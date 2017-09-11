@@ -16,8 +16,11 @@ type Trait interface {
 	// Returns learned trait parameters
 	Params() []float64
 
-	//Perturb the trait parameters slightly
+	// Perturb the trait parameters slightly
 	Mutate(trait_mutation_power, trait_param_mut_prob float64)
+
+	// Writes this Trait into given writer
+	WriteTrait(w *io.Writer)
 }
 
 func NewTrait() Trait {
