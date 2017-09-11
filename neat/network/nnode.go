@@ -51,7 +51,7 @@ type NNode interface {
 	Depth(d int32, mynet *Network) int32
 
 	// Verify flushing for debug
-	FlushbackCheck(seenlist []*NNode) error
+	FlushbackCheck() error
 
 }
 
@@ -221,16 +221,15 @@ func (n *nnode) Flushback() {
 	n.last_activation = 0
 	n.last_activation2 = 0
 
-	if n.ntype == NEURON {
-		//Flush back recursively
-		for _, l := range n.incoming {
-			(*l).SetAddedWeight(0)
-			if (*l).InNode().ActivationCount() > 0 {
-				(*l).InNode().Flushback()
-			}
-		}
-
-	}
+	//if n.ntype == NEURON {
+	//	// Flush back recursively
+	//	for _, l := range n.incoming {
+	//		(*l).SetAddedWeight(0)
+	//		if (*l).InNode().ActivationCount() > 0 {
+	//			(*l).InNode().Flushback()
+	//		}
+	//	}
+	//}
 }
 func (n *nnode) FlushbackCheck() error {
 	if n.activation_count > 0 {
@@ -246,17 +245,16 @@ func (n *nnode) FlushbackCheck() error {
 		return errors.New(fmt.Sprintf("ALERT: %s has last_activation2 %f", n, n.last_activation2))
 	}
 
-
-	if n.ntype == NEURON {
-		// Flush back check recursively
-		for _, l := range n.incoming {
-			err := (*l).InNode().FlushbackCheck()
-			if err != nil {
-				return err
-			}
-		}
-
-	}
+	//if n.ntype == NEURON {
+	//	// Flush back check recursively
+	//	for _, l := range n.incoming {
+	//		err := (*l).InNode().FlushbackCheck()
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
+	//
+	//}
 	return nil
 }
 func (n *nnode) WriteNode(w *io.Writer) {
