@@ -2,7 +2,11 @@
 // Artificial Neural Networks to perform specific task using genetic algorithms.
 package neat
 
-const num_trait_params = 8
+import "math/rand"
+
+// The number of parameters used in neurons that learn through habituation,
+// sensitization, or Hebbian-type processes
+const Num_trait_params = 8
 
 // The global configuration holder
 type Neat struct {
@@ -76,4 +80,14 @@ type Neat struct {
 
 	// The number of runs to average over in an experiment
 	num_runs int32
+}
+
+// Returns
+func RandPosNeg() int32 {
+	v := rand.Int()
+	if (v % 2) == 0 {
+		return -1
+	} else {
+		return 1
+	}
 }
