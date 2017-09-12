@@ -53,6 +53,10 @@ type NNode interface {
 	GetType() int32
 	// Allows alteration between NEURON and SENSOR.  Returns its argument
 	SetType(ntype int32)
+	// Returns true if this node is SENSOR
+	IsSensor() bool
+	// Returns true if this node is NEURON
+	IsNeuron() bool
 
 	// If the node is a SENSOR, returns TRUE and loads the value
 	SensorLoad(load float64) bool
@@ -245,9 +249,6 @@ func (n *nnode) SetActiveFlag(flag bool) {
 func (n *nnode) IsActive() bool {
 	return n.active_flag
 }
-func (n *nnode) NodeType() int32 {
-	return n.ntype
-}
 func (n *nnode) NodeId() int32  {
 	return n.node_id
 }
@@ -277,8 +278,14 @@ func (n *nnode) GetType() int32 {
 func (n *nnode) SetType(ntype int32) {
 	n.ntype = ntype
 }
+func (n *nnode) IsSensor() bool {
+	return n.ntype == SENSOR
+}
+func (n *nnode) IsNeuron() bool {
+	return n.ntype == NEURON
+}
 func (n *nnode) SensorLoad(load float64) bool {
-	if n.ntype == SENSOR {
+	if n.IsSensor() {
 		// Keep a memory of activations for potential time delayed connections
 		n.SaveActivations()
 		// Puts sensor into next time-step

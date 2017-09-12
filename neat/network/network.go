@@ -17,15 +17,28 @@ type Network interface {
 	// If at least one output is not active then return true
 	OutputIsOff() bool
 
-
 	// Prints the values of network outputs to the console
 	PrintActivation()
 	// Print the values of network inputs to the console
 	PrintInput()
 	// Verify that network was successfully flushed for debugging
 	FlushCheck() error
+
+	// Adds a new input node
+	AddInputNode(node *NNode)
+	// Adds a new output node
+	AddOutputNode(node *NNode)
+
+	// Takes an array of sensor values and loads it into SENSOR inputs ONLY
+	LoadSensors(sensors []float64)
+	// Set network name
+	SetName(name string)
+
+	// Counts the number of nodes in the net if not yet counted
+	NodeCount()
 }
 
+// Creates new network
 func NewNetwork(in, out, all []*NNode, netid int32) Network {
 	n := newNetwork(netid)
 	n.inputs = in
@@ -105,7 +118,6 @@ func (n *network) PrintInput() {
 	}
 	fmt.Println(")")
 }
-
 func (n *network) OutputIsOff() bool {
 	for _, on := range n.outputs {
 		if (*on).ActivationCount() == 0 {
@@ -114,7 +126,6 @@ func (n *network) OutputIsOff() bool {
 	}
 	return false
 }
-
 func (n *network) Activate() (bool, error) {
 	//For adding to the activesum
 	add_amount := 0.0
@@ -129,12 +140,12 @@ func (n *network) Activate() (bool, error) {
 		abort_count += 1
 
 		if abort_count >= 20 {
-			return false, errors.New("Inputs disconnected from output!")
+			return false, errors.New("Inputs disconnected from outputa!")
 		}
 
-		// For each node, compute the sum of its incoming activation
+		// For each neuron node, compute the sum of its incoming activation
 		for _, np := range n.all_nodes {
-			if (*np).GetType() != SENSOR {
+			if (*np).IsNeuron() {
 				(*np).SetActiveSum(0.0) // reset activation value
 				(*np).SetActiveFlag(false) // flag node disabled
 
@@ -143,7 +154,7 @@ func (n *network) Activate() (bool, error) {
 					// Handle possible time delays
 					if !(*lp).IsTimeDelayed() {
 						add_amount = (*lp).GetWeight() * (*(*lp).InNode()).GetActiveOut()
-						if (*(*lp).InNode()).IsActive() && (*(*lp).InNode()).GetType() == SENSOR {
+						if (*(*lp).InNode()).IsActive() && (*(*lp).InNode()).IsSensor() {
 							(*(*lp).InNode()).SetActiveFlag(true)
 						}
 					} else {
@@ -154,9 +165,9 @@ func (n *network) Activate() (bool, error) {
 			} // End if != SENSOR
 		}  // End {for} over all nodes
 
-		// Now activate all the non-sensor nodes off their incoming activation
+		// Now activate all the neuron nodes off their incoming activation
 		for _, np := range n.all_nodes {
-			if (*np).GetType() != SENSOR {
+			if (*np).IsNeuron() {
 				// Only activate if some active input came in
 				if (*np).IsActive() {
 					// Keep a memory of activations for potential time delayed connections
@@ -178,4 +189,25 @@ func (n *network) Activate() (bool, error) {
 		one_time = true
 	}
 	return true, nil
+}
+func (n *network) AddInputNode(node *NNode) {
+	n.inputs = append(n.inputs, node)
+}
+func (n *network) AddOutputNode(node *NNode) {
+	n.outputs = append(n.outputs, node)
+}
+func (n *network) LoadSensors(sensors []float64) {
+	counter := 0
+	for _, np := range n.inputs{
+		if (*np).IsSensor() {
+			(*np).SensorLoad(sensors[counter])
+			counter += 1
+		}
+	}
+}
+func (n *network) SetName(name string) {
+	n.name = name
+}
+func (n *network) NodeCount() {
+
 }
