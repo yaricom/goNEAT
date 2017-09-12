@@ -3,6 +3,7 @@ package network
 import (
 	"github.com/yaricom/goNEAT/neat"
 	"fmt"
+	"flag"
 )
 
 // A LINK is a connection from one node to another with an associated weight.
@@ -12,7 +13,12 @@ type Link interface {
 	// Set added weight
 	SetAddedWeight(weight float64)
 	// Returns IN node
-	InNode() NNode
+	InNode() *NNode
+	// Returns link weight
+	GetWeight() float64
+
+	// Returns true if link is time delayed
+	IsTimeDelayed() bool
 }
 
 // Creates new link with specified weight, input and output neurons connected reccurently or not.
@@ -69,6 +75,20 @@ func newLink(weight float64) link {
 		weight:weight,
 		params:make([]float64, neat.Num_trait_params),
 	}
+}
+
+// The Link interface implementation
+func (l *link) SetAddedWeight(weight float64) {
+	l.added_weight = weight
+}
+func (l *link) InNode() *NNode {
+	return l.in_node
+}
+func (l *link) GetWeight() float64 {
+	return l.weight
+}
+func (l *link) IsTimeDelayed() bool {
+	return l.time_delay
 }
 
 func (n link) String() string {

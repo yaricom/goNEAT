@@ -5,6 +5,7 @@ import (
 	"io"
 	"fmt"
 	"errors"
+	"math"
 )
 
 // A NODE is either a NEURON or a SENSOR.
@@ -21,6 +22,26 @@ type NNode interface {
 	SetTrait(t *Trait)
 	// Returns number of activations for current node
 	ActivationCount() int32
+	// Increments activation count
+	IncrementActivationCount()
+
+	// Sets activation sum
+	SetActiveSum(sum float64)
+	// Returns activation sum
+	GetActiveSum() float64
+	// Adds activation value to the total activation sum of this node
+	AddToActiveSum(value float64)
+	// Set node active flag
+	SetActiveFlag(flag bool)
+	// Returns true if this link is active
+	IsActive() bool
+
+	// Save current node's activations for potential time delayed connections
+	SaveActivations()
+	// Set node's activation value
+	SetActivation(val float64)
+	// Returns type of node activation function (SIGMOID, ...)
+	GetFtype() int32
 
 
 	// Return activation for current step
@@ -40,6 +61,8 @@ type NNode interface {
 	AddIncoming(in *NNode, weight float64)
 	// Adds a Link to a new NNode in the incoming List
 	AddIncomingRecurrent(in *NNode, weight float64, recur bool);
+	// Returns list of all incoming connections
+	GetIncoming() []*Link
 
 	// Recursively deactivate backwards through the network including this NNode and reccurencies
 	Flushback()
@@ -53,6 +76,38 @@ type NNode interface {
 	// Verify flushing for debug
 	FlushbackCheck() error
 
+}
+
+// SIGMOID FUNCTION ********************************
+// This is a signmoidal activation function, which is an S-shaped squashing function.
+// It smoothly limits the amplitude of the output of a neuron to between 0 and 1.
+// It is a helper to the neural-activation function get_active_out.
+// It is made inline so it can execute quickly since it is at every non-sensor node in a network.
+// NOTE:  In order to make node insertion in the middle of a link possible,
+// the signmoid can be shifted to the right and more steeply sloped:
+// slope=4.924273
+// constant= 2.4621365
+// These parameters optimize mean squared error between the old output,
+// and an output of a node inserted in the middle of a link between
+// the old output and some other node.
+// When not right-shifted, the steepened slope is closest to a linear
+// ascent as possible between -0.5 and 0.5
+func fsigmoid(activesum, slope, constant float64) float64 {
+	//RIGHT SHIFTED ---------------------------------------------------------
+	//return (1/(1+(exp(-(slope*activesum-constant))))); //ave 3213 clean on 40 runs of p2m and 3468 on another 40
+	//41394 with 1 failure on 8 runs
+
+	//LEFT SHIFTED ----------------------------------------------------------
+	//return (1/(1+(exp(-(slope*activesum+constant))))); //original setting ave 3423 on 40 runs of p2m, 3729 and 1 failure also
+
+	//PLAIN SIGMOID ---------------------------------------------------------
+	//return (1/(1+(exp(-activesum)))); //3511 and 1 failure
+
+	//LEFT SHIFTED NON-STEEPENED---------------------------------------------
+	//return (1/(1+(exp(-activesum-constant)))); //simple left shifted
+
+	//NON-SHIFTED STEEPENED
+	return 1.0 / (1.0 + (math.Exp(-(slope * activesum)))) //Compressed
 }
 
 // Creates new node with specified type (NEURON or SENSOR) and ID
@@ -162,6 +217,34 @@ func newNode() nnode {
 func (n *nnode) ActivationCount() {
 	return n.activation_count
 }
+func (n *nnode) IncrementActivationCount() {
+	n.activation_count += 1
+}
+func (n *nnode) SetActiveSum(sum float64) {
+	n.activesum = sum
+}
+func (n *nnode) GetActiveSum() float64 {
+	return n.activesum
+}
+func (n *nnode) SaveActivations() {
+	n.last_activation2 = n.last_activation
+	n.last_activation = n.activation
+}
+func (n *nnode) SetActivation(val float64) {
+	n.activation = val
+}
+func (n *nnode) GetFtype() int32 {
+	return n.ftype
+}
+func (n *nnode) AddToActiveSum(value float64) {
+	n.activesum += value
+}
+func (n *nnode) SetActiveFlag(flag bool) {
+	n.active_flag = flag
+}
+func (n *nnode) IsActive() bool {
+	return n.active_flag
+}
 func (n *nnode) NodeType() int32 {
 	return n.ntype
 }
@@ -196,11 +279,10 @@ func (n *nnode) SetType(ntype int32) {
 }
 func (n *nnode) SensorLoad(load float64) bool {
 	if n.ntype == SENSOR {
-		// Time delay memory
-		n.last_activation2 = n.last_activation
-		n.last_activation = n.activation
+		// Keep a memory of activations for potential time delayed connections
+		n.SaveActivations()
 		// Puts sensor into next time-step
-		n.activation_count += 1
+		n.IncrementActivationCount()
 		n.activation = load
 		return true
 	} else {
@@ -214,6 +296,9 @@ func (n *nnode) AddIncoming(in *NNode, weight float64) {
 func (n *nnode) AddIncomingRecurrent(in *NNode, weight float64, recur bool) {
 	newLink := NewLink(weight, in, n, recur)
 	n.incoming = append(n.incoming, newLink)
+}
+func (n *nnode) GetIncoming() []*Link {
+	return n.incoming
 }
 func (n *nnode) Flushback() {
 	n.activation_count = 0
@@ -278,7 +363,7 @@ func (n *nnode) Depth(d int32, mynet *Network) int32 {
 	} else {
 		// recursion
 		for _, l := range n.incoming {
-			cur_depth = (*l).InNode().Depth(d + 1, mynet)
+			cur_depth = (*(*l).InNode()).Depth(d + 1, mynet)
 			if cur_depth > max {
 				max = cur_depth
 			}

@@ -3,6 +3,7 @@ package network
 import (
 	"github.com/yaricom/goNEAT/neat/genetics"
 	"fmt"
+	"errors"
 )
 
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
@@ -12,7 +13,9 @@ type Network interface {
 	// Puts the network back into an initial state
 	Flush()
 	// Activates the net such that all outputs are active
-	Activate() bool
+	Activate() (bool, error)
+	// If at least one output is not active then return true
+	OutputIsOff() bool
 
 
 	// Prints the values of network outputs to the console
@@ -103,6 +106,76 @@ func (n *network) PrintInput() {
 	fmt.Println(")")
 }
 
-func (n *network) Activate() bool {
+func (n *network) OutputIsOff() bool {
+	for _, on := range n.outputs {
+		if (*on).ActivationCount() == 0 {
+			return true
+		}
+	}
+	return false
+}
 
+func (n *network) Activate() (bool, error) {
+	//For adding to the activesum
+	add_amount := 0.0
+	//Make sure we at least activate once
+	one_time := false
+	//Used in case the output is somehow truncated from the network
+	abort_count := 0
+
+	// Keep activating until all the outputs have become active
+	// (This only happens on the first activation, because after that they are always active)
+	for n.OutputIsOff() && !one_time {
+		abort_count += 1
+
+		if abort_count >= 20 {
+			return false, errors.New("Inputs disconnected from output!")
+		}
+
+		// For each node, compute the sum of its incoming activation
+		for _, np := range n.all_nodes {
+			if (*np).GetType() != SENSOR {
+				(*np).SetActiveSum(0.0) // reset activation value
+				(*np).SetActiveFlag(false) // flag node disabled
+
+				// For each node's incoming connection, add the activity from the connection to the activesum
+				for _, lp := range (*np).GetIncoming() {
+					// Handle possible time delays
+					if !(*lp).IsTimeDelayed() {
+						add_amount = (*lp).GetWeight() * (*(*lp).InNode()).GetActiveOut()
+						if (*(*lp).InNode()).IsActive() && (*(*lp).InNode()).GetType() == SENSOR {
+							(*(*lp).InNode()).SetActiveFlag(true)
+						}
+					} else {
+						add_amount = (*lp).GetWeight() * (*(*lp).InNode()).GetActiveOutTd()
+					}
+					(*np).AddToActiveSum(add_amount)
+				} // End {for} over incoming links
+			} // End if != SENSOR
+		}  // End {for} over all nodes
+
+		// Now activate all the non-sensor nodes off their incoming activation
+		for _, np := range n.all_nodes {
+			if (*np).GetType() != SENSOR {
+				// Only activate if some active input came in
+				if (*np).IsActive() {
+					// Keep a memory of activations for potential time delayed connections
+					(*np).SaveActivations()
+					// Now run the net activation through an activation function
+					if (*np).GetFtype() == SIGMOID {
+						activation := fsigmoid((*np).GetActiveSum(), 4.924273, 2.4621365)
+						(*np).SetActivation(activation)
+					} else {
+						return false, errors.New(
+							fmt.Sprintf("Unknown activation function type: %d", (*np).GetFtype()))
+					}
+					// Increment the activation_count
+					// First activation cannot be from nothing!!
+					(*np).IncrementActivationCount()
+				}
+			}
+		}
+		one_time = true
+	}
+	return true, nil
 }
