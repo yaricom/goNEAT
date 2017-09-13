@@ -87,13 +87,13 @@ type network struct {
 }
 
 // The Network interface implementation
-func (n network) Flush() {
+func (n *network) Flush() {
 	// Flush back recursively
 	for _, node := range n.all_nodes {
 		node.Flushback()
 	}
 }
-func (n network) FlushCheck() error {
+func (n *network) FlushCheck() error {
 	for _, node := range n.all_nodes {
 		err := node.FlushbackCheck()
 		if err != nil {
@@ -102,21 +102,21 @@ func (n network) FlushCheck() error {
 	}
 	return nil
 }
-func (n network) PrintActivation() {
+func (n *network) PrintActivation() {
 	fmt.Printf("Network %s with id %d outputs: (", n.name, n.net_id)
 	for i, node := range n.outputs {
 		fmt.Printf("[Output #%d: %s] ", i, node)
 	}
 	fmt.Println(")")
 }
-func (n network) PrintInput() {
+func (n *network) PrintInput() {
 	fmt.Printf("Network %s with id %d inputs: (", n.name, n.net_id)
 	for i, node := range n.inputs {
 		fmt.Printf("[Input #%d: %s] ", i, node)
 	}
 	fmt.Println(")")
 }
-func (n network) OutputIsOff() bool {
+func (n *network) OutputIsOff() bool {
 	for _, node := range n.outputs {
 		if node.ActivationCount() == 0 {
 			return true
@@ -217,7 +217,7 @@ func (n network) LinkCount() int {
 	return n.numlinks
 }
 
-func (n network) IsRecurrent(potin_node, potout_node NNode, count *int32, thresh int32) bool {
+func (n *network) IsRecurrent(potin_node, potout_node NNode, count *int32, thresh int32) bool {
 	// Count the node as visited
 	(*count) += 1
 
@@ -242,7 +242,7 @@ func (n network) IsRecurrent(potin_node, potout_node NNode, count *int32, thresh
 	return false
 }
 
-func (n network) MaxDepth() (int32, error) {
+func (n *network) MaxDepth() (int32, error) {
 	max := int32(0) // The max depth
 	for _, node := range n.outputs {
 		curr_depth, err := node.Depth(0)

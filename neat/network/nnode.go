@@ -220,7 +220,7 @@ func newNode() nnode {
 }
 
 // The NNode interface implementation
-func (n nnode) ActivationCount() int32 {
+func (n *nnode) ActivationCount() int32 {
 	return n.activation_count
 }
 func (n *nnode) IncrementActivationCount() {
@@ -248,45 +248,45 @@ func (n *nnode) AddToActiveSum(value float64) {
 func (n *nnode) SetActiveFlag(flag bool) {
 	n.active_flag = flag
 }
-func (n nnode) IsActive() bool {
+func (n *nnode) IsActive() bool {
 	return n.active_flag
 }
-func (n nnode) NodeId() int  {
+func (n *nnode) NodeId() int  {
 	return n.node_id
 }
-func (n nnode) GenNodeLabel() int  {
+func (n *nnode) GenNodeLabel() int  {
 	return n.gen_node_label
 }
 func (n *nnode) SetTrait(t Trait) {
 	n.nodetrait = t
 }
-func (n nnode) GetTrait() Trait {
+func (n *nnode) GetTrait() Trait {
 	return n.nodetrait
 }
-func (n nnode) GetActiveOut() float64 {
+func (n *nnode) GetActiveOut() float64 {
 	if n.activation_count > 0 {
 		return n.activation
 	} else {
 		return 0.0
 	}
 }
-func (n nnode) GetActiveOutTd() float64 {
+func (n *nnode) GetActiveOutTd() float64 {
 	if n.activation_count > 1 {
 		return n.last_activation
 	} else {
 		return 0.0
 	}
 }
-func (n nnode) GetType() int {
+func (n *nnode) GetType() int {
 	return n.ntype
 }
 func (n *nnode) SetType(ntype int) {
 	n.ntype = ntype
 }
-func (n nnode) IsSensor() bool {
+func (n *nnode) IsSensor() bool {
 	return n.ntype == SENSOR
 }
-func (n nnode) IsNeuron() bool {
+func (n *nnode) IsNeuron() bool {
 	return n.ntype == NEURON
 }
 func (n *nnode) SensorLoad(load float64) bool {
@@ -309,7 +309,7 @@ func (n *nnode) AddIncomingRecurrent(in NNode, weight float64, recur bool) {
 	newLink := NewLink(weight, in, n, recur)
 	n.incoming = append(n.incoming, newLink)
 }
-func (n nnode) GetIncoming() []Link {
+func (n *nnode) GetIncoming() []Link {
 	return n.incoming
 }
 func (n *nnode) Flushback() {
@@ -354,14 +354,14 @@ func (n *nnode) FlushbackCheck() error {
 	//}
 	return nil
 }
-func (n nnode) WriteNode(w io.Writer) {
+func (n *nnode) WriteNode(w io.Writer) {
 	trait_id := 0
 	if n.nodetrait != nil {
 		trait_id = n.nodetrait.TraitId()
 	}
 	fmt.Fprintf(w, "%d %d %d %d", n.node_id, trait_id, n.ntype, n.gen_node_label)
 }
-func (n nnode) Depth(d int32) (int32, error) {
+func (n *nnode) Depth(d int32) (int32, error) {
 	if d > 100 {
 		return 10, errors.New("** DEPTH NOT DETERMINED FOR NETWORK WITH LOOP");
 	}
@@ -385,7 +385,7 @@ func (n nnode) Depth(d int32) (int32, error) {
 
 }
 
-func (n nnode) String() string {
+func (n *nnode) String() string {
 	if n.ntype == SENSOR {
 		return fmt.Sprintf("(S %d, step %d : %f)", n.node_id, n.activation_count, n.activation)
 	} else {

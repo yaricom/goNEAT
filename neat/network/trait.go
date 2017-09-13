@@ -89,10 +89,10 @@ func newTrait() trait {
 }
 
 // The Trait interface implementation
-func (t trait) TraitId() int {
+func (t *trait) TraitId() int {
 	return t.trait_id
 }
-func (t trait) Params() []float64 {
+func (t *trait) Params() []float64 {
 	return t.params
 }
 func (t *trait) Mutate(trait_mutation_power, trait_param_mut_prob float64) {

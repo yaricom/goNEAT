@@ -83,19 +83,19 @@ func newLink(weight float64) link {
 func (l *link) SetAddedWeight(weight float64) {
 	l.added_weight = weight
 }
-func (l link) InNode() NNode {
+func (l *link) InNode() NNode {
 	return l.in_node
 }
-func (l link) GetWeight() float64 {
+func (l *link) GetWeight() float64 {
 	return l.weight
 }
-func (l link) IsTimeDelayed() bool {
+func (l *link) IsTimeDelayed() bool {
 	return l.time_delay
 }
-func (l link) IsRecurrent() bool {
+func (l *link) IsRecurrent() bool {
 	return l.is_recurrent
 }
 
-func (n link) String() string {
+func (n *link) String() string {
 	return fmt.Sprintf("(link: %s <-> %s, w: %f", n.in_node, n.out_node, n.weight)
 }
