@@ -37,7 +37,7 @@ const (
 // The innovation method to be applied
 const (
 	// The novelty will be introduced by new NN node
-	NEWNODE
+	NEWNODE = iota
 	// The novelty will be introduced by new NN link
 	NEWLINK
 )
