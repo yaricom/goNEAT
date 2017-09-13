@@ -34,8 +34,17 @@ type Network interface {
 	// Set network name
 	SetName(name string)
 
-	// Counts the number of nodes in the net if not yet counted
-	NodeCount()
+	// This checks a POTENTIAL link between a potential in_node
+     	// and potential out_node to see if it must be recurrent.
+	// Use count and thresh to jump out in the case of an infinite loop.
+	IsRecurrent(potin_node, potout_node *NNode, count *int32, thresh int32) bool
+	// Find the maximum number of neurons between an output and an input
+	MaxDepth() (int32, error)
+
+	// Counts the number of nodes in the net
+	NodeCount() int32
+	// Counts the number of links in the net
+	LinkCount() int32
 }
 
 // Creates new network
@@ -49,8 +58,7 @@ func NewNetwork(in, out, all []*NNode, netid int32) Network {
 
 // The default private constructor
 func newNetwork(netId int32) network {
-	return network{
-		numnodes:-1,
+	return network {
 		numlinks:-1,
 		net_id:netId,
 	}
@@ -58,8 +66,6 @@ func newNetwork(netId int32) network {
 
 // The private network data holder
 type network struct {
-	//The number of nodes in the net (-1 means not yet counted)
-	numnodes int32
 	//The number of links in the net (-1 means not yet counted)
 	numlinks int32
 
@@ -208,6 +214,52 @@ func (n *network) LoadSensors(sensors []float64) {
 func (n *network) SetName(name string) {
 	n.name = name
 }
-func (n *network) NodeCount() {
+func (n *network) NodeCount() int32 {
+	return len(n.all_nodes)
+}
+func (n *network) LinkCount() int32 {
+	n.numlinks = 0
+	for _, np := range n.all_nodes {
+		n.numlinks += len((*np).GetIncoming())
+	}
+	return n.numlinks
+}
 
+func (n *network) IsRecurrent(potin_node, potout_node *NNode, count *int32, thresh int32) bool {
+	// Count the node as visited
+	(*count) += 1
+
+	if count > thresh {
+		return false // Short out the whole thing - loop detected
+	}
+
+	if potin_node == potout_node {
+		return true
+	} else {
+		// Check back on all links ...
+		for _, lp := range (*potin_node).GetIncoming() {
+			// But skip links that are already recurrent -
+			// We want to check back through the forward flow of signals only
+			if (*lp).IsRecurrent() != true {
+				if n.IsRecurrent((*lp).InNode(), potout_node, count, thresh) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (n *network) MaxDepth() (int32, error) {
+	max := 0 // The max depth
+	for _, np := range n.outputs {
+		curr_depth, err := (*np).Depth(0, n)
+		if err != nil {
+			return curr_depth, err
+		}
+		if curr_depth > max {
+			max = curr_depth
+		}
+	}
+	return max, nil
 }

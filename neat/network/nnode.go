@@ -75,7 +75,7 @@ type NNode interface {
 	WriteNode(w *io.Writer)
 
 	// Find the greatest depth starting from this neuron at depth d
-	Depth(d int32, mynet *Network) int32
+	Depth(d int32, mynet *Network) (int32, error)
 
 	// Verify flushing for debug
 	FlushbackCheck() error
@@ -356,26 +356,26 @@ func (n *nnode) WriteNode(w *io.Writer) {
 	}
 	fmt.Fprintf(w, "%d %d %d %d", n.node_id, trait_id, n.ntype, n.gen_node_label)
 }
-func (n *nnode) Depth(d int32, mynet *Network) int32 {
-	cur_depth := 0 //The depth of the current node
-	max := d //The max depth
-
+func (n *nnode) Depth(d int32, mynet *Network) (int32, error) {
 	if d > 100 {
-		fmt.Println("** DEPTH NOT DETERMINED FOR NETWORK WITH LOOP")
-		return 10;
+		return 10, errors.New("** DEPTH NOT DETERMINED FOR NETWORK WITH LOOP");
 	}
 	// Base Case
 	if n.ntype == SENSOR {
 		return d
 	} else {
 		// recursion
+		max := d // The max depth
 		for _, l := range n.incoming {
-			cur_depth = (*(*l).InNode()).Depth(d + 1, mynet)
+			cur_depth, err := (*(*l).InNode()).Depth(d + 1, mynet)
+			if err != nil {
+				return cur_depth, err
+			}
 			if cur_depth > max {
 				max = cur_depth
 			}
 		}
-		return max
+		return max, nil
 	}
 
 }

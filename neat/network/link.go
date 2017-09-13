@@ -19,6 +19,8 @@ type Link interface {
 
 	// Returns true if link is time delayed
 	IsTimeDelayed() bool
+	// Returns true if link is recurrent
+	IsRecurrent() bool
 }
 
 // Creates new link with specified weight, input and output neurons connected reccurently or not.
@@ -89,6 +91,9 @@ func (l *link) GetWeight() float64 {
 }
 func (l *link) IsTimeDelayed() bool {
 	return l.time_delay
+}
+func (l *link) IsRecurrent() bool {
+	return l.is_recurrent
 }
 
 func (n link) String() string {
