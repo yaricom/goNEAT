@@ -219,9 +219,9 @@ func (n network) LinkCount() int {
 
 func (n *network) IsRecurrent(potin_node, potout_node NNode, count *int32, thresh int32) bool {
 	// Count the node as visited
-	(*count) += 1
+	*count++
 
-	if (*count) > thresh {
+	if *count > thresh {
 		return false // Short out the whole thing - loop detected
 	}
 
