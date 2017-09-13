@@ -17,8 +17,8 @@ func TestReadNNode(t *testing.T) {
 
 	node := network.ReadNNode(strings.NewReader(node_str), traits)
 
-	if node.NodeId() != node_id {
-		t.Errorf("Found node ID is not what expected, %d != %d", node_id, node.NodeId())
+	if node.GetNodeId() != node_id {
+		t.Errorf("Found node ID is not what expected, %d != %d", node_id, node.GetNodeId())
 	}
 	if node.GetTrait() != trait {
 		t.Error("The wrong Trait found in the node")

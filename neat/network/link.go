@@ -12,7 +12,7 @@ type Link interface {
 	// Set added weight
 	SetAddedWeight(weight float64)
 	// Returns IN node
-	InNode() NNode
+	GetInNode() NNode
 	// Returns link weight
 	GetWeight() float64
 
@@ -83,7 +83,7 @@ func newLink(weight float64) link {
 func (l *link) SetAddedWeight(weight float64) {
 	l.added_weight = weight
 }
-func (l *link) InNode() NNode {
+func (l *link) GetInNode() NNode {
 	return l.in_node
 }
 func (l *link) GetWeight() float64 {

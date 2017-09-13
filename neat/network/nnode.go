@@ -15,7 +15,7 @@ import (
 type NNode interface {
 
 	// Return the ID of the node
-	NodeId() int
+	GetNodeId() int
 	// Returns the placement of the node in the network layers (INPUT, HIDDEN, OUTPUT)
 	GenNodeLabel() int
 	// Sets new trait to the node
@@ -23,7 +23,7 @@ type NNode interface {
 	// Returns trait associated with node
 	GetTrait() Trait
 	// Returns number of activations for current node
-	ActivationCount() int32
+	GetActivationCount() int32
 	// Increments activation count
 	IncrementActivationCount()
 
@@ -138,7 +138,7 @@ func NewNNodeInPlace(ntype, nodeid, placement int) NNode {
 func NewNNodeCopy(n NNode, t Trait) NNode {
 	node := newNode()
 	node.ntype = n.GetType()
-	node.node_id = n.NodeId()
+	node.node_id = n.GetNodeId()
 	node.gen_node_label = n.GenNodeLabel()
 	node.SetTrait(t)
 	return &node
@@ -152,7 +152,7 @@ func ReadNNode(r io.Reader, traits []Trait) NNode {
 	if trait_id != 0 && traits != nil {
 		// find corresponding node trait from list
 		for _, t := range traits {
-			if trait_id == t.TraitId() {
+			if trait_id == t.GetTraitId() {
 				n.nodetrait = t
 				break
 			}
@@ -220,7 +220,7 @@ func newNode() nnode {
 }
 
 // The NNode interface implementation
-func (n *nnode) ActivationCount() int32 {
+func (n *nnode) GetActivationCount() int32 {
 	return n.activation_count
 }
 func (n *nnode) IncrementActivationCount() {
@@ -251,7 +251,7 @@ func (n *nnode) SetActiveFlag(flag bool) {
 func (n *nnode) IsActive() bool {
 	return n.active_flag
 }
-func (n *nnode) NodeId() int  {
+func (n *nnode) GetNodeId() int  {
 	return n.node_id
 }
 func (n *nnode) GenNodeLabel() int  {
@@ -357,7 +357,7 @@ func (n *nnode) FlushbackCheck() error {
 func (n *nnode) WriteNode(w io.Writer) {
 	trait_id := 0
 	if n.nodetrait != nil {
-		trait_id = n.nodetrait.TraitId()
+		trait_id = n.nodetrait.GetTraitId()
 	}
 	fmt.Fprintf(w, "%d %d %d %d", n.node_id, trait_id, n.ntype, n.gen_node_label)
 }
@@ -372,7 +372,7 @@ func (n *nnode) Depth(d int32) (int32, error) {
 		// recursion
 		max := d // The max depth
 		for _, l := range n.incoming {
-			cur_depth, err := l.InNode().Depth(d + 1)
+			cur_depth, err := l.GetInNode().Depth(d + 1)
 			if err != nil {
 				return cur_depth, err
 			}

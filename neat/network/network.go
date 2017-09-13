@@ -118,7 +118,7 @@ func (n *network) PrintInput() {
 }
 func (n *network) OutputIsOff() bool {
 	for _, node := range n.outputs {
-		if node.ActivationCount() == 0 {
+		if node.GetActivationCount() == 0 {
 			return true
 		}
 	}
@@ -151,12 +151,12 @@ func (n *network) Activate() (bool, error) {
 				for _, link := range node.GetIncoming() {
 					// Handle possible time delays
 					if !link.IsTimeDelayed() {
-						add_amount = link.GetWeight() * link.InNode().GetActiveOut()
-						if link.InNode().IsActive() && link.InNode().IsSensor() {
-							link.InNode().SetActiveFlag(true)
+						add_amount = link.GetWeight() * link.GetInNode().GetActiveOut()
+						if link.GetInNode().IsActive() && link.GetInNode().IsSensor() {
+							link.GetInNode().SetActiveFlag(true)
 						}
 					} else {
-						add_amount = link.GetWeight() * link.InNode().GetActiveOutTd()
+						add_amount = link.GetWeight() * link.GetInNode().GetActiveOutTd()
 					}
 					node.AddToActiveSum(add_amount)
 				} // End {for} over incoming links
@@ -233,7 +233,7 @@ func (n *network) IsRecurrent(potin_node, potout_node NNode, count *int32, thres
 			// But skip links that are already recurrent -
 			// We want to check back through the forward flow of signals only
 			if link.IsRecurrent() != true {
-				if n.IsRecurrent(link.InNode(), potout_node, count, thresh) {
+				if n.IsRecurrent(link.GetInNode(), potout_node, count, thresh) {
 					return true
 				}
 			}

@@ -12,9 +12,9 @@ import (
 // and those traits can evolve on their own.
 type Trait interface {
 	// Returns trait ID
-	TraitId() int
+	GetTraitId() int
 	// Returns learned trait parameters
-	Params() []float64
+	GetParams() []float64
 
 	// Perturb the trait parameters slightly
 	Mutate(trait_mutation_power, trait_param_mut_prob float64)
@@ -45,8 +45,8 @@ func NewTraitWithParams(id int, p1, p2, p3, p4, p5, p6, p7, p8, p9 float64) Trai
 // The copy constructor
 func NewTraitCopy(t Trait) Trait {
 	nt := newTrait()
-	nt.trait_id = t.TraitId()
-	for i, p := range t.Params() {
+	nt.trait_id = t.GetTraitId()
+	for i, p := range t.GetParams() {
 		nt.params[i] = p
 	}
 	return &nt
@@ -55,9 +55,9 @@ func NewTraitCopy(t Trait) Trait {
 // Special Constructor creates a new Trait which is the average of two existing traits passed in
 func NewTraitAvrg(t1, t2 Trait) Trait {
 	nt := newTrait()
-	nt.trait_id = t1.TraitId()
+	nt.trait_id = t1.GetTraitId()
 	for i := 0; i < neat.Num_trait_params; i++ {
-		nt.params[i] = (t1.Params()[i] + t2.Params()[i]) / 2.0
+		nt.params[i] = (t1.GetParams()[i] + t2.GetParams()[i]) / 2.0
 	}
 	return &nt
 }
@@ -89,10 +89,10 @@ func newTrait() trait {
 }
 
 // The Trait interface implementation
-func (t *trait) TraitId() int {
+func (t *trait) GetTraitId() int {
 	return t.trait_id
 }
-func (t *trait) Params() []float64 {
+func (t *trait) GetParams() []float64 {
 	return t.params
 }
 func (t *trait) Mutate(trait_mutation_power, trait_param_mut_prob float64) {
@@ -110,7 +110,7 @@ func (t *trait) WriteTrait(w io.Writer) {
 	}
 }
 
-func (t trait) String() string {
+func (t *trait) String() string {
 	s := fmt.Sprintf("Trait # %d\t", t.trait_id)
 	for _, p := range t.params {
 		s = fmt.Sprintf("%s %f", s, p)
