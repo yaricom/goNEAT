@@ -1,7 +1,6 @@
 package network
 
 import (
-	"github.com/yaricom/goNEAT/neat/genetics"
 	"fmt"
 	"errors"
 )
@@ -81,9 +80,6 @@ type network struct {
 
 	// A network id
 	net_id int32
-
-	// Allows Network to be matched with its Genome
-	genotype *genetics.Genome
 
 	// Is a name of this network */
 	name string
