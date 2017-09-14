@@ -148,7 +148,7 @@ func NewNNodeCopy(n NNode, t Trait) NNode {
 func ReadNNode(r io.Reader, traits []Trait) NNode {
 	n := newNode()
 	var trait_id int
-	fmt.Fscanf(r, "%d %d %d %d", &n.node_id, &trait_id, &n.ntype, &n.gen_node_label)
+	fmt.Fscanf(r, "node %d %d %d %d", &n.node_id, &trait_id, &n.ntype, &n.gen_node_label)
 	if trait_id != 0 && traits != nil {
 		// find corresponding node trait from list
 		for _, t := range traits {
@@ -359,7 +359,7 @@ func (n *nnode) WriteNode(w io.Writer) {
 	if n.nodetrait != nil {
 		trait_id = n.nodetrait.GetTraitId()
 	}
-	fmt.Fprintf(w, "%d %d %d %d", n.node_id, trait_id, n.ntype, n.gen_node_label)
+	fmt.Fprintf(w, "node %d %d %d %d", n.node_id, trait_id, n.ntype, n.gen_node_label)
 }
 func (n *nnode) Depth(d int32) (int32, error) {
 	if d > 100 {

@@ -63,9 +63,9 @@ func NewTraitAvrg(t1, t2 Trait) Trait {
 }
 
 // The method to read Trait from input
-func ReadTrait(r *io.Reader) Trait {
+func ReadTrait(r io.Reader) Trait {
 	nt := newTrait()
-	fmt.Scanf("%d ", &nt.trait_id)
+	fmt.Fscanf(r, "trait %d ", &nt.trait_id)
 	for i := 0; i < neat.Num_trait_params; i++ {
 		fmt.Scanf("%f ", &nt.params[i])
 	}
