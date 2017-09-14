@@ -172,7 +172,7 @@ func (n *network) Activate() (bool, error) {
 				// Only activate if some active input came in
 				if node.IsActive {
 					// Keep a memory of activations for potential time delayed connections
-					node.SaveActivations()
+					node.saveActivations()
 					// Now run the net activation through an activation function
 					if node.FType == SIGMOID {
 						node.Activation = sigmoid.Activation(node, 4.924273, 2.4621365)

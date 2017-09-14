@@ -103,10 +103,11 @@ func newNode() *NNode {
 }
 
 // Saves current node's activations for potential time delayed connections
-func (n *NNode) SaveActivations() {
+func (n *NNode) saveActivations() {
 	n.lastActivation2 = n.lastActivation
 	n.lastActivation = n.Activation
 }
+
 // Returns activation for a current step
 func (n *NNode) GetActiveOut() float64 {
 	if n.ActivationsCount > 0 {
@@ -115,6 +116,7 @@ func (n *NNode) GetActiveOut() float64 {
 		return 0.0
 	}
 }
+
 // Returns activation from PREVIOUS time step
 func (n *NNode) GetActiveOutTd() float64 {
 	if n.ActivationsCount > 1 {
@@ -123,17 +125,22 @@ func (n *NNode) GetActiveOutTd() float64 {
 		return 0.0
 	}
 }
+
+// Returns true if this node is SENSOR
 func (n *NNode) IsSensor() bool {
 	return n.NType == SENSOR
 }
+
+// returns true if this node is NEURON
 func (n *NNode) IsNeuron() bool {
 	return n.NType == NEURON
 }
+
 // If the node is a SENSOR, returns TRUE and loads the value
 func (n *NNode) SensorLoad(load float64) bool {
 	if n.IsSensor() {
 		// Keep a memory of activations for potential time delayed connections
-		n.SaveActivations()
+		n.saveActivations()
 		// Puts sensor into next time-step
 		n.ActivationsCount++
 		n.Activation = load
@@ -142,33 +149,27 @@ func (n *NNode) SensorLoad(load float64) bool {
 		return false
 	}
 }
+
 // Adds a NONRECURRENT Link to an incoming NNode in the incoming List
 func (n *NNode) AddIncoming(in *NNode, weight float64) {
 	newLink := NewLink(weight, in, n, false)
 	n.Incoming = append(n.Incoming, newLink)
 }
+
 // Adds a Link to a new NNode in the incoming List
 func (n *NNode) AddIncomingRecurrent(in *NNode, weight float64, recur bool) {
 	newLink := NewLink(weight, in, n, recur)
 	n.Incoming = append(n.Incoming, newLink)
 }
+
 // Recursively deactivate backwards through the network
 func (n *NNode) Flushback() {
 	n.ActivationsCount = 0
 	n.Activation = 0
 	n.lastActivation = 0
 	n.lastActivation2 = 0
-
-	//if n.ntype == NEURON {
-	//	// Flush back recursively
-	//	for _, l := range n.incoming {
-	//		(*l).SetAddedWeight(0)
-	//		if (*l).InNode().ActivationCount() > 0 {
-	//			(*l).InNode().Flushback()
-	//		}
-	//	}
-	//}
 }
+
 // Verify flushing for debuginh
 func (n *NNode) FlushbackCheck() error {
 	if n.ActivationsCount > 0 {
@@ -183,19 +184,9 @@ func (n *NNode) FlushbackCheck() error {
 	if n.lastActivation2 > 0 {
 		return errors.New(fmt.Sprintf("ALERT: %s has last_activation2 %f", n, n.lastActivation2))
 	}
-
-	//if n.ntype == NEURON {
-	//	// Flush back check recursively
-	//	for _, l := range n.incoming {
-	//		err := (*l).InNode().FlushbackCheck()
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
-	//
-	//}
 	return nil
 }
+
 // Dump node to a writer
 func (n *NNode) WriteNode(w io.Writer) {
 	trait_id := 0
@@ -204,6 +195,7 @@ func (n *NNode) WriteNode(w io.Writer) {
 	}
 	fmt.Fprintf(w, "node %d %d %d %d", n.NodeId, trait_id, n.NType, n.GenNodeLabel)
 }
+
 // Find the greatest depth starting from this neuron at depth d
 func (n *NNode) Depth(d int32) (int32, error) {
 	if d > 100 {
