@@ -10,10 +10,10 @@ import (
 // Tests how NNode read working
 func TestReadNNode(t *testing.T) {
 	node_id, trait_id, ntype, gen_node_label := 1, 10, network.SENSOR, network.INPUT
-	node_str := fmt.Sprintf("%d %d %d %d", node_id, trait_id, ntype, gen_node_label)
+	node_str := fmt.Sprintf("node %d %d %d %d", node_id, trait_id, ntype, gen_node_label)
 
 	trait := network.NewTraitWithParams(10, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0)
-	traits := []network.Trait{trait}
+	traits := []*network.Trait{trait}
 
 	node := network.ReadNNode(strings.NewReader(node_str), traits)
 

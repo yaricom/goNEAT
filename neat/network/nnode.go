@@ -19,9 +19,9 @@ type NNode interface {
 	// Returns the placement of the node in the network layers (INPUT, HIDDEN, OUTPUT)
 	GenNodeLabel() int
 	// Sets new trait to the node
-	SetTrait(t Trait)
+	SetTrait(t *Trait)
 	// Returns trait associated with node
-	GetTrait() Trait
+	GetTrait() *Trait
 	// Returns number of activations for current node
 	GetActivationCount() int32
 	// Increments activation count
@@ -135,7 +135,7 @@ func NewNNodeInPlace(ntype, nodeid, placement int) NNode {
 }
 
 // Construct a NNode off another NNode with given trait for genome purposes
-func NewNNodeCopy(n NNode, t Trait) NNode {
+func NewNNodeCopy(n NNode, t *Trait) NNode {
 	node := newNode()
 	node.ntype = n.GetType()
 	node.node_id = n.GetNodeId()
@@ -145,14 +145,14 @@ func NewNNodeCopy(n NNode, t Trait) NNode {
 }
 
 // Read a NNode from specified Reader (r) and applies corresponding trait to it from a list of traits provided
-func ReadNNode(r io.Reader, traits []Trait) NNode {
+func ReadNNode(r io.Reader, traits []*Trait) NNode {
 	n := newNode()
 	var trait_id int
 	fmt.Fscanf(r, "node %d %d %d %d", &n.node_id, &trait_id, &n.ntype, &n.gen_node_label)
 	if trait_id != 0 && traits != nil {
 		// find corresponding node trait from list
 		for _, t := range traits {
-			if trait_id == t.GetTraitId() {
+			if trait_id == t.TraitId {
 				n.nodetrait = t
 				break
 			}
@@ -189,7 +189,7 @@ type nnode struct {
 	last_activation2 float64
 
 	//Points to a trait of parameters
-	nodetrait Trait
+	nodetrait *Trait
 
 	// Is a reference to a Node; It's used to generate and point from a genetic node (genotype)
 	// to a real node (fenotype) during 'genesis' process (Gene decoding)
@@ -257,10 +257,10 @@ func (n *nnode) GetNodeId() int  {
 func (n *nnode) GenNodeLabel() int  {
 	return n.gen_node_label
 }
-func (n *nnode) SetTrait(t Trait) {
+func (n *nnode) SetTrait(t *Trait) {
 	n.nodetrait = t
 }
-func (n *nnode) GetTrait() Trait {
+func (n *nnode) GetTrait() *Trait {
 	return n.nodetrait
 }
 func (n *nnode) GetActiveOut() float64 {
@@ -357,7 +357,7 @@ func (n *nnode) FlushbackCheck() error {
 func (n *nnode) WriteNode(w io.Writer) {
 	trait_id := 0
 	if n.nodetrait != nil {
-		trait_id = n.nodetrait.GetTraitId()
+		trait_id = n.nodetrait.TraitId
 	}
 	fmt.Fprintf(w, "node %d %d %d %d", n.node_id, trait_id, n.ntype, n.gen_node_label)
 }

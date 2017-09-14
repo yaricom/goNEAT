@@ -32,7 +32,7 @@ func NewLink(weight float64, innode, outnode NNode, recurrent bool) Link {
 }
 
 // Creates new Link with specified Trait
-func NewLinkWithTrait(trait Trait, weight float64, innode, outnode NNode, recurrent bool) Link {
+func NewLinkWithTrait(trait *Trait, weight float64, innode, outnode NNode, recurrent bool) Link {
 	link := newLink(weight)
 	link.in_node = innode
 	link.out_node = outnode
@@ -60,7 +60,7 @@ type link struct {
 	time_delay bool
 
 	// Points to a trait of parameters for genetic creation
-	linktrait Trait
+	linktrait *Trait
 
 	/* ************ LEARNING PARAMETERS *********** */
 	/* These are link-related parameters that change
