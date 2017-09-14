@@ -47,7 +47,7 @@ func ReadTrait(r io.Reader) *Trait {
 	nt := newTrait()
 	fmt.Fscanf(r, "trait %d ", &nt.TraitId)
 	for i := 0; i < neat.Num_trait_params; i++ {
-		fmt.Scanf("%f ", &nt.Params[i])
+		fmt.Scanf("%g ", &nt.Params[i])
 	}
 	return nt
 }
@@ -72,7 +72,7 @@ func (t *Trait) Mutate(trait_mutation_power, trait_param_mut_prob float64) {
 func (t *Trait) WriteTrait(w io.Writer) {
 	fmt.Fprintf(w, "trait %d ", t.TraitId)
 	for _, p := range t.Params {
-		fmt.Fprintf(w, "%f ", p)
+		fmt.Fprintf(w, "%g ", p)
 	}
 }
 
