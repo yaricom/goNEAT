@@ -132,6 +132,9 @@ func (n *network) Activate() (bool, error) {
 	//Used in case the output is somehow truncated from the network
 	abort_count := 0
 
+	// The sigmoid activator function
+	sigmoid := ActivationFunc(SigmoidActivation)
+
 	// Keep activating until all the outputs have become active
 	// (This only happens on the first activation, because after that they are always active)
 	for n.OutputIsOff() && !one_time {
@@ -172,8 +175,7 @@ func (n *network) Activate() (bool, error) {
 					node.SaveActivations()
 					// Now run the net activation through an activation function
 					if node.FType == SIGMOID {
-						activation := fsigmoid(node.ActivationSum, 4.924273, 2.4621365)
-						node.Activation = activation
+						node.Activation = sigmoid.Activation(node, 4.924273, 2.4621365)
 					} else {
 						return false, errors.New(
 							fmt.Sprintf("Unknown activation function type: %d", node.FType))
