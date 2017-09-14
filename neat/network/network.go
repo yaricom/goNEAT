@@ -152,11 +152,11 @@ func (n *network) Activate() (bool, error) {
 					// Handle possible time delays
 					if !link.IsTimeDelayed {
 						add_amount = link.Weight * link.InNode.GetActiveOut()
-						if (*link.InNode).IsActive && (*link.InNode).IsSensor() {
-							(*link.InNode).IsActive = true
+						if link.InNode.IsActive && link.InNode.IsSensor() {
+							link.InNode.IsActive = true
 						}
 					} else {
-						add_amount = link.Weight * (*link.InNode).GetActiveOutTd()
+						add_amount = link.Weight * link.InNode.GetActiveOutTd()
 					}
 					node.ActivationSum += add_amount
 				} // End {for} over incoming links
