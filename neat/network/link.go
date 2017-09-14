@@ -59,6 +59,7 @@ func newLink(weight float64) *Link {
 }
 
 // The Link methods implementation
-func (n *Link) String() string {
-	return fmt.Sprintf("(link: %s <-> %s, w: %f", n.InNode, n.OutNode, n.Weight)
+func (l *Link) String() string {
+	return fmt.Sprintf("[Link: (%s <-> %s), weight: %.3f, recurrent: %t, time delayed: %t]",
+		l.InNode, l.OutNode, l.Weight, l.IsRecurrent, l.IsTimeDelayed)
 }
