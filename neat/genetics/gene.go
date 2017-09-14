@@ -28,19 +28,19 @@ type Gene struct {
 
 // Creates new Gene
 func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, inov_num int64, mut_num float64) *Gene  {
-	return newGene(network.NewLink(weight, in_node, out_node, recurrent), inov_num, mut_num)
+	return newGene(network.NewLink(weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
 // Creates new Gene with Trait
 func NewGeneWithTrait(trait *network.Trait, weight float64, in_node, out_node *network.NNode,
 			recurrent bool, inov_num int64, mut_num float64) *Gene  {
-	return newGene(network.NewLinkWithTrait(trait, weight, in_node, out_node, recurrent), inov_num, mut_num)
+	return newGene(network.NewLinkWithTrait(trait, weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
 // Construct a gene off of another gene as a duplicate
 func NewGeneGeneCopy(g *Gene, trait *network.Trait, in_node, out_node *network.NNode) *Gene {
 	return newGene(network.NewLinkWithTrait(trait, g.Link.Weight, in_node, out_node, g.Link.IsRecurrent),
-		g.InnovationNum, g.MutationNum)
+		g.InnovationNum, g.MutationNum, true)
 }
 
 // Reads Gene from reader
@@ -49,7 +49,7 @@ func ReadGene(r io.Reader, traits []*network.Trait, nodes []*network.NNode) *Gen
 	var inov_num int64
 	var weight, mut_num float64
 	var recurrent, enabled bool
-	fmt.Fscanf(r, "gene %d %d %d %f %t %d %f %t",
+	fmt.Fscanf(r, "gene %d %d %d %g %t %d %g %t",
 		&traitId, &inNodeId, &outNodeId, &weight, &recurrent, &inov_num, &mut_num, &enabled)
 
 	var trait *network.Trait = nil
@@ -60,7 +60,7 @@ func ReadGene(r io.Reader, traits []*network.Trait, nodes []*network.NNode) *Gen
 			}
 		}
 	}
-	var inNode, outNode network.NNode
+	var inNode, outNode *network.NNode
 	for _, np := range nodes {
 		if np.NodeId == inNodeId {
 			inNode = np
@@ -70,18 +70,18 @@ func ReadGene(r io.Reader, traits []*network.Trait, nodes []*network.NNode) *Gen
 		}
 	}
 	if trait != nil {
-		return newGene(network.NewLinkWithTrait(trait, weight, inNode, outNode, recurrent), inov_num, mut_num)
+		return newGene(network.NewLinkWithTrait(trait, weight, inNode, outNode, recurrent), inov_num, mut_num, enabled)
 	} else {
-		return newGene(network.NewLink(weight, inNode, outNode, recurrent), inov_num, mut_num)
+		return newGene(network.NewLink(weight, inNode, outNode, recurrent), inov_num, mut_num, enabled)
 	}
 }
 
-func newGene(link *network.Link, inov_num int64, mut_num float64) *Gene {
+func newGene(link *network.Link, inov_num int64, mut_num float64, enabled bool) *Gene {
 	return &Gene{
 		Link:link,
 		InnovationNum:inov_num,
 		MutationNum:mut_num,
-		IsEnabled:true,
+		IsEnabled:enabled,
 	}
 }
 
@@ -100,7 +100,7 @@ func (g *Gene) WriteGene(w io.Writer)  {
 	mut_num := g.MutationNum
 	enabled := g.IsEnabled
 
-	fmt.Fprintf(w, "gene %d %d %d %f %t %d %f %t",
+	fmt.Fprintf(w, "gene %d %d %d %g %t %d %g %t",
 		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
 }
 
