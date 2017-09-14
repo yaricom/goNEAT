@@ -17,16 +17,16 @@ func TestReadNNode(t *testing.T) {
 
 	node := network.ReadNNode(strings.NewReader(node_str), traits)
 
-	if node.GetNodeId() != node_id {
-		t.Errorf("Found node ID is not what expected, %d != %d", node_id, node.GetNodeId())
+	if node.NodeId != node_id {
+		t.Errorf("Found node ID is not what expected, %d != %d", node_id, node.NodeId)
 	}
-	if node.GetTrait() != trait {
+	if node.Trait != trait {
 		t.Error("The wrong Trait found in the node")
 	}
-	if node.GetType() != ntype {
-		t.Errorf("Wrong node type found, %d != %d", ntype, node.GetFtype())
+	if node.NType != ntype {
+		t.Errorf("Wrong node type found, %d != %d", ntype, node.NType)
 	}
-	if node.GenNodeLabel() != gen_node_label {
-		t.Errorf("The wrong node placement label found, %d != %d", gen_node_label, node.GenNodeLabel())
+	if node.GenNodeLabel != gen_node_label {
+		t.Errorf("The wrong node placement label found, %d != %d", gen_node_label, node.GenNodeLabel)
 	}
 }

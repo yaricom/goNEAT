@@ -25,9 +25,9 @@ type Network interface {
 	FlushCheck() error
 
 	// Adds a new input node
-	AddInputNode(node NNode)
+	AddInputNode(node *NNode)
 	// Adds a new output node
-	AddOutputNode(node NNode)
+	AddOutputNode(node *NNode)
 
 	// Takes an array of sensor values and loads it into SENSOR inputs ONLY
 	LoadSensors(sensors []float64)
@@ -37,7 +37,7 @@ type Network interface {
 	// This checks a POTENTIAL link between a potential in_node
      	// and potential out_node to see if it must be recurrent.
 	// Use count and thresh to jump out in the case of an infinite loop.
-	IsRecurrent(potin_node, potout_node NNode, count *int32, thresh int32) bool
+	IsRecurrent(potin_node, potout_node *NNode, count *int32, thresh int32) bool
 	// Find the maximum number of neurons between an output and an input
 	MaxDepth() (int32, error)
 
@@ -48,7 +48,7 @@ type Network interface {
 }
 
 // Creates new network
-func NewNetwork(in, out, all []NNode, netid int32) Network {
+func NewNetwork(in, out, all []*NNode, netid int32) Network {
 	n := newNetwork(netid)
 	n.inputs = in
 	n.outputs = out
@@ -70,11 +70,11 @@ type network struct {
 	numlinks int
 
 	// A list of all the nodes in the network
-	all_nodes []NNode
+	all_nodes []*NNode
 	// NNodes that input into the network
-	inputs []NNode
+	inputs []*NNode
 	// NNodes that output from the network
-	outputs []NNode
+	outputs []*NNode
 
 	// A network id
 	net_id int32
@@ -118,7 +118,7 @@ func (n *network) PrintInput() {
 }
 func (n *network) OutputIsOff() bool {
 	for _, node := range n.outputs {
-		if node.GetActivationCount() == 0 {
+		if node.ActivationsCount == 0 {
 			return true
 		}
 	}
@@ -144,21 +144,21 @@ func (n *network) Activate() (bool, error) {
 		// For each neuron node, compute the sum of its incoming activation
 		for _, node := range n.all_nodes {
 			if node.IsNeuron() {
-				node.SetActiveSum(0.0) // reset activation value
-				node.SetActiveFlag(false) // flag node disabled
+				node.ActivationSum = 0.0 // reset activation value
+				node.IsActive = false // flag node disabled
 
 				// For each node's incoming connection, add the activity from the connection to the activesum
-				for _, link := range node.GetIncoming() {
+				for _, link := range node.Incoming {
 					// Handle possible time delays
-					if !link.IsTimeDelayed() {
-						add_amount = link.GetWeight() * link.GetInNode().GetActiveOut()
-						if link.GetInNode().IsActive() && link.GetInNode().IsSensor() {
-							link.GetInNode().SetActiveFlag(true)
+					if !link.IsTimeDelayed {
+						add_amount = link.Weight * link.InNode.GetActiveOut()
+						if (*link.InNode).IsActive && (*link.InNode).IsSensor() {
+							(*link.InNode).IsActive = true
 						}
 					} else {
-						add_amount = link.GetWeight() * link.GetInNode().GetActiveOutTd()
+						add_amount = link.Weight * (*link.InNode).GetActiveOutTd()
 					}
-					node.AddToActiveSum(add_amount)
+					node.ActivationSum += add_amount
 				} // End {for} over incoming links
 			} // End if != SENSOR
 		}  // End {for} over all nodes
@@ -167,20 +167,20 @@ func (n *network) Activate() (bool, error) {
 		for _, node := range n.all_nodes {
 			if node.IsNeuron() {
 				// Only activate if some active input came in
-				if node.IsActive() {
+				if node.IsActive {
 					// Keep a memory of activations for potential time delayed connections
 					node.SaveActivations()
 					// Now run the net activation through an activation function
-					if node.GetFtype() == SIGMOID {
-						activation := fsigmoid(node.GetActiveSum(), 4.924273, 2.4621365)
-						node.SetActivation(activation)
+					if node.FType == SIGMOID {
+						activation := fsigmoid(node.ActivationSum, 4.924273, 2.4621365)
+						node.Activation = activation
 					} else {
 						return false, errors.New(
-							fmt.Sprintf("Unknown activation function type: %d", node.GetFtype()))
+							fmt.Sprintf("Unknown activation function type: %d", node.FType))
 					}
 					// Increment the activation_count
 					// First activation cannot be from nothing!!
-					node.IncrementActivationCount()
+					node.ActivationsCount++
 				}
 			}
 		}
@@ -188,10 +188,10 @@ func (n *network) Activate() (bool, error) {
 	}
 	return true, nil
 }
-func (n *network) AddInputNode(node NNode) {
+func (n *network) AddInputNode(node *NNode) {
 	n.inputs = append(n.inputs, node)
 }
-func (n *network) AddOutputNode(node NNode) {
+func (n *network) AddOutputNode(node *NNode) {
 	n.outputs = append(n.outputs, node)
 }
 func (n *network) LoadSensors(sensors []float64) {
@@ -212,12 +212,12 @@ func (n network) NodeCount() int {
 func (n network) LinkCount() int {
 	n.numlinks = 0
 	for _, node := range n.all_nodes {
-		n.numlinks += len(node.GetIncoming())
+		n.numlinks += len(node.Incoming)
 	}
 	return n.numlinks
 }
 
-func (n *network) IsRecurrent(potin_node, potout_node NNode, count *int32, thresh int32) bool {
+func (n *network) IsRecurrent(potin_node, potout_node *NNode, count *int32, thresh int32) bool {
 	// Count the node as visited
 	*count++
 
@@ -229,11 +229,11 @@ func (n *network) IsRecurrent(potin_node, potout_node NNode, count *int32, thres
 		return true
 	} else {
 		// Check back on all links ...
-		for _, link := range potin_node.GetIncoming() {
+		for _, link := range potin_node.Incoming {
 			// But skip links that are already recurrent -
 			// We want to check back through the forward flow of signals only
-			if link.IsRecurrent() != true {
-				if n.IsRecurrent(link.GetInNode(), potout_node, count, thresh) {
+			if link.IsRecurrent != true {
+				if n.IsRecurrent(link.InNode, potout_node, count, thresh) {
 					return true
 				}
 			}
