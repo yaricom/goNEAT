@@ -73,7 +73,7 @@ func newTrait() *Trait {
 	}
 }
 
-// The Trait methods
+// Perturb the trait parameters slightly
 func (t *Trait) Mutate(trait_mutation_power, trait_param_mut_prob float64) {
 	for i := 0; i < neat.Num_trait_params; i++ {
 		if rand.Float64() > trait_param_mut_prob {
@@ -82,6 +82,7 @@ func (t *Trait) Mutate(trait_mutation_power, trait_param_mut_prob float64) {
 		}
 	}
 }
+// Dump trait to a writer
 func (t *Trait) WriteTrait(w io.Writer) {
 	fmt.Fprintf(w, "trait %d ", t.TraitId)
 	for _, p := range t.Params {

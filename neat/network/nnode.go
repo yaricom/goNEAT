@@ -4,7 +4,6 @@ import (
 	"io"
 	"fmt"
 	"errors"
-	"math"
 )
 
 // A NODE is either a NEURON or a SENSOR.
@@ -49,38 +48,6 @@ type NNode struct {
 	lastActivation2 float64
 }
 
-// SIGMOID FUNCTION ********************************
-// This is a signmoidal activation function, which is an S-shaped squashing function.
-// It smoothly limits the amplitude of the output of a neuron to between 0 and 1.
-// It is a helper to the neural-activation function get_active_out.
-// It is made inline so it can execute quickly since it is at every non-sensor node in a network.
-// NOTE:  In order to make node insertion in the middle of a link possible,
-// the signmoid can be shifted to the right and more steeply sloped:
-// slope=4.924273
-// constant= 2.4621365
-// These parameters optimize mean squared error between the old output,
-// and an output of a node inserted in the middle of a link between
-// the old output and some other node.
-// When not right-shifted, the steepened slope is closest to a linear
-// ascent as possible between -0.5 and 0.5
-func fsigmoid(activesum, slope, constant float64) float64 {
-	//RIGHT SHIFTED ---------------------------------------------------------
-	//return (1/(1+(exp(-(slope*activesum-constant))))); //ave 3213 clean on 40 runs of p2m and 3468 on another 40
-	//41394 with 1 failure on 8 runs
-
-	//LEFT SHIFTED ----------------------------------------------------------
-	//return (1/(1+(exp(-(slope*activesum+constant))))); //original setting ave 3423 on 40 runs of p2m, 3729 and 1 failure also
-
-	//PLAIN SIGMOID ---------------------------------------------------------
-	//return (1/(1+(exp(-activesum)))); //3511 and 1 failure
-
-	//LEFT SHIFTED NON-STEEPENED---------------------------------------------
-	//return (1/(1+(exp(-activesum-constant)))); //simple left shifted
-
-	//NON-SHIFTED STEEPENED
-	return 1.0 / (1.0 + (math.Exp(-(slope * activesum)))) //Compressed
-}
-
 // Creates new node with specified type (NEURON or SENSOR) and ID
 func NewNNode(ntype, nodeid int) *NNode {
 	n := newNode()
@@ -109,7 +76,7 @@ func NewNNodeCopy(n NNode, t *Trait) *NNode {
 	return node
 }
 
-// Read a NNode from specified Reader (r) and applies corresponding trait to it from a list of traits provided
+// Read a NNode from specified Reader and applies corresponding trait to it from a list of traits provided
 func ReadNNode(r io.Reader, traits []*Trait) *NNode {
 	n := newNode()
 	var trait_id int
@@ -135,12 +102,12 @@ func newNode() *NNode {
 	}
 }
 
-// The NNode methods implementation
+// Saves current node's activations for potential time delayed connections
 func (n *NNode) SaveActivations() {
 	n.lastActivation2 = n.lastActivation
 	n.lastActivation = n.Activation
 }
-
+// Returns activation for a current step
 func (n *NNode) GetActiveOut() float64 {
 	if n.ActivationsCount > 0 {
 		return n.Activation
@@ -148,6 +115,7 @@ func (n *NNode) GetActiveOut() float64 {
 		return 0.0
 	}
 }
+// Returns activation from PREVIOUS time step
 func (n *NNode) GetActiveOutTd() float64 {
 	if n.ActivationsCount > 1 {
 		return n.lastActivation
@@ -161,6 +129,7 @@ func (n *NNode) IsSensor() bool {
 func (n *NNode) IsNeuron() bool {
 	return n.NType == NEURON
 }
+// If the node is a SENSOR, returns TRUE and loads the value
 func (n *NNode) SensorLoad(load float64) bool {
 	if n.IsSensor() {
 		// Keep a memory of activations for potential time delayed connections
@@ -173,14 +142,17 @@ func (n *NNode) SensorLoad(load float64) bool {
 		return false
 	}
 }
+// Adds a NONRECURRENT Link to an incoming NNode in the incoming List
 func (n *NNode) AddIncoming(in *NNode, weight float64) {
 	newLink := NewLink(weight, in, n, false)
 	n.Incoming = append(n.Incoming, newLink)
 }
+// Adds a Link to a new NNode in the incoming List
 func (n *NNode) AddIncomingRecurrent(in *NNode, weight float64, recur bool) {
 	newLink := NewLink(weight, in, n, recur)
 	n.Incoming = append(n.Incoming, newLink)
 }
+// Recursively deactivate backwards through the network
 func (n *NNode) Flushback() {
 	n.ActivationsCount = 0
 	n.Activation = 0
@@ -197,6 +169,7 @@ func (n *NNode) Flushback() {
 	//	}
 	//}
 }
+// Verify flushing for debuginh
 func (n *NNode) FlushbackCheck() error {
 	if n.ActivationsCount > 0 {
 		return errors.New(fmt.Sprintf("ALERT: %s has activation count %d", n, n.ActivationsCount))
@@ -223,6 +196,7 @@ func (n *NNode) FlushbackCheck() error {
 	//}
 	return nil
 }
+// Dump node to a writer
 func (n *NNode) WriteNode(w io.Writer) {
 	trait_id := 0
 	if n.Trait != nil {
@@ -230,6 +204,7 @@ func (n *NNode) WriteNode(w io.Writer) {
 	}
 	fmt.Fprintf(w, "node %d %d %d %d", n.NodeId, trait_id, n.NType, n.GenNodeLabel)
 }
+// Find the greatest depth starting from this neuron at depth d
 func (n *NNode) Depth(d int32) (int32, error) {
 	if d > 100 {
 		return 10, errors.New("** DEPTH NOT DETERMINED FOR NETWORK WITH LOOP");
@@ -256,9 +231,9 @@ func (n *NNode) Depth(d int32) (int32, error) {
 
 func (n *NNode) String() string {
 	if n.IsSensor() {
-		return fmt.Sprintf("(S %d, step %d : %f)", n.NodeId, n.ActivationsCount, n.Activation)
+		return fmt.Sprintf("(S %d, type: %d, step %d : %f)", n.NodeId, n.NType, n.ActivationsCount, n.Activation)
 	} else {
-		return fmt.Sprintf("(N %d, step %d : %f)", n.NodeId, n.ActivationsCount, n.Activation)
+		return fmt.Sprintf("(N %d, type: %d, step %d : %f)", n.NodeId, n.NType, n.ActivationsCount, n.Activation)
 	}
 }
 
