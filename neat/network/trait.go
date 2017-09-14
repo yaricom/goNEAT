@@ -22,20 +22,6 @@ func NewTrait() *Trait {
 	return trait
 }
 
-func NewTraitWithParams(id int, p1, p2, p3, p4, p5, p6, p7, p8, p9 float64) *Trait {
-	t := newTrait()
-	t.TraitId = id
-	t.Params[0] = p1
-	t.Params[1] = p2
-	t.Params[2] = p3
-	t.Params[3] = p4
-	t.Params[4] = p5
-	t.Params[5] = p6
-	t.Params[6] = p7
-	t.Params[7] = 0
-	return t
-}
-
 // The copy constructor
 func NewTraitCopy(t *Trait) *Trait {
 	nt := newTrait()
