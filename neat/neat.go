@@ -66,20 +66,20 @@ type Neat struct {
 	RecurOnlyProb          float64
 
 	// Size of population
-	PopSize                int32
+	PopSize                int
 	// Age where Species starts to be penalized
-	DropOffAge             int32
+	DropOffAge             int
 	// Number of tries mutate_add_link will attempt to find an open link
-	NewLinkTries           int32
+	NewLinkTries           int
 
 	// Tells to print population to file every n generations
-	PrintEvery             int32
+	PrintEvery             int
 
 	// The number of babies to siphen off to the champions
-	BabiesStolen           int32
+	BabiesStolen           int
 
 	// The number of runs to average over in an experiment
-	Num_runs               int32
+	Num_runs               int
 }
 
 // Returns
