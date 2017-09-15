@@ -36,14 +36,6 @@ const (
 	SIGMOID = iota
 )
 
-// The innovation method to be applied
-const (
-	// The novelty will be introduced by new NN node
-	NEWNODE = iota
-	// The novelty will be introduced by new NN link
-	NEWLINK
-)
-
 // The neuron activator function
 type ActivationFunc func(node *NNode, slope, constant float64) float64
 
