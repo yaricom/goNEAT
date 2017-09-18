@@ -13,14 +13,15 @@ func TestGene_AdjustFitness(t *testing.T)  {
 	}
 
 	sp := genetics.NewSpecies(1)
-	sp.AddOrganism(genetics.NewOrganism(5.0, gen, 10))
-	sp.AddOrganism(genetics.NewOrganism(15.0, gen, 10))
-	sp.AddOrganism(genetics.NewOrganism(10.0, gen, 10))
+	sp.AddOrganism(genetics.NewOrganism(5.0, gen, 1))
+	sp.AddOrganism(genetics.NewOrganism(15.0, gen, 1))
+	sp.AddOrganism(genetics.NewOrganism(10.0, gen, 1))
 
 	// Configuration
 	conf := neat.Neat{
 		DropOffAge:5,
 		SurvivalThresh:0.5,
+		AgeSignificance:0.5,
 	}
 
 	t.Log(sp.Organisms)
@@ -37,7 +38,7 @@ func TestGene_AdjustFitness(t *testing.T)  {
 	if sp.MaxFitnessEver != 15.0 {
 		t.Error("sp.MaxFitnessEver", 15.0, sp.MaxFitnessEver)
 	}
-	if len(sp.Organisms) != 2 {
-		t.Error("len(sp.Organisms)", 2, len(sp.Organisms))
+	if sp.Organisms[2].ToEliminate != true {
+		t.Error("sp.Organisms[2].ToEliminate", true, sp.Organisms[2].ToEliminate)
 	}
 }
