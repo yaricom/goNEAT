@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/yaricom/goNEAT.svg?branch=master)](https://travis-ci.org/yaricom/goNEAT)
+[![Build Status](https://travis-ci.org/yaricom/goNEAT.svg?branch=master)](https://travis-ci.org/yaricom/goNEAT) [![GoDoc](https://godoc.org/github.com/yaricom/goNEAT?status.svg)](http://godoc.org/github.com/yaricom/goNEAT)
 
 # Overview
 This repository provides implementation of [NeuroEvolution of Augmenting Topologies (NEAT)][1] method written in Go language.
