@@ -21,15 +21,6 @@ const (
 	OUTPUT
 )
 
-
-// Mutators are variables that specify a kind of mutation of connection weights between NN nodes
-const (
-	//This adds Gaussian noise to the weights
-	GAUSSIAN = iota
-	//This sets weights to numbers chosen from a Gaussian distribution
-	COLDGAUSSIAN
-)
-
 // The neuron Activation function Types
 const (
 	// The sigmoid activation function
