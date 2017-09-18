@@ -5,16 +5,22 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 )
 
-// Tests Species ReadGene
-func TestGene_AdjustFitness(t *testing.T)  {
+func buildSpeciesWithOrganisms() *Species {
 	gen := &Genome{
 		GenomeId:1,
 	}
 
 	sp := NewSpecies(1)
-	sp.AddOrganism(NewOrganism(5.0, gen, 1))
-	sp.AddOrganism(NewOrganism(15.0, gen, 1))
-	sp.AddOrganism(NewOrganism(10.0, gen, 1))
+	sp.addOrganism(NewOrganism(5.0, gen, 1))
+	sp.addOrganism(NewOrganism(15.0, gen, 1))
+	sp.addOrganism(NewOrganism(10.0, gen, 1))
+
+	return sp
+}
+
+// Tests Species ReadGene
+func TestGene_adjustFitness(t *testing.T)  {
+	sp := buildSpeciesWithOrganisms()
 
 	// Configuration
 	conf := neat.Neat{
@@ -22,10 +28,7 @@ func TestGene_AdjustFitness(t *testing.T)  {
 		SurvivalThresh:0.5,
 		AgeSignificance:0.5,
 	}
-
-	t.Log(sp.Organisms)
-
-	sp.AdjustFitness(&conf)
+	sp.adjustFitness(&conf)
 
 	// test results
 	if sp.Organisms[0].IsChampion != true {
@@ -39,5 +42,103 @@ func TestGene_AdjustFitness(t *testing.T)  {
 	}
 	if sp.Organisms[2].ToEliminate != true {
 		t.Error("sp.Organisms[2].ToEliminate", true, sp.Organisms[2].ToEliminate)
+	}
+}
+
+// Tests Species countOffspring
+func TestSpecies_countOffspring(t *testing.T) {
+	sp := buildSpeciesWithOrganisms()
+	for i, o := range sp.Organisms {
+		o.ExpectedOffspring = float64(i) * 1.5
+	}
+
+	skim := sp.countOffspring(0.5)
+
+	if sp.ExpectedOffspring != 5 {
+		t.Error("sp.ExpectedOffspring", 5, sp.ExpectedOffspring)
+	}
+	if skim != 0 {
+		t.Error("skim", 0, skim)
+	}
+
+	sp = buildSpeciesWithOrganisms()
+	for i, o := range sp.Organisms {
+		o.ExpectedOffspring = float64(i) * 1.5
+	}
+	skim = sp.countOffspring(0.4)
+	if sp.ExpectedOffspring != 4 {
+		t.Error("sp.ExpectedOffspring", 5, sp.ExpectedOffspring)
+	}
+	if skim != 0.9 {
+		t.Error("skim", 0.9, skim)
+	}
+}
+
+// Tests Species computeAvgFitness
+func TestSpecies_computeAvgFitness(t *testing.T) {
+	sp := buildSpeciesWithOrganisms()
+
+	avg_check := 0.0
+	for _, o := range sp.Organisms{
+		avg_check += o.Fitness
+	}
+	avg_check /= float64(len(sp.Organisms))
+
+	sp.computeAvgFitness()
+	if sp.AvgFitness != avg_check {
+		t.Error("sp.AvgFitness != avg_check", sp.AvgFitness, avg_check)
+	}
+}
+
+func TestSpecies_computeMaxFitness(t *testing.T) {
+	sp := buildSpeciesWithOrganisms()
+
+	sp.computeMaxFitness()
+	if sp.MaxFitness != 15.0 {
+		t.Error("sp.MaxFitness != 15.0", 15.0, sp.MaxFitness)
+	}
+}
+
+func TestSpecies_findChampion(t *testing.T) {
+	sp := buildSpeciesWithOrganisms()
+
+	champ := sp.findChampion()
+	if champ.Fitness != 15.0 {
+		t.Error("champ.Fitness != 15.0", champ.Fitness)
+	}
+
+}
+
+func TestSpecies_removeOrganism(t *testing.T) {
+	sp := buildSpeciesWithOrganisms()
+
+	// test remove
+	size := len(sp.Organisms)
+	res, err := sp.removeOrganism(sp.Organisms[0])
+	if res != true {
+		t.Error("res != true", res, err)
+	}
+	if err != nil {
+		t.Error("err != nil", err)
+	}
+	if size - 1 != len(sp.Organisms) {
+		t.Error("size - 1 != len(sp.Organisms)", size - 1, len(sp.Organisms))
+	}
+
+	// test fail to remove
+	size = len(sp.Organisms)
+	gen := &Genome{
+		GenomeId:1,
+	}
+	org := NewOrganism(6.0, gen, 1)
+	res, err = sp.removeOrganism(org)
+	if res == true {
+		t.Error("res == true", res, err)
+	}
+	if err == nil {
+		t.Error("err == nil", res, err)
+	}
+	if size != len(sp.Organisms) {
+		t.Error("size != len(sp.Organisms)", size, len(sp.Organisms))
 	}
 }
