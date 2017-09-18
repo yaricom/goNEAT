@@ -1,20 +1,19 @@
 package network
 
 import (
-	"github.com/yaricom/goNEAT/neat/network"
 	"testing"
 )
 
-func buildNetwork() network.Network {
-	all_nodes := []*network.NNode {
-		network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
-		network.NewNNodeInPlace(network.SENSOR, 2, network.INPUT),
-		network.NewNNodeInPlace(network.SENSOR, 3, network.INPUT),
-		network.NewNNodeInPlace(network.NEURON, 4, network.HIDDEN),
-		network.NewNNodeInPlace(network.NEURON, 5, network.HIDDEN),
-		network.NewNNodeInPlace(network.NEURON, 6, network.HIDDEN),
-		network.NewNNodeInPlace(network.NEURON, 7, network.OUTPUT),
-		network.NewNNodeInPlace(network.NEURON, 8, network.OUTPUT),
+func buildNetwork() Network {
+	all_nodes := []*NNode {
+		NewNNodeInPlace(SENSOR, 1, INPUT),
+		NewNNodeInPlace(SENSOR, 2, INPUT),
+		NewNNodeInPlace(SENSOR, 3, INPUT),
+		NewNNodeInPlace(NEURON, 4, HIDDEN),
+		NewNNodeInPlace(NEURON, 5, HIDDEN),
+		NewNNodeInPlace(NEURON, 6, HIDDEN),
+		NewNNodeInPlace(NEURON, 7, OUTPUT),
+		NewNNodeInPlace(NEURON, 8, OUTPUT),
 	}
 
 	// HIDDEN 4
@@ -31,7 +30,7 @@ func buildNetwork() network.Network {
 	// OUTPUT 8
 	all_nodes[7].AddIncoming(all_nodes[5], 13.0)
 
-	return network.NewNetwork(all_nodes[0:3], all_nodes[6:8], all_nodes, 0)
+	return NewNetwork(all_nodes[0:3], all_nodes[6:8], all_nodes, 0)
 }
 
 // Tests Network MaxDepth

@@ -1,9 +1,8 @@
-package genetics_test
+package genetics
 
 import (
 	"testing"
 	"fmt"
-	"github.com/yaricom/goNEAT/neat/genetics"
 	"strings"
 	"github.com/yaricom/goNEAT/neat/network"
 	"bytes"
@@ -26,7 +25,7 @@ func TestGene_ReadGene(t *testing.T)  {
 		network.NewNNodeInPlace(network.NEURON, 4, network.HIDDEN),
 	}
 
-	gene := genetics.ReadGene(strings.NewReader(gene_str), []*network.Trait{trait}, nodes)
+	gene := ReadGene(strings.NewReader(gene_str), []*network.Trait{trait}, nodes)
 
 	if gene.InnovationNum != innov_num {
 		t.Error("gene.InnovationNum", innov_num, gene.InnovationNum)
@@ -67,7 +66,7 @@ func TestGene_WriteGene(t *testing.T)  {
 
 	trait := network.NewTrait()
 	trait.TraitId = traitId
-	gene := genetics.NewGeneWithTrait(trait, weight, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
+	gene := NewGeneWithTrait(trait, weight, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
 		network.NewNNodeInPlace(network.NEURON, 4, network.HIDDEN), recurrent, innov_num, mut_num)
 	gene.IsEnabled = enabled
 

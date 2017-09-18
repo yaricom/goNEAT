@@ -1,23 +1,22 @@
-package network_test
+package network
 
 import (
 	"testing"
 	"fmt"
 	"strings"
-	"github.com/yaricom/goNEAT/neat/network"
 	"bytes"
 )
 
 // Tests how NNode read working
 func TestReadNNode(t *testing.T) {
-	node_id, trait_id, ntype, gen_node_label := 1, 10, network.SENSOR, network.INPUT
+	node_id, trait_id, ntype, gen_node_label := 1, 10, SENSOR, INPUT
 	node_str := fmt.Sprintf("node %d %d %d %d", node_id, trait_id, ntype, gen_node_label)
 
-	trait := network.NewTrait()
+	trait := NewTrait()
 	trait.TraitId = 10
-	traits := []*network.Trait{trait}
+	traits := []*Trait{trait}
 
-	node := network.ReadNNode(strings.NewReader(node_str), traits)
+	node := ReadNNode(strings.NewReader(node_str), traits)
 
 	if node.NodeId != node_id {
 		t.Errorf("Found node ID is not what expected, %d != %d", node_id, node.NodeId)
@@ -35,12 +34,12 @@ func TestReadNNode(t *testing.T) {
 
 // Tests NNode serialization
 func TestWriteNNode(t *testing.T) {
-	node_id, trait_id, ntype, gen_node_label := 1, 10, network.SENSOR, network.INPUT
+	node_id, trait_id, ntype, gen_node_label := 1, 10, SENSOR, INPUT
 	node_str := fmt.Sprintf("node %d %d %d %d", node_id, trait_id, ntype, gen_node_label)
-	trait := network.NewTrait()
+	trait := NewTrait()
 	trait.TraitId = 10
 
-	node := network.NewNNodeInPlace(ntype, node_id, gen_node_label)
+	node := NewNNodeInPlace(ntype, node_id, gen_node_label)
 	node.Trait = trait
 	out_buffer := bytes.NewBufferString("")
 	node.WriteNode(out_buffer)
@@ -53,7 +52,7 @@ func TestWriteNNode(t *testing.T) {
 
 // Tests NNode SensorLoad
 func TestNNode_SensorLoad(t *testing.T) {
-	node := network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT)
+	node := NewNNodeInPlace(SENSOR, 1, INPUT)
 
 	load := 21.0
 	res := node.SensorLoad(load)
@@ -91,7 +90,7 @@ func TestNNode_SensorLoad(t *testing.T) {
 	}
 
 	// Check loading of incorrect type node
-	node_n := network.NewNNodeInPlace(network.NEURON, 1, network.INPUT)
+	node_n := NewNNodeInPlace(NEURON, 1, INPUT)
 	res = node_n.SensorLoad(load)
 	if res {
 		t.Error("Non SENSOR node can not be loaded")
@@ -100,8 +99,8 @@ func TestNNode_SensorLoad(t *testing.T) {
 
 // Tests NNode AddIncoming
 func TestNNode_AddIncoming(t *testing.T) {
-	node := network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT)
-	node2 := network.NewNNodeInPlace(network.NEURON, 2, network.HIDDEN)
+	node := NewNNodeInPlace(SENSOR, 1, INPUT)
+	node2 := NewNNodeInPlace(NEURON, 2, HIDDEN)
 
 	weight := 1.5
 	node2.AddIncoming(node, weight)
@@ -122,8 +121,8 @@ func TestNNode_AddIncoming(t *testing.T) {
 
 // Tests NNode AddIncomingRecurrent
 func TestNNode_AddIncomingRecurrent(t *testing.T) {
-	node := network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT)
-	node2 := network.NewNNodeInPlace(network.NEURON, 2, network.HIDDEN)
+	node := NewNNodeInPlace(SENSOR, 1, INPUT)
+	node2 := NewNNodeInPlace(NEURON, 2, HIDDEN)
 
 	weight := 1.5
 	node2.AddIncomingRecurrent(node, weight, true)
@@ -147,9 +146,9 @@ func TestNNode_AddIncomingRecurrent(t *testing.T) {
 
 // Tests NNode Depth
 func TestNNode_Depth(t *testing.T) {
-	node := network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT)
-	node2 := network.NewNNodeInPlace(network.NEURON, 2, network.HIDDEN)
-	node3 := network.NewNNodeInPlace(network.NEURON, 3, network.OUTPUT)
+	node := NewNNodeInPlace(SENSOR, 1, INPUT)
+	node2 := NewNNodeInPlace(NEURON, 2, HIDDEN)
+	node3 := NewNNodeInPlace(NEURON, 3, OUTPUT)
 
 	node2.AddIncoming(node, 15.0)
 	node3.AddIncoming(node2, 20.0)
@@ -165,7 +164,7 @@ func TestNNode_Depth(t *testing.T) {
 
 // Tests NNode Flushback
 func TestNNode_Flushback(t *testing.T) {
-	node := network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT)
+	node := NewNNodeInPlace(SENSOR, 1, INPUT)
 	load := 34.0
 	load_2 := 14.0
 	node.SensorLoad(load)

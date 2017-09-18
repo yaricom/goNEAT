@@ -1,21 +1,20 @@
-package genetics_test
+package genetics
 
 import (
 	"testing"
-	"github.com/yaricom/goNEAT/neat/genetics"
 	"github.com/yaricom/goNEAT/neat"
 )
 
 // Tests Species ReadGene
 func TestGene_AdjustFitness(t *testing.T)  {
-	gen := &genetics.Genome{
+	gen := &Genome{
 		GenomeId:1,
 	}
 
-	sp := genetics.NewSpecies(1)
-	sp.AddOrganism(genetics.NewOrganism(5.0, gen, 1))
-	sp.AddOrganism(genetics.NewOrganism(15.0, gen, 1))
-	sp.AddOrganism(genetics.NewOrganism(10.0, gen, 1))
+	sp := NewSpecies(1)
+	sp.AddOrganism(NewOrganism(5.0, gen, 1))
+	sp.AddOrganism(NewOrganism(15.0, gen, 1))
+	sp.AddOrganism(NewOrganism(10.0, gen, 1))
 
 	// Configuration
 	conf := neat.Neat{
