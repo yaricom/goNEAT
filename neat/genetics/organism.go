@@ -68,10 +68,19 @@ func (o *Organism) UpdatePhenotype() {
 }
 
 func (o *Organism) String() string {
-	return fmt.Sprintf("[Organism, fitness: %f]", o.Fitness)
+	champStr := ""
+	if o.IsChampion {
+		champStr = " - CHAMPION - "
+	}
+	eliminStr := ""
+	if o.ToEliminate {
+		eliminStr = " - TO BE ELIMINATED - "
+	}
+	return fmt.Sprintf("[Organism generation: %d, fitness: %.3f, original fitness: %.3f%s%s]",
+		o.Generation, o.Fitness, o.OriginalFitness, champStr, eliminStr)
 }
 
-// ByFitness implements sort.Interface for []Organism based on the Fitness field.
+// ByFitness implements sort.Interface for []Organism based on the Fitness field in descending order.
 type ByFitness []*Organism
 func (f ByFitness) Len() int {
 	return len(f)
@@ -80,5 +89,5 @@ func (f ByFitness) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
 func (f ByFitness) Less(i, j int) bool {
-	return f[i].Fitness < f[j].Fitness
+	return f[i].Fitness > f[j].Fitness
 }
