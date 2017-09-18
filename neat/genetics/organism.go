@@ -56,7 +56,7 @@ func NewOrganism(fit float64, g *Genome, generation int) *Organism {
 	return &Organism{
 		Fitness:fit,
 		GNome:g,
-		Net:g.Genesis(g.GenomeId),
+		Net:g.genesis(g.GenomeId),
 		Generation:generation,
 	}
 }
@@ -67,7 +67,7 @@ func (o *Organism) UpdatePhenotype() {
 	o.Net = nil
 
 	// Now, recreate the phenotype off the new genotype
-	o.Net = o.GNome.Genesis(o.GNome.GenomeId)
+	o.Net = o.GNome.genesis(o.GNome.GenomeId)
 }
 
 func (o *Organism) String() string {

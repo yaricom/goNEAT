@@ -112,21 +112,21 @@ func (g *Genome) mutateAllNonstructural(conf *neat.Neat) {
 // This method mates this Genome with another Genome g. For every point in each Genome, where each Genome shares
 // the innovation number, the Gene is chosen randomly from either parent.  If one parent has an innovation absent in
 // the other, the baby will inherit the innovation
-func (g *Genome) mateMultipoint(g *Genome, genomeid int, fitness1, fitness2 float64) *Genome {
+func (g *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 float64) *Genome {
 	// TODO implement this
 	return nil
 }
 
 // This method mates like multipoint but instead of selecting one or the other when the innovation numbers match,
 // it averages their weights.
-func (g *Genome) mateMultipointAvg(g *Genome, genomeid int, fitness1, fitness2 float64) *Genome {
+func (g *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness2 float64) *Genome {
 	// TODO implement this
 	return nil
 }
 
 // This method is similar to a standard single point CROSSOVER operator. Traits are averaged as in the previous two
 // mating methods. A point is chosen in the smaller Genome for crossing with the bigger one.
-func (g *Genome) mateSinglepoint(g *Genome, genomeid int) *Genome {
+func (g *Genome) mateSinglepoint(og *Genome, genomeid int) *Genome {
 	// TODO implement this
 	return nil
 }
@@ -138,7 +138,7 @@ func (g *Genome) mateSinglepoint(g *Genome, genomeid int) *Genome {
 // PERCENT EXCESS GENES, MUTATIONAL DIFFERENCE WITHIN MATCHING GENES. So the formula for compatibility
 // is:  disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // The 3 coefficients are global system parameters */
-func (g *Genome) compatibility(g *Genome) float64 {
+func (g *Genome) compatibility(og *Genome) float64 {
 	// TODO implement this
 	return 0.0
 }

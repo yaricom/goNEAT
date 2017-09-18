@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"errors"
 	"math/rand"
-	"github.com/yaricom/goNEAT/neat/network"
+	//"github.com/yaricom/goNEAT/neat/network"
 )
 
 // A Species is a group of similar Organisms.
@@ -209,9 +209,9 @@ func (s *Species) findChampion() *Organism {
 }
 
 //Perform mating and mutation to form next generation
-func (s *Species) reproduce(generation int, pop *Population, sorted_species *Species, conf *neat.Neat) (bool, error) {
+func (s *Species) reproduce(generation int, pop *Population, sorted_species []*Species, conf *neat.Neat) (bool, error) {
 	//Check for a mistake
-	if s.ExpectedOffspring > 0 && len(s.Organisms == 0) {
+	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
 		return false, errors.New("ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")
 	}
 
@@ -220,7 +220,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species *Spe
 	thechamp := s.Organisms[0]
 
 	// TODO check if we really need this
-	var net_analogue *network.Network  // For adding link to test for reccurrency
+	//var net_analogue *network.Network  // For adding link to test for reccurrency
 
 	// Parent Organisms and new Organism
 	var mom, dad, baby *Organism
@@ -236,11 +236,11 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species *Spe
 	// Flag the preservation of the champion
 	champ_done := false
 
-	var outside, mut_struct_baby, mate_baby bool
+	var mut_struct_baby, mate_baby bool
 
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
-		outside, mut_struct_baby, mate_baby = false, false, false
+		mut_struct_baby, mate_baby = false, false
 
 		// Debug Trap
 		if s.ExpectedOffspring > conf.PopSize {
@@ -262,7 +262,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species *Spe
 					new_genome.mutateLinkWeights(mut_power, 1.0, GAUSSIAN)
 				} else {
 					//Sometimes we add a link to a superchamp
-					net_analogue = new_genome.genesis(generation)
+					//net_analogue = new_genome.genesis(generation)
 					new_genome.mutateAddLink(pop, conf.NewLinkTries)
 					mut_struct_baby = true;
 				}
@@ -286,7 +286,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species *Spe
 			champ_done = true
 		} else if rand.Float64() < conf.MutateOnlyProb || poolsize == 1 {
 			// Apply mutations
-			orgnum := rand.Int31n(poolsize) // select random mom
+			orgnum := rand.Int31n(int32(poolsize)) // select random mom
 			mom = s.Organisms[orgnum]
 			new_genome = mom.GNome.duplicate(count)
 
@@ -297,7 +297,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species *Spe
 				mut_struct_baby = true
 			} else if rand.Float64() < conf.MutateAddLinkProb {
 				// Mutate add link
-				net_analogue = new_genome.genesis(generation)
+				//net_analogue = new_genome.genesis(generation)
 				new_genome.mutateAddLink(pop, conf.NewLinkTries)
 				mut_struct_baby = true
 			} else {
@@ -308,13 +308,13 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species *Spe
 			baby = NewOrganism(0.0, new_genome, generation);
 		} else {
 			// Otherwise we should mate
-			orgnum := rand.Int31n(poolsize) // select random mom
+			orgnum := rand.Int31n(int32(poolsize)) // select random mom
 			mom = s.Organisms[orgnum]
 
 			// Choose random dad
 			if rand.Float64() > conf.InterspeciesMateRate {
 				// Mate within Species
-				orgnum = rand.Int31n(poolsize)
+				orgnum = rand.Int31n(int32(poolsize))
 				dad = s.Organisms[orgnum]
 			} else {
 				// Mate outside Species
@@ -361,7 +361,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species *Spe
 					mut_struct_baby = true
 				} else if rand.Float64() < conf.MutateAddLinkProb {
 					// mutate_add_link
-					net_analogue = new_genome.genesis(generation)
+					//net_analogue = new_genome.genesis(generation)
 					new_genome.mutateAddLink(pop, conf.NewLinkTries)
 					mut_struct_baby = true
 				} else {
@@ -415,7 +415,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species *Spe
 		}
 
 	} // end for count := 0
-	return true;
+	return true, nil
 }
 
 func createFirstSpecies(pop *Population, baby *Organism) {
