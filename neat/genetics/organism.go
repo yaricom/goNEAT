@@ -24,9 +24,9 @@ type Organism struct {
 	SpeciesOf                 *Species
 
 	// Number of children this Organism may have
-	ExpectedOffspring         int64
+	ExpectedOffspring         float64
 	// Tells which generation this Organism is from
-	Generation                int32
+	Generation                int
 
 	// Marker for destruction of inferior Organisms
 	ToEliminate               bool
@@ -41,15 +41,18 @@ type Organism struct {
 	IsPopulationChampionChild bool
 
 	// DEBUG variable - highest fitness of champ
-	HighestFitness            float64
+	highestFitness            float64
 
 	// Track its origin - for debugging or analysis - we can tell how the organism was born
-	MutationStructBaby        bool
-	MateBaby                  bool
+	mutationStructBaby        bool
+	mateBaby                  bool
+
+	// Used just for reporting purposes
+	error float64
 }
 
 // Creates new organism with specified genome, fitness and given generation number
-func NewOrganism(fit float64, g *Genome, generation int32) *Organism {
+func NewOrganism(fit float64, g *Genome, generation int) *Organism {
 	return &Organism{
 		Fitness:fit,
 		GNome:g,
