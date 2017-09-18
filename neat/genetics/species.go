@@ -4,7 +4,6 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 	"sort"
 	"math"
-	"fmt"
 )
 
 // A Species is a group of similar Organisms.
@@ -100,12 +99,13 @@ func (s *Species) AdjustFitness(conf *neat.Neat) {
 		if org.Fitness < 0.0 {
 			org.Fitness = 0.0001
 		}
+
 		// Share fitness with the species
 		org.Fitness = org.Fitness / float64(len(s.Organisms))
 	}
 
 	// Sort the population (most fit first) and mark for death those after : survival_thresh * pop_size
-	sort.Reverse(ByFitness(s.Organisms))
+	sort.Sort(ByFitness(s.Organisms))
 
 	// Update age_of_last_improvement here
 	if s.Organisms[0].OriginalFitness > s.MaxFitnessEver {
