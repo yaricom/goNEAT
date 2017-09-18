@@ -23,4 +23,4 @@ const (
 )
 
 // The Gaussian random number generator
-const gaussian = rng.NewGaussianGenerator(time.Now().UnixNano())
+var gaussian = rng.NewGaussianGenerator(time.Now().UnixNano())
