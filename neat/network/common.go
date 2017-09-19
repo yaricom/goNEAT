@@ -19,6 +19,8 @@ const (
 	INPUT
 	// The node is in output layer
 	OUTPUT
+	// The node is bias
+	BIAS
 )
 
 // The neuron Activation function Types
