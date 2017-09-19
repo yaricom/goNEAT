@@ -215,9 +215,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 		return false, errors.New("ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")
 	}
 
-	poolsize := len(s.Organisms)  //The number of Organisms in the old generation
+	// The number of Organisms in the old generation
+	pool_size := len(s.Organisms)
 	// The champion of the 'this' specie is the first element of the specie;
-	thechamp := s.Organisms[0]
+	the_champ := s.Organisms[0]
 
 	// TODO check if we really need this
 	//var net_analogue *network.Network  // For adding link to test for reccurrency
@@ -229,12 +230,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 	var new_genome *Genome
 
 	// For mating outside the Species
-	var randspecies *Species
+	var rand_species *Species
 
-	// The weight mutation power is species specific depending on its age
-	mut_power := conf.WeightMutPower
 	// Flag the preservation of the champion
-	champ_done := false
+	champ_clone_done := false
 
 	var mut_struct_baby, mate_baby bool
 
@@ -247,21 +246,21 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			fmt.Printf("ALERT: EXPECTED OFFSPRING = %d", s.ExpectedOffspring)
 		}
 
-		if thechamp.SuperChampOffspring > 0 {
+		if the_champ.SuperChampOffspring > 0 {
 			// If we have a super_champ (Population champion), finish off some special clones
-			mom = thechamp;
+			mom = the_champ;
 			new_genome = mom.GNome.duplicate(count)
 
 			// Most superchamp offspring will have their connection weights mutated only
 			// The last offspring will be an exact duplicate of this super_champ
 			// Note: Superchamp offspring only occur with stolen babies!
 			//      Settings used for published experiments did not use this
-			if thechamp.SuperChampOffspring > 1 {
+			if the_champ.SuperChampOffspring > 1 {
 				if rand.Float64() < 0.8 || conf.MutateAddLinkProb == 0.0 {
 					// Make sure no links get added when the system has link adding disabled
-					new_genome.mutateLinkWeights(mut_power, 1.0, GAUSSIAN)
+					new_genome.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
 				} else {
-					//Sometimes we add a link to a superchamp
+					// Sometimes we add a link to a superchamp
 					//net_analogue = new_genome.genesis(generation)
 					new_genome.mutateAddLink(pop, conf.NewLinkTries)
 					mut_struct_baby = true;
@@ -270,23 +269,23 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			baby = NewOrganism(0.0, new_genome, generation)
 
-			if thechamp.SuperChampOffspring == 1 {
-				if thechamp.IsPopulationChampion {
+			if the_champ.SuperChampOffspring == 1 {
+				if the_champ.IsPopulationChampion {
 					baby.IsPopulationChampionChild = true
 					baby.highestFitness = mom.OriginalFitness
 				}
 			}
 
-			thechamp.SuperChampOffspring--
-		} else if !champ_done && s.ExpectedOffspring > 5 {
+			the_champ.SuperChampOffspring--
+		} else if !champ_clone_done && s.ExpectedOffspring > 5 {
 			// If we have a Species champion, just clone it
-			mom = thechamp // Mom is the champ
+			mom = the_champ // Mom is the champ
 			new_genome = mom.GNome.duplicate(count)
 			baby = NewOrganism(0.0, new_genome, generation) // Baby is just like mommy
-			champ_done = true
-		} else if rand.Float64() < conf.MutateOnlyProb || poolsize == 1 {
+			champ_clone_done = true
+		} else if rand.Float64() < conf.MutateOnlyProb || pool_size == 1 {
 			// Apply mutations
-			orgnum := rand.Int31n(int32(poolsize)) // select random mom
+			orgnum := rand.Int31n(int32(pool_size)) // select random mom
 			mom = s.Organisms[orgnum]
 			new_genome = mom.GNome.duplicate(count)
 
@@ -308,32 +307,31 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			baby = NewOrganism(0.0, new_genome, generation);
 		} else {
 			// Otherwise we should mate
-			orgnum := rand.Int31n(int32(poolsize)) // select random mom
-			mom = s.Organisms[orgnum]
+			org_num := rand.Int31n(int32(pool_size)) // select random mom
+			mom = s.Organisms[org_num]
 
 			// Choose random dad
 			if rand.Float64() > conf.InterspeciesMateRate {
 				// Mate within Species
-				orgnum = rand.Int31n(int32(poolsize))
-				dad = s.Organisms[orgnum]
+				org_num = rand.Int31n(int32(pool_size))
+				dad = s.Organisms[org_num]
 			} else {
 				// Mate outside Species
-				randspecies = s
+				rand_species = s
 
 				// Select a random species
 				giveup := 0
-				for ;randspecies == s && giveup < 5; {
-
-					//Choose a random species tending towards better species
-					randmult := gaussian.StdGaussian() / 4.0
-					if randmult > 1.0 { randmult = 1.0 }
+				for ;rand_species == s && giveup < 5; {
+					// Choose a random species tending towards better species
+					rand_mult := gaussian.StdGaussian() / 4.0
+					if rand_mult > 1.0 { rand_mult = 1.0 }
 					// This tends to select better species
-					randspeciesnum := int(math.Floor(randmult * (float64(len(sorted_species)) - 1.0) + 0.5))
-					randspecies = sorted_species[randspeciesnum]
+					rand_species_num := int(math.Floor(rand_mult * (float64(len(sorted_species)) - 1.0) + 0.5))
+					rand_species = sorted_species[rand_species_num]
 
 					giveup++
 				}
-				dad = randspecies.Organisms[0]
+				dad = rand_species.Organisms[0]
 			}
 
 			// Perform mating based on probabilities of different mating types
@@ -368,19 +366,15 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					//Only do other mutations when not doing structural mutations
 					new_genome.mutateAllNonstructural(conf)
 				}
-
-				//Create the baby
-				baby = NewOrganism(0.0, new_genome, generation);
-			} else {
-				//Create the baby without mutating first
-				baby = NewOrganism(0.0, new_genome, generation);
 			}
 
-			// Add the baby to its proper Species
-			// If it doesn't fit a Species, create a new one
+			// Create the baby
+			baby = NewOrganism(0.0, new_genome, generation);
 			baby.mutationStructBaby = mut_struct_baby
 			baby.mateBaby = mate_baby
 
+			// Add the baby to its proper Species
+			// If it doesn't fit a Species, create a new one
 			if pop.species == nil || len(pop.species) == 0 {
 				// Create the first species
 				createFirstSpecies(pop, baby)
@@ -406,7 +400,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					}
 				}
 
-				// If we didn't find a match, create a new species
+				// If match was not found, create a new species
 				if !found {
 					createFirstSpecies(pop, baby)
 				}
