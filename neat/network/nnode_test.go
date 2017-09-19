@@ -5,21 +5,22 @@ import (
 	"fmt"
 	"strings"
 	"bytes"
+	"github.com/yaricom/goNEAT/neat"
 )
 
 // Tests how NNode read working
 func TestReadNNode(t *testing.T) {
 	node_id, trait_id, ntype, gen_node_label := 1, 10, SENSOR, INPUT
-	node_str := fmt.Sprintf("node %d %d %d %d", node_id, trait_id, ntype, gen_node_label)
+	node_str := fmt.Sprintf("%d %d %d %d", node_id, trait_id, ntype, gen_node_label)
 
-	trait := NewTrait()
-	trait.TraitId = 10
-	traits := []*Trait{trait}
+	trait := neat.NewTrait()
+	trait.Id = 10
+	traits := []*neat.Trait{trait}
 
 	node := ReadNNode(strings.NewReader(node_str), traits)
 
-	if node.NodeId != node_id {
-		t.Errorf("Found node ID is not what expected, %d != %d", node_id, node.NodeId)
+	if node.Id != node_id {
+		t.Errorf("Found node ID is not what expected, %d != %d", node_id, node.Id)
 	}
 	if node.Trait != trait {
 		t.Error("The wrong Trait found in the node")
@@ -35,9 +36,9 @@ func TestReadNNode(t *testing.T) {
 // Tests NNode serialization
 func TestWriteNNode(t *testing.T) {
 	node_id, trait_id, ntype, gen_node_label := 1, 10, SENSOR, INPUT
-	node_str := fmt.Sprintf("node %d %d %d %d", node_id, trait_id, ntype, gen_node_label)
-	trait := NewTrait()
-	trait.TraitId = 10
+	node_str := fmt.Sprintf("%d %d %d %d", node_id, trait_id, ntype, gen_node_label)
+	trait := neat.NewTrait()
+	trait.Id = 10
 
 	node := NewNNodeInPlace(ntype, node_id, gen_node_label)
 	node.Trait = trait

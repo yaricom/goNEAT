@@ -4,6 +4,7 @@ import (
 	"io"
 	"fmt"
 	"errors"
+	"github.com/yaricom/goNEAT/neat"
 )
 
 // A NODE is either a NEURON or a SENSOR.
@@ -12,47 +13,47 @@ import (
 // Use an activation count to avoid flushing
 type NNode struct {
 	// The ID of the node
-	NodeId int
+	Id               int
 
 	// If true the node is active
-	IsActive bool
+	IsActive         bool
 
 	// The the type of the node (NEURON or SENSOR)
-	NType int
+	NType            int
 	// The type of node activation function (SIGMOID, ...)
-	FType int
+	FType            int
 	// The placement of the node in the network layers (INPUT, HIDDEN, OUTPUT)
-	GenNodeLabel int
+	GenNodeLabel     int
 
 	// The activation for current step
-	ActiveOut float64
+	ActiveOut        float64
 	// The activation from PREVIOUS (time-delayed) time step, if there is one
-	ActiveOutTd float64
+	ActiveOutTd      float64
 	// The node's activation value
-	Activation float64
+	Activation       float64
 	// The number of activations for current node
 	ActivationsCount int32
 	// The activation sum
-	ActivationSum float64
+	ActivationSum    float64
 
 	// The list of all incoming connections
-	Incoming []*Link
+	Incoming         []*Link
 	// The trait linked to the node
-	Trait *Trait
+	Trait            *neat.Trait
 
 	// Activation value of node at time t-1; Holds the previous step's activation for recurrency
-	lastActivation float64
+	lastActivation   float64
 	// Activation value of node at time t-2 Holds the activation before  the previous step's
 	// This is necessary for a special recurrent case when the innode of a recurrent link is one time step ahead of the outnode.
 	// The innode then needs to send from TWO time steps ago
-	lastActivation2 float64
+	lastActivation2  float64
 }
 
 // Creates new node with specified type (NEURON or SENSOR) and ID
 func NewNNode(ntype, nodeid int) *NNode {
 	n := newNode()
 	n.NType = ntype
-	n.NodeId = nodeid
+	n.Id = nodeid
 	return n
 }
 
@@ -61,30 +62,30 @@ func NewNNode(ntype, nodeid int) *NNode {
 func NewNNodeInPlace(ntype, nodeid, placement int) *NNode {
 	n := newNode()
 	n.NType = ntype
-	n.NodeId = nodeid
+	n.Id = nodeid
 	n.GenNodeLabel = placement
 	return n
 }
 
 // Construct a NNode off another NNode with given trait for genome purposes
-func NewNNodeCopy(n NNode, t *Trait) *NNode {
+func NewNNodeCopy(n NNode, t *neat.Trait) *NNode {
 	node := newNode()
 	node.NType = n.NType
-	node.NodeId = n.NodeId
+	node.Id = n.Id
 	node.GenNodeLabel = n.GenNodeLabel
 	node.Trait = t
 	return node
 }
 
 // Read a NNode from specified Reader and applies corresponding trait to it from a list of traits provided
-func ReadNNode(r io.Reader, traits []*Trait) *NNode {
+func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
 	n := newNode()
 	var trait_id int
-	fmt.Fscanf(r, "node %d %d %d %d", &n.NodeId, &trait_id, &n.NType, &n.GenNodeLabel)
+	fmt.Fscanf(r, "%d %d %d %d", &n.Id, &trait_id, &n.NType, &n.GenNodeLabel)
 	if trait_id != 0 && traits != nil {
 		// find corresponding node trait from list
 		for _, t := range traits {
-			if trait_id == t.TraitId {
+			if trait_id == t.Id {
 				n.Trait = t
 				break
 			}
@@ -191,9 +192,9 @@ func (n *NNode) FlushbackCheck() error {
 func (n *NNode) WriteNode(w io.Writer) {
 	trait_id := 0
 	if n.Trait != nil {
-		trait_id = n.Trait.TraitId
+		trait_id = n.Trait.Id
 	}
-	fmt.Fprintf(w, "node %d %d %d %d", n.NodeId, trait_id, n.NType, n.GenNodeLabel)
+	fmt.Fprintf(w, "%d %d %d %d", n.Id, trait_id, n.NType, n.GenNodeLabel)
 }
 
 // Find the greatest depth starting from this neuron at depth d
@@ -223,9 +224,9 @@ func (n *NNode) Depth(d int32) (int32, error) {
 
 func (n *NNode) String() string {
 	if n.IsSensor() {
-		return fmt.Sprintf("(S %d, type: %d, step %d : %f)", n.NodeId, n.NType, n.ActivationsCount, n.Activation)
+		return fmt.Sprintf("(S %d, type: %d, step %d : %f)", n.Id, n.NType, n.ActivationsCount, n.Activation)
 	} else {
-		return fmt.Sprintf("(N %d, type: %d, step %d : %f)", n.NodeId, n.NType, n.ActivationsCount, n.Activation)
+		return fmt.Sprintf("(N %d, type: %d, step %d : %f)", n.Id, n.NType, n.ActivationsCount, n.Activation)
 	}
 }
 
