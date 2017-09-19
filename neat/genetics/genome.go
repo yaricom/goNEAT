@@ -61,6 +61,132 @@ func NewGenomeFromLinks(id int, t []*neat.Trait, n []*network.NNode, links []*ne
 	return &gnome
 }
 
+// This special constructor creates a Genome with in inputs, out outputs, n out of nmax hidden units, and random
+// connectivity.  If rec is true then recurrent connections will be included. The last input is a bias
+// link_prob is the probability of a link  */
+func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64) *Genome {
+	total_nodes := in + out + nmax
+	matrix_dim := total_nodes * total_nodes
+	// The connection matrix which will be randomized
+	cm := make([]bool, matrix_dim)  //Dimension the connection matrix
+
+	// No nodes above this number for this genome
+	max_node := in + n
+	first_output := total_nodes - out + 1
+
+	// For creating the new genes
+	var new_node, in_node, out_node *network.NNode
+	var new_gene *Gene
+	var new_trait *neat.Trait
+
+	// Create a dummy trait (this is for future expansion of the system)
+	new_trait = neat.NewTrait()
+	new_trait.Id = 1
+	new_trait.Params = []float64{0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	// Create empty genome
+	gnome := Genome {
+		Id:new_id,
+		Traits:[]*neat.Trait{new_trait},
+		Nodes:make([]*network.NNode, 0),
+		Genes:make([]*Gene, 0),
+	}
+
+	// Step through the connection matrix, randomly assigning bits
+	for count := 0; count < matrix_dim; count++ {
+		cm[count] = (rand.Float64() < link_prob)
+	}
+
+	// Build the input nodes
+	for ncount := 1; ncount <= in; ncount++ {
+		if ncount < in {
+			new_node = network.NewNNodeInPlace(network.SENSOR, ncount, network.INPUT)
+		} else {
+			new_node = network.NewNNodeInPlace(network.SENSOR, ncount, network.BIAS)
+		}
+		new_node.Trait = new_trait
+		gnome.Nodes = append(gnome.Nodes, new_node)
+	}
+
+	// Build the hidden nodes
+	for ncount := in + 1; ncount <= in + n; ncount++ {
+		new_node = network.NewNNodeInPlace(network.NEURON, ncount, network.HIDDEN)
+		new_node.Trait = new_trait
+		gnome.Nodes = append(gnome.Nodes, new_node)
+	}
+
+	// Build the output nodes
+	for ncount := first_output; ncount <= total_nodes; ncount++ {
+		new_node = network.NewNNodeInPlace(network.NEURON, ncount, network.OUTPUT)
+		new_node.Trait = new_trait
+		gnome.Nodes = append(gnome.Nodes, new_node)
+	}
+
+	//
+	//    i i i n n n n n n n n n n n n n n n n . . . . . . . . o o o o
+	//    |                                   |                 ^     |
+	//    |<----------- max_node ------------>|                 |     |
+	//    |                                                     |     |
+	//    |<-----------------------total_nodes -----------------|---->|
+	//                                                          |
+	//                                                          |
+	//     first_output ----------------------------------------+
+	//
+	//
+
+	// Step through the connection matrix, creating connection genes
+	count := 0
+	var create_gene, flag_recurrent bool
+	for col := 1; col <= total_nodes; col++ {
+		for row := 1; row <= total_nodes; row++ {
+			// Only try to create a link if it is in the matrix and not leading into a sensor
+			if cm[count] && col > in &&
+				(col <= max_node || col >= first_output) &&
+				(row <= max_node || row >= first_output) {
+
+				// If it's recurrent, create the connection (gene) no matter what
+				create_gene = true
+				if col > row {
+					flag_recurrent = false
+				} else {
+					flag_recurrent = true
+					if !recurrent {
+						// skip recurrent connections
+						create_gene = false
+					}
+				}
+
+				// Introduce new connection (gene) into genome
+				if create_gene {
+					// Retrieve in_node and out_node
+					for i := 0; i < len(gnome.Nodes) && (in_node == nil || out_node == nil); i++ {
+						node_id := gnome.Nodes[i].Id
+						if node_id == row {
+							in_node = gnome.Nodes[i]
+						}
+						if node_id == col {
+							out_node = gnome.Nodes[i]
+						}
+					}
+
+					// Create the gene
+					new_weight := float64(neat.RandPosNeg()) * rand.Float64()
+					new_gene = NewGeneWithTrait(new_trait, new_weight, in_node, out_node, flag_recurrent, count, new_weight)
+
+					//Add the gene to the genome
+					gnome.Genes = append(gnome.Genes, new_gene)
+				}
+
+			}
+
+			count++ //increment counter
+			// reset nodes
+			in_node, out_node = nil, nil
+		}
+	}
+	return &gnome
+}
+
 // Reads Genome from reader
 func ReadGenome(r io.Reader, id int) (*Genome, error) {
 	gnome := Genome {

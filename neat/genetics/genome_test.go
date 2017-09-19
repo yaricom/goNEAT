@@ -106,7 +106,7 @@ func TestGenome_ReadGenome(t *testing.T) {
 		if g.Link.IsRecurrent {
 			t.Error("Gene link's recurrent flag is wrong")
 		}
-		if g.InnovationNum != int64(i + 1) {
+		if g.InnovationNum != i + 1 {
 			t.Error("Gene's innovation number is wrong",  g.InnovationNum)
 		}
 		if g.MutationNum != float64(0) {
@@ -153,5 +153,27 @@ func TestGenome_WriteGenome(t *testing.T) {
 			t.Error("Lines mismatch", gsr, o_str_r[i])
 		}
 	}
+}
 
+// Test create rnadom genome
+func TestGenome_NewGenomeRand(t *testing.T) {
+	new_id, in, out, n, nmax := 1, 3, 2, 2, 5
+	recurrent := false
+	link_prob := 0.5
+
+	gnome := NewGenomeRand(new_id, in, out, n, nmax, recurrent, link_prob)
+
+	if gnome == nil {
+		t.Error("Failed to create random genome")
+	}
+	if len(gnome.Nodes) != in + n + out {
+		t.Error("len(gnome.Nodes) != in + nmax + out", len(gnome.Nodes), in + n + out)
+	}
+	if len(gnome.Genes) < in + n + out {
+		t.Error("Failed to create genes", len(gnome.Genes))
+	}
+
+	for _, g := range gnome.Genes {
+		t.Log(g)
+	}
 }
