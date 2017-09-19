@@ -2,6 +2,7 @@ package network
 
 import (
 	"fmt"
+	"github.com/yaricom/goNEAT/neat"
 )
 
 // A LINK is a connection from one node to another with an associated weight.
@@ -19,7 +20,7 @@ type Link struct {
 	IsTimeDelayed bool
 
 	// Points to a trait of parameters for genetic creation
-	LinkTrait *Trait
+	LinkTrait *neat.Trait
 
 	/* ************ LEARNING PARAMETERS *********** */
 	/* These are link-related parameters that change during Hebbian type learning */
@@ -38,7 +39,7 @@ func NewLink(weight float64, innode, outnode *NNode, recurrent bool) *Link {
 }
 
 // Creates new Link with specified Trait
-func NewLinkWithTrait(trait *Trait, weight float64, innode, outnode *NNode, recurrent bool) *Link {
+func NewLinkWithTrait(trait *neat.Trait, weight float64, innode, outnode *NNode, recurrent bool) *Link {
 	link := newLink(weight)
 	link.InNode = innode
 	link.OutNode = outnode
