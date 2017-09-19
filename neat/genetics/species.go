@@ -350,7 +350,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Determine whether to mutate the baby's Genome
 			// This is done randomly or if the mom and dad are the same organism
 			if rand.Float64() > conf.MateOnlyProb ||
-				dad.GNome.GenomeId == mom.GNome.GenomeId ||
+				dad.GNome.Id == mom.GNome.Id ||
 				dad.GNome.compatibility(mom.GNome) == 0.0 {
 				// Do the mutation depending on probabilities of  various mutations
 				if rand.Float64() < conf.MutateAddNodeProb {
