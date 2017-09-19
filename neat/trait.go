@@ -46,7 +46,7 @@ func ReadTrait(r io.Reader) *Trait {
 	nt := newTrait()
 	fmt.Fscanf(r, "%d ", &nt.Id)
 	for i := 0; i < Num_trait_params; i++ {
-		fmt.Scanf("%g ", &nt.Params[i])
+		fmt.Fscanf(r, "%g ", &nt.Params[i])
 	}
 	return nt
 }

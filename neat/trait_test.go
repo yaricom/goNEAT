@@ -19,6 +19,11 @@ func TestTrait_ReadTrait(t *testing.T)  {
 	if trait.Id != trait_id {
 		t.Error("trait.TraitId", trait_id, trait.Id)
 	}
+	for i, p := range params {
+		if trait.Params[i] != p {
+			t.Error("trait.Params[i] != p", trait.Params[i], p)
+		}
+	}
 }
 
 // Tests Trait WriteTrait
@@ -31,12 +36,12 @@ func TestTrait_WriteTrait(t *testing.T)  {
 	trait.Id = trait_id
 	trait.Params = params
 
-	trait_str := fmt.Sprintf("%d %g %g %g %g %g %g %g %g ",
+	trait_str := fmt.Sprintf("%d %g %g %g %g %g %g %g %g",
 		trait_id, params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7])
 
 	out_buffer := bytes.NewBufferString("")
 	trait.WriteTrait(out_buffer)
-	out_str := out_buffer.String()
+	out_str := strings.TrimSpace(out_buffer.String())
 	if trait_str != out_str {
 		t.Errorf("Wrong trait serialization\n[%s]\n[%s]", trait_str, out_str)
 	}
