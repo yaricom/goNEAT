@@ -224,9 +224,9 @@ func (n *NNode) Depth(d int32) (int32, error) {
 
 func (n *NNode) String() string {
 	if n.IsSensor() {
-		return fmt.Sprintf("(S %d, type: %d, step %d : %f)", n.Id, n.NType, n.ActivationsCount, n.Activation)
+		return fmt.Sprintf("(S %3d, type: %d, step %d = %.3f)", n.Id, n.NType, n.ActivationsCount, n.Activation)
 	} else {
-		return fmt.Sprintf("(N %d, type: %d, step %d : %f)", n.Id, n.NType, n.ActivationsCount, n.Activation)
+		return fmt.Sprintf("(N %3d, type: %d, step %d = %.3f)", n.Id, n.NType, n.ActivationsCount, n.Activation)
 	}
 }
 
