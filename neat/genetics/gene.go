@@ -4,6 +4,7 @@ import (
 	"github.com/yaricom/goNEAT/neat/network"
 	"io"
 	"fmt"
+	"github.com/yaricom/goNEAT/neat"
 )
 
 // The Gene class in this system specifies a "Connection Gene."
@@ -32,40 +33,40 @@ func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, i
 }
 
 // Creates new Gene with Trait
-func NewGeneWithTrait(trait *network.Trait, weight float64, in_node, out_node *network.NNode,
+func NewGeneWithTrait(trait *neat.Trait, weight float64, in_node, out_node *network.NNode,
 			recurrent bool, inov_num int64, mut_num float64) *Gene  {
 	return newGene(network.NewLinkWithTrait(trait, weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
 // Construct a gene off of another gene as a duplicate
-func NewGeneGeneCopy(g *Gene, trait *network.Trait, in_node, out_node *network.NNode) *Gene {
+func NewGeneGeneCopy(g *Gene, trait *neat.Trait, in_node, out_node *network.NNode) *Gene {
 	return newGene(network.NewLinkWithTrait(trait, g.Link.Weight, in_node, out_node, g.Link.IsRecurrent),
 		g.InnovationNum, g.MutationNum, true)
 }
 
 // Reads Gene from reader
-func ReadGene(r io.Reader, traits []*network.Trait, nodes []*network.NNode) *Gene  {
+func ReadGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) *Gene  {
 	var traitId, inNodeId, outNodeId int
 	var inov_num int64
 	var weight, mut_num float64
 	var recurrent, enabled bool
-	fmt.Fscanf(r, "gene %d %d %d %g %t %d %g %t",
+	fmt.Fscanf(r, "%d %d %d %g %t %d %g %t",
 		&traitId, &inNodeId, &outNodeId, &weight, &recurrent, &inov_num, &mut_num, &enabled)
 
-	var trait *network.Trait = nil
+	var trait *neat.Trait = nil
 	if traitId != 0 && traits != nil {
 		for _, tr := range traits {
-			if tr.TraitId == traitId {
+			if tr.Id == traitId {
 				trait = tr
 			}
 		}
 	}
 	var inNode, outNode *network.NNode
 	for _, np := range nodes {
-		if np.NodeId == inNodeId {
+		if np.Id == inNodeId {
 			inNode = np
 		}
-		if np.NodeId == outNodeId {
+		if np.Id == outNodeId {
 			outNode = np
 		}
 	}
@@ -90,17 +91,17 @@ func (g *Gene) WriteGene(w io.Writer)  {
 	link := g.Link
 	traitId := 0
 	if link.LinkTrait != nil {
-		traitId = link.LinkTrait.TraitId
+		traitId = link.LinkTrait.Id
 	}
-	inNodeId := link.InNode.NodeId
-	outNodeId := link.OutNode.NodeId
+	inNodeId := link.InNode.Id
+	outNodeId := link.OutNode.Id
 	weight := link.Weight
 	recurrent := link.IsRecurrent
 	innov_num := g.InnovationNum
 	mut_num := g.MutationNum
 	enabled := g.IsEnabled
 
-	fmt.Fprintf(w, "gene %d %d %d %g %t %d %g %t",
+	fmt.Fprintf(w, "%d %d %d %g %t %d %g %t",
 		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
 }
 
@@ -115,9 +116,9 @@ func (g *Gene) String() string  {
 	}
 	trait_str := ""
 	if g.Link.LinkTrait != nil {
-		trait_str = fmt.Sprintf("Link's trait_id %d", g.Link.LinkTrait.TraitId)
+		trait_str = fmt.Sprintf("Link's trait_id %d", g.Link.LinkTrait.Id)
 	}
 	return fmt.Sprintf("[Link (%4d, %4d) INNOV (%4d, %.3f) Weight %.3f %s %s %s]",
-		g.Link.InNode.NodeId, g.Link.OutNode.NodeId, g.InnovationNum, g.MutationNum, g.Link.Weight,
+		g.Link.InNode.Id, g.Link.OutNode.Id, g.InnovationNum, g.MutationNum, g.Link.Weight,
 		trait_str, enabl_str, recurr_str)
 }

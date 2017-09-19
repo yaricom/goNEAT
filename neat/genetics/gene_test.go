@@ -6,6 +6,7 @@ import (
 	"strings"
 	"github.com/yaricom/goNEAT/neat/network"
 	"bytes"
+	"github.com/yaricom/goNEAT/neat"
 )
 
 // Tests Gene ReadGene
@@ -15,17 +16,17 @@ func TestGene_ReadGene(t *testing.T)  {
 	innov_num := int64(1)
 	weight, mut_num := 1.1983046913458986, 1.1983046913458986
 	recurrent, enabled := false, false
-	gene_str := fmt.Sprintf("gene %d %d %d %g %t %d %g %t",
+	gene_str := fmt.Sprintf("%d %d %d %g %t %d %g %t",
 		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
 
-	trait := network.NewTrait()
-	trait.TraitId = 1
+	trait := neat.NewTrait()
+	trait.Id = 1
 	nodes := []*network.NNode{
 		network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
 		network.NewNNodeInPlace(network.NEURON, 4, network.HIDDEN),
 	}
 
-	gene := ReadGene(strings.NewReader(gene_str), []*network.Trait{trait}, nodes)
+	gene := ReadGene(strings.NewReader(gene_str), []*neat.Trait{trait}, nodes)
 
 	if gene.InnovationNum != innov_num {
 		t.Error("gene.InnovationNum", innov_num, gene.InnovationNum)
@@ -37,14 +38,14 @@ func TestGene_ReadGene(t *testing.T)  {
 		t.Error("gene.IsEnabled", enabled, gene.IsEnabled)
 	}
 	link := gene.Link
-	if link.LinkTrait.TraitId != traitId {
-		t.Error("link.LinkTrait.TraitId", traitId, link.LinkTrait.TraitId)
+	if link.LinkTrait.Id != traitId {
+		t.Error("link.LinkTrait.TraitId", traitId, link.LinkTrait.Id)
 	}
-	if link.InNode.NodeId != inNodeId {
-		t.Error("link.InNode.NodeId", inNodeId, link.InNode.NodeId)
+	if link.InNode.Id != inNodeId {
+		t.Error("link.InNode.NodeId", inNodeId, link.InNode.Id)
 	}
-	if link.OutNode.NodeId != outNodeId {
-		t.Error("link.OutNode.NodeId", outNodeId, link.OutNode.NodeId)
+	if link.OutNode.Id != outNodeId {
+		t.Error("link.OutNode.NodeId", outNodeId, link.OutNode.Id)
 	}
 	if link.Weight != weight {
 		t.Error("link.Weight", weight, link.Weight)
@@ -61,11 +62,11 @@ func TestGene_WriteGene(t *testing.T)  {
 	innov_num := int64(1)
 	weight, mut_num := 1.1983046913458986, 1.1983046913458986
 	recurrent, enabled := false, false
-	gene_str := fmt.Sprintf("gene %d %d %d %g %t %d %g %t",
+	gene_str := fmt.Sprintf("%d %d %d %g %t %d %g %t",
 		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
 
-	trait := network.NewTrait()
-	trait.TraitId = traitId
+	trait := neat.NewTrait()
+	trait.Id = traitId
 	gene := NewGeneWithTrait(trait, weight, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
 		network.NewNNodeInPlace(network.NEURON, 4, network.HIDDEN), recurrent, innov_num, mut_num)
 	gene.IsEnabled = enabled
