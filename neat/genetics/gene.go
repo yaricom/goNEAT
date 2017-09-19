@@ -50,7 +50,7 @@ func ReadGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) *Gene  
 	var inov_num int64
 	var weight, mut_num float64
 	var recurrent, enabled bool
-	fmt.Fscanf(r, "%d %d %d %g %t %d %g %t",
+	fmt.Fscanf(r, "%d %d %d %g %t %d %g %t ",
 		&traitId, &inNodeId, &outNodeId, &weight, &recurrent, &inov_num, &mut_num, &enabled)
 
 	var trait *neat.Trait = nil

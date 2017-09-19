@@ -81,7 +81,7 @@ func NewNNodeCopy(n NNode, t *neat.Trait) *NNode {
 func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
 	n := newNode()
 	var trait_id int
-	fmt.Fscanf(r, "%d %d %d %d", &n.Id, &trait_id, &n.NType, &n.GenNodeLabel)
+	fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &n.NType, &n.GenNodeLabel)
 	if trait_id != 0 && traits != nil {
 		// find corresponding node trait from list
 		for _, t := range traits {
