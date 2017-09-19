@@ -4,6 +4,9 @@ import (
 	"github.com/yaricom/goNEAT/neat/network"
 	"github.com/yaricom/goNEAT/neat"
 	"math/rand"
+	"io"
+	"fmt"
+	"errors"
 )
 
 // A Genome is the primary source of genotype information used to create  a phenotype.
@@ -19,9 +22,121 @@ import (
 // Each Gene in (3) has a marker telling when it arose historically. Thus, these Genes can be used to speciate the
 // population, and the list of Genes provide an evolutionary history of innovation and link-building.
 type Genome struct {
-	GenomeId int
+	// The genome ID
+	Id int
+	// The parameters conglomerations
+	Traits []*neat.Trait
+	// List of NNodes for the Network
+	Nodes []*network.NNode
+	// List of innovation-tracking genes
+	Genes []*Gene
 
+	// Allows Genome to be matched with its Network
+	Phenotype *network.Network
 
+}
+
+// Constructor which takes full genome specs and puts them into the new one
+func NewGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene) *Genome {
+	return &Genome{
+		Id:id,
+		Traits:t,
+		Nodes:n,
+		Genes:g,
+	}
+}
+
+// Constructor which takes in links (not genes) and creates a Genome
+func NewGenomeFromLinks(id int, t []*neat.Trait, n []*network.NNode, links []*network.Link) *Genome {
+	gnome := Genome{
+		Id:id,
+		Traits:t,
+		Nodes:n,
+		Genes:make([]*Gene, len(links)),
+	}
+	// Iterate over links and turn them into genes
+	for i, l := range links {
+		gnome.Genes[i] = NewGeneWithTrait(l.LinkTrait, l.Weight, l.InNode, l.OutNode, l.IsRecurrent, 1.0, 0.0)
+	}
+	return &gnome
+}
+
+// Reads Genome from reader
+func ReadGenome(r io.Reader, id int) (*Genome, error) {
+	gnome := Genome {
+		Id:id,
+		Traits:make([]*neat.Trait, 0),
+		Nodes:make([]*network.NNode, 0),
+		Genes:make([]*Gene, 0),
+	}
+
+	done := false
+	var cur_word string
+	// Loop until file is finished, parsing each line
+	for !done {
+		fmt.Fscanf(r, "%s", &cur_word)
+
+		//fmt.Println(cur_word)
+
+		switch cur_word {
+		case "genomestart":
+			// Read Genome ID and check
+			var g_id int
+			fmt.Fscanf(r, "%d ", &g_id)
+			if g_id != id {
+				return nil, errors.New(
+					fmt.Sprintf("Id mismatch in genome. Found: %d, expected: %d", g_id, id))
+			}
+
+		case "trait":
+			// Read a Trait
+			new_trait := neat.ReadTrait(r)
+			gnome.Traits = append(gnome.Traits, new_trait)
+
+		case "node":
+			// Read a NNode
+			new_node := network.ReadNNode(r, gnome.Traits)
+			gnome.Nodes = append(gnome.Nodes, new_node)
+
+		case "gene":
+			// Read a Gene
+			new_gene := ReadGene(r, gnome.Traits, gnome.Nodes)
+			gnome.Genes = append(gnome.Genes, new_gene)
+
+		case "genomeend":
+			// Finish
+			done = true
+
+		default:
+			// Print to the screen
+			fmt.Printf("%s \n", cur_word)
+		}
+	}
+	return &gnome, nil
+}
+
+// Writes this genome into provided writer
+func (g *Genome) WriteGenome(w io.Writer) {
+	fmt.Fprintf(w, "genomestart %d\n", g.Id)
+
+	for _, tr := range g.Traits {
+		fmt.Fprint(w, "trait ")
+		tr.WriteTrait(w)
+		fmt.Fprintln(w, "")
+	}
+
+	for _, nd := range g.Nodes {
+		fmt.Fprint(w, "node ")
+		nd.WriteNode(w)
+		fmt.Fprintln(w, "")
+	}
+
+	for _, gn := range g.Genes {
+		fmt.Fprint(w, "gene ")
+		gn.WriteGene(w)
+		fmt.Fprintln(w, "")
+	}
+	fmt.Fprintf(w, "genomeend %d\n", g.Id)
 }
 
 // Generate a Network phenotype from this Genome with specified id
