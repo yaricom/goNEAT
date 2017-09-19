@@ -243,7 +243,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 		// Debug Trap
 		if s.ExpectedOffspring > conf.PopSize {
-			fmt.Printf("ALERT: EXPECTED OFFSPRING = %d", s.ExpectedOffspring)
+			fmt.Printf("ALERT: EXPECTED OFFSPRING = %d\n", s.ExpectedOffspring)
 		}
 
 		if the_champ.SuperChampOffspring > 0 {

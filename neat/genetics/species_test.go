@@ -5,22 +5,22 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 )
 
-func buildSpeciesWithOrganisms() *Species {
+func buildSpeciesWithOrganisms(id int) *Species {
 	gen := &Genome{
 		GenomeId:1,
 	}
 
-	sp := NewSpecies(1)
-	sp.addOrganism(NewOrganism(5.0, gen, 1))
-	sp.addOrganism(NewOrganism(15.0, gen, 1))
-	sp.addOrganism(NewOrganism(10.0, gen, 1))
+	sp := NewSpecies(id)
+	sp.addOrganism(NewOrganism(5.0 * float64(id), gen, id))
+	sp.addOrganism(NewOrganism(15.0 * float64(id), gen, id))
+	sp.addOrganism(NewOrganism(10.0 * float64(id), gen, id))
 
 	return sp
 }
 
 // Tests Species ReadGene
 func TestGene_adjustFitness(t *testing.T)  {
-	sp := buildSpeciesWithOrganisms()
+	sp := buildSpeciesWithOrganisms(1)
 
 	// Configuration
 	conf := neat.Neat{
@@ -47,7 +47,7 @@ func TestGene_adjustFitness(t *testing.T)  {
 
 // Tests Species countOffspring
 func TestSpecies_countOffspring(t *testing.T) {
-	sp := buildSpeciesWithOrganisms()
+	sp := buildSpeciesWithOrganisms(1)
 	for i, o := range sp.Organisms {
 		o.ExpectedOffspring = float64(i) * 1.5
 	}
@@ -61,7 +61,7 @@ func TestSpecies_countOffspring(t *testing.T) {
 		t.Error("skim", 0, skim)
 	}
 
-	sp = buildSpeciesWithOrganisms()
+	sp = buildSpeciesWithOrganisms(2)
 	for i, o := range sp.Organisms {
 		o.ExpectedOffspring = float64(i) * 1.5
 	}
@@ -76,7 +76,7 @@ func TestSpecies_countOffspring(t *testing.T) {
 
 // Tests Species computeAvgFitness
 func TestSpecies_computeAvgFitness(t *testing.T) {
-	sp := buildSpeciesWithOrganisms()
+	sp := buildSpeciesWithOrganisms(1)
 
 	avg_check := 0.0
 	for _, o := range sp.Organisms{
@@ -91,7 +91,7 @@ func TestSpecies_computeAvgFitness(t *testing.T) {
 }
 
 func TestSpecies_computeMaxFitness(t *testing.T) {
-	sp := buildSpeciesWithOrganisms()
+	sp := buildSpeciesWithOrganisms(1)
 
 	sp.computeMaxFitness()
 	if sp.MaxFitness != 15.0 {
@@ -100,7 +100,7 @@ func TestSpecies_computeMaxFitness(t *testing.T) {
 }
 
 func TestSpecies_findChampion(t *testing.T) {
-	sp := buildSpeciesWithOrganisms()
+	sp := buildSpeciesWithOrganisms(1)
 
 	champ := sp.findChampion()
 	if champ.Fitness != 15.0 {
@@ -110,7 +110,7 @@ func TestSpecies_findChampion(t *testing.T) {
 }
 
 func TestSpecies_removeOrganism(t *testing.T) {
-	sp := buildSpeciesWithOrganisms()
+	sp := buildSpeciesWithOrganisms(1)
 
 	// test remove
 	size := len(sp.Organisms)
@@ -140,5 +140,51 @@ func TestSpecies_removeOrganism(t *testing.T) {
 	}
 	if size != len(sp.Organisms) {
 		t.Error("size != len(sp.Organisms)", size, len(sp.Organisms))
+	}
+}
+
+// Tests Species reproduce failure
+func TestSpecies_reproduce_fail(t *testing.T) {
+	sp := NewSpecies(1)
+
+	sp.ExpectedOffspring = 1
+
+	res, err := sp.reproduce(1, nil, nil, nil)
+	if res != false {
+		t.Error("res != false")
+	}
+	if err == nil {
+		t.Error("err == nil")
+	}
+}
+
+// Tests Species reproduce success
+func TestSpecies_reproduce(t *testing.T) {
+	sp := buildSpeciesWithOrganisms(1)
+	sp.ExpectedOffspring = 2
+
+	sorted_species := []*Species {
+		buildSpeciesWithOrganisms(4),
+		buildSpeciesWithOrganisms(3),
+		buildSpeciesWithOrganisms(2),
+	}
+
+	// Configuration
+	conf := neat.Neat{
+		DropOffAge:5,
+		SurvivalThresh:0.5,
+		AgeSignificance:0.5,
+		PopSize:3,
+	}
+
+	res, err := sp.reproduce(1, nil, sorted_species, &conf)
+	if !res {
+		t.Error("!res", err)
+	}
+	if err != nil {
+		t.Error("err != nil", err)
+	}
+	if len(sp.Organisms) != 4 {
+		t.Error("No new baby was created")
 	}
 }
