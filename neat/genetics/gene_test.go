@@ -12,8 +12,7 @@ import (
 // Tests Gene ReadGene
 func TestGene_ReadGene(t *testing.T)  {
 	// gene  1 1 4 1.1983046913458986 0 1.0 1.1983046913458986 0
-	traitId, inNodeId, outNodeId := 1, 1, 4
-	innov_num := int64(1)
+	traitId, inNodeId, outNodeId, innov_num := 1, 1, 4, 1
 	weight, mut_num := 1.1983046913458986, 1.1983046913458986
 	recurrent, enabled := false, false
 	gene_str := fmt.Sprintf("%d %d %d %g %t %d %g %t",
@@ -58,8 +57,7 @@ func TestGene_ReadGene(t *testing.T)  {
 // Tests Gene WriteGene
 func TestGene_WriteGene(t *testing.T)  {
 	// gene  1 1 4 1.1983046913458986 0 1.0 1.1983046913458986 0
-	traitId, inNodeId, outNodeId := 1, 1, 4
-	innov_num := int64(1)
+	traitId, inNodeId, outNodeId, innov_num := 1, 1, 4, 1
 	weight, mut_num := 1.1983046913458986, 1.1983046913458986
 	recurrent, enabled := false, false
 	gene_str := fmt.Sprintf("%d %d %d %g %t %d %g %t",

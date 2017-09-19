@@ -20,7 +20,7 @@ type Gene struct {
 	// The link between nodes
 	Link *network.Link
 	// The current innovation number for this gene
-	InnovationNum int64
+	InnovationNum int
 	// Used to see how much mutation has changed the link
 	MutationNum float64
 	// If true the gene is enabled
@@ -28,13 +28,13 @@ type Gene struct {
 }
 
 // Creates new Gene
-func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, inov_num int64, mut_num float64) *Gene  {
+func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, inov_num int, mut_num float64) *Gene  {
 	return newGene(network.NewLink(weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
 // Creates new Gene with Trait
 func NewGeneWithTrait(trait *neat.Trait, weight float64, in_node, out_node *network.NNode,
-			recurrent bool, inov_num int64, mut_num float64) *Gene  {
+			recurrent bool, inov_num int, mut_num float64) *Gene  {
 	return newGene(network.NewLinkWithTrait(trait, weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
@@ -47,7 +47,7 @@ func NewGeneGeneCopy(g *Gene, trait *neat.Trait, in_node, out_node *network.NNod
 // Reads Gene from reader
 func ReadGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) *Gene  {
 	var traitId, inNodeId, outNodeId int
-	var inov_num int64
+	var inov_num int
 	var weight, mut_num float64
 	var recurrent, enabled bool
 	fmt.Fscanf(r, "%d %d %d %g %t %d %g %t ",
@@ -77,7 +77,7 @@ func ReadGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) *Gene  
 	}
 }
 
-func newGene(link *network.Link, inov_num int64, mut_num float64, enabled bool) *Gene {
+func newGene(link *network.Link, inov_num int, mut_num float64, enabled bool) *Gene {
 	return &Gene{
 		Link:link,
 		InnovationNum:inov_num,
@@ -116,9 +116,9 @@ func (g *Gene) String() string  {
 	}
 	trait_str := ""
 	if g.Link.LinkTrait != nil {
-		trait_str = fmt.Sprintf("Link's trait_id %d", g.Link.LinkTrait.Id)
+		trait_str = fmt.Sprintf(" Link's trait_id %d", g.Link.LinkTrait.Id)
 	}
-	return fmt.Sprintf("[Link (%4d, %4d) INNOV (%4d, %.3f) Weight %.3f %s %s %s]",
+	return fmt.Sprintf("[Link (%4d, %4d) INNOV (%4d, % .3f) Weight % .3f %s%s%s : %s->%s]",
 		g.Link.InNode.Id, g.Link.OutNode.Id, g.InnovationNum, g.MutationNum, g.Link.Weight,
-		trait_str, enabl_str, recurr_str)
+		trait_str, enabl_str, recurr_str, g.Link.InNode, g.Link.OutNode)
 }
