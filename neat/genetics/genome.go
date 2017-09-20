@@ -264,6 +264,35 @@ func (g *Genome) WriteGenome(w io.Writer) {
 	fmt.Fprintf(w, "genomeend %d\n", g.Id)
 }
 
+// Stringer
+func (g *Genome) String() string {
+	str := "GENOME START\nNodes:\n"
+	for _, n := range g.Nodes {
+		n_type := ""
+		switch n.NType {
+		case network.INPUT:
+			n_type = "I"
+		case network.OUTPUT:
+			n_type = "O"
+		case network.BIAS:
+			n_type = "B"
+		case network.HIDDEN:
+			n_type = "H"
+		}
+		str += fmt.Sprintf("\t%s%s \n", n_type, n)
+	}
+	str += "Genes:\n"
+	for _, gn := range g.Genes {
+		str += fmt.Sprintf("\t%s\n", gn)
+	}
+	str += "Traits:\n"
+	for _, t := range g.Traits {
+		str += fmt.Sprintf("\t%s\n", t)
+	}
+	str += "GENOME END"
+	return str
+}
+
 // Generate a Network phenotype from this Genome with specified id
 func (g *Genome) genesis(net_id int) *network.Network {
 	// Inputs and outputs will be collected here for the network.
