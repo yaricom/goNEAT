@@ -252,10 +252,10 @@ func (n *NNode) Depth(d int32) (int32, error) {
 
 func (n *NNode) String() string {
 	if n.IsSensor() {
-		return fmt.Sprintf("(S %3d, type: %d, step %d = %.3f, %s)",
+		return fmt.Sprintf("(S %3d, type: %d, step %d = %.3f %.3f)",
 			n.Id, n.NType, n.ActivationsCount, n.Activation, n.Params)
 	} else {
-		return fmt.Sprintf("(N %3d, type: %d, step %d = %.3f %s)",
+		return fmt.Sprintf("(N %3d, type: %d, step %d = %.3f %.3f)",
 			n.Id, n.NType, n.ActivationsCount, n.Activation, n.Params)
 	}
 }
