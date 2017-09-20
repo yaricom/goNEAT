@@ -37,11 +37,6 @@ func NewNetwork(in, out, all []*NNode, net_id int) *Network {
 	return &n
 }
 
-// The private network data holder
-type network struct {
-
-}
-
 // Puts the network back into an initial state
 func (n *Network) Flush() {
 	// Flush back recursively
