@@ -50,10 +50,6 @@ func NewLinkWithTrait(trait *neat.Trait, weight float64, innode, outnode *NNode,
 	return link
 }
 
-func NewLinkWeight(weight float64) *Link {
-	return newLink(weight)
-}
-
 // The private default constructor
 func newLink(weight float64) *Link {
 	return &Link{
