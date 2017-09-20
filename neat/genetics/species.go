@@ -220,9 +220,6 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 	// The champion of the 'this' specie is the first element of the specie;
 	the_champ := s.Organisms[0]
 
-	// TODO check if we really need this
-	//var net_analogue *network.Network  // For adding link to test for reccurrency
-
 	// Parent Organisms and new Organism
 	var mom, dad, baby *Organism
 
@@ -261,7 +258,6 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					new_genome.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
 				} else {
 					// Sometimes we add a link to a superchamp
-					//net_analogue = new_genome.genesis(generation)
 					new_genome.mutateAddLink(pop, conf.NewLinkTries)
 					mut_struct_baby = true;
 				}
@@ -296,7 +292,6 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				mut_struct_baby = true
 			} else if rand.Float64() < conf.MutateAddLinkProb {
 				// Mutate add link
-				//net_analogue = new_genome.genesis(generation)
 				new_genome.mutateAddLink(pop, conf.NewLinkTries)
 				mut_struct_baby = true
 			} else {
@@ -337,10 +332,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Perform mating based on probabilities of different mating types
 			if rand.Float64() < conf.MateMultipointProb {
 				// mate multipoint baby
-				new_genome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
+				new_genome = mom.GNome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
 			} else if rand.Float64() < conf.MateMultipointAvgProb / (conf.MateMultipointAvgProb + conf.MateSinglepointProb) {
 				// mate multipoint_avg baby
-				new_genome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
+				new_genome = mom.GNome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
 			} else {
 				new_genome = mom.GNome.mateSinglepoint(dad.GNome, count)
 			}
@@ -359,7 +354,6 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					mut_struct_baby = true
 				} else if rand.Float64() < conf.MutateAddLinkProb {
 					// mutate_add_link
-					//net_analogue = new_genome.genesis(generation)
 					new_genome.mutateAddLink(pop, conf.NewLinkTries)
 					mut_struct_baby = true
 				} else {
