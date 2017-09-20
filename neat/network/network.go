@@ -8,67 +8,13 @@ import (
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
 // The point of the network is to define a single entity which can evolve
 // or learn on its own, even though it may be part of a larger framework.
-type Network interface {
-	// Puts the network back into an initial state
-	Flush()
-	// Activates the net such that all outputs are active
-	Activate() (bool, error)
-	// If at least one output is not active then return true
-	OutputIsOff() bool
+type Network struct {
+	// A network id
+	Id int
+	// Is a name of this network */
+	Name string
 
-	// Prints the values of network outputs to the console
-	PrintActivation()
-	// Print the values of network inputs to the console
-	PrintInput()
-	// Verify that network was successfully flushed for debugging
-	FlushCheck() error
-
-	// Adds a new input node
-	AddInputNode(node *NNode)
-	// Adds a new output node
-	AddOutputNode(node *NNode)
-
-	// Takes an array of sensor values and loads it into SENSOR inputs ONLY
-	LoadSensors(sensors []float64)
-	// Set network name
-	SetName(name string)
-
-	// This checks a POTENTIAL link between a potential in_node
-     	// and potential out_node to see if it must be recurrent.
-	// Use count and thresh to jump out in the case of an infinite loop.
-	IsRecurrent(potin_node, potout_node *NNode, count *int, thresh int) bool
-	// Find the maximum number of neurons between an output and an input
-	MaxDepth() (int32, error)
-
-	// Counts the number of nodes in the net
-	NodeCount() int
-	// Counts the number of links in the net
-	LinkCount() int
-
-	// Returns all nodes in the network
-	AllNodes() []*NNode
-}
-
-// Creates new network
-func NewNetwork(in, out, all []*NNode, netid int32) Network {
-	n := newNetwork(netid)
-	n.inputs = in
-	n.outputs = out
-	n.all_nodes = all
-	return &n
-}
-
-// The default private constructor
-func newNetwork(netId int32) network {
-	return network {
-		numlinks:-1,
-		net_id:netId,
-	}
-}
-
-// The private network data holder
-type network struct {
-	//The number of links in the net (-1 means not yet counted)
+	// The number of links in the net (-1 means not yet counted)
 	numlinks int
 
 	// A list of all the nodes in the network
@@ -77,22 +23,35 @@ type network struct {
 	inputs []*NNode
 	// NNodes that output from the network
 	outputs []*NNode
-
-	// A network id
-	net_id int32
-
-	// Is a name of this network */
-	name string
 }
 
-// The Network interface implementation
-func (n *network) Flush() {
+// Creates new network
+func NewNetwork(in, out, all []*NNode, net_id int) *Network {
+	n := Network{
+		Id:net_id,
+		inputs:in,
+		outputs:out,
+		all_nodes:all,
+		numlinks:-1,
+	}
+	return &n
+}
+
+// The private network data holder
+type network struct {
+
+}
+
+// Puts the network back into an initial state
+func (n *Network) Flush() {
 	// Flush back recursively
 	for _, node := range n.all_nodes {
 		node.Flushback()
 	}
 }
-func (n *network) FlushCheck() error {
+
+// Verify that network was successfully flushed for debugging
+func (n *Network) FlushCheck() error {
 	for _, node := range n.all_nodes {
 		err := node.FlushbackCheck()
 		if err != nil {
@@ -101,21 +60,27 @@ func (n *network) FlushCheck() error {
 	}
 	return nil
 }
-func (n *network) PrintActivation() {
-	fmt.Printf("Network %s with id %d outputs: (", n.name, n.net_id)
+
+// Prints the values of network outputs to the console
+func (n *Network) PrintActivation() {
+	fmt.Printf("Network %s with id %d outputs: (", n.Name, n.Id)
 	for i, node := range n.outputs {
 		fmt.Printf("[Output #%d: %s] ", i, node)
 	}
 	fmt.Println(")")
 }
-func (n *network) PrintInput() {
-	fmt.Printf("Network %s with id %d inputs: (", n.name, n.net_id)
+
+// Print the values of network inputs to the console
+func (n *Network) PrintInput() {
+	fmt.Printf("Network %s with id %d inputs: (", n.Name, n.Id)
 	for i, node := range n.inputs {
 		fmt.Printf("[Input #%d: %s] ", i, node)
 	}
 	fmt.Println(")")
 }
-func (n *network) OutputIsOff() bool {
+
+// If at least one output is not active then return true
+func (n *Network) OutputIsOff() bool {
 	for _, node := range n.outputs {
 		if node.ActivationsCount == 0 {
 			return true
@@ -123,7 +88,9 @@ func (n *network) OutputIsOff() bool {
 	}
 	return false
 }
-func (n *network) Activate() (bool, error) {
+
+// Activates the net such that all outputs are active
+func (n *Network) Activate() (bool, error) {
 	//For adding to the activesum
 	add_amount := 0.0
 	//Make sure we at least activate once
@@ -191,13 +158,19 @@ func (n *network) Activate() (bool, error) {
 	}
 	return true, nil
 }
-func (n *network) AddInputNode(node *NNode) {
+
+// Adds a new input node
+func (n *Network) AddInputNode(node *NNode) {
 	n.inputs = append(n.inputs, node)
 }
-func (n *network) AddOutputNode(node *NNode) {
+
+// Adds a new output node
+func (n *Network) AddOutputNode(node *NNode) {
 	n.outputs = append(n.outputs, node)
 }
-func (n *network) LoadSensors(sensors []float64) {
+
+// Takes an array of sensor values and loads it into SENSOR inputs ONLY
+func (n *Network) LoadSensors(sensors []float64) {
 	counter := 0
 	for _, node := range n.inputs {
 		if node.IsSensor() {
@@ -206,13 +179,14 @@ func (n *network) LoadSensors(sensors []float64) {
 		}
 	}
 }
-func (n *network) SetName(name string) {
-	n.name = name
-}
-func (n network) NodeCount() int {
+
+// Counts the number of nodes in the net
+func (n *Network) NodeCount() int {
 	return len(n.all_nodes)
 }
-func (n network) LinkCount() int {
+
+// Counts the number of links in the net
+func (n *Network) LinkCount() int {
 	n.numlinks = 0
 	for _, node := range n.all_nodes {
 		n.numlinks += len(node.Incoming)
@@ -220,7 +194,10 @@ func (n network) LinkCount() int {
 	return n.numlinks
 }
 
-func (n *network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) bool {
+// This checks a POTENTIAL link between a potential in_node
+// and potential out_node to see if it must be recurrent.
+// Use count and thresh to jump out in the case of an infinite loop.
+func (n *Network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) bool {
 	// Count the node as visited
 	*count++
 
@@ -245,7 +222,8 @@ func (n *network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) 
 	return false
 }
 
-func (n *network) MaxDepth() (int32, error) {
+// Find the maximum number of neurons between an output and an input
+func (n *Network) MaxDepth() (int32, error) {
 	max := int32(0) // The max depth
 	for _, node := range n.outputs {
 		curr_depth, err := node.Depth(0)
@@ -259,6 +237,7 @@ func (n *network) MaxDepth() (int32, error) {
 	return max, nil
 }
 
-func (n *network) AllNodes() []*NNode {
+// Returns all nodes in the network
+func (n *Network) AllNodes() []*NNode {
 	return n.all_nodes
 }

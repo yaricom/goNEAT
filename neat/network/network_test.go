@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func buildNetwork() Network {
+func buildNetwork() *Network {
 	all_nodes := []*NNode {
 		NewNNodeInPlace(SENSOR, 1, INPUT),
 		NewNNodeInPlace(SENSOR, 2, INPUT),

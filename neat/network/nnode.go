@@ -80,7 +80,7 @@ func NewNNodeInPlace(ntype, nodeid, placement int) *NNode {
 }
 
 // Construct a NNode off another NNode with given trait for genome purposes
-func NewNNodeCopy(n NNode, t *neat.Trait) *NNode {
+func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 	node := newNode()
 	node.NType = n.NType
 	node.Id = n.Id
