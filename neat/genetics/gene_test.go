@@ -37,8 +37,8 @@ func TestGene_ReadGene(t *testing.T)  {
 		t.Error("gene.IsEnabled", enabled, gene.IsEnabled)
 	}
 	link := gene.Link
-	if link.LinkTrait.Id != traitId {
-		t.Error("link.LinkTrait.TraitId", traitId, link.LinkTrait.Id)
+	if link.Trait.Id != traitId {
+		t.Error("link.LinkTrait.TraitId", traitId, link.Trait.Id)
 	}
 	if link.InNode.Id != inNodeId {
 		t.Error("link.InNode.NodeId", inNodeId, link.InNode.Id)

@@ -90,8 +90,8 @@ func newGene(link *network.Link, inov_num int, mut_num float64, enabled bool) *G
 func (g *Gene) WriteGene(w io.Writer)  {
 	link := g.Link
 	traitId := 0
-	if link.LinkTrait != nil {
-		traitId = link.LinkTrait.Id
+	if link.Trait != nil {
+		traitId = link.Trait.Id
 	}
 	inNodeId := link.InNode.Id
 	outNodeId := link.OutNode.Id
@@ -115,8 +115,8 @@ func (g *Gene) String() string  {
 		recurr_str = " -RECUR-"
 	}
 	trait_str := ""
-	if g.Link.LinkTrait != nil {
-		trait_str = fmt.Sprintf(" Link's trait_id %d", g.Link.LinkTrait.Id)
+	if g.Link.Trait != nil {
+		trait_str = fmt.Sprintf(" Link's trait_id %d", g.Link.Trait.Id)
 	}
 	return fmt.Sprintf("[Link (%4d, %4d) INNOV (%4d, % .3f) Weight % .3f %s%s%s : %s->%s]",
 		g.Link.InNode.Id, g.Link.OutNode.Id, g.InnovationNum, g.MutationNum, g.Link.Weight,
