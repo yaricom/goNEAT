@@ -346,7 +346,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// This is done randomly or if the mom and dad are the same organism
 			if rand.Float64() > conf.MateOnlyProb ||
 				dad.GNome.Id == mom.GNome.Id ||
-				dad.GNome.compatibility(mom.GNome) == 0.0 {
+				dad.GNome.compatibility(mom.GNome, conf) == 0.0 {
 				// Do the mutation depending on probabilities of  various mutations
 				if rand.Float64() < conf.MutateAddNodeProb {
 					// mutate_add_node
@@ -381,7 +381,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 						// point to first organism of this _specie
 						compare_org := _specie.Organisms[0]
 						// compare baby organism with first organism in current specie
-						curr_compat := baby.GNome.compatibility(compare_org.GNome)
+						curr_compat := baby.GNome.compatibility(compare_org.GNome, conf)
 
 						if curr_compat < conf.CompatThreshold {
 							// Found compatible species, so add this baby to it
