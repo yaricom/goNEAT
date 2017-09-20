@@ -7,6 +7,7 @@ import (
 	"io"
 	"fmt"
 	"errors"
+	"math"
 )
 
 // A Genome is the primary source of genotype information used to create  a phenotype.
@@ -591,9 +592,52 @@ func (g *Genome) mateSinglepoint(og *Genome, genomeid int) *Genome {
 // PERCENT EXCESS GENES, MUTATIONAL DIFFERENCE WITHIN MATCHING GENES. So the formula for compatibility
 // is:  disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // The 3 coefficients are global system parameters */
-func (g *Genome) compatibility(og *Genome) float64 {
-	// TODO implement this
-	return 0.0
+func (g *Genome) compatibility(og *Genome, conf *neat.Neat) float64 {
+	num_disjoint, num_excess, mut_diff_total, num_matching := 0.0, 0.0, 0.0, 0.0
+	size1, size2 := len(g.Genes), len(og.Genes)
+	max_genome_size := size2
+	if size1 > size2 {
+		max_genome_size = size1
+	}
+	var gene1, gene2 *Gene
+	for i, i1, i2 := 0, 0, 0; i < max_genome_size; i++ {
+		if i1 >= size1 {
+			num_excess += 1.0
+			i2++
+		} else if i2 >= size2 {
+			num_excess += 1.0
+			i1++
+		} else {
+			gene1 = g.Genes[i1]
+			gene2 = og.Genes[i2]
+			p1innov := gene1.InnovationNum
+			p2innov := gene2.InnovationNum
+
+			if p1innov == p2innov {
+				num_matching += 1.0
+				mut_diff :=  math.Abs(gene1.MutationNum - gene2.MutationNum)
+				mut_diff_total += mut_diff
+				i1++
+				i2++
+			} else if p1innov < p2innov {
+				i1++
+				num_disjoint += 1.0
+			} else if p2innov < p1innov {
+				i2++
+				num_disjoint += 1.0
+			}
+		}
+	}
+
+	//fmt.Printf("num_disjoint: %.f num_excess: %.f mut_diff_total: %.f num_matching: %.f\n", num_disjoint, num_excess, mut_diff_total, num_matching)
+
+	// Return the compatibility number using compatibility formula
+	// Note that mut_diff_total/num_matching gives the AVERAGE difference between mutation_nums for any two matching
+	// Genes in the Genome. Look at disjointedness and excess in the absolute (ignoring size)
+	comp := conf.DisjointCoeff * num_disjoint + conf.ExcessCoeff * num_excess +
+		conf.MutdiffCoeff * (mut_diff_total / num_matching)
+
+	return comp
 }
 
 
