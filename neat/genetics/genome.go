@@ -56,7 +56,7 @@ func NewGenomeFromLinks(id int, t []*neat.Trait, n []*network.NNode, links []*ne
 	}
 	// Iterate over links and turn them into genes
 	for i, l := range links {
-		gnome.Genes[i] = NewGeneWithTrait(l.LinkTrait, l.Weight, l.InNode, l.OutNode, l.IsRecurrent, 1.0, 0.0)
+		gnome.Genes[i] = NewGeneWithTrait(l.Trait, l.Weight, l.InNode, l.OutNode, l.IsRecurrent, 1.0, 0.0)
 	}
 	return &gnome
 }
@@ -82,7 +82,7 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 	// Create a dummy trait (this is for future expansion of the system)
 	new_trait = neat.NewTrait()
 	new_trait.Id = 1
-	new_trait.Params = []float64{0, 0, 0, 0, 0, 0, 0, 0, 0}
+	new_trait.Params = make([]float64, neat.Num_trait_params)
 
 	// Create empty genome
 	gnome := Genome {
@@ -267,14 +267,128 @@ func (g *Genome) WriteGenome(w io.Writer) {
 
 // Generate a Network phenotype from this Genome with specified id
 func (g *Genome) genesis(net_id int) *network.Network {
-	// TODO Implement this
-	return nil
+	// Inputs and outputs will be collected here for the network.
+	// All nodes are collected in an all_list -
+	// this is useful for network traversing routines
+	in_list := make([]*network.NNode, 0)
+	out_list := make([]*network.NNode, 0)
+	all_list := make([]*network.NNode, 0)
+
+	var new_node *network.NNode
+	// Create the network nodes
+	for _, n := range g.Nodes {
+		new_node = network.NewNNodeCopy(n, n.Trait)
+
+		// Check for input or output designation of node
+		if n.GenNodeLabel == network.INPUT || n.GenNodeLabel == network.BIAS {
+			in_list = append(in_list, new_node)
+		} else if n.GenNodeLabel == network.OUTPUT {
+			out_list = append(out_list, new_node)
+		}
+
+		// Keep track of all nodes in one place for convenience
+		all_list = append(all_list, new_node)
+
+		// Have the node specifier point to the node it generated
+		n.Analogue = new_node
+	}
+
+	if len(g.Genes)  == 0 {
+		fmt.Println("ALERT : the network built whitout GENES; the result can be unpredictable")
+	}
+
+
+	if len(out_list) == 0 {
+		fmt.Println("ALERT : the network whitout OUTPUTS; the result can be unpredictable");
+		fmt.Println(g)
+	}
+
+	var in_node, out_node *network.NNode
+	var cur_link, new_link *network.Link
+	// Create the links by iterating through the genes
+	for _, gn := range g.Genes {
+		// Only create the link if the gene is enabled
+		if gn.IsEnabled {
+			cur_link = gn.Link
+			in_node = cur_link.InNode.Analogue
+			out_node = cur_link.OutNode.Analogue
+
+			// NOTE: This line could be run through a recurrency check if desired
+			// (no need to in the current implementation of NEAT)
+			new_link = network.NewLinkWithTrait(cur_link.Trait, cur_link.Weight, in_node, out_node, cur_link.IsRecurrent)
+
+			// Add link to the connected nodes
+			out_node.Incoming = append(out_node.Incoming, new_link)
+			in_node.Outgoing = append(in_node.Outgoing, new_link)
+		}
+	}
+
+	// Create the new network
+	new_net := network.NewNetwork(in_list, out_list, all_list, net_id)
+	// Attach genotype and phenotype together:
+	// new_net point to owner genotype (this)
+	// TODO new_net.Genome = g
+
+	// genotype points to owner phenotype (new_net)
+	g.Phenotype = new_net
+
+	return new_net
 }
 
 // Duplicate this Genome to create a new one with the specified id
 func (g *Genome) duplicate(new_id int) *Genome {
-	// TODO Implement this
-	return nil
+
+	// Duplicate the traits
+	traits_dup := make([]*neat.Trait, 0)
+	for _, tr := range g.Traits {
+		new_trait := neat.NewTraitCopy(tr)
+		traits_dup = append(traits_dup, new_trait)
+	}
+
+	// Duplicate NNodes
+	var assoc_trait *neat.Trait
+	nodes_dup := make([]*network.NNode, 0)
+	for _, nd := range g.Nodes {
+		// First, find the trait that this node points to
+		assoc_trait = nil
+		if nd.Trait != nil {
+			for _, tr := range traits_dup {
+				if nd.Trait.Id == tr.Id {
+					assoc_trait = tr
+					break
+				}
+			}
+		}
+
+		new_node := network.NewNNodeCopy(nd, assoc_trait)
+		// Remember this node's old copy
+		nd.Duplicate = new_node
+
+		nodes_dup = append(nodes_dup, new_node)
+	}
+
+	// Duplicate Genes
+	genes_dup := make([]*Gene, 0)
+	for _, gn := range g.Genes {
+		// First find the nodes connected by the gene's link
+		in_node := gn.Link.InNode.Duplicate
+		out_node := gn.Link.OutNode.Duplicate
+
+		// Find the trait associated with this gene
+		assoc_trait = nil
+		if gn.Link.Trait != nil {
+			for _, tr := range traits_dup {
+				if gn.Link.Trait.Id == tr.Id {
+					assoc_trait = tr
+					break
+				}
+			}
+		}
+		new_gene := NewGeneGeneCopy(gn, assoc_trait, in_node, out_node)
+		genes_dup = append(genes_dup, new_gene)
+	}
+
+	return NewGenome(new_id, traits_dup, nodes_dup, genes_dup)
 }
 
 /* ******* MUTATORS ******* */

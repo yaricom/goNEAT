@@ -7,6 +7,7 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 	"bytes"
 	"bufio"
+	"reflect"
 )
 
 const gnome_str = "genomestart 1\n" +
@@ -21,6 +22,29 @@ const gnome_str = "genomestart 1\n" +
 	"gene 2 2 4 2.5 false 2 0 true\n" +
 	"gene 3 3 4 3.5 false 3 0 true\n" +
 	"genomeend 1"
+
+func buildTestGenome(id int) *Genome {
+	traits := []*neat.Trait {
+		neat.ReadTrait(strings.NewReader("1 0.1 0 0 0 0 0 0 0")),
+		neat.ReadTrait(strings.NewReader("2 0.2 0 0 0 0 0 0 0")),
+		neat.ReadTrait(strings.NewReader("3 0.3 0 0 0 0 0 0 0")),
+	}
+
+	nodes := []*network.NNode {
+		network.ReadNNode(strings.NewReader("1 0 1 1"), traits),
+		network.ReadNNode(strings.NewReader("2 0 1 1"), traits),
+		network.ReadNNode(strings.NewReader("3 0 1 3"), traits),
+		network.ReadNNode(strings.NewReader("4 0 0 2"), traits),
+	}
+
+	genes := []*Gene {
+		ReadGene(strings.NewReader("1 1 4 1.5 false 1 0 true"), traits, nodes),
+		ReadGene(strings.NewReader("2 2 4 2.5 false 2 0 true"), traits, nodes),
+		ReadGene(strings.NewReader("3 3 4 3.5 false 3 0 true"), traits, nodes),
+	}
+
+	return NewGenome(id, traits, nodes, genes)
+}
 
 // Tests Genome reading
 func TestGenome_ReadGenome(t *testing.T) {
@@ -91,8 +115,8 @@ func TestGenome_ReadGenome(t *testing.T) {
 	}
 
 	for i, g := range gnome.Genes {
-		if g.Link.LinkTrait.Id != i + 1 {
-			t.Error("Gene Link Traid Id is wrong", g.Link.LinkTrait.Id)
+		if g.Link.Trait.Id != i + 1 {
+			t.Error("Gene Link Traid Id is wrong", g.Link.Trait.Id)
 		}
 		if g.Link.InNode.Id != i + 1 {
 			t.Error("Gene link's input node Id is wrong", g.Link.InNode.Id)
@@ -120,26 +144,8 @@ func TestGenome_ReadGenome(t *testing.T) {
 
 // Test write Genome
 func TestGenome_WriteGenome(t *testing.T) {
-	traits := []*neat.Trait {
-		neat.ReadTrait(strings.NewReader("1 0.1 0 0 0 0 0 0 0")),
-		neat.ReadTrait(strings.NewReader("2 0.2 0 0 0 0 0 0 0")),
-		neat.ReadTrait(strings.NewReader("3 0.3 0 0 0 0 0 0 0")),
-	}
 
-	nodes := []*network.NNode {
-		network.ReadNNode(strings.NewReader("1 0 1 1"), traits),
-		network.ReadNNode(strings.NewReader("2 0 1 1"), traits),
-		network.ReadNNode(strings.NewReader("3 0 1 3"), traits),
-		network.ReadNNode(strings.NewReader("4 0 0 2"), traits),
-	}
-
-	genes := []*Gene {
-		ReadGene(strings.NewReader("1 1 4 1.5 false 1 0 true"), traits, nodes),
-		ReadGene(strings.NewReader("2 2 4 2.5 false 2 0 true"), traits, nodes),
-		ReadGene(strings.NewReader("3 3 4 3.5 false 3 0 true"), traits, nodes),
-	}
-
-	gnome := NewGenome(1, traits, nodes, genes)
+	gnome := buildTestGenome(1)
 	out_buf := bytes.NewBufferString("")
 	gnome.WriteGenome(out_buf)
 
@@ -155,7 +161,7 @@ func TestGenome_WriteGenome(t *testing.T) {
 	}
 }
 
-// Test create rnadom genome
+// Test create random genome
 func TestGenome_NewGenomeRand(t *testing.T) {
 	new_id, in, out, n, nmax := 1, 3, 2, 2, 5
 	recurrent := false
@@ -175,5 +181,64 @@ func TestGenome_NewGenomeRand(t *testing.T) {
 
 	for _, g := range gnome.Genes {
 		t.Log(g)
+	}
+}
+
+// Test genesis
+func TestGenome_Genesis(t *testing.T)  {
+	gnome := buildTestGenome(1)
+
+	net_id := 10
+
+	net := gnome.genesis(net_id)
+	if net == nil {
+		t.Error("Failed to do network genesis")
+	}
+	if net.Id != net_id {
+		t.Error("net.Id != net_id", net.Id)
+	}
+	if net.NodeCount() != len(gnome.Nodes) {
+		t.Error("net.NodeCount() != len(nodes)", net.NodeCount(), len(gnome.Nodes))
+	}
+	if net.LinkCount() != len(gnome.Genes) {
+		t.Error("net.LinkCount() != len(genes)", net.LinkCount(), len(gnome.Genes))
+	}
+}
+
+// Test duplicate
+func TestGenome_Duplicate(t *testing.T)  {
+	gnome := buildTestGenome(1)
+
+	new_gnome := gnome.duplicate(2)
+	if new_gnome.Id != 2 {
+		t.Error("new_gnome.Id != 2", new_gnome.Id)
+	}
+
+	if len(new_gnome.Traits) != len(gnome.Traits) {
+		t.Error("len(new_gnome.Traits) != len(gnome.Traits)", len(new_gnome.Traits), len(gnome.Traits))
+	}
+	if len(new_gnome.Nodes) != len(gnome.Nodes) {
+		t.Error("len(new_gnome.Nodes) != len(gnome.Nodes)", len(new_gnome.Nodes), len(gnome.Nodes))
+	}
+	if len(new_gnome.Genes) != len(gnome.Genes) {
+		t.Error("len(new_gnome.Genes) != len(gnome.Genes)", len(new_gnome.Genes), len(gnome.Genes))
+	}
+
+	for i, tr := range new_gnome.Traits {
+		if !reflect.DeepEqual(tr, gnome.Traits[i]) {
+			t.Error("Wrong trait found in new genome")
+		}
+	}
+	for i, nd := range new_gnome.Nodes {
+		gnome.Nodes[i].Duplicate = nil
+		if !reflect.DeepEqual(nd, gnome.Nodes[i]) {
+			t.Error("Wrong node found in new genome", nd, gnome.Nodes[i])
+		}
+	}
+
+	for i, g := range new_gnome.Genes {
+		if !reflect.DeepEqual(g, gnome.Genes[i]) {
+			t.Error("Wrong gene found", g, gnome.Genes[i])
+		}
 	}
 }
