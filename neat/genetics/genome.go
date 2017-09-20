@@ -23,17 +23,16 @@ import (
 // population, and the list of Genes provide an evolutionary history of innovation and link-building.
 type Genome struct {
 	// The genome ID
-	Id int
+	Id        int
 	// The parameters conglomerations
-	Traits []*neat.Trait
+	Traits    []*neat.Trait
 	// List of NNodes for the Network
-	Nodes []*network.NNode
+	Nodes     []*network.NNode
 	// List of innovation-tracking genes
-	Genes []*Gene
+	Genes     []*Gene
 
 	// Allows Genome to be matched with its Network
 	Phenotype *network.Network
-
 }
 
 // Constructor which takes full genome specs and puts them into the new one
@@ -85,7 +84,7 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 	new_trait.Params = make([]float64, neat.Num_trait_params)
 
 	// Create empty genome
-	gnome := Genome {
+	gnome := Genome{
 		Id:new_id,
 		Traits:[]*neat.Trait{new_trait},
 		Nodes:make([]*network.NNode, 0),
@@ -189,7 +188,7 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 
 // Reads Genome from reader
 func ReadGenome(r io.Reader, id int) (*Genome, error) {
-	gnome := Genome {
+	gnome := Genome{
 		Id:id,
 		Traits:make([]*neat.Trait, 0),
 		Nodes:make([]*network.NNode, 0),
@@ -293,10 +292,9 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		n.Analogue = new_node
 	}
 
-	if len(g.Genes)  == 0 {
+	if len(g.Genes) == 0 {
 		fmt.Println("ALERT : the network built whitout GENES; the result can be unpredictable")
 	}
-
 
 	if len(out_list) == 0 {
 		fmt.Println("ALERT : the network whitout OUTPUTS; the result can be unpredictable");
@@ -389,6 +387,77 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	}
 
 	return NewGenome(new_id, traits_dup, nodes_dup, genes_dup)
+}
+
+// For debugging: A number of tests can be run on a genome to check its integrity.
+// Note: Some of these tests do not indicate a bug, but rather are meant to be used to detect specific system states.
+func (g *Genome) verify() (bool, error) {
+	if len(g.Genes) == 0 {
+		return false, errors.New("Ganome has no Genes")
+	}
+	if len(g.Nodes) == 0 {
+		return false, errors.New("Ganome has no Nodes")
+	}
+	if len(g.Traits) == 0 {
+		return false, errors.New("Ganome has no Traits")
+	}
+
+
+	// Check each gene's nodes
+	for _, gn := range g.Genes {
+		inode := gn.Link.InNode
+		onode := gn.Link.OutNode
+		i_found, o_found := false, false
+		for i := 0; i < len(g.Nodes) && (!i_found || !o_found); i++ {
+			if inode.Id == g.Nodes[i].Id {
+				i_found = true
+			}
+			if onode.Id == g.Nodes[i].Id {
+				o_found = true
+			}
+		}
+
+		// check results
+		if !i_found {
+			return false, errors.New("Missing input node of gene in the genome nodes")
+		}
+		if !o_found {
+			return false, errors.New("Missing output node of gene in the genome nodes")
+		}
+	}
+
+	// Check for NNodes being out of order
+	last_id := 0
+	for _, n := range g.Nodes {
+		if n.Id < last_id {
+			return false, errors.New("Nodes out of order in genome")
+		}
+		last_id = n.Id
+	}
+
+	// Make sure there are no duplicate genes
+	for _, gn := range g.Genes {
+		for _, gn2 := range g.Genes {
+			if gn != gn2 &&
+				gn.Link.IsRecurrent == gn2.Link.IsRecurrent &&
+				gn.Link.InNode.Id == gn2.Link.InNode.Id &&
+				gn.Link.OutNode.Id == gn2.Link.OutNode.Id {
+				return false, errors.New(fmt.Sprintf("Duplicate genes found. %s == %s", gn, gn2))
+			}
+		}
+	}
+	// Check for 2 disables in a row
+	// Note: Again, this is not necessarily a bad sign
+	if len(g.Nodes) > 500 {
+		disab := false
+		for _, gn := range g.Genes {
+			if gn.IsEnabled == false && disab {
+				return false, errors.New("Two gene disables in a row")
+			}
+			disab = !gn.IsEnabled
+		}
+	}
+	return true, nil
 }
 
 /* ******* MUTATORS ******* */

@@ -242,3 +242,44 @@ func TestGenome_Duplicate(t *testing.T)  {
 		}
 	}
 }
+
+func TestGene_Verify(t *testing.T) {
+	gnome := buildTestGenome(1)
+
+	res, err := gnome.verify()
+
+	if !res {
+		t.Error("Verification failed", err)
+	}
+
+	if err != nil {
+		t.Error("err != nil", err)
+	}
+
+	// Test gene error
+	new_gene := NewGene(1.0, network.NewNNodeInPlace(network.SENSOR, 100, network.INPUT),
+		network.NewNNodeInPlace(network.SENSOR, 101, network.OUTPUT), false, 1, 1.0)
+	gnome.Genes = append(gnome.Genes, new_gene)
+	res, err = gnome.verify()
+	if res {
+		t.Error("Validation should fail")
+	}
+	if err == nil {
+		t.Error("Error is missing")
+	}
+
+	// Test duplicate genes
+	gnome = buildTestGenome(1)
+	gnome.Genes = append(gnome.Genes, NewGene(1.0, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
+		network.NewNNodeInPlace(network.SENSOR, 1, network.OUTPUT), false, 1, 1.0))
+	gnome.Genes = append(gnome.Genes, NewGene(1.0, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
+		network.NewNNodeInPlace(network.SENSOR, 1, network.OUTPUT), false, 1, 1.0))
+	res, err = gnome.verify()
+	if res {
+		t.Error("Validation should fail")
+	}
+	if err == nil {
+		t.Error("Error is missing")
+	}
+
+}
