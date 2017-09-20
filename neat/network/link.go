@@ -9,24 +9,25 @@ import (
 // It can be marked as recurrent.
 type Link struct {
 	// Weight of connection
-	Weight float64
+	Weight        float64
 	// NNode inputting into the link
-	InNode *NNode
+	InNode        *NNode
 	// NNode that the link affects
-	OutNode *NNode
+	OutNode       *NNode
 	// If TRUE the link is recurrent
-	IsRecurrent bool
+	IsRecurrent   bool
 	// If TRUE the link is time delayed
 	IsTimeDelayed bool
 
 	// Points to a trait of parameters for genetic creation
-	LinkTrait *neat.Trait
+	Trait         *neat.Trait
 
 	/* ************ LEARNING PARAMETERS *********** */
-	/* These are link-related parameters that change during Hebbian type learning */
+	// The following parameters are for use in neurons that learn through habituation,
+	// sensitization, or Hebbian-type processes
+	Params        []float64
 	// The amount of weight adjustment
-	AddedWeight float64
-
+	AddedWeight   float64
 }
 
 // Creates new link with specified weight, input and output neurons connected reccurently or not.
@@ -44,7 +45,8 @@ func NewLinkWithTrait(trait *neat.Trait, weight float64, innode, outnode *NNode,
 	link.InNode = innode
 	link.OutNode = outnode
 	link.IsRecurrent = recurrent
-	link.LinkTrait = trait
+	link.Trait = trait
+	link.deriveTrait(trait)
 	return link
 }
 
@@ -63,4 +65,14 @@ func newLink(weight float64) *Link {
 func (l *Link) String() string {
 	return fmt.Sprintf("[Link: (%s <-> %s), weight: %.3f, recurrent: %t, time delayed: %t]",
 		l.InNode, l.OutNode, l.Weight, l.IsRecurrent, l.IsTimeDelayed)
+}
+
+// Copy trait parameters into this link's parameters
+func (l *Link) deriveTrait(t *neat.Trait) {
+	l.Params = make([]float64, neat.Num_trait_params)
+	if t != nil {
+		for i, p := range t.Params {
+			l.Params[i] = p
+		}
+	}
 }

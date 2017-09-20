@@ -38,8 +38,20 @@ type NNode struct {
 
 	// The list of all incoming connections
 	Incoming         []*Link
+	// The list of all outgoing connections
+	Outgoing         []*Link
 	// The trait linked to the node
 	Trait            *neat.Trait
+
+	// Used for Gene decoding
+	Analogue         *NNode
+	// Used for Genome duplication
+	Duplicate        *NNode
+
+	/* ************ LEARNING PARAMETERS *********** */
+	// The following parameters are for use in neurons that learn through habituation,
+	// sensitization, or Hebbian-type processes  */
+	Params           []float64
 
 	// Activation value of node at time t-1; Holds the previous step's activation for recurrency
 	lastActivation   float64
@@ -74,6 +86,7 @@ func NewNNodeCopy(n NNode, t *neat.Trait) *NNode {
 	node.Id = n.Id
 	node.GenNodeLabel = n.GenNodeLabel
 	node.Trait = t
+	node.deriveTrait(t)
 	return node
 }
 
@@ -99,7 +112,18 @@ func newNode() *NNode {
 	return &NNode{
 		FType:SIGMOID,
 		Incoming:make([]*Link, 0),
+		Outgoing:make([]*Link, 0),
 		GenNodeLabel:HIDDEN,
+	}
+}
+
+// Copy trait parameters into this node's parameters
+func (n *NNode) deriveTrait(t *neat.Trait) {
+	n.Params = make([]float64, neat.Num_trait_params)
+	if t != nil {
+		for i, p := range t.Params {
+			n.Params[i] = p
+		}
 	}
 }
 
