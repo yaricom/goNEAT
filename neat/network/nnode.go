@@ -100,9 +100,13 @@ func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
 		for _, t := range traits {
 			if trait_id == t.Id {
 				n.Trait = t
+				n.deriveTrait(t)
 				break
 			}
 		}
+	} else {
+		// just create empty params
+		n.deriveTrait(nil)
 	}
 	return n
 }
@@ -248,9 +252,11 @@ func (n *NNode) Depth(d int32) (int32, error) {
 
 func (n *NNode) String() string {
 	if n.IsSensor() {
-		return fmt.Sprintf("(S %3d, type: %d, step %d = %.3f)", n.Id, n.NType, n.ActivationsCount, n.Activation)
+		return fmt.Sprintf("(S %3d, type: %d, step %d = %.3f, %s)",
+			n.Id, n.NType, n.ActivationsCount, n.Activation, n.Params)
 	} else {
-		return fmt.Sprintf("(N %3d, type: %d, step %d = %.3f)", n.Id, n.NType, n.ActivationsCount, n.Activation)
+		return fmt.Sprintf("(N %3d, type: %d, step %d = %.3f %s)",
+			n.Id, n.NType, n.ActivationsCount, n.Activation, n.Params)
 	}
 }
 
