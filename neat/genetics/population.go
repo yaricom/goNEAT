@@ -19,6 +19,8 @@ type Population struct {
 
 	// The current innovation number for population
 	currInnovNum       int64
+	// The current ID for new node in population
+	currNodeId         int
 }
 
 /* Construct off of a single spawning Genome */
@@ -37,6 +39,12 @@ func (p *Population) getInnovationNumberAndIncrement() int64 {
 	inn_num := p.currInnovNum
 	p.currInnovNum++
 	return inn_num
+}
+// Returns the current node ID which can be used to create new node in population and increment it after
+func (p *Population) getCurrentNodeIdAndIncrement() int {
+	node_id := p.currNodeId
+	p.currNodeId++
+	return node_id
 }
 
 // A Population can be spawned off of a single Genome. There will be size Genomes added to the Population.
