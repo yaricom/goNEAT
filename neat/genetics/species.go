@@ -258,7 +258,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					new_genome.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
 				} else {
 					// Sometimes we add a link to a superchamp
-					new_genome.mutateAddLink(pop, conf.NewLinkTries)
+					_, err := new_genome.mutateAddLink(pop, conf)
+					if err != nil {
+						return false, err
+					}
 					mut_struct_baby = true;
 				}
 			}
@@ -292,7 +295,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				mut_struct_baby = true
 			} else if rand.Float64() < conf.MutateAddLinkProb {
 				// Mutate add link
-				new_genome.mutateAddLink(pop, conf.NewLinkTries)
+				_, err := new_genome.mutateAddLink(pop, conf)
+				if err != nil {
+					return false, err
+				}
 				mut_struct_baby = true
 			} else {
 				//If we didn't do a structural mutation, we do the other kinds
@@ -354,7 +360,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					mut_struct_baby = true
 				} else if rand.Float64() < conf.MutateAddLinkProb {
 					// mutate_add_link
-					new_genome.mutateAddLink(pop, conf.NewLinkTries)
+					_, err := new_genome.mutateAddLink(pop, conf)
+					if err != nil {
+						return false, err
+					}
 					mut_struct_baby = true
 				} else {
 					//Only do other mutations when not doing structural mutations
@@ -369,14 +378,14 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			// Add the baby to its proper Species
 			// If it doesn't fit a Species, create a new one
-			if pop.species == nil || len(pop.species) == 0 {
+			if pop.Species == nil || len(pop.Species) == 0 {
 				// Create the first species
 				createFirstSpecies(pop, baby)
 			} else {
 				found := false
-				for i := 0; i < len(pop.species) && !found; i++ {
+				for i := 0; i < len(pop.Species) && !found; i++ {
 					// point _species
-					_specie := pop.species[i]
+					_specie := pop.Species[i]
 					if len(_specie.Organisms) > 0 {
 						// point to first organism of this _specie
 						compare_org := _specie.Organisms[0]
@@ -407,9 +416,9 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 }
 
 func createFirstSpecies(pop *Population, baby *Organism) {
-	pop.lastSpecies++
-	new_species := NewSpeciesNovel(pop.lastSpecies, true)
-	pop.species = append(pop.species, new_species)
+	pop.LastSpecies++
+	new_species := NewSpeciesNovel(pop.LastSpecies, true)
+	pop.Species = append(pop.Species, new_species)
 	new_species.addOrganism(baby) // Add the baby
 	baby.SpeciesOf = new_species //Point baby to its species
 }
