@@ -492,11 +492,158 @@ func (g *Genome) verify() (bool, error) {
 
 /* ******* MUTATORS ******* */
 
-// Mutate the genome by adding a new link between 2 random NNodes
-func (g *Genome) mutateAddLink(pop *Population, tries int) bool {
-	// TODO Implement this
-	return false
+// Mutate the genome by adding a new link between two random NNodes,
+// if NNodes are already connected, keep trying conf.NewLinkTries times
+func (g *Genome) mutateAddLink(pop *Population, conf *neat.Neat) (bool, error) {
+	// If the phenotype does not exist, exit on false,print error
+	// Note: This should never happen - if it does there is a bug
+	if g.Phenotype == nil {
+		return false, errors.New("Attempt to add link to genome with no phenotype")
+	}
+
+	// These are used to avoid getting stuck in an infinite loop checking for recursion
+	// Note that we check for recursion to control the frequency of adding recurrent links rather than to prevent
+	// any particular kind of error
+	nodes_len := len(g.Nodes)
+	thresh := nodes_len * nodes_len
+
+	// Decide whether to make link recurrent
+	do_recur := false
+	if rand.Float64() < conf.RecurOnlyProb {
+		do_recur = true
+	}
+
+	// Find the first non-sensor so that the to-node won't look at sensors as possible destinations
+	first_nonsensor := 0
+	for _, n := range g.Nodes {
+		if n.NType == network.SENSOR {
+			first_nonsensor++
+		} else {
+			break
+		}
+	}
+
+	// Made attempts to find an unconnected pair
+	try_count := 0
+
+	// Iterate over nodes and try to add new link
+	var node_num_1, node_num_2 int
+	var node_1, node_2 *network.NNode
+	found := false
+	for try_count < conf.NewLinkTries {
+		if do_recur {
+			// 50% of prob to decide create a recurrent link (node X to node X)
+			// 50% of a normal link (node X to node Y)
+			loop_recur := false
+			if rand.Float64() > 0.5 {
+				loop_recur = true
+			}
+			if loop_recur {
+				node_num_1 = first_nonsensor + rand.Intn(nodes_len - first_nonsensor) // only NON SENSOR
+				node_num_2 = node_num_1
+			} else {
+				node_num_1 = rand.Intn(nodes_len)
+				node_num_2 = first_nonsensor + rand.Intn(nodes_len - first_nonsensor) // only NON SENSOR
+			}
+		} else {
+			node_num_1 = rand.Intn(nodes_len)
+			node_num_2 = first_nonsensor + rand.Intn(nodes_len - first_nonsensor) // only NON SENSOR
+		}
+
+		// get corresponding nodes
+		node_1 = g.Nodes[node_num_1]
+		node_2 = g.Nodes[node_num_2]
+
+		// See if a link already exists  ALSO STOP AT END OF GENES!!!!
+		bypass := false
+		if node_2.NType == network.SENSOR {
+			// Don't allow SENSORS to get input
+			bypass = true
+		} else {
+			for _, gene := range g.Genes {
+				if gene.Link.InNode == node_1 &&
+					gene.Link.OutNode == node_2 &&
+					gene.Link.IsRecurrent && do_recur {
+					// recurrent link already exists
+					bypass = true;
+					break;
+				} else if gene.Link.InNode == node_1  &&
+					gene.Link.OutNode == node_2 &&
+					!gene.Link.IsRecurrent && !do_recur {
+					// not recurrent link already exists
+					bypass = true;
+					break;
+				}
+
+			}
+		}
+		if !bypass {
+			// check if link is open
+			count := 0
+			recur_flag := g.Phenotype.IsRecurrent(node_1.Analogue, node_2.Analogue, &count, thresh)
+
+			// Exit if the network is faulty (contains an infinite loop)
+			if count > thresh {
+				return false, errors.New("LOOP DETECTED DURING A RECURRENCY CHECK")
+			}
+
+			// Make sure it finds the right kind of link (recurrent or not)
+			if (!recur_flag && do_recur) || (recur_flag && !do_recur) {
+				try_count++
+			} else {
+				// The open link found
+				try_count = conf.NewLinkTries
+				found = true
+			}
+		} else {
+			try_count++
+		}
+
+	}
+	// Continue only if an open link was found
+	if found {
+		var new_gene *Gene
+		// Check to see if this innovation already occurred in the population
+		innovation_found := false
+		for _, inn := range pop.Innovations {
+			// match the innovation in the innovations list
+			if inn.InnovationType == NEWLINK &&
+				inn.InNodeId == node_1.Id &&
+				inn.OutNodeId == node_2.Id &&
+				inn.IsRecurrent == do_recur {
+
+				//Create new gene
+				new_gene = NewGeneWithTrait(g.Traits[inn.NewTraitNum], inn.NewWeight, node_1, node_2, do_recur, inn.InnovationNum, 0)
+
+				innovation_found = true
+				break
+			}
+		}
+		// The innovation is totally novel
+		if !innovation_found {
+			// Choose a random trait
+			trait_num := rand.Intn(len(g.Traits))
+			// Choose the new weight
+			new_weight := neat.RandPosNeg() * rand.Float64() * 10.0
+			// read curr innovation with post increment
+			curr_innov := pop.getInnovationNumberAndIncrement()
+
+			// Create the new gene
+			new_gene = NewGeneWithTrait(g.Traits[trait_num], new_weight, node_1, node_2,
+				do_recur, curr_innov, new_weight)
+
+			// Add the innovation
+			new_innov := NewInnovationForLink(node_1.Id, node_2.Id, curr_innov, new_weight, trait_num)
+			pop.Innovations = append(pop.Innovations, new_innov)
+		}
+
+		// Now add the new Gene to the Genome
+		g.Genes = append(g.Genes, new_gene)
+	}
+
+	return found, nil
 }
+
 // Mutate genome by adding a node representation
 func (g *Genome) mutateAddNode(pop *Population) bool {
 	// TODO Implement this
@@ -615,7 +762,7 @@ func (g *Genome) compatibility(og *Genome, conf *neat.Neat) float64 {
 
 			if p1innov == p2innov {
 				num_matching += 1.0
-				mut_diff :=  math.Abs(gene1.MutationNum - gene2.MutationNum)
+				mut_diff := math.Abs(gene1.MutationNum - gene2.MutationNum)
 				mut_diff_total += mut_diff
 				i1++
 				i2++
