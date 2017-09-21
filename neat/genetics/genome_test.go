@@ -130,7 +130,7 @@ func TestGenome_ReadGenome(t *testing.T) {
 		if g.Link.IsRecurrent {
 			t.Error("Gene link's recurrent flag is wrong")
 		}
-		if g.InnovationNum != i + 1 {
+		if g.InnovationNum != int64(i + 1) {
 			t.Error("Gene's innovation number is wrong",  g.InnovationNum)
 		}
 		if g.MutationNum != float64(0) {
@@ -179,9 +179,9 @@ func TestGenome_NewGenomeRand(t *testing.T) {
 		t.Error("Failed to create genes", len(gnome.Genes))
 	}
 
-	for _, g := range gnome.Genes {
-		t.Log(g)
-	}
+	//for _, g := range gnome.Genes {
+	//	t.Log(g)
+	//}
 }
 
 // Test genesis
@@ -321,4 +321,68 @@ func TestGenome_Compatibility(t *testing.T) {
 	if comp != 2 {
 		t.Error("comp != 2", comp)
 	}
+}
+
+func TestGenome_mutateAddLink(t *testing.T) {
+	gnome1 := buildTestGenome(1)
+	// Configuration
+	conf := neat.Neat{
+		RecurOnlyProb:0.5,
+		NewLinkTries:10,
+	}
+	// The population
+	pop := NewPopulation(gnome1, 10)
+	// Create gnome phenotype
+	gnome1.genesis(1)
+
+	res, err := gnome1.mutateAddLink(pop, &conf)
+	if !res {
+		t.Error("New link not added:", err)
+	}
+	if err != nil {
+		t.Error("err != nil", err)
+	}
+	if pop.currInnovNum != 1 {
+		t.Error("pop.currInnovNum != 1", pop.currInnovNum)
+	}
+	if len(pop.Innovations) != 1 {
+		t.Error("len(pop.Innovations) != 1", len(pop.Innovations))
+	}
+	if len(gnome1.Genes) != 4 {
+		t.Error("No new gene was added")
+	}
+	if gnome1.Genes[3].InnovationNum != 0 {
+		t.Error("gnome1.Genes[3].InnovationNum != 0")
+	}
+	if !gnome1.Genes[3].Link.IsRecurrent {
+		t.Error("New gene must be recurrent, because only one NEURON node exists")
+	}
+
+	// add more NEURONs
+	conf.RecurOnlyProb = 0.0
+	nodes := []*network.NNode {
+		network.ReadNNode(strings.NewReader("5 0 0 0"), gnome1.Traits),
+		network.ReadNNode(strings.NewReader("6 0 0 1"), gnome1.Traits),
+	}
+	gnome1.Nodes = append(gnome1.Nodes, nodes[0], nodes[1])
+	res, err = gnome1.mutateAddLink(pop, &conf)
+	if !res {
+		t.Error("New link not added:", err)
+	}
+	if err != nil {
+		t.Error("err != nil", err)
+	}
+	if pop.currInnovNum != 2 {
+		t.Error("pop.currInnovNum != 2", pop.currInnovNum)
+	}
+	if len(pop.Innovations) != 2 {
+		t.Error("len(pop.Innovations) != 2", len(pop.Innovations))
+	}
+	if len(gnome1.Genes) != 5 {
+		t.Error("No new gene was added")
+	}
+	if gnome1.Genes[4].Link.IsRecurrent {
+		t.Error("New gene must not be recurrent, because conf.RecurOnlyProb = 0.0")
+	}
+	t.Log(gnome1.Genes[4])
 }

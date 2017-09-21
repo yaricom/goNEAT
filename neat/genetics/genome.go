@@ -171,7 +171,7 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 
 					// Create the gene
 					new_weight := float64(neat.RandPosNeg()) * rand.Float64()
-					new_gene = NewGeneWithTrait(new_trait, new_weight, in_node, out_node, flag_recurrent, count, new_weight)
+					new_gene = NewGeneWithTrait(new_trait, new_weight, in_node, out_node, flag_recurrent, int64(count), new_weight)
 
 					//Add the gene to the genome
 					gnome.Genes = append(gnome.Genes, new_gene)
@@ -563,20 +563,15 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.Neat) (bool, error) {
 			for _, gene := range g.Genes {
 				if gene.Link.InNode == node_1 &&
 					gene.Link.OutNode == node_2 &&
-					gene.Link.IsRecurrent && do_recur {
-					// recurrent link already exists
-					bypass = true;
-					break;
-				} else if gene.Link.InNode == node_1  &&
-					gene.Link.OutNode == node_2 &&
-					!gene.Link.IsRecurrent && !do_recur {
-					// not recurrent link already exists
+					gene.Link.IsRecurrent == do_recur {
+					// link already exists
 					bypass = true;
 					break;
 				}
 
 			}
 		}
+
 		if !bypass {
 			// check if link is open
 			count := 0
@@ -624,7 +619,7 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.Neat) (bool, error) {
 			// Choose a random trait
 			trait_num := rand.Intn(len(g.Traits))
 			// Choose the new weight
-			new_weight := neat.RandPosNeg() * rand.Float64() * 10.0
+			new_weight := float64(neat.RandPosNeg()) * rand.Float64() * 10.0
 			// read curr innovation with post increment
 			curr_innov := pop.getInnovationNumberAndIncrement()
 
