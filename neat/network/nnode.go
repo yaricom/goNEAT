@@ -22,7 +22,7 @@ type NNode struct {
 	NType            int
 	// The type of node activation function (SIGMOID, ...)
 	FType            int
-	// The placement of the node in the network layers (INPUT, HIDDEN, OUTPUT)
+	// The placement of the node in the network layers (HIDDEN, INPUT, OUTPUT, BIAS)
 	GenNodeLabel     int
 
 	// The activation for current step
