@@ -490,6 +490,23 @@ func (g *Genome) verify() (bool, error) {
 	return true, nil
 }
 
+// Inserts a NNode into a given ordered list of NNodes in order
+func (g *Genome) nodeInsert(n *network.NNode) {
+	index := len(g.Nodes) // to make sure that greater IDs appended at the end
+	for i, node := range g.Nodes {
+		if node.Id >= n.Id {
+			index = i
+			break
+		}
+	}
+	first := make([]*network.NNode, index + 1)
+	copy(first, g.Nodes[0:index])
+	first[index] = n
+	second := g.Nodes[index:len(g.Nodes)]
+
+	g.Nodes = append(first, second...)
+}
+
 /* ******* MUTATORS ******* */
 
 // Mutate the genome by adding a new link between two random NNodes,
@@ -639,10 +656,118 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.Neat) (bool, error) {
 	return found, nil
 }
 
-// Mutate genome by adding a node representation
+// This mutator adds a node to a Genome by inserting it in the middle of an existing link between two nodes.
+// This broken link will be disabled and now represented by two links with the new node between them.
+// The innovations list from population is used to compare the innovation with other innovations in the list and see
+// whether they match. If they do, the same innovation numbers will be assigned to the new genes. If a disabled link
+// is chosen, then the method just exits with false.
 func (g *Genome) mutateAddNode(pop *Population) bool {
-	// TODO Implement this
-	return false
+	// First, find a random gene already in the genome
+	found := false
+	var gene *Gene
+
+	// For a very small genome, we need to bias splitting towards older links to avoid a "chaining" effect which is likely
+	// to occur when we keep splitting between the same two nodes over and over again (on newer and newer connections)
+	if len(g.Genes) < 15 {
+		for _, gn := range g.Genes {
+			// Now randomize which gene is chosen.
+			if gn.IsEnabled && gn.Link.InNode.NType != network.BIAS && rand.Float32() >= 0.3 {
+				gene = gn
+				found = true
+				break
+			}
+		}
+	} else {
+		try_count := 0
+		// Alternative uniform random choice of genes. When the genome is not tiny, it is safe to choose randomly.
+		for try_count < 20 && !found {
+			gene_num := rand.Intn(len(g.Genes))
+			gene = g.Genes[gene_num]
+			if gene.IsEnabled && gene.Link.InNode.NType != network.BIAS {
+				found = true
+			}
+			try_count++
+		}
+	}
+	if !found {
+		// Failed to find appropriate gene
+		return false
+	}
+
+	gene.IsEnabled = false;
+
+	// Extract the link
+	link := gene.Link
+	// Extract the weight
+	old_weight := link.Weight
+	// Get the old link's trait
+	trait := link.Trait
+
+	// Extract the nodes
+	in_node, out_node := link.InNode, link.OutNode
+
+	var new_gene_1, new_gene_2 *Gene
+	var new_node *network.NNode
+
+	// Check to see if this innovation already occurred in the population
+	innovation_found := false
+	for _, inn := range pop.Innovations {
+		/* We check to see if an innovation already occurred that was:
+		 	-A new node
+		 	-Stuck between the same nodes as were chosen for this mutation
+		 	-Splitting the same gene as chosen for this mutation
+		 If so, we know this mutation is not a novel innovation in this generation
+		 so we make it match the original, identical mutation which occurred
+		 elsewhere in the population by coincidence */
+		if inn.InnovationType == NEWNODE &&
+			inn.InNodeId == in_node.Id &&
+			inn.OutNodeId == out_node.Id &&
+			inn.OldInnovNum == gene.InnovationNum {
+
+			// Create the new NNode
+			new_node = network.NewNNodeInPlace(network.NEURON, inn.NewNodeId, network.HIDDEN)
+			// By convention, it will point to the first trait
+			// Note: In future may want to change this
+			new_node.Trait = g.Traits[0]
+
+			// Create the new Genes
+			new_gene_1 = NewGeneWithTrait(trait, 1.0 ,in_node, new_node, link.IsRecurrent, inn.InnovationNum, 0)
+			new_gene_2 = NewGeneWithTrait(trait, old_weight, new_node, out_node, false, inn.InnovationNum2, 0)
+
+			innovation_found = true
+			break
+		}
+	}
+	// The innovation is totally novel
+	if !innovation_found {
+		// Get the current node id with post increment
+		curnode_id := pop.getCurrentNodeIdAndIncrement()
+		// Create the new NNode
+		new_node = network.NewNNodeInPlace(network.NEURON, curnode_id, network.HIDDEN)
+		// By convention, it will point to the first trait
+		new_node.Trait = g.Traits[0]
+
+		// get the current gene 1 innovation with post increment
+		gene_innov_1 := pop.getInnovationNumberAndIncrement()
+		// create gene with the current gene inovation
+		new_gene_1 = NewGeneWithTrait(trait, 1.0, in_node, new_node, link.IsRecurrent, gene_innov_1, 0);
+
+		// get the current gene 2 innovation with post increment
+		gene_innov_2 := pop.getInnovationNumberAndIncrement()
+		// create the second gene with this innovation incremented
+		new_gene_2 = NewGeneWithTrait(trait, old_weight, new_node, out_node, false, gene_innov_2, 0);
+
+		// Store innovation
+		innov := NewInnovationForNode(in_node.Id, out_node.Id, gene_innov_1, gene_innov_2, new_node.Id, gene.InnovationNum)
+		pop.Innovations = append(pop.Innovations, innov)
+	}
+
+	// Now add the new NNode and new Genes to the Genome
+	g.Genes = append(g.Genes, new_gene_1)
+	g.Genes = append(g.Genes, new_gene_2)
+	g.nodeInsert(new_node)
+
+	return true;
 }
 
 // Adds Gaussian noise to link weights either GAUSSIAN or COLDGAUSSIAN (from zero)

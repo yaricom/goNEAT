@@ -364,7 +364,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 		network.ReadNNode(strings.NewReader("5 0 0 0"), gnome1.Traits),
 		network.ReadNNode(strings.NewReader("6 0 0 1"), gnome1.Traits),
 	}
-	gnome1.Nodes = append(gnome1.Nodes, nodes[0], nodes[1])
+	gnome1.Nodes = append(gnome1.Nodes, nodes...)
 	res, err = gnome1.mutateAddLink(pop, &conf)
 	if !res {
 		t.Error("New link not added:", err)
@@ -384,5 +384,36 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	if gnome1.Genes[4].Link.IsRecurrent {
 		t.Error("New gene must not be recurrent, because conf.RecurOnlyProb = 0.0")
 	}
-	t.Log(gnome1.Genes[4])
+	//t.Log(gnome1.Genes[4])
+}
+
+func TestGenome_mutateAddNode(t *testing.T) {
+	gnome1 := buildTestGenome(1)
+
+	// The population
+	pop := NewPopulation(gnome1, 10)
+	// Create gnome phenotype
+	gnome1.genesis(1)
+
+	res := gnome1.mutateAddNode(pop)
+	if !res {
+		t.Error("Failed to add new node")
+	}
+	if pop.currInnovNum != 2 {
+		t.Error("pop.currInnovNum != 2", pop.currInnovNum)
+	}
+	if len(pop.Innovations) != 1 {
+		t.Error("len(pop.Innovations) != 1", len(pop.Innovations))
+	}
+	if len(gnome1.Genes) != 5 {
+		t.Error("No new gene was added")
+	}
+	if len(gnome1.Nodes) != 5 {
+		t.Error("No new node was added to genome")
+	}
+	if gnome1.Nodes[0].Id != 0 {
+		t.Error("New node inserted at wrong position")
+	}
+
+	//t.Log(gnome1.Nodes)
 }
