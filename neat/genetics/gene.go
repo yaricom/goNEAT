@@ -20,7 +20,7 @@ type Gene struct {
 	// The link between nodes
 	Link *network.Link
 	// The current innovation number for this gene
-	InnovationNum int
+	InnovationNum int64
 	// Used to see how much mutation has changed the link
 	MutationNum float64
 	// If true the gene is enabled
@@ -28,13 +28,13 @@ type Gene struct {
 }
 
 // Creates new Gene
-func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, inov_num int, mut_num float64) *Gene  {
+func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, inov_num int64, mut_num float64) *Gene  {
 	return newGene(network.NewLink(weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
 // Creates new Gene with Trait
 func NewGeneWithTrait(trait *neat.Trait, weight float64, in_node, out_node *network.NNode,
-			recurrent bool, inov_num int, mut_num float64) *Gene  {
+			recurrent bool, inov_num int64, mut_num float64) *Gene  {
 	return newGene(network.NewLinkWithTrait(trait, weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
@@ -47,7 +47,7 @@ func NewGeneGeneCopy(g *Gene, trait *neat.Trait, in_node, out_node *network.NNod
 // Reads Gene from reader
 func ReadGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) *Gene  {
 	var traitId, inNodeId, outNodeId int
-	var inov_num int
+	var inov_num int64
 	var weight, mut_num float64
 	var recurrent, enabled bool
 	fmt.Fscanf(r, "%d %d %d %g %t %d %g %t ",
@@ -77,7 +77,7 @@ func ReadGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) *Gene  
 	}
 }
 
-func newGene(link *network.Link, inov_num int, mut_num float64, enabled bool) *Gene {
+func newGene(link *network.Link, inov_num int64, mut_num float64, enabled bool) *Gene {
 	return &Gene{
 		Link:link,
 		InnovationNum:inov_num,
