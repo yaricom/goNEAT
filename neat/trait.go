@@ -76,9 +76,10 @@ func (t *Trait) WriteTrait(w io.Writer) {
 }
 
 func (t *Trait) String() string {
-	s := fmt.Sprintf("Trait # %d\t", t.Id)
+	s := fmt.Sprintf("Trait #%d (", t.Id)
 	for _, p := range t.Params {
 		s = fmt.Sprintf("%s %f", s, p)
 	}
+	s = fmt.Sprintf("%s )", s)
 	return s
 }
