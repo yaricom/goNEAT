@@ -19,7 +19,7 @@ const (
 	//This adds Gaussian noise to the weights
 	GAUSSIAN = iota
 	//This sets weights to numbers chosen from a Gaussian distribution
-	COLDGAUSSIAN
+	COLD_GAUSSIAN
 )
 
 // The Gaussian random number generator

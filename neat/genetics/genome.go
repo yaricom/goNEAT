@@ -731,7 +731,7 @@ func (g *Genome) mutateAddNode(pop *Population) bool {
 			new_node.Trait = g.Traits[0]
 
 			// Create the new Genes
-			new_gene_1 = NewGeneWithTrait(trait, 1.0 ,in_node, new_node, link.IsRecurrent, inn.InnovationNum, 0)
+			new_gene_1 = NewGeneWithTrait(trait, 1.0, in_node, new_node, link.IsRecurrent, inn.InnovationNum, 0)
 			new_gene_2 = NewGeneWithTrait(trait, old_weight, new_node, out_node, false, inn.InnovationNum2, 0)
 
 			innovation_found = true
@@ -749,7 +749,7 @@ func (g *Genome) mutateAddNode(pop *Population) bool {
 
 		// get the current gene 1 innovation with post increment
 		gene_innov_1 := pop.getInnovationNumberAndIncrement()
-		// create gene with the current gene inovation
+		// create gene with the current gene innovation
 		new_gene_1 = NewGeneWithTrait(trait, 1.0, in_node, new_node, link.IsRecurrent, gene_innov_1, 0);
 
 		// get the current gene 2 innovation with post increment
@@ -770,10 +770,63 @@ func (g *Genome) mutateAddNode(pop *Population) bool {
 	return true;
 }
 
-// Adds Gaussian noise to link weights either GAUSSIAN or COLDGAUSSIAN (from zero)
-func (g *Genome) mutateLinkWeights(power, rate float64, mut_type int) {
-	// TODO Implement this
+// Adds Gaussian noise to link weights either GAUSSIAN or COLD_GAUSSIAN (from zero).
+// The COLD_GAUSSIAN means ALL connection weights will be given completely new values
+func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type int) {
+	// Once in a while really shake things up
+	severe := false
+	if rand.Float64() > 0.5 {
+		severe = true
+	}
+
+	// Go through all the Genes and perturb their link's weights
+	num, gene_total := 0.0, float64(len(g.Genes))
+	end_part := gene_total * 0.8
+	var gauss_point, cold_gauss_point float64
+
+	for _, gene := range g.Genes {
+		// The following if determines the probabilities of doing cold gaussian
+		// mutation, meaning the probability of replacing a link weight with
+		// another, entirely random weight. It is meant to bias such mutations
+		// to the tail of a genome, because that is where less time-tested genes
+		// reside. The gauss_point and cold_gauss_point represent values above
+		// which a random float will signify that kind of mutation.
+		if severe {
+			gauss_point = 0.3
+			cold_gauss_point = 0.1
+		} else if gene_total >= 10.0 && num > end_part {
+			gauss_point = 0.5  // Mutate by modification % of connections
+			cold_gauss_point = 0.3 // Mutate the rest by replacement % of the time
+		} else {
+			// Half the time don't do any cold mutations
+			if rand.Float64() > 0.5 {
+				gauss_point = 1.0 - rate
+				cold_gauss_point = gauss_point - 0.1
+			} else {
+				gauss_point = 1.0 - rate
+				cold_gauss_point = gauss_point // no cold mutation possible (see later)
+			}
+		}
+
+		rand_val := float64(neat.RandPosNeg()) * rand.Float64() * power
+		if mutation_type == GAUSSIAN {
+			rand_choice := rand.Float64()
+			if rand_choice > gauss_point {
+				gene.Link.Weight += rand_val
+			} else if rand_choice > cold_gauss_point {
+				gene.Link.Weight = rand_val
+			}
+		} else if mutation_type == COLD_GAUSSIAN {
+			gene.Link.Weight = rand_val
+		}
+
+		// Record the innovation
+		gene.MutationNum = gene.Link.Weight
+
+		num += 1.0
+	}
 }
+
 // Perturb params in one trait
 func (g *Genome) mutateRandomTrait() {
 	// TODO Implement this

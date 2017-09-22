@@ -417,3 +417,18 @@ func TestGenome_mutateAddNode(t *testing.T) {
 
 	//t.Log(gnome1.Nodes)
 }
+
+func TestGenome_mutateLinkWeights(t *testing.T) {
+	gnome1 := buildTestGenome(1)
+	// Configuration
+	conf := neat.Neat{
+		WeightMutPower:0.5,
+	}
+
+	gnome1.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
+	for i, gn := range gnome1.Genes {
+		if gn.Link.Weight == float64(i) + 1.5 {
+			t.Error("Found not mutrated gene:", gn)
+		}
+	}
+}
