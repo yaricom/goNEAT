@@ -432,3 +432,48 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 		}
 	}
 }
+
+func TestGenome_mutateRandomTrait(t *testing.T) {
+	gnome1 := buildTestGenome(1)
+	// Configuration
+	conf := neat.Neat{
+		TraitMutationPower:0.3,
+		TraitParamMutProb:0.5,
+	}
+	gnome1.mutateRandomTrait(&conf)
+	mutation_found := false
+	for _, tr := range gnome1.Traits {
+		for pi, p := range tr.Params {
+			if pi == 0 && p != float64(tr.Id) / 10.0 {
+				mutation_found = true
+				break
+			} else if pi > 0 && p != 0 {
+				mutation_found = true
+				break
+			}
+		}
+		if mutation_found {
+			break
+		}
+	}
+	if !mutation_found {
+		t.Error("No mutation found in genome traits")
+	}
+}
+
+func TestGenome_mutateLinkTrait(t *testing.T) {
+	gnome1 := buildTestGenome(1)
+
+	gnome1.mutateLinkTrait(2)
+	mutation_found := false
+	for i, gn := range gnome1.Genes {
+		if gn.Link.Trait.Id != i + 1 {
+			mutation_found = true
+			break
+		}
+	}
+	if !mutation_found {
+		t.Error("No mutation found in gene links traits")
+	}
+	t.Log(gnome1.Genes)
+}

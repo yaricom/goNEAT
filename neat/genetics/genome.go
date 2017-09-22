@@ -828,13 +828,29 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type int) {
 }
 
 // Perturb params in one trait
-func (g *Genome) mutateRandomTrait() {
-	// TODO Implement this
+func (g *Genome) mutateRandomTrait(conf *neat.Neat) {
+	// Choose a random trait number
+	trait_num := rand.Intn(len(g.Traits))
+
+	// Retrieve the trait and mutate it
+	g.Traits[trait_num].Mutate(conf.TraitMutationPower, conf.TraitParamMutProb)
 }
-// Change random link's trait. Repeat times times
+
+// This chooses a random gene, extracts the link from it and re-points the link to a random trait
 func (g *Genome) mutateLinkTrait(times int) {
-	// TODO Implement this
+	for loop := 0; loop < times; loop++ {
+		// Choose a random trait number
+		trait_num := rand.Intn(len(g.Traits))
+
+		// Choose a random link number
+		gene_num := rand.Intn(len(g.Genes))
+
+		// set the link to point to the new trait
+		g.Genes[gene_num].Link.Trait = g.Traits[trait_num]
+
+	}
 }
+
 // Change random node's trait times
 func (g *Genome) mutateNodeTrait(times int) {
 	// TODO Implement this
@@ -852,7 +868,7 @@ func (g *Genome) mutateGeneReenable() {
 func (g *Genome) mutateAllNonstructural(conf *neat.Neat) {
 	if rand.Float64() < conf.MutateRandomTraitProb {
 		// mutate random trait
-		g.mutateRandomTrait()
+		g.mutateRandomTrait(conf)
 	}
 
 	if rand.Float64() < conf.MutateLinkTraitProb {
