@@ -116,9 +116,9 @@ func (g *Gene) String() string  {
 	}
 	trait_str := ""
 	if g.Link.Trait != nil {
-		trait_str = fmt.Sprintf(" Link's trait_id %d", g.Link.Trait.Id)
+		trait_str = fmt.Sprintf(" Link's trait_id: %d", g.Link.Trait.Id)
 	}
-	return fmt.Sprintf("[Link (%4d, %4d) INNOV (%4d, % .3f) Weight % .3f %s%s%s : %s->%s]",
+	return fmt.Sprintf("[Link (%4d ->%4d) INNOV (%4d, % .3f) Weight: % .3f %s%s%s : %s->%s]",
 		g.Link.InNode.Id, g.Link.OutNode.Id, g.InnovationNum, g.MutationNum, g.Link.Weight,
 		trait_str, enabl_str, recurr_str, g.Link.InNode, g.Link.OutNode)
 }
