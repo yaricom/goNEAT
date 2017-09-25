@@ -234,6 +234,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 	var mut_struct_baby, mate_baby bool
 
+	var err error
+
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
 		mut_struct_baby, mate_baby = false, false
@@ -295,14 +297,14 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				mut_struct_baby = true
 			} else if rand.Float64() < conf.MutateAddLinkProb {
 				// Mutate add link
-				_, err := new_genome.mutateAddLink(pop, conf)
+				_, err = new_genome.mutateAddLink(pop, conf)
 				if err != nil {
 					return false, err
 				}
 				mut_struct_baby = true
 			} else {
 				// If we didn't do a structural mutation, we do the other kinds
-				_, err := new_genome.mutateAllNonstructural(conf)
+				_, err = new_genome.mutateAllNonstructural(conf)
 				if err != nil {
 					return false, err
 				}
@@ -341,7 +343,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Perform mating based on probabilities of different mating types
 			if rand.Float64() < conf.MateMultipointProb {
 				// mate multipoint baby
-				new_genome = mom.GNome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
+				new_genome, err = mom.GNome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
+				if err != nil {
+					return false, err
+				}
 			} else if rand.Float64() < conf.MateMultipointAvgProb / (conf.MateMultipointAvgProb + conf.MateSinglepointProb) {
 				// mate multipoint_avg baby
 				new_genome = mom.GNome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
@@ -363,14 +368,14 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					mut_struct_baby = true
 				} else if rand.Float64() < conf.MutateAddLinkProb {
 					// mutate_add_link
-					_, err := new_genome.mutateAddLink(pop, conf)
+					_, err = new_genome.mutateAddLink(pop, conf)
 					if err != nil {
 						return false, err
 					}
 					mut_struct_baby = true
 				} else {
 					// Only do other mutations when not doing structural mutations
-					_, err := new_genome.mutateAllNonstructural(conf)
+					_, err = new_genome.mutateAllNonstructural(conf)
 					if err != nil {
 						return false, err
 					}
