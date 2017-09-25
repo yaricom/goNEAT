@@ -301,8 +301,11 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 				mut_struct_baby = true
 			} else {
-				//If we didn't do a structural mutation, we do the other kinds
-				new_genome.mutateAllNonstructural(conf)
+				// If we didn't do a structural mutation, we do the other kinds
+				_, err := new_genome.mutateAllNonstructural(conf)
+				if err != nil {
+					return false, err
+				}
 			}
 
 			baby = NewOrganism(0.0, new_genome, generation);
@@ -366,8 +369,11 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					}
 					mut_struct_baby = true
 				} else {
-					//Only do other mutations when not doing structural mutations
-					new_genome.mutateAllNonstructural(conf)
+					// Only do other mutations when not doing structural mutations
+					_, err := new_genome.mutateAllNonstructural(conf)
+					if err != nil {
+						return false, err
+					}
 				}
 			}
 
