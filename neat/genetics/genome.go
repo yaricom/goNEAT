@@ -490,21 +490,22 @@ func (g *Genome) verify() (bool, error) {
 	return true, nil
 }
 
-// Inserts a NNode into a given ordered list of NNodes in order
-func (g *Genome) nodeInsert(n *network.NNode) {
-	index := len(g.Nodes) // to make sure that greater IDs appended at the end
-	for i, node := range g.Nodes {
+// Inserts a NNode into a given ordered list of NNodes in ascending order by NNode ID
+func nodeInsert(nodes[]*network.NNode, n *network.NNode)[]*network.NNode {
+	index := len(nodes) // to make sure that greater IDs appended at the end
+	for i, node := range nodes {
 		if node.Id >= n.Id {
 			index = i
 			break
 		}
 	}
 	first := make([]*network.NNode, index + 1)
-	copy(first, g.Nodes[0:index])
+	copy(first, nodes[0:index])
 	first[index] = n
-	second := g.Nodes[index:len(g.Nodes)]
+	second := nodes[index:]
 
-	g.Nodes = append(first, second...)
+	nodes = append(first, second...)
+	return nodes
 }
 
 /* ******* MUTATORS ******* */
@@ -771,7 +772,7 @@ func (g *Genome) mutateAddNode(pop *Population) (bool, error) {
 	// Now add the new NNode and new Genes to the Genome
 	g.Genes = append(g.Genes, new_gene_1)
 	g.Genes = append(g.Genes, new_gene_2)
-	g.nodeInsert(new_node)
+	g.Nodes = nodeInsert(g.Nodes, new_node)
 
 	return true, nil
 }
@@ -971,10 +972,165 @@ func (g *Genome) mutateAllNonstructural(conf *neat.Neat) (bool, error) {
 
 // This method mates this Genome with another Genome g. For every point in each Genome, where each Genome shares
 // the innovation number, the Gene is chosen randomly from either parent.  If one parent has an innovation absent in
-// the other, the baby will inherit the innovation
-func (g *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 float64) *Genome {
-	// TODO implement this
-	return nil
+// the other, the baby may inherit the innovation if it is from the more fit parent.
+// The new Genome is given the id in the genomeid argument.
+func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 float64) (*Genome, error) {
+	// Check if genomes has equal number of traits
+	if len(gen.Traits) != len(og.Traits) {
+		return nil, errors.New(fmt.Sprintf("Genomes has different traits count, %d != %d", len(gen.Traits), len(og.Traits)))
+	}
+
+	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
+	// the same length. In the future, may decide on a different method for trait mating.
+	new_traits := make([]*neat.Trait, len(gen.Traits))
+	for i, tr := range gen.Traits {
+		new_traits[i] = neat.NewTraitAvrg(tr, og.Traits[i])
+	}
+
+	// The new genes and nodes created
+	new_genes := make([]*Gene, 0)
+	new_nodes := make([]*network.NNode, 0)
+
+	// Figure out which genome is better. The worse genome should not be allowed to add extra structural baggage.
+	// If they are the same, use the smaller one's disjoint and excess genes only.
+	p1better := false // Tells if the first genome (this one) has better fitness or not
+	if fitness1 > fitness2 ||
+		(fitness1 == fitness2 && len(gen.Genes) < len(og.Genes)) {
+		p1better = true
+	}
+
+	// Now loop through the Genes of each parent
+	i1, i2, size1, size2 := 0, 0, len(gen.Genes), len(og.Genes)
+	var chosen_gene, p1gene, p2gene *Gene
+	var new_in_node, new_out_node, in_node, out_node *network.NNode
+	for i1 < size1 || i2 < size2 {
+		skip, disable := false, false
+
+		// choose best gene
+		if i1 >= size1 {
+			chosen_gene = og.Genes[i2]
+			i2++
+			if p1better {
+				skip = true // Skip excess from the worse genome
+			}
+		} else if i2 >= size2 {
+			chosen_gene = gen.Genes[i1]
+			i1++
+			if !p1better {
+				skip = true // Skip excess from the worse genome
+			}
+		} else {
+			p1gene = gen.Genes[i1]
+			p2gene = og.Genes[i2]
+
+			// Extract current innovation numbers
+			p1innov := p1gene.InnovationNum
+			p2innov := p2gene.InnovationNum
+
+			if p1innov == p2innov {
+				if rand.Float64() < 0.5 {
+					chosen_gene = p1gene
+				} else {
+					chosen_gene = p2gene
+				}
+
+				// If one is disabled, the corresponding gene in the offspring will likely be disabled
+				if p1gene.IsEnabled != p2gene.IsEnabled && rand.Float64() < 0.75 {
+					disable = true
+				}
+				i1++
+				i2++
+			} else if p1innov < p2innov {
+				chosen_gene = p1gene
+				i1++
+				if !p1better {
+					skip = true // Skip excess from the worse genome
+				}
+			} else {
+				chosen_gene = p2gene
+				i2++
+				if p1better {
+					skip = true // Skip excess from the worse genome
+				}
+			}
+		}
+
+		// Uncomment this line to let growth go faster (from both parents excesses)
+		// skip=false
+
+		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
+		for _, new_gene := range new_genes {
+			if new_gene.Link.InNode.Id == chosen_gene.Link.InNode.Id &&
+				new_gene.Link.OutNode.Id == chosen_gene.Link.OutNode.Id &&
+				new_gene.Link.IsRecurrent == chosen_gene.Link.IsRecurrent {
+				skip = true;
+				break;
+			}
+		}
+
+		// Now add the chosen gene to the baby
+		if (!skip) {
+			// Check for the nodes, add them if not in the baby Genome already
+			in_node = chosen_gene.Link.InNode
+			out_node = chosen_gene.Link.OutNode
+
+			// Checking for inode's existence
+			new_in_node = nil
+			for _, node := range new_nodes {
+				if node.Id == in_node.Id {
+					new_in_node = node
+					break
+				}
+			}
+			if new_in_node == nil {
+				// Here we know the node doesn't exist so we have to add it normalized trait
+				// number for new NNode
+				in_node_trait_num := 0
+				if in_node.Trait != nil {
+					in_node_trait_num = in_node.Trait.Id - gen.Traits[0].Id
+				}
+				new_in_node = network.NewNNodeCopy(in_node, new_traits[in_node_trait_num])
+				new_nodes = nodeInsert(new_nodes, new_in_node)
+			}
+
+			// Checking for onode's existence
+			new_out_node = nil
+			for _, node := range new_nodes {
+				if node.Id == out_node.Id {
+					new_out_node = node
+					break
+				}
+			}
+			if new_out_node == nil {
+				// Here we know the node doesn't exist so we have to add it normalized trait
+				// number for new NNode
+				out_node_trait_num := 0
+				if out_node.Trait != nil {
+					out_node_trait_num = out_node.Trait.Id - gen.Traits[0].Id
+				}
+				new_out_node = network.NewNNodeCopy(out_node, new_traits[out_node_trait_num])
+				new_nodes = nodeInsert(new_nodes, new_out_node)
+			}
+
+
+			// Add the Gene
+			gene_trait_num := 0
+			if chosen_gene.Link.Trait != nil {
+				// The subtracted number normalizes depending on whether traits start counting at 1 or 0
+				gene_trait_num = chosen_gene.Link.Trait.Id - gen.Traits[0].Id
+			}
+			newgene := NewGeneGeneCopy(chosen_gene, new_traits[gene_trait_num], new_in_node, new_out_node)
+			if disable {
+				newgene.IsEnabled = false
+			}
+			new_genes = append(new_genes, newgene)
+		} // end SKIP
+	}
+
+	new_genome := NewGenome(genomeid, new_traits, new_nodes, new_genes)
+
+	//Return the baby Genome
+	return new_genome, nil
 }
 
 // This method mates like multipoint but instead of selecting one or the other when the innovation numbers match,

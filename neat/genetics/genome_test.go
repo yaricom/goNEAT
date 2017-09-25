@@ -550,3 +550,50 @@ func TestGenome_mutateGeneReenable(t *testing.T) {
 		t.Error("The second gen should be still disabled")
 	}
 }
+
+func TestGenome_mateMultipoint(t *testing.T) {
+	gnome1 := buildTestGenome(1)
+	gnome2 := buildTestGenome(2)
+
+	genomeid := 3
+	fitness1, fitness2 := 1.0, 2.3
+
+	gnome_child, err := gnome1.mateMultipoint(gnome2, genomeid, fitness1, fitness2)
+	if err != nil {
+		t.Error(err)
+	}
+	if gnome_child == nil {
+		t.Error("Failed to create child genome")
+	}
+
+	if len(gnome_child.Genes) != 3 {
+		t.Error("len(gnome_child.Genes) != 3")
+	}
+	if len(gnome_child.Nodes) != 4 {
+		t.Error("gnome_child.Nodes) != 4")
+	}
+	if len(gnome_child.Traits) != 3 {
+		t.Error("len(gnome_child.Traits) != 3")
+	}
+
+	// check not equal gene pools
+	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
+		gnome1.Traits, gnome1.Nodes))
+	fitness1, fitness2 = 15.0, 2.3
+	gnome_child, err = gnome1.mateMultipoint(gnome2, genomeid, fitness1, fitness2)
+	if err != nil {
+		t.Error(err)
+	}
+	if gnome_child == nil {
+		t.Error("Failed to create child genome")
+	}
+	if len(gnome_child.Genes) != 3 {
+		t.Error("len(gnome_child.Genes) != 3")
+	}
+	if len(gnome_child.Nodes) != 4 {
+		t.Error("gnome_child.Nodes) != 4")
+	}
+	if len(gnome_child.Traits) != 3 {
+		t.Error("len(gnome_child.Traits) != 3")
+	}
+}
