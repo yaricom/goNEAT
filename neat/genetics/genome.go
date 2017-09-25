@@ -516,6 +516,8 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.Neat) (bool, error) {
 	// Note: This should never happen - if it does there is a bug
 	if g.Phenotype == nil {
 		return false, errors.New("Attempt to add link to genome with no phenotype")
+	} else if len(g.Nodes) == 0 {
+		return false, errors.New("Genome has no nodes to be connected by new link")
 	}
 
 	// These are used to avoid getting stuck in an infinite loop checking for recursion
@@ -661,7 +663,11 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.Neat) (bool, error) {
 // The innovations list from population is used to compare the innovation with other innovations in the list and see
 // whether they match. If they do, the same innovation numbers will be assigned to the new genes. If a disabled link
 // is chosen, then the method just exits with false.
-func (g *Genome) mutateAddNode(pop *Population) bool {
+func (g *Genome) mutateAddNode(pop *Population) (bool, error) {
+	if len(g.Genes) == 0 {
+		return false, errors.New("Genome has no genes")
+	}
+
 	// First, find a random gene already in the genome
 	found := false
 	var gene *Gene
@@ -691,7 +697,7 @@ func (g *Genome) mutateAddNode(pop *Population) bool {
 	}
 	if !found {
 		// Failed to find appropriate gene
-		return false
+		return false, nil
 	}
 
 	gene.IsEnabled = false;
@@ -767,12 +773,16 @@ func (g *Genome) mutateAddNode(pop *Population) bool {
 	g.Genes = append(g.Genes, new_gene_2)
 	g.nodeInsert(new_node)
 
-	return true;
+	return true, nil
 }
 
 // Adds Gaussian noise to link weights either GAUSSIAN or COLD_GAUSSIAN (from zero).
 // The COLD_GAUSSIAN means ALL connection weights will be given completely new values
-func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type int) {
+func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type int) (bool, error) {
+	if len(g.Genes) == 0 {
+		return false, errors.New("Genome has no genes")
+	}
+
 	// Once in a while really shake things up
 	severe := false
 	if rand.Float64() > 0.5 {
@@ -825,19 +835,29 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type int) {
 
 		num += 1.0
 	}
+
+	return true, nil
 }
 
 // Perturb params in one trait
-func (g *Genome) mutateRandomTrait(conf *neat.Neat) {
+func (g *Genome) mutateRandomTrait(conf *neat.Neat) (bool, error) {
+	if len(g.Traits) == 0 {
+		return false, errors.New("Genome has no traits")
+	}
 	// Choose a random trait number
 	trait_num := rand.Intn(len(g.Traits))
 
 	// Retrieve the trait and mutate it
 	g.Traits[trait_num].Mutate(conf.TraitMutationPower, conf.TraitParamMutProb)
+
+	return true, nil
 }
 
 // This chooses a random gene, extracts the link from it and re-points the link to a random trait
-func (g *Genome) mutateLinkTrait(times int) {
+func (g *Genome) mutateLinkTrait(times int) (bool, error) {
+	if len(g.Traits) == 0 || len(g.Genes) == 0 {
+		return false, errors.New("Genome has either no traits od genes")
+	}
 	for loop := 0; loop < times; loop++ {
 		// Choose a random trait number
 		trait_num := rand.Intn(len(g.Traits))
@@ -849,12 +869,27 @@ func (g *Genome) mutateLinkTrait(times int) {
 		g.Genes[gene_num].Link.Trait = g.Traits[trait_num]
 
 	}
+	return true, nil
 }
 
-// Change random node's trait times
-func (g *Genome) mutateNodeTrait(times int) {
-	// TODO Implement this
+// This chooses a random node and re-points the node to a random trait specified number of times
+func (g *Genome) mutateNodeTrait(times int) (bool, error) {
+	if len(g.Traits) == 0 || len(g.Nodes) == 0 {
+		return false, errors.New("Genome has either no traits or nodes")
+	}
+	for loop := 0; loop < times; loop++ {
+		// Choose a random trait number
+		trait_num := rand.Intn(len(g.Traits))
+
+		// Choose a random node number
+		node_num := rand.Intn(len(g.Nodes))
+
+		// set the node to point to the new trait
+		g.Nodes[node_num].Trait = g.Traits[trait_num]
+	}
+	return true, nil
 }
+
 // Toggle genes on or off
 func (g *Genome) mutateToggleEnable(times int) {
 	// TODO Implement th
@@ -865,36 +900,39 @@ func (g *Genome) mutateGeneReenable() {
 }
 
 // Applies all non-structural mutations to this genome
-func (g *Genome) mutateAllNonstructural(conf *neat.Neat) {
+func (g *Genome) mutateAllNonstructural(conf *neat.Neat) (bool, error){
+	res := false
+	var err error
 	if rand.Float64() < conf.MutateRandomTraitProb {
 		// mutate random trait
-		g.mutateRandomTrait(conf)
+		res, err = g.mutateRandomTrait(conf)
 	}
 
-	if rand.Float64() < conf.MutateLinkTraitProb {
+	if err == nil && rand.Float64() < conf.MutateLinkTraitProb {
 		// mutate link trait
-		g.mutateLinkTrait(1)
+		res, err = g.mutateLinkTrait(1)
 	}
 
-	if rand.Float64() < conf.MutateNodeTraitProb {
+	if err == nil && rand.Float64() < conf.MutateNodeTraitProb {
 		// mutate node trait
-		g.mutateNodeTrait(1)
+		res, err = g.mutateNodeTrait(1)
 	}
 
-	if rand.Float64() < conf.MutateLinkWeightsProb {
+	if err == nil && rand.Float64() < conf.MutateLinkWeightsProb {
 		// mutate link weight
-		g.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
+		res, err = g.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
 	}
 
-	if rand.Float64() < conf.MutateToggleEnableProb {
+	if err == nil && rand.Float64() < conf.MutateToggleEnableProb {
 		// mutate toggle enable
 		g.mutateToggleEnable(1)
 	}
 
-	if rand.Float64() < conf.MutateGeneReenableProb {
+	if err == nil && rand.Float64() < conf.MutateGeneReenableProb {
 		// mutate gene reenable
 		g.mutateGeneReenable();
 	}
+	return res, err
 }
 
 /* ****** MATING METHODS ***** */

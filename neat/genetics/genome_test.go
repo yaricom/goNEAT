@@ -395,8 +395,8 @@ func TestGenome_mutateAddNode(t *testing.T) {
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
-	res := gnome1.mutateAddNode(pop)
-	if !res {
+	res, err := gnome1.mutateAddNode(pop)
+	if !res || err != nil {
 		t.Error("Failed to add new node")
 	}
 	if pop.currInnovNum != 2 {
@@ -425,7 +425,10 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 		WeightMutPower:0.5,
 	}
 
-	gnome1.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
+	res, err := gnome1.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
+	if !res || err != nil {
+		t.Error("Failed to mutate link weights")
+	}
 	for i, gn := range gnome1.Genes {
 		if gn.Link.Weight == float64(i) + 1.5 {
 			t.Error("Found not mutrated gene:", gn)
@@ -440,7 +443,10 @@ func TestGenome_mutateRandomTrait(t *testing.T) {
 		TraitMutationPower:0.3,
 		TraitParamMutProb:0.5,
 	}
-	gnome1.mutateRandomTrait(&conf)
+	res, err := gnome1.mutateRandomTrait(&conf)
+	if !res || err != nil {
+		t.Error("Failed to mutate random trait")
+	}
 	mutation_found := false
 	for _, tr := range gnome1.Traits {
 		for pi, p := range tr.Params {
@@ -464,7 +470,10 @@ func TestGenome_mutateRandomTrait(t *testing.T) {
 func TestGenome_mutateLinkTrait(t *testing.T) {
 	gnome1 := buildTestGenome(1)
 
-	gnome1.mutateLinkTrait(2)
+	res, err := gnome1.mutateLinkTrait(2)
+	if !res || err != nil {
+		t.Error("Failed to mutate link trait")
+	}
 	mutation_found := false
 	for i, gn := range gnome1.Genes {
 		if gn.Link.Trait.Id != i + 1 {
@@ -475,5 +484,31 @@ func TestGenome_mutateLinkTrait(t *testing.T) {
 	if !mutation_found {
 		t.Error("No mutation found in gene links traits")
 	}
-	t.Log(gnome1.Genes)
+}
+
+func TestGenome_mutateNodeTrait(t *testing.T) {
+	gnome1 := buildTestGenome(1)
+
+	// Add traits to nodes
+	for i, nd := range gnome1.Nodes {
+		if i < 3 {
+			nd.Trait = gnome1.Traits[i]
+		}
+	}
+	gnome1.Nodes[3].Trait = neat.ReadTrait(strings.NewReader("4 0.4 0 0 0 0 0 0 0"))
+
+	res, err := gnome1.mutateNodeTrait(2)
+	if !res || err != nil {
+		t.Error("Failed to mutate node trait")
+	}
+	mutation_found := false
+	for i, nd := range gnome1.Nodes {
+		if nd.Trait.Id != i + 1 {
+			mutation_found = true
+			break
+		}
+	}
+	if !mutation_found {
+		t.Error("No mutation found in nodes traits")
+	}
 }
