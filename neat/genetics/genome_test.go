@@ -512,3 +512,23 @@ func TestGenome_mutateNodeTrait(t *testing.T) {
 		t.Error("No mutation found in nodes traits")
 	}
 }
+
+func TestGenome_mutateToggleEnable(t *testing.T) {
+	gnome1 := buildTestGenome(1)
+	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 true"),
+		gnome1.Traits, gnome1.Nodes))
+
+	res, err := gnome1.mutateToggleEnable(5)
+	if !res || err != nil {
+		t.Error("Failed to mutate toggle genes")
+	}
+	mut_count := 0
+	for _, gn := range gnome1.Genes {
+		if !gn.IsEnabled {
+			mut_count++
+		}
+	}
+	if mut_count != 1 {
+		t.Errorf("Wrong number of mutations found: %d", mut_count)
+	}
+}

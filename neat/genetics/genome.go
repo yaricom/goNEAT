@@ -890,9 +890,32 @@ func (g *Genome) mutateNodeTrait(times int) (bool, error) {
 	return true, nil
 }
 
-// Toggle genes on or off
-func (g *Genome) mutateToggleEnable(times int) {
-	// TODO Implement th
+// Toggle genes from enable on to enable off or vice versa.  Do it specified number of times.
+func (g *Genome) mutateToggleEnable(times int) (bool, error) {
+	if len(g.Genes) == 0 {
+		return false, errors.New("Genome has no genes to toggle")
+	}
+	for loop := 0; loop < times; loop++ {
+		// Choose a random gene number
+		gene_num := rand.Intn(len(g.Genes))
+
+		gene := g.Genes[gene_num]
+		if gene.IsEnabled {
+			// We need to make sure that another gene connects out of the in-node.
+			// Because if not a section of network will break off and become isolated.
+			for _, check_gene := range g.Genes {
+				if check_gene.Link.InNode.Id == gene.Link.InNode.Id &&
+					check_gene.IsEnabled && check_gene.InnovationNum != gene.InnovationNum {
+					gene.IsEnabled = false
+					break
+				}
+			}
+		} else {
+			gene.IsEnabled = true
+		}
+
+	}
+	return true, nil
 }
 // Find first disabled gene and enable it
 func (g *Genome) mutateGeneReenable() {
@@ -900,7 +923,7 @@ func (g *Genome) mutateGeneReenable() {
 }
 
 // Applies all non-structural mutations to this genome
-func (g *Genome) mutateAllNonstructural(conf *neat.Neat) (bool, error){
+func (g *Genome) mutateAllNonstructural(conf *neat.Neat) (bool, error) {
 	res := false
 	var err error
 	if rand.Float64() < conf.MutateRandomTraitProb {
@@ -925,7 +948,7 @@ func (g *Genome) mutateAllNonstructural(conf *neat.Neat) (bool, error){
 
 	if err == nil && rand.Float64() < conf.MutateToggleEnableProb {
 		// mutate toggle enable
-		g.mutateToggleEnable(1)
+		res, err = g.mutateToggleEnable(1)
 	}
 
 	if err == nil && rand.Float64() < conf.MutateGeneReenableProb {
