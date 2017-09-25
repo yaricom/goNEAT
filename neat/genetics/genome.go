@@ -917,9 +917,18 @@ func (g *Genome) mutateToggleEnable(times int) (bool, error) {
 	}
 	return true, nil
 }
-// Find first disabled gene and enable it
-func (g *Genome) mutateGeneReenable() {
-	// TODO Implement th
+// Finds first disabled gene and enable it
+func (g *Genome) mutateGeneReenable() (bool, error) {
+	if len(g.Genes) == 0 {
+		return false, errors.New("Genome has no genes to re-enable")
+	}
+	for _, gene := range g.Genes {
+		if !gene.IsEnabled {
+			gene.IsEnabled = true
+			break
+		}
+	}
+	return true, nil
 }
 
 // Applies all non-structural mutations to this genome
@@ -953,7 +962,7 @@ func (g *Genome) mutateAllNonstructural(conf *neat.Neat) (bool, error) {
 
 	if err == nil && rand.Float64() < conf.MutateGeneReenableProb {
 		// mutate gene reenable
-		g.mutateGeneReenable();
+		res, err = g.mutateGeneReenable();
 	}
 	return res, err
 }
