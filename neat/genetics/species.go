@@ -354,7 +354,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					return false, err
 				}
 			} else {
-				new_genome = mom.GNome.mateSinglepoint(dad.GNome, count)
+				new_genome, err = mom.GNome.mateSinglepoint(dad.GNome, count)
+				if err != nil {
+					return false, err
+				}
 			}
 
 			mate_baby = true
