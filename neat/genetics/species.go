@@ -349,7 +349,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 			} else if rand.Float64() < conf.MateMultipointAvgProb / (conf.MateMultipointAvgProb + conf.MateSinglepointProb) {
 				// mate multipoint_avg baby
-				new_genome = mom.GNome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
+				new_genome, err = mom.GNome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
+				if err != nil {
+					return false, err
+				}
 			} else {
 				new_genome = mom.GNome.mateSinglepoint(dad.GNome, count)
 			}
