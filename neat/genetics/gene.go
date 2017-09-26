@@ -39,7 +39,7 @@ func NewGeneWithTrait(trait *neat.Trait, weight float64, in_node, out_node *netw
 }
 
 // Construct a gene off of another gene as a duplicate
-func NewGeneGeneCopy(g *Gene, trait *neat.Trait, in_node, out_node *network.NNode) *Gene {
+func NewGeneCopy(g *Gene, trait *neat.Trait, in_node, out_node *network.NNode) *Gene {
 	return newGene(network.NewLinkWithTrait(trait, g.Link.Weight, in_node, out_node, g.Link.IsRecurrent),
 		g.InnovationNum, g.MutationNum, true)
 }
