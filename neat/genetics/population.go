@@ -1,10 +1,12 @@
 package genetics
 
 import (
-	"fmt"
 	"math/rand"
 	"errors"
 	"github.com/yaricom/goNEAT/neat"
+
+	"io"
+	"fmt"
 )
 
 // A Population is a group of Organisms including their species
@@ -54,7 +56,6 @@ func NewPopulation(g *Genome, size int, conf *neat.Neat) (*Population, error) {
 // NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64)
 // See the Genome constructor above for the argument specifications
 func NewPopulationRandom(size, in, out, nmax int , recurrent bool, link_prob float64, conf *neat.Neat) (*Population, error) {
-	fmt.Println("Making a random Population")
 	pop := newPopulation()
 
 	for count := 0; count < size; count++ {
@@ -70,6 +71,59 @@ func NewPopulationRandom(size, in, out, nmax int , recurrent bool, link_prob flo
 	}
 
 	return pop, nil
+}
+
+// Reads population from provided reader
+func ReadPopulation(r io.Reader, conf *neat.Neat) (*Population, error) {
+	pop := newPopulation()
+
+	var cur_word string
+	for true {
+		_, ioerr := fmt.Fscanf(r, "%s", &cur_word)
+		if ioerr == io.EOF {
+			break
+		}
+		if cur_word == "genomestart" {
+			var id_check int
+			fmt.Fscanf(r, "%d", &id_check)
+			new_genome, err := ReadGenome(r, id_check)
+			if err != nil {
+				return nil, err
+			}
+			// add new organism for read genome
+			new_organism := NewOrganism(0, new_genome, 1)
+			pop.Organisms = append(pop.Organisms, new_organism)
+
+			if last_node_id, err := new_genome.getLastNodeId(); err == nil {
+				if pop.currNodeId < last_node_id {
+					pop.currNodeId = last_node_id
+				}
+			} else {
+				return nil, err
+			}
+
+			if last_gene_innov_num, err := new_genome.getLastGeneInnovNum(); err == nil {
+				if pop.currInnovNum < last_gene_innov_num {
+					pop.currInnovNum = last_gene_innov_num
+				}
+			} else {
+				return nil, err
+			}
+
+		} else if cur_word == "/*" {
+			// read comments and print it
+			for cur_word != "*/" {
+				fmt.Fscanf(r, "%s", &cur_word)
+				fmt.Println(cur_word)
+			}
+		}
+	}
+	err := pop.speciate(conf)
+	if err != nil {
+		return nil, err
+	} else {
+		return pop, nil
+	}
 }
 
 // Default private constructor
