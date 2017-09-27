@@ -329,9 +329,10 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	conf := neat.Neat{
 		RecurOnlyProb:0.5,
 		NewLinkTries:10,
+		CompatThreshold:0.5,
 	}
 	// The population
-	pop := NewPopulation(gnome1, 10)
+	pop, _ := NewPopulation(gnome1, 10, &conf)
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
@@ -389,9 +390,15 @@ func TestGenome_mutateAddLink(t *testing.T) {
 
 func TestGenome_mutateAddNode(t *testing.T) {
 	gnome1 := buildTestGenome(1)
+	// Configuration
+	conf := neat.Neat{
+		RecurOnlyProb:0.5,
+		NewLinkTries:10,
+		CompatThreshold:0.5,
+	}
 
 	// The population
-	pop := NewPopulation(gnome1, 10)
+	pop, _ := NewPopulation(gnome1, 10, &conf)
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
