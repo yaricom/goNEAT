@@ -234,8 +234,8 @@ func ReadGenome(r io.Reader, id int) (*Genome, error) {
 
 		case "/*":
 			// read all comments and print it
-			fmt.Fscanf(r, "%s", &cur_word)
 			for cur_word != "*/" {
+				fmt.Fscanf(r, "%s", &cur_word)
 				fmt.Println(cur_word)
 			}
 		}
