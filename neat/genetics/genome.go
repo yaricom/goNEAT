@@ -294,6 +294,24 @@ func (g *Genome) String() string {
 	return str
 }
 
+// Return id of final NNode in Genome
+func (g *Genome) getLastNodeId() (int, error) {
+	if len(g.Nodes) > 0 {
+		return g.Nodes[len(g.Nodes) - 1].Id + 1
+	} else {
+		return nil, errors.New("Genome has no nodes")
+	}
+}
+
+// Return last innovation number in Genome
+func (g *Genome) getLastGeneInnovNum() (int64, error) {
+	if len(g.Genes) > 0 {
+		return g.Genes[len(g.Genes) - 1].InnovationNum + int64(1)
+	} else {
+		return nil, errors.New("Genome has no Genes")
+	}
+}
+
 // Generate a Network phenotype from this Genome with specified id
 func (g *Genome) genesis(net_id int) *network.Network {
 	// Inputs and outputs will be collected here for the network.
