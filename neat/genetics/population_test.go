@@ -111,3 +111,51 @@ func TestReadPopulation(t *testing.T) {
 		t.Error("len(pop.Species) != 1", len(pop.Species))
 	}
 }
+
+func TestPopulation_verify(t *testing.T) {
+	// first create population
+	rand.Seed(42)
+	pop_str := "genomestart 1\n" +
+		"trait 1 0.1 0 0 0 0 0 0 0\n" +
+		"trait 2 0.2 0 0 0 0 0 0 0\n" +
+		"trait 3 0.3 0 0 0 0 0 0 0\n" +
+		"node 1 0 1 1\n" +
+		"node 2 0 1 1\n" +
+		"node 3 0 1 3\n" +
+		"node 4 0 0 2\n" +
+		"gene 1 1 4 1.5 false 1 0 true\n" +
+		"gene 2 2 4 2.5 false 2 0 true\n" +
+		"gene 3 3 4 3.5 false 3 0 true\n" +
+		"genomeend 1\n" +
+		"genomestart 2\n" +
+		"trait 1 0.1 0 0 0 0 0 0 0\n" +
+		"trait 2 0.2 0 0 0 0 0 0 0\n" +
+		"trait 3 0.3 0 0 0 0 0 0 0\n" +
+		"node 1 0 1 1\n" +
+		"node 2 0 1 1\n" +
+		"node 3 0 1 3\n" +
+		"node 4 0 0 2\n" +
+		"gene 1 1 4 1.5 false 1 0 true\n" +
+		"gene 2 2 4 2.5 false 2 0 true\n" +
+		"gene 3 3 4 3.5 false 3 0 true\n" +
+		"genomeend 2\n"
+	conf := neat.Neat{
+		CompatThreshold:0.5,
+	}
+	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
+	if err != nil {
+		t.Error(err)
+	}
+	if pop == nil {
+		t.Error("pop == nil")
+	}
+
+	// then verify created
+	res, err := pop.verify()
+	if err != nil {
+		t.Error(err)
+	}
+	if !res {
+		t.Error("Population verification failed, but must not")
+	}
+}

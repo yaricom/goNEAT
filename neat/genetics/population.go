@@ -228,9 +228,16 @@ func (p *Population) speciate(conf *neat.Neat) error {
 }
 
 // Run verify on all Genomes in this Population (Debugging)
-func (p *Population) verify() bool {
-	// TODO implement this
-	return false
+func (p *Population) verify() (bool, error) {
+	res := true
+	var err error
+	for _, o := range p.Organisms {
+		res, err = o.GNome.verify()
+		if err != nil {
+			return false, err
+		}
+	}
+	return res, nil
 }
 
 // Turnover the population to a new generation using fitness
