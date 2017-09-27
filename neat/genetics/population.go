@@ -55,7 +55,7 @@ func NewPopulation(g *Genome, size int, conf *neat.Neat) (*Population, error) {
 // Special constructor to create a population of random topologies uses
 // NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64)
 // See the Genome constructor above for the argument specifications
-func NewPopulationRandom(size, in, out, nmax int , recurrent bool, link_prob float64, conf *neat.Neat) (*Population, error) {
+func NewPopulationRandom(size, in, out, nmax int, recurrent bool, link_prob float64, conf *neat.Neat) (*Population, error) {
 	pop := newPopulation()
 
 	for count := 0; count < size; count++ {
@@ -123,6 +123,14 @@ func ReadPopulation(r io.Reader, conf *neat.Neat) (*Population, error) {
 		return nil, err
 	} else {
 		return pop, nil
+	}
+}
+
+// Writes given population to a writer
+func (p *Population) Write(w io.Writer) {
+	// Prints all the Organisms' Genomes to the outFile
+	for _, o := range p.Organisms {
+		o.GNome.Write(w)
 	}
 }
 
