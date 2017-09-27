@@ -443,13 +443,13 @@ func (g *Genome) duplicate(new_id int) *Genome {
 // Note: Some of these tests do not indicate a bug, but rather are meant to be used to detect specific system states.
 func (g *Genome) verify() (bool, error) {
 	if len(g.Genes) == 0 {
-		return false, errors.New("Ganome has no Genes")
+		return false, errors.New("Genome has no Genes")
 	}
 	if len(g.Nodes) == 0 {
-		return false, errors.New("Ganome has no Nodes")
+		return false, errors.New("Genome has no Nodes")
 	}
 	if len(g.Traits) == 0 {
-		return false, errors.New("Ganome has no Traits")
+		return false, errors.New("Genome has no Traits")
 	}
 
 
