@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"bufio"
 	"reflect"
+	"math/rand"
 )
 
 const gnome_str = "genomestart 1\n" +
@@ -163,6 +164,7 @@ func TestGenome_WriteGenome(t *testing.T) {
 
 // Test create random genome
 func TestGenome_NewGenomeRand(t *testing.T) {
+	rand.Seed(42)
 	new_id, in, out, n, nmax := 1, 3, 2, 2, 5
 	recurrent := false
 	link_prob := 0.5
@@ -285,6 +287,7 @@ func TestGene_Verify(t *testing.T) {
 }
 
 func TestGenome_Compatibility(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome2 := buildTestGenome(2)
 
@@ -324,6 +327,7 @@ func TestGenome_Compatibility(t *testing.T) {
 }
 
 func TestGenome_mutateAddLink(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	// Configuration
 	conf := neat.Neat{
@@ -331,14 +335,15 @@ func TestGenome_mutateAddLink(t *testing.T) {
 		NewLinkTries:10,
 		CompatThreshold:0.5,
 	}
-	// The population
-	pop, _ := NewPopulation(gnome1, 10, &conf)
+	// The population (DUMMY)
+	pop := newPopulation()
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
 	res, err := gnome1.mutateAddLink(pop, &conf)
 	if !res {
 		t.Error("New link not added:", err)
+		return
 	}
 	if err != nil {
 		t.Error("err != nil", err)
@@ -389,16 +394,11 @@ func TestGenome_mutateAddLink(t *testing.T) {
 }
 
 func TestGenome_mutateAddNode(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
-	// Configuration
-	conf := neat.Neat{
-		RecurOnlyProb:0.5,
-		NewLinkTries:10,
-		CompatThreshold:0.5,
-	}
 
-	// The population
-	pop, _ := NewPopulation(gnome1, 10, &conf)
+	// The population (DUMMY)
+	pop := newPopulation()
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
@@ -421,11 +421,10 @@ func TestGenome_mutateAddNode(t *testing.T) {
 	if gnome1.Nodes[0].Id != 0 {
 		t.Error("New node inserted at wrong position")
 	}
-
-	//t.Log(gnome1.Nodes)
 }
 
 func TestGenome_mutateLinkWeights(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	// Configuration
 	conf := neat.Neat{
@@ -444,6 +443,7 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 }
 
 func TestGenome_mutateRandomTrait(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	// Configuration
 	conf := neat.Neat{
@@ -475,9 +475,10 @@ func TestGenome_mutateRandomTrait(t *testing.T) {
 }
 
 func TestGenome_mutateLinkTrait(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 
-	res, err := gnome1.mutateLinkTrait(2)
+	res, err := gnome1.mutateLinkTrait(10)
 	if !res || err != nil {
 		t.Error("Failed to mutate link trait")
 	}
@@ -494,6 +495,7 @@ func TestGenome_mutateLinkTrait(t *testing.T) {
 }
 
 func TestGenome_mutateNodeTrait(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 
 	// Add traits to nodes
@@ -521,6 +523,7 @@ func TestGenome_mutateNodeTrait(t *testing.T) {
 }
 
 func TestGenome_mutateToggleEnable(t *testing.T) {
+	rand.Seed(41)
 	gnome1 := buildTestGenome(1)
 	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 true"),
 		gnome1.Traits, gnome1.Nodes))
@@ -541,6 +544,7 @@ func TestGenome_mutateToggleEnable(t *testing.T) {
 }
 
 func TestGenome_mutateGeneReenable(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
 		gnome1.Traits, gnome1.Nodes))
@@ -559,6 +563,7 @@ func TestGenome_mutateGeneReenable(t *testing.T) {
 }
 
 func TestGenome_mateMultipoint(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome2 := buildTestGenome(2)
 
@@ -606,6 +611,7 @@ func TestGenome_mateMultipoint(t *testing.T) {
 }
 
 func TestGenome_mateMultipointAvg(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome2 := buildTestGenome(2)
 
@@ -642,7 +648,7 @@ func TestGenome_mateMultipointAvg(t *testing.T) {
 		t.Error("Failed to create child genome")
 	}
 	if len(gnome_child.Genes) != 4 {
-		t.Error("len(gnome_child.Genes) != 4")
+		t.Error("len(gnome_child.Genes) != 4", len(gnome_child.Genes))
 	}
 	if len(gnome_child.Nodes) != 4 {
 		t.Error("gnome_child.Nodes) != 4")
@@ -653,6 +659,7 @@ func TestGenome_mateMultipointAvg(t *testing.T) {
 }
 
 func TestGenome_mateSinglepoint(t *testing.T) {
+	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome2 := buildTestGenome(2)
 
