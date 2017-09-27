@@ -1,20 +1,36 @@
 package genetics
 
+import (
+	"fmt"
+	"math/rand"
+	"errors"
+	"github.com/yaricom/goNEAT/neat"
+)
+
+// A Population is a group of Organisms including their species
 type Population struct {
 	// Species in the Population. Note that the species should comprise all the genomes
 	Species            []*Species
+	// The organisms in the Population
+	Organisms          []*Organism
 	// The highest species number
 	LastSpecies        int
 	// For holding the genetic innovations of the newest generation
 	Innovations        []*Innovation
 	// An integer that when above zero tells when the first winner appeared
 	WinnerGen          int
-
+	// The last generation played
+	FinalGen           int
 
 	// Stagnation detector
 	HighestFitness     float64
 	// If too high, leads to delta coding
 	HighestLastChanged int
+
+	/* Fitness Statistics */
+	MeanFitness        float64
+	Variance           float64
+	StandardDev        float64
 
 
 	// The current innovation number for population
@@ -23,15 +39,46 @@ type Population struct {
 	currNodeId         int
 }
 
-/* Construct off of a single spawning Genome */
+// Construct off of a single spawning Genome
 func NewPopulation(g *Genome, size int) *Population {
-	pop := Population{
+	pop := newPopulation()
+
+	pop.spawn(g, size)
+	return pop
+}
+
+// Special constructor to create a population of random topologies uses
+// NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64)
+// See the Genome constructor above for the argument specifications
+func NewPopulationRandom(size, in, out, nmax int , recurrent bool, link_prob float64, conf *neat.Neat) (*Population, error) {
+	fmt.Println("Making a random Population")
+	pop := newPopulation()
+
+	for count := 0; count < size; count++ {
+		gen := NewGenomeRand(count, in, out, rand.Intn(nmax), nmax, recurrent, link_prob)
+		pop.Organisms = append(pop.Organisms, NewOrganism(0, gen, 1))
+	}
+	pop.currNodeId = in + out + nmax + 1
+	pop.currInnovNum = int64((in + out + nmax) * (in + out + nmax) + 1)
+
+	err := pop.speciate(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return pop, nil
+}
+
+// Default private constructor
+func newPopulation() *Population {
+	return &Population{
 		WinnerGen:0,
 		HighestFitness:0.0,
 		HighestLastChanged:0,
+		Species:make([]*Species, 0),
+		Organisms:make([]*Organism, 0),
+		Innovations:make([]*Innovation, 0),
 	}
-	pop.spawn(g, size)
-	return &pop
 }
 
 // Returns current innovation number and increment innovations number counter after that
@@ -50,6 +97,67 @@ func (p *Population) getCurrentNodeIdAndIncrement() int {
 // A Population can be spawned off of a single Genome. There will be size Genomes added to the Population.
 // The Population does not have to be empty to add Genomes.
 func (p *Population) spawn(g *Genome, size int) bool {
+	// TODO implement this
+	return false
+}
+
+// Speciate separates the organisms into species by checking compatibilities against a threshold.
+// Any organism that does is not compatible with the first organism in any existing species becomes a new species.
+func (p *Population) speciate(conf *neat.Neat) error {
+	if len(p.Organisms) == 0 {
+		return errors.New("There is no organisms to speciate from")
+	}
+
+	// Species counter
+	species_counter := 0
+	// Step through all known organisms
+	for _, curr_org := range p.Organisms {
+		if len(p.Species) == 0 {
+			// Create the first species
+			new_species := NewSpecies(species_counter)
+			p.Species = append(p.Species, new_species)
+			new_species.addOrganism(curr_org)
+			curr_org.SpeciesOf = new_species
+			species_counter++
+		} else {
+			// For each organism, search for a species it is compatible to
+			done := false
+			for _, curr_species := range p.Species {
+				comp_org := curr_species.firstOrganism()
+				// compare current organism with first organism in current specie
+				if comp_org != nil &&
+					curr_org.GNome.compatibility(comp_org.GNome, conf) < conf.CompatThreshold {
+					// Found compatible species, so add this organism to it
+					curr_species.addOrganism(curr_org)
+					curr_org.SpeciesOf = curr_species // Point organism to its species
+					done = true
+					break
+				}
+			}
+			// If we didn't find a match, create a new species
+			if !done {
+				new_species := NewSpecies(species_counter)
+				p.Species = append(p.Species, new_species)
+				new_species.addOrganism(curr_org)
+				curr_org.SpeciesOf = new_species
+				species_counter++
+			}
+		}
+	}
+	p.LastSpecies = species_counter // Keep track of highest species
+
+	return nil
+}
+
+// Run verify on all Genomes in this Population (Debugging)
+func (p *Population) verify() bool {
+	// TODO implement this
+	return false
+}
+
+// Turnover the population to a new generation using fitness
+// The generation argument is the next generation
+func (p *Population) epoch(generation int) bool {
 	// TODO implement this
 	return false
 }
