@@ -40,11 +40,14 @@ type Population struct {
 }
 
 // Construct off of a single spawning Genome
-func NewPopulation(g *Genome, size int) *Population {
+func NewPopulation(g *Genome, size int, conf *neat.Neat) (*Population, error) {
 	pop := newPopulation()
 
-	pop.spawn(g, size)
-	return pop
+	err := pop.spawn(g, size, conf)
+	if err != nil {
+		return nil, err
+	}
+	return pop, nil
 }
 
 // Special constructor to create a population of random topologies uses
@@ -94,11 +97,32 @@ func (p *Population) getCurrentNodeIdAndIncrement() int {
 	return node_id
 }
 
-// A Population can be spawned off of a single Genome. There will be size Genomes added to the Population.
-// The Population does not have to be empty to add Genomes.
-func (p *Population) spawn(g *Genome, size int) bool {
-	// TODO implement this
-	return false
+// Create a population of size size off of Genome g. The new Population will have the same topology as g
+// with link weights slightly perturbed from g's
+func (p *Population) spawn(g *Genome, size int, conf *neat.Neat) error {
+	var new_genome *Genome
+	for count := 0; count < size; count++ {
+		new_genome = g.duplicate(count)
+		_, err := new_genome.mutateLinkWeights(1.0, 1.0, GAUSSIAN)
+		if err != nil {
+			return err
+		}
+		new_organism := NewOrganism(0.0, new_genome, 1)
+		p.Organisms = append(p.Organisms, new_organism)
+	}
+	//Keep a record of the innovation and node number we are on
+	var err error
+	p.currNodeId, err = new_genome.getLastNodeId()
+	p.currInnovNum, err = new_genome.getLastGeneInnovNum()
+
+	if err != nil {
+		return err
+	}
+
+	// Separate the new Population into species
+	err = p.speciate(conf)
+
+	return err
 }
 
 // Speciate separates the organisms into species by checking compatibilities against a threshold.
