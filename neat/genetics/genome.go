@@ -294,21 +294,21 @@ func (g *Genome) String() string {
 	return str
 }
 
-// Return id of final NNode in Genome
+// Return id of final NNode in Genome + 1
 func (g *Genome) getLastNodeId() (int, error) {
 	if len(g.Nodes) > 0 {
-		return g.Nodes[len(g.Nodes) - 1].Id + 1
+		return g.Nodes[len(g.Nodes) - 1].Id + 1, nil
 	} else {
-		return nil, errors.New("Genome has no nodes")
+		return -1, errors.New("Genome has no nodes")
 	}
 }
 
-// Return last innovation number in Genome
+// Return innovation number of last gene in Genome + 1
 func (g *Genome) getLastGeneInnovNum() (int64, error) {
 	if len(g.Genes) > 0 {
-		return g.Genes[len(g.Genes) - 1].InnovationNum + int64(1)
+		return g.Genes[len(g.Genes) - 1].InnovationNum + int64(1), nil
 	} else {
-		return nil, errors.New("Genome has no Genes")
+		return -1, errors.New("Genome has no Genes")
 	}
 }
 
