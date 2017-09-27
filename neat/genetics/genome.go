@@ -198,6 +198,7 @@ func ReadGenome(r io.Reader, id int) (*Genome, error) {
 
 	done := false
 	var cur_word string
+	var g_id int
 	// Loop until file is finished, parsing each line
 	for !done {
 		fmt.Fscanf(r, "%s", &cur_word)
@@ -205,15 +206,6 @@ func ReadGenome(r io.Reader, id int) (*Genome, error) {
 		//fmt.Println(cur_word)
 
 		switch cur_word {
-		case "genomestart":
-			// Read Genome ID and check
-			var g_id int
-			fmt.Fscanf(r, "%d ", &g_id)
-			if g_id != id {
-				return nil, errors.New(
-					fmt.Sprintf("Id mismatch in genome. Found: %d, expected: %d", g_id, id))
-			}
-
 		case "trait":
 			// Read a Trait
 			new_trait := neat.ReadTrait(r)
@@ -230,12 +222,22 @@ func ReadGenome(r io.Reader, id int) (*Genome, error) {
 			gnome.Genes = append(gnome.Genes, new_gene)
 
 		case "genomeend":
+			// Read Genome ID
+			fmt.Fscanf(r, "%d ", &g_id)
+			// check that we have correct genome ID
+			if g_id != id {
+				return nil, errors.New(
+					fmt.Sprintf("Id mismatch in genome. Found: %d, expected: %d", g_id, id))
+			}
 			// Finish
 			done = true
 
-		default:
-			// Print to the screen
-			fmt.Printf("%s \n", cur_word)
+		case "/*":
+			// read all comments and print it
+			fmt.Fscanf(r, "%s", &cur_word)
+			for cur_word != "*/" {
+				fmt.Println(cur_word)
+			}
 		}
 	}
 	return &gnome, nil
@@ -766,9 +768,10 @@ func (g *Genome) mutateAddNode(pop *Population) (bool, error) {
 	// The innovation is totally novel
 	if !innovation_found {
 		// Get the current node id with post increment
-		curnode_id := pop.getCurrentNodeIdAndIncrement()
+		curr_node_id := pop.getCurrentNodeIdAndIncrement()
+
 		// Create the new NNode
-		new_node = network.NewNNodeInPlace(network.NEURON, curnode_id, network.HIDDEN)
+		new_node = network.NewNNodeInPlace(network.NEURON, curr_node_id, network.HIDDEN)
 		// By convention, it will point to the first trait
 		new_node.Trait = g.Traits[0]
 
