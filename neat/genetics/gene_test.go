@@ -70,7 +70,7 @@ func TestGene_WriteGene(t *testing.T)  {
 	gene.IsEnabled = enabled
 
 	out_buf := bytes.NewBufferString("")
-	gene.WriteGene(out_buf)
+	gene.Write(out_buf)
 
 	out_str := out_buf.String()
 	if gene_str != out_str {

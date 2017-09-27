@@ -87,7 +87,7 @@ func newGene(link *network.Link, inov_num int64, mut_num float64, enabled bool) 
 }
 
 // Writes Gene to the provided writer
-func (g *Gene) WriteGene(w io.Writer)  {
+func (g *Gene) Write(w io.Writer)  {
 	link := g.Link
 	traitId := 0
 	if link.Trait != nil {

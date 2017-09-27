@@ -148,7 +148,7 @@ func TestGenome_WriteGenome(t *testing.T) {
 
 	gnome := buildTestGenome(1)
 	out_buf := bytes.NewBufferString("")
-	gnome.WriteGenome(out_buf)
+	gnome.Write(out_buf)
 
 	_, g_str_r, err_g := bufio.ScanLines([]byte(gnome_str), true)
 	_, o_str_r, err_o := bufio.ScanLines(out_buf.Bytes(), true)

@@ -43,7 +43,7 @@ func TestWriteNNode(t *testing.T) {
 	node := NewNNodeInPlace(ntype, node_id, gen_node_label)
 	node.Trait = trait
 	out_buffer := bytes.NewBufferString("")
-	node.WriteNode(out_buffer)
+	node.Write(out_buffer)
 	out_str := out_buffer.String()
 
 	if out_str != node_str {

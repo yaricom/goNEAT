@@ -217,7 +217,7 @@ func (n *NNode) FlushbackCheck() error {
 }
 
 // Dump node to a writer
-func (n *NNode) WriteNode(w io.Writer) {
+func (n *NNode) Write(w io.Writer) {
 	trait_id := 0
 	if n.Trait != nil {
 		trait_id = n.Trait.Id

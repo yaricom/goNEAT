@@ -244,7 +244,7 @@ func ReadGenome(r io.Reader, id int) (*Genome, error) {
 }
 
 // Writes this genome into provided writer
-func (g *Genome) WriteGenome(w io.Writer) {
+func (g *Genome) Write(w io.Writer) {
 	fmt.Fprintf(w, "genomestart %d\n", g.Id)
 
 	for _, tr := range g.Traits {
@@ -255,13 +255,13 @@ func (g *Genome) WriteGenome(w io.Writer) {
 
 	for _, nd := range g.Nodes {
 		fmt.Fprint(w, "node ")
-		nd.WriteNode(w)
+		nd.Write(w)
 		fmt.Fprintln(w, "")
 	}
 
 	for _, gn := range g.Genes {
 		fmt.Fprint(w, "gene ")
-		gn.WriteGene(w)
+		gn.Write(w)
 		fmt.Fprintln(w, "")
 	}
 	fmt.Fprintf(w, "genomeend %d\n", g.Id)
