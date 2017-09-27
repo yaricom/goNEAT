@@ -1506,7 +1506,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 /* ******** COMPATIBILITY CHECKING METHODS * ********/
 
 // This function gives a measure of compatibility between two Genomes by computing a linear combination of 3
-// characterizing variables of their compatibilty. The 3 variables represent PERCENT DISJOINT GENES,
+// characterizing variables of their compatibility. The 3 variables represent PERCENT DISJOINT GENES,
 // PERCENT EXCESS GENES, MUTATIONAL DIFFERENCE WITHIN MATCHING GENES. So the formula for compatibility
 // is:  disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // The 3 coefficients are global system parameters */
