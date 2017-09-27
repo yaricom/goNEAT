@@ -157,6 +157,15 @@ func (s *Species) computeMaxFitness() float64 {
 	return s.MaxFitness
 }
 
+// Returns first organism or nil
+func (s *Species) firstOrganism() *Organism {
+	if len(s.Organisms) > 0 {
+		return s.Organisms[0]
+	} else {
+		return nil
+	}
+}
+
 // Compute the collective offspring the entire species (the sum of all organism's offspring) is assigned.
 // The skim is fractional offspring left over from a previous species that was counted. These fractional parts are
 // kept until they add up to 1.
@@ -443,9 +452,9 @@ func createFirstSpecies(pop *Population, baby *Organism) {
 func (s *Species) String() string {
 	str := fmt.Sprintf("Species #%d, age=%d, avg_fitness=%.3f, max_fitness=%.3f, max_fitness_ever=%.3f, expected_offspring=%d, age_of_last_improvement=%d\n",
 		s.Id, s.Age, s.AvgFitness, s.MaxFitness, s.MaxFitnessEver, s.ExpectedOffspring, s.AgeOfLastImprovement)
-	str += fmt.Sprintf("Has %d Organisms\n", len(s.Organisms))
+	str += fmt.Sprintf("Has %d Organisms:\n", len(s.Organisms))
 	for _, o := range s.Organisms {
-		str += fmt.Sprintf("%s\n", o)
+		str += fmt.Sprintf("\t%s\n", o)
 	}
 	return str
 }
