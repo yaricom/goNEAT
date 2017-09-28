@@ -23,7 +23,7 @@ func TestGene_adjustFitness(t *testing.T)  {
 	sp := buildSpeciesWithOrganisms(1)
 
 	// Configuration
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		DropOffAge:5,
 		SurvivalThresh:0.5,
 		AgeSignificance:0.5,

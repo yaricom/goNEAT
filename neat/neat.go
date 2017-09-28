@@ -8,8 +8,8 @@ import "math/rand"
 // sensitization, or Hebbian-type processes
 const Num_trait_params = 8
 
-// The global configuration holder
-type Neat struct {
+// The NEAT execution context holding common configuration parameters, etc.
+type NeatContext struct {
 	// Prob. of mutating a single trait param
 	TraitParamMutProb      float64
 	// Power of mutation on a single trait param

@@ -14,7 +14,7 @@ func TestNewPopulationRandom(t *testing.T) {
 	size, in, out, nmax := 10, 3, 2, 5
 	recurrent := false
 	link_prob := 0.5
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		CompatThreshold:0.5,
 	}
 	pop, err := NewPopulationRandom(size, in, out, nmax, recurrent, link_prob, &conf)
@@ -44,7 +44,7 @@ func TestNewPopulation(t *testing.T) {
 	size, in, out, nmax, n := 10, 3, 2, 5, 3
 	recurrent := false
 	link_prob := 0.5
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		CompatThreshold:0.5,
 	}
 	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
@@ -94,7 +94,7 @@ func TestReadPopulation(t *testing.T) {
 		"gene 2 2 4 2.5 false 2 0 true\n" +
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		CompatThreshold:0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
@@ -139,7 +139,7 @@ func TestPopulation_verify(t *testing.T) {
 		"gene 2 2 4 2.5 false 2 0 true\n" +
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		CompatThreshold:0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
@@ -186,7 +186,7 @@ func TestPopulation_Write(t *testing.T) {
 		"gene 2 2 4 2.5 false 2 0 true\n" +
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		CompatThreshold:0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)

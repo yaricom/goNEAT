@@ -83,7 +83,7 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 
 // Can change the fitness of the organisms in the Species to be higher for very new species (to protect them).
 // Divides the fitness by the size of the Species, so that fitness is "shared" by the species.
-func (s *Species) adjustFitness(conf *neat.Neat) {
+func (s *Species) adjustFitness(conf *neat.NeatContext) {
 	age_debt := (s.Age - s.AgeOfLastImprovement + 1) - conf.DropOffAge
 	if age_debt == 0 {
 		age_debt = 1
@@ -218,7 +218,7 @@ func (s *Species) findChampion() *Organism {
 }
 
 //Perform mating and mutation to form next generation
-func (s *Species) reproduce(generation int, pop *Population, sorted_species []*Species, conf *neat.Neat) (bool, error) {
+func (s *Species) reproduce(generation int, pop *Population, sorted_species []*Species, conf *neat.NeatContext) (bool, error) {
 	//Check for a mistake
 	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
 		return false, errors.New("ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")

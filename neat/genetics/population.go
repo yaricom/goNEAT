@@ -42,7 +42,7 @@ type Population struct {
 }
 
 // Construct off of a single spawning Genome
-func NewPopulation(g *Genome, size int, conf *neat.Neat) (*Population, error) {
+func NewPopulation(g *Genome, size int, conf *neat.NeatContext) (*Population, error) {
 	pop := newPopulation()
 
 	err := pop.spawn(g, size, conf)
@@ -55,7 +55,7 @@ func NewPopulation(g *Genome, size int, conf *neat.Neat) (*Population, error) {
 // Special constructor to create a population of random topologies uses
 // NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64)
 // See the Genome constructor above for the argument specifications
-func NewPopulationRandom(size, in, out, nmax int, recurrent bool, link_prob float64, conf *neat.Neat) (*Population, error) {
+func NewPopulationRandom(size, in, out, nmax int, recurrent bool, link_prob float64, conf *neat.NeatContext) (*Population, error) {
 	pop := newPopulation()
 
 	for count := 0; count < size; count++ {
@@ -74,7 +74,7 @@ func NewPopulationRandom(size, in, out, nmax int, recurrent bool, link_prob floa
 }
 
 // Reads population from provided reader
-func ReadPopulation(r io.Reader, conf *neat.Neat) (*Population, error) {
+func ReadPopulation(r io.Reader, conf *neat.NeatContext) (*Population, error) {
 	pop := newPopulation()
 
 	var cur_word string
@@ -161,7 +161,7 @@ func (p *Population) getCurrentNodeIdAndIncrement() int {
 
 // Create a population of size size off of Genome g. The new Population will have the same topology as g
 // with link weights slightly perturbed from g's
-func (p *Population) spawn(g *Genome, size int, conf *neat.Neat) error {
+func (p *Population) spawn(g *Genome, size int, conf *neat.NeatContext) error {
 	var new_genome *Genome
 	for count := 0; count < size; count++ {
 		new_genome = g.duplicate(count)
@@ -189,7 +189,7 @@ func (p *Population) spawn(g *Genome, size int, conf *neat.Neat) error {
 
 // Speciate separates the organisms into species by checking compatibilities against a threshold.
 // Any organism that does is not compatible with the first organism in any existing species becomes a new species.
-func (p *Population) speciate(conf *neat.Neat) error {
+func (p *Population) speciate(conf *neat.NeatContext) error {
 	if len(p.Organisms) == 0 {
 		return errors.New("There is no organisms to speciate from")
 	}
@@ -250,7 +250,15 @@ func (p *Population) verify() (bool, error) {
 
 // Turnover the population to a new generation using fitness
 // The generation argument is the next generation
-func (p *Population) epoch(generation int) bool {
+func (p *Population) epoch(generation int, conf *neat.NeatContext) bool {
+	// Use Species' ages to modify the objective fitness of organisms in other words, make it more fair for younger
+	// species so they have a chance to take hold and also penalize stagnant species. Then adjust the fitness using
+	// the species size to "share" fitness within a species. Then, within each Species, mark for death those below
+	// survival_thresh * average
+	for _, sp := range p.Species {
+		sp.adjustFitness(conf)
+	}
+
 	// TODO implement this
 	return false
 }

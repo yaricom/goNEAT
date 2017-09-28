@@ -292,7 +292,7 @@ func TestGenome_Compatibility(t *testing.T) {
 	gnome2 := buildTestGenome(2)
 
 	// Configuration
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		DisjointCoeff:0.5,
 		ExcessCoeff:0.5,
 		MutdiffCoeff:0.5,
@@ -330,7 +330,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	// Configuration
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		RecurOnlyProb:0.5,
 		NewLinkTries:10,
 		CompatThreshold:0.5,
@@ -427,7 +427,7 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	// Configuration
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		WeightMutPower:0.5,
 	}
 
@@ -446,7 +446,7 @@ func TestGenome_mutateRandomTrait(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	// Configuration
-	conf := neat.Neat{
+	conf := neat.NeatContext{
 		TraitMutationPower:0.3,
 		TraitParamMutProb:0.5,
 	}

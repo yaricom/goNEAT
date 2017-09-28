@@ -532,7 +532,7 @@ func nodeInsert(nodes[]*network.NNode, n *network.NNode) []*network.NNode {
 
 // Mutate the genome by adding a new link between two random NNodes,
 // if NNodes are already connected, keep trying conf.NewLinkTries times
-func (g *Genome) mutateAddLink(pop *Population, conf *neat.Neat) (bool, error) {
+func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, error) {
 	// If the phenotype does not exist, exit on false,print error
 	// Note: This should never happen - if it does there is a bug
 	if g.Phenotype == nil {
@@ -862,7 +862,7 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type int) (bool
 }
 
 // Perturb params in one trait
-func (g *Genome) mutateRandomTrait(conf *neat.Neat) (bool, error) {
+func (g *Genome) mutateRandomTrait(conf *neat.NeatContext) (bool, error) {
 	if len(g.Traits) == 0 {
 		return false, errors.New("Genome has no traits")
 	}
@@ -954,7 +954,7 @@ func (g *Genome) mutateGeneReenable() (bool, error) {
 }
 
 // Applies all non-structural mutations to this genome
-func (g *Genome) mutateAllNonstructural(conf *neat.Neat) (bool, error) {
+func (g *Genome) mutateAllNonstructural(conf *neat.NeatContext) (bool, error) {
 	res := false
 	var err error
 	if rand.Float64() < conf.MutateRandomTraitProb {
@@ -1531,7 +1531,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 // PERCENT EXCESS GENES, MUTATIONAL DIFFERENCE WITHIN MATCHING GENES. So the formula for compatibility
 // is:  disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // The 3 coefficients are global system parameters */
-func (g *Genome) compatibility(og *Genome, conf *neat.Neat) float64 {
+func (g *Genome) compatibility(og *Genome, conf *neat.NeatContext) float64 {
 	num_disjoint, num_excess, mut_diff_total, num_matching := 0.0, 0.0, 0.0, 0.0
 	size1, size2 := len(g.Genes), len(og.Genes)
 	max_genome_size := size2
