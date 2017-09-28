@@ -458,3 +458,17 @@ func (s *Species) String() string {
 	}
 	return str
 }
+
+// This is used for list sorting of Species by fitness of best organism highest fitness first
+// It implements sort.Interface for []Species based on the OriginalFitness of first Organism field in descending order,
+// i.e. the max fitness goes first
+type ByOrganismOrigFitness []*Species
+func (f ByOrganismOrigFitness) Len() int {
+	return len(f)
+}
+func (f ByOrganismOrigFitness) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
+}
+func (f ByOrganismOrigFitness) Less(i, j int) bool {
+	return f[i].Organisms[0].OriginalFitness > f[j].Organisms[0].OriginalFitness
+}
