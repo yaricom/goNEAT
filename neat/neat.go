@@ -2,7 +2,10 @@
 // Artificial Neural Networks to perform specific task using genetic algorithms.
 package neat
 
-import "math/rand"
+import (
+	"math/rand"
+	"fmt"
+)
 
 // The number of parameters used in neurons that learn through habituation,
 // sensitization, or Hebbian-type processes
@@ -66,20 +69,29 @@ type NeatContext struct {
 	RecurOnlyProb          float64
 
 	// Size of population
-	PopSize                int
+	PopSize        int
 	// Age where Species starts to be penalized
-	DropOffAge             int
+	DropOffAge     int
 	// Number of tries mutate_add_link will attempt to find an open link
-	NewLinkTries           int
+	NewLinkTries   int
 
 	// Tells to print population to file every n generations
-	PrintEvery             int
+	PrintEvery     int
 
 	// The number of babies to siphen off to the champions
-	BabiesStolen           int
+	BabiesStolen   int
 
 	// The number of runs to average over in an experiment
-	Num_runs               int
+	Num_runs       int
+
+	// The flag to indicate whether to print additional debugging info
+	IsDebugEnabled bool
+}
+
+func (c *NeatContext) DebugLog(rec string) {
+	if c.IsDebugEnabled {
+		fmt.Println(rec)
+	}
 }
 
 // Returns
