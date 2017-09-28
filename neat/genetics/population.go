@@ -7,6 +7,7 @@ import (
 
 	"io"
 	"fmt"
+	"sort"
 )
 
 // A Population is a group of Organisms including their species
@@ -250,15 +251,112 @@ func (p *Population) verify() (bool, error) {
 
 // Turnover the population to a new generation using fitness
 // The generation argument is the next generation
-func (p *Population) epoch(generation int, conf *neat.NeatContext) bool {
+func (p *Population) epoch(generation int, context *neat.NeatContext) bool {
 	// Use Species' ages to modify the objective fitness of organisms in other words, make it more fair for younger
 	// species so they have a chance to take hold and also penalize stagnant species. Then adjust the fitness using
 	// the species size to "share" fitness within a species. Then, within each Species, mark for death those below
 	// survival_thresh * average
 	for _, sp := range p.Species {
-		sp.adjustFitness(conf)
+		sp.adjustFitness(context)
 	}
 
-	// TODO implement this
+	// Used to compute average fitness over all Organisms
+	total := 0.0
+	total_organisms := len(p.Organisms)
+
+	// Go through the organisms and add up their fitnesses to compute the overall average
+	for _, o := range p.Organisms {
+		total += o.Fitness
+	}
+	// The average modified fitness among ALL organisms
+	overall_average := total / float64(total_organisms)
+	context.DebugLog(fmt.Sprintf("Generation %d: overall average fitness = %f\n", generation, overall_average))
+
+	// Now compute expected number of offspring for each individual organism
+	for _, o := range p.Organisms {
+		o.ExpectedOffspring = o.Fitness / overall_average
+	}
+
+	//The fractional parts of expected offspring that can be used only when they accumulate above 1 for the purposes
+	// of counting Offspring
+	skim := 0.0
+	// precision checking
+	total_expected := 0
+
+	// Now add those offspring up within each Species to get the number of offspring per Species
+	for _, sp := range p.Species {
+		skim = sp.countOffspring(skim)
+		total_expected += sp.ExpectedOffspring
+	}
+
+	// Need to make up for lost floating point precision in offspring assignment.
+	// If we lost precision, give an extra baby to the best Species
+	if total_expected < total_organisms {
+		// Find the Species expecting the most
+		var best_species *Species
+		max_expected := 0
+		final_expected := 0
+		for _, sp := range p.Species {
+			if sp.ExpectedOffspring >= max_expected {
+				max_expected = sp.ExpectedOffspring
+				best_species = sp
+			}
+			final_expected += sp.ExpectedOffspring
+		}
+		// Give the extra offspring to the best species
+		best_species.ExpectedOffspring += 1
+		final_expected++
+
+		// If we still aren't at total, there is a problem. Note that this can happen if a stagnant Species
+		// dominates the population and then gets killed off by its age. Then the whole population plummets in
+		// fitness. If the average fitness is allowed to hit 0, then we no longer have an average we can use to
+		// assign offspring.
+		if final_expected < total_organisms {
+			fmt.Println("!!! Population died !!!")
+			for _, sp := range p.Species {
+				sp.ExpectedOffspring = 0
+			}
+			best_species.ExpectedOffspring = total_organisms
+		}
+	}
+
+	// Stick the Species pointers into a new Species list for sorting
+	sorted_species := make([]*Species, len(p.Species))
+	copy(sorted_species, p.Species)
+
+	// Sort the Species by max original fitness of its first organism
+	sort.Sort(ByOrganismOrigFitness(sorted_species))
+
+	// Used in debugging to see why (if) best species dies
+	// TODO best_species_num := sorted_species[0].Id
+	if context.IsDebugEnabled {
+		for _, sp := range sorted_species {
+			// Print out for Debugging/viewing what's going on
+			fmt.Printf("Orig. fitness of Species %d (Size %d): %f last improved %d \n",
+				sp.Id, len(sp.Organisms), sp.Organisms[0].OriginalFitness, (sp.Age - sp.AgeOfLastImprovement))
+		}
+	}
+
+	// Check for Population-level stagnation
+	sorted_species[0].Organisms[0].IsPopulationChampion = true // DEBUG marker of the best of pop
+	if sorted_species[0].Organisms[0].OriginalFitness > p.HighestFitness {
+		p.HighestFitness = sorted_species[0].Organisms[0].OriginalFitness
+		p.HighestLastChanged = 0
+		context.DebugLog(fmt.Sprintf("NEW POPULATION RECORD FITNESS: %f\n", p.HighestFitness))
+
+	} else {
+		p.HighestLastChanged += 1
+		context.DebugLog(fmt.Sprintf(" generations since last population fitness record: %f\n", p.HighestFitness))
+	}
+
+	// Check for stagnation- if there is stagnation, perform delta-coding
+	if p.HighestLastChanged>= context.DropOffAge+5 {
+		context.DebugLog("PERFORMING DELTA CODING")
+
+		// TODO implement this
+
+	}
+
+
 	return false
 }
