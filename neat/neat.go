@@ -69,23 +69,23 @@ type NeatContext struct {
 	RecurOnlyProb          float64
 
 	// Size of population
-	PopSize        int
-	// Age where Species starts to be penalized
-	DropOffAge     int
+	PopSize                int
+	// Age when Species starts to be penalized
+	DropOffAge             int
 	// Number of tries mutate_add_link will attempt to find an open link
-	NewLinkTries   int
+	NewLinkTries           int
 
 	// Tells to print population to file every n generations
-	PrintEvery     int
+	PrintEvery             int
 
-	// The number of babies to siphen off to the champions
-	BabiesStolen   int
+	// The number of babies to stolen off to the champions
+	BabiesStolen           int
 
 	// The number of runs to average over in an experiment
-	Num_runs       int
+	Num_runs               int
 
 	// The flag to indicate whether to print additional debugging info
-	IsDebugEnabled bool
+	IsDebugEnabled         bool
 }
 
 func (c *NeatContext) DebugLog(rec string) {
