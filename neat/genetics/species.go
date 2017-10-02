@@ -217,8 +217,8 @@ func (s *Species) findChampion() *Organism {
 	return champion
 }
 
-//Perform mating and mutation to form next generation
-func (s *Species) reproduce(generation int, pop *Population, sorted_species []*Species, conf *neat.NeatContext) (bool, error) {
+// Perform mating and mutation to form next generation. The sorted_species is ordered to have best species in the beginning.
+func (s *Species) reproduce(generation int, pop *Population, sorted_species []*Species, context *neat.NeatContext) (bool, error) {
 	//Check for a mistake
 	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
 		return false, errors.New("ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")
@@ -250,7 +250,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 		mut_struct_baby, mate_baby = false, false
 
 		// Debug Trap
-		if s.ExpectedOffspring > conf.PopSize {
+		if s.ExpectedOffspring > context.PopSize {
 			fmt.Printf("ALERT: EXPECTED OFFSPRING = %d\n", s.ExpectedOffspring)
 		}
 
@@ -264,12 +264,12 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Note: Superchamp offspring only occur with stolen babies!
 			//      Settings used for published experiments did not use this
 			if the_champ.SuperChampOffspring > 1 {
-				if rand.Float64() < 0.8 || conf.MutateAddLinkProb == 0.0 {
+				if rand.Float64() < 0.8 || context.MutateAddLinkProb == 0.0 {
 					// Make sure no links get added when the system has link adding disabled
-					new_genome.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
+					new_genome.mutateLinkWeights(context.WeightMutPower, 1.0, GAUSSIAN)
 				} else {
 					// Sometimes we add a link to a superchamp
-					_, err := new_genome.mutateAddLink(pop, conf)
+					_, err := new_genome.mutateAddLink(pop, context)
 					if err != nil {
 						return false, err
 					}
@@ -293,27 +293,27 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			new_genome = mom.GNome.duplicate(count)
 			baby = NewOrganism(0.0, new_genome, generation) // Baby is just like mommy
 			champ_clone_done = true
-		} else if rand.Float64() < conf.MutateOnlyProb || pool_size == 1 {
+		} else if rand.Float64() < context.MutateOnlyProb || pool_size == 1 {
 			// Apply mutations
 			orgnum := rand.Int31n(int32(pool_size)) // select random mom
 			mom = s.Organisms[orgnum]
 			new_genome = mom.GNome.duplicate(count)
 
 			// Do the mutation depending on probabilities of various mutations
-			if rand.Float64() < conf.MutateAddNodeProb {
+			if rand.Float64() < context.MutateAddNodeProb {
 				// Mutate add node
 				new_genome.mutateAddNode(pop)
 				mut_struct_baby = true
-			} else if rand.Float64() < conf.MutateAddLinkProb {
+			} else if rand.Float64() < context.MutateAddLinkProb {
 				// Mutate add link
-				_, err = new_genome.mutateAddLink(pop, conf)
+				_, err = new_genome.mutateAddLink(pop, context)
 				if err != nil {
 					return false, err
 				}
 				mut_struct_baby = true
 			} else {
 				// If we didn't do a structural mutation, we do the other kinds
-				_, err = new_genome.mutateAllNonstructural(conf)
+				_, err = new_genome.mutateAllNonstructural(context)
 				if err != nil {
 					return false, err
 				}
@@ -326,7 +326,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			mom = s.Organisms[org_num]
 
 			// Choose random dad
-			if rand.Float64() > conf.InterspeciesMateRate {
+			if rand.Float64() > context.InterspeciesMateRate {
 				// Mate within Species
 				org_num = rand.Int31n(int32(pool_size))
 				dad = s.Organisms[org_num]
@@ -350,13 +350,13 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			}
 
 			// Perform mating based on probabilities of different mating types
-			if rand.Float64() < conf.MateMultipointProb {
+			if rand.Float64() < context.MateMultipointProb {
 				// mate multipoint baby
 				new_genome, err = mom.GNome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
 				if err != nil {
 					return false, err
 				}
-			} else if rand.Float64() < conf.MateMultipointAvgProb / (conf.MateMultipointAvgProb + conf.MateSinglepointProb) {
+			} else if rand.Float64() < context.MateMultipointAvgProb / (context.MateMultipointAvgProb + context.MateSinglepointProb) {
 				// mate multipoint_avg baby
 				new_genome, err = mom.GNome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
 				if err != nil {
@@ -373,24 +373,24 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			// Determine whether to mutate the baby's Genome
 			// This is done randomly or if the mom and dad are the same organism
-			if rand.Float64() > conf.MateOnlyProb ||
+			if rand.Float64() > context.MateOnlyProb ||
 				dad.GNome.Id == mom.GNome.Id ||
-				dad.GNome.compatibility(mom.GNome, conf) == 0.0 {
+				dad.GNome.compatibility(mom.GNome, context) == 0.0 {
 				// Do the mutation depending on probabilities of  various mutations
-				if rand.Float64() < conf.MutateAddNodeProb {
+				if rand.Float64() < context.MutateAddNodeProb {
 					// mutate_add_node
 					new_genome.mutateAddNode(pop)
 					mut_struct_baby = true
-				} else if rand.Float64() < conf.MutateAddLinkProb {
+				} else if rand.Float64() < context.MutateAddLinkProb {
 					// mutate_add_link
-					_, err = new_genome.mutateAddLink(pop, conf)
+					_, err = new_genome.mutateAddLink(pop, context)
 					if err != nil {
 						return false, err
 					}
 					mut_struct_baby = true
 				} else {
 					// Only do other mutations when not doing structural mutations
-					_, err = new_genome.mutateAllNonstructural(conf)
+					_, err = new_genome.mutateAllNonstructural(context)
 					if err != nil {
 						return false, err
 					}
@@ -416,9 +416,9 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 						// point to first organism of this _specie
 						compare_org := _specie.Organisms[0]
 						// compare baby organism with first organism in current specie
-						curr_compat := baby.GNome.compatibility(compare_org.GNome, conf)
+						curr_compat := baby.GNome.compatibility(compare_org.GNome, context)
 
-						if curr_compat < conf.CompatThreshold {
+						if curr_compat < context.CompatThreshold {
 							// Found compatible species, so add this baby to it
 							_specie.addOrganism(baby);
 							// update in baby pointer to its species
