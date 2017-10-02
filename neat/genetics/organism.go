@@ -56,7 +56,7 @@ func NewOrganism(fit float64, g *Genome, generation int) *Organism {
 	return &Organism{
 		Fitness:fit,
 		GNome:g,
-		Net:g.Phenotype, // TODO g.genessis(g.Id)
+		Net:g.genesis(g.Id),
 		Generation:generation,
 	}
 }
