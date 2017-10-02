@@ -230,24 +230,14 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 	the_champ := s.Organisms[0]
 
 	// Parent Organisms and new Organism
-	var mom, dad, baby *Organism
-
-	// For holding baby's genes
-	var new_genome *Genome
-
-	// For mating outside the Species
-	var rand_species *Species
+	var baby *Organism
 
 	// Flag the preservation of the champion
 	champ_clone_done := false
 
-	var mut_struct_baby, mate_baby bool
-
-	var err error
-
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
-		mut_struct_baby, mate_baby = false, false
+		mut_struct_baby, mate_baby := false, false
 
 		// Debug Trap
 		if s.ExpectedOffspring > context.PopSize {
@@ -256,8 +246,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 		if the_champ.SuperChampOffspring > 0 {
 			// If we have a super_champ (Population champion), finish off some special clones
-			mom = the_champ;
-			new_genome = mom.GNome.duplicate(count)
+			mom := the_champ;
+			new_genome := mom.GNome.duplicate(count)
 
 			// Most superchamp offspring will have their connection weights mutated only
 			// The last offspring will be an exact duplicate of this super_champ
@@ -277,6 +267,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 			}
 
+			// Create the new baby organism
 			baby = NewOrganism(0.0, new_genome, generation)
 
 			if the_champ.SuperChampOffspring == 1 {
@@ -289,15 +280,19 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			the_champ.SuperChampOffspring--
 		} else if !champ_clone_done && s.ExpectedOffspring > 5 {
 			// If we have a Species champion, just clone it
-			mom = the_champ // Mom is the champ
-			new_genome = mom.GNome.duplicate(count)
-			baby = NewOrganism(0.0, new_genome, generation) // Baby is just like mommy
+			mom := the_champ // Mom is the champ
+			new_genome := mom.GNome.duplicate(count)
+			// Baby is just like mommy
 			champ_clone_done = true
+
+			// Create the new baby organism
+			baby = NewOrganism(0.0, new_genome, generation)
+
 		} else if rand.Float64() < context.MutateOnlyProb || pool_size == 1 {
 			// Apply mutations
 			orgnum := rand.Int31n(int32(pool_size)) // select random mom
-			mom = s.Organisms[orgnum]
-			new_genome = mom.GNome.duplicate(count)
+			mom := s.Organisms[orgnum]
+			new_genome := mom.GNome.duplicate(count)
 
 			// Do the mutation depending on probabilities of various mutations
 			if rand.Float64() < context.MutateAddNodeProb {
@@ -306,40 +301,44 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				mut_struct_baby = true
 			} else if rand.Float64() < context.MutateAddLinkProb {
 				// Mutate add link
-				_, err = new_genome.mutateAddLink(pop, context)
+				_, err := new_genome.mutateAddLink(pop, context)
 				if err != nil {
 					return false, err
 				}
 				mut_struct_baby = true
 			} else {
 				// If we didn't do a structural mutation, we do the other kinds
-				_, err = new_genome.mutateAllNonstructural(context)
+				_, err := new_genome.mutateAllNonstructural(context)
 				if err != nil {
 					return false, err
 				}
 			}
 
+			// Create the new baby organism
 			baby = NewOrganism(0.0, new_genome, generation);
 		} else {
 			// Otherwise we should mate
 			org_num := rand.Int31n(int32(pool_size)) // select random mom
-			mom = s.Organisms[org_num]
+			mom := s.Organisms[org_num]
 
 			// Choose random dad
+			var dad *Organism
 			if rand.Float64() > context.InterspeciesMateRate {
 				// Mate within Species
 				org_num = rand.Int31n(int32(pool_size))
 				dad = s.Organisms[org_num]
 			} else {
 				// Mate outside Species
-				rand_species = s
+				rand_species := s
 
 				// Select a random species
 				giveup := 0
-				for ;rand_species == s && giveup < 5; {
+				for ; rand_species == s && giveup < 5; {
 					// Choose a random species tending towards better species
 					rand_mult := gaussian.StdGaussian() / 4.0
-					if rand_mult > 1.0 { rand_mult = 1.0 }
+					if rand_mult > 1.0 {
+						rand_mult = 1.0
+					}
 					// This tends to select better species
 					rand_species_num := int(math.Floor(rand_mult * (float64(len(sorted_species)) - 1.0) + 0.5))
 					rand_species = sorted_species[rand_species_num]
@@ -350,6 +349,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			}
 
 			// Perform mating based on probabilities of different mating types
+			var new_genome *Genome
+			var err error
 			if rand.Float64() < context.MateMultipointProb {
 				// mate multipoint baby
 				new_genome, err = mom.GNome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
@@ -396,45 +397,46 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					}
 				}
 			}
+			// Create the new baby organism
+			baby = NewOrganism(0.0, new_genome, generation)
+		} // end else
 
-			// Create the baby
-			baby = NewOrganism(0.0, new_genome, generation);
-			baby.mutationStructBaby = mut_struct_baby
-			baby.mateBaby = mate_baby
+		// Add the baby to its proper Species
+		// If it doesn't fit a Species, create a new one
+		baby.mutationStructBaby = mut_struct_baby
+		baby.mateBaby = mate_baby
 
-			// Add the baby to its proper Species
-			// If it doesn't fit a Species, create a new one
-			if pop.Species == nil || len(pop.Species) == 0 {
-				// Create the first species
-				createFirstSpecies(pop, baby)
-			} else {
-				found := false
-				for i := 0; i < len(pop.Species) && !found; i++ {
-					// point _species
-					_specie := pop.Species[i]
-					if len(_specie.Organisms) > 0 {
-						// point to first organism of this _specie
-						compare_org := _specie.Organisms[0]
-						// compare baby organism with first organism in current specie
-						curr_compat := baby.GNome.compatibility(compare_org.GNome, context)
+		if len(pop.Species) == 0 {
+			// Create the first species
+			createFirstSpecies(pop, baby)
+		} else {
+			found := false
+			for i := 0; i < len(pop.Species); i++ {
+				// point _species
+				_specie := pop.Species[i]
+				if len(_specie.Organisms) > 0 {
+					// point to first organism of this _specie
+					compare_org := _specie.Organisms[0]
+					// compare baby organism with first organism in current specie
+					curr_compat := baby.GNome.compatibility(compare_org.GNome, context)
 
-						if curr_compat < context.CompatThreshold {
-							// Found compatible species, so add this baby to it
-							_specie.addOrganism(baby);
-							// update in baby pointer to its species
-							baby.SpeciesOf = _specie
-							// force exit from this block ...
-							found = true;
-						}
+					if curr_compat < context.CompatThreshold {
+						// Found compatible species, so add this baby to it
+						_specie.addOrganism(baby);
+						// update in baby pointer to its species
+						baby.SpeciesOf = _specie
+						found = true;
+						// force exit from this block ...
+						break
 					}
 				}
+			}
 
-				// If match was not found, create a new species
-				if !found {
-					createFirstSpecies(pop, baby)
-				}
+			// If match was not found, create a new species
+			if !found {
+				createFirstSpecies(pop, baby)
+			}
 
-			} //end else
 		}
 
 	} // end for count := 0
@@ -463,6 +465,7 @@ func (s *Species) String() string {
 // It implements sort.Interface for []Species based on the OriginalFitness of first Organism field in descending order,
 // i.e. the max fitness goes first
 type ByOrganismOrigFitness []*Species
+
 func (f ByOrganismOrigFitness) Len() int {
 	return len(f)
 }
