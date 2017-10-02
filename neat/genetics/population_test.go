@@ -11,20 +11,21 @@ import (
 
 func TestNewPopulationRandom(t *testing.T) {
 	rand.Seed(42)
-	size, in, out, nmax := 10, 3, 2, 5
+	in, out, nmax := 3, 2, 5
 	recurrent := false
 	link_prob := 0.5
 	conf := neat.NeatContext{
 		CompatThreshold:0.5,
+		PopSize:10,
 	}
-	pop, err := NewPopulationRandom(size, in, out, nmax, recurrent, link_prob, &conf)
+	pop, err := NewPopulationRandom(in, out, nmax, recurrent, link_prob, &conf)
 	if err != nil {
 		t.Error(err)
 	}
 	if pop == nil {
 		t.Error("pop == nil")
 	}
-	if len(pop.Organisms) != size {
+	if len(pop.Organisms) != conf.PopSize {
 		t.Error("len(pop.Organisms) != size")
 	}
 	if pop.currNodeId != 11 {
@@ -37,27 +38,43 @@ func TestNewPopulationRandom(t *testing.T) {
 		t.Error("len(pop.Species) == 0")
 	}
 
+	for _, org := range pop.Organisms {
+		if len(org.GNome.Genes) == 0 {
+			t.Error("len(org.GNome.Genes) == 0")
+		}
+		if len(org.GNome.Nodes) == 0 {
+			t.Error("len(org.GNome.Nodes) == 0")
+		}
+		if len(org.GNome.Traits) == 0 {
+			t.Error("len(org.GNome.Traits) == 0")
+		}
+		if org.GNome.Phenotype == nil {
+			t.Error("org.GNome.Phenotype == nil")
+		}
+	}
+
 }
 
 func TestNewPopulation(t *testing.T) {
 	rand.Seed(42)
-	size, in, out, nmax, n := 10, 3, 2, 5, 3
+	in, out, nmax, n := 3, 2, 5, 3
 	recurrent := false
 	link_prob := 0.5
 	conf := neat.NeatContext{
 		CompatThreshold:0.5,
+		PopSize:10,
 	}
 	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
 
-	pop, err := NewPopulation(gen, size, &conf)
+	pop, err := NewPopulation(gen, &conf)
 	if err != nil {
 		t.Error(err)
 	}
 	if pop == nil {
 		t.Error("pop == nil")
 	}
-	if len(pop.Organisms) != size {
-		t.Error("len(pop.Organisms) != size")
+	if len(pop.Organisms) != conf.PopSize {
+		t.Error("len(pop.Organisms) != conf.PopSize")
 	}
 	last_node_id, _ := gen.getLastNodeId()
 	if pop.currNodeId != last_node_id {
@@ -66,6 +83,21 @@ func TestNewPopulation(t *testing.T) {
 	last_gene_innov_num, _ := gen.getLastGeneInnovNum()
 	if pop.currInnovNum != last_gene_innov_num {
 		t.Error("pop.currInnovNum != last_gene_innov_num")
+	}
+
+	for _, org := range pop.Organisms {
+		if len(org.GNome.Genes) == 0 {
+			t.Error("len(org.GNome.Genes) == 0")
+		}
+		if len(org.GNome.Nodes) == 0 {
+			t.Error("len(org.GNome.Nodes) == 0")
+		}
+		if len(org.GNome.Traits) == 0 {
+			t.Error("len(org.GNome.Traits) == 0")
+		}
+		if org.GNome.Phenotype == nil {
+			t.Error("org.GNome.Phenotype == nil")
+		}
 	}
 }
 
@@ -213,4 +245,38 @@ func TestPopulation_Write(t *testing.T) {
 			t.Error("Lines mismatch", gsr, o_str_r[i])
 		}
 	}
+}
+
+func TestPopulation_epoch(t *testing.T) {
+	rand.Seed(42)
+	in, out, nmax, n := 3, 2, 15, 3
+	recurrent := false
+	link_prob := 0.8
+	conf := neat.NeatContext{
+		CompatThreshold:0.5,
+		DropOffAge:1,
+		PopSize: 30,
+		BabiesStolen:10,
+		IsDebugEnabled:true,
+		RecurOnlyProb:0.2,
+	}
+	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
+	pop, err := NewPopulation(gen, &conf)
+	if err != nil {
+		t.Error(err)
+	}
+	if pop == nil {
+		t.Error("pop == nil")
+	}
+
+	for i := 0; i < 100; i++ {
+		res, err := pop.epoch(i + 1, &conf)
+		if err != nil {
+			t.Error(err)
+		}
+		if !res {
+			t.Error("Failed to proceed with next epoch")
+		}
+	}
+
 }
