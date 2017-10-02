@@ -668,7 +668,8 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 				do_recur, curr_innov, new_weight)
 
 			// Add the innovation
-			new_innov := NewInnovationForLink(node_1.Id, node_2.Id, curr_innov, new_weight, trait_num)
+			new_innov := NewInnovationForRecurrentLink(node_1.Id, node_2.Id, curr_innov,
+				new_weight, trait_num, do_recur)
 			pop.Innovations = append(pop.Innovations, new_innov)
 		}
 
