@@ -1,8 +1,10 @@
 package genetics
 
 import (
+	"math/rand"
 	"testing"
 	"github.com/yaricom/goNEAT/neat"
+	"sort"
 )
 
 func buildSpeciesWithOrganisms(id int) *Species {
@@ -18,8 +20,8 @@ func buildSpeciesWithOrganisms(id int) *Species {
 	return sp
 }
 
-// Tests Species ReadGene
-func TestGene_adjustFitness(t *testing.T)  {
+// Tests Species adjustFitness
+func TestSpecies_adjustFitness(t *testing.T)  {
 	sp := buildSpeciesWithOrganisms(1)
 
 	// Configuration
@@ -159,34 +161,52 @@ func TestSpecies_reproduce_fail(t *testing.T) {
 }
 
 // Tests Species reproduce success
-// TODO do this
-/*
 func TestSpecies_reproduce(t *testing.T) {
-	sp := buildSpeciesWithOrganisms(1)
-	sp.ExpectedOffspring = 2
-
-	sorted_species := []*Species {
-		buildSpeciesWithOrganisms(4),
-		buildSpeciesWithOrganisms(3),
-		buildSpeciesWithOrganisms(2),
-	}
+	rand.Seed(42)
+	in, out, nmax, n := 3, 2, 15, 3
+	recurrent := false
+	link_prob := 0.8
 
 	// Configuration
-	conf := neat.Neat{
+	conf := neat.NeatContext {
 		DropOffAge:5,
 		SurvivalThresh:0.5,
 		AgeSignificance:0.5,
-		PopSize:3,
+		PopSize:30,
+		CompatThreshold:0.6,
 	}
 
-	res, err := sp.reproduce(1, nil, sorted_species, &conf)
+	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
+	pop, err := NewPopulation(gen, &conf)
+	if err != nil {
+		t.Error(err)
+	}
+	if pop == nil {
+		t.Error("pop == nil")
+	}
+
+	// Stick the Species pointers into a new Species list for sorting
+	sorted_species := make([]*Species, len(pop.Species))
+	copy(sorted_species, pop.Species)
+
+	// Sort the Species by max original fitness of its first organism
+	sort.Sort(ByOrganismOrigFitness(sorted_species))
+
+	pop.Species[0].ExpectedOffspring = 11
+
+	res, err := pop.Species[0].reproduce(1, pop, sorted_species, &conf)
 	if !res {
-		t.Error("!res", err)
+		t.Error("No reproduction", err)
 	}
 	if err != nil {
 		t.Error("err != nil", err)
 	}
-	if len(sp.Organisms) != 4 {
-		t.Error("No new baby was created")
+	after := 0
+	for _, sp := range pop.Species {
+		after += len(sp.Organisms)
 	}
-}*/
+
+	if after != conf.PopSize + pop.Species[0].ExpectedOffspring {
+		t.Error("No new baby was created", after)
+	}
+}
