@@ -425,7 +425,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 						_specie.addOrganism(baby);
 						// update in baby pointer to its species
 						baby.SpeciesOf = _specie
-						found = true;
+						found = true
 						// force exit from this block ...
 						break
 					}
@@ -435,8 +435,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// If match was not found, create a new species
 			if !found {
 				createFirstSpecies(pop, baby)
-			}
 
+			}
 		}
 
 	} // end for count := 0
