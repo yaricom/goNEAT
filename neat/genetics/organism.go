@@ -48,7 +48,7 @@ type Organism struct {
 	mateBaby                  bool
 
 	// Used just for reporting purposes
-	error float64
+	Error                     float64
 }
 
 // Creates new organism with specified genome, fitness and given generation number
