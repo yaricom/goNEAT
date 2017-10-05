@@ -183,7 +183,7 @@ func TestPopulation_verify(t *testing.T) {
 	}
 
 	// then verify created
-	res, err := pop.verify()
+	res, err := pop.Verify()
 	if err != nil {
 		t.Error(err)
 	}
@@ -270,7 +270,7 @@ func TestPopulation_epoch(t *testing.T) {
 	}
 
 	for i := 0; i < 100; i++ {
-		res, err := pop.epoch(i + 1, &conf)
+		res, err := pop.Epoch(i + 1, &conf)
 		if err != nil {
 			t.Error(err)
 		}

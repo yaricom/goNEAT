@@ -86,7 +86,7 @@ func TestSpecies_computeAvgFitness(t *testing.T) {
 	}
 	avg_check /= float64(len(sp.Organisms))
 
-	sp.computeAvgFitness()
+	sp.ComputeAvgFitness()
 	if sp.AvgFitness != avg_check {
 		t.Error("sp.AvgFitness != avg_check", sp.AvgFitness, avg_check)
 	}
@@ -95,7 +95,7 @@ func TestSpecies_computeAvgFitness(t *testing.T) {
 func TestSpecies_computeMaxFitness(t *testing.T) {
 	sp := buildSpeciesWithOrganisms(1)
 
-	sp.computeMaxFitness()
+	sp.ComputeMaxFitness()
 	if sp.MaxFitness != 15.0 {
 		t.Error("sp.MaxFitness != 15.0", 15.0, sp.MaxFitness)
 	}

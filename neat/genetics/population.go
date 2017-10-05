@@ -245,7 +245,7 @@ func (p *Population) speciate(context *neat.NeatContext) error {
 }
 
 // Run verify on all Genomes in this Population (Debugging)
-func (p *Population) verify() (bool, error) {
+func (p *Population) Verify() (bool, error) {
 	res := true
 	var err error
 	for _, o := range p.Organisms {
@@ -259,7 +259,7 @@ func (p *Population) verify() (bool, error) {
 
 // Turnover the population to a new generation using fitness
 // The generation argument is the next generation
-func (p *Population) epoch(generation int, context *neat.NeatContext) (bool, error) {
+func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, error) {
 	// Use Species' ages to modify the objective fitness of organisms in other words, make it more fair for younger
 	// species so they have a chance to take hold and also penalize stagnant species. Then adjust the fitness using
 	// the species size to "share" fitness within a species. Then, within each Species, mark for death those below

@@ -136,7 +136,7 @@ func (s *Species) adjustFitness(conf *neat.NeatContext) {
 }
 
 // Computes average species fitness
-func (s *Species) computeAvgFitness() float64 {
+func (s *Species) ComputeAvgFitness() float64 {
 	total := 0.0
 	for _, o := range s.Organisms {
 		total += o.Fitness
@@ -146,7 +146,7 @@ func (s *Species) computeAvgFitness() float64 {
 }
 
 // Computes maximal fitness of species
-func (s *Species) computeMaxFitness() float64 {
+func (s *Species) ComputeMaxFitness() float64 {
 	max := 0.0
 	for _, o := range s.Organisms {
 		if o.Fitness > max {
