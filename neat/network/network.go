@@ -10,27 +10,27 @@ import (
 // or learn on its own, even though it may be part of a larger framework.
 type Network struct {
 	// A network id
-	Id int
+	Id        int
 	// Is a name of this network */
-	Name string
+	Name      string
 
 	// The number of links in the net (-1 means not yet counted)
-	numlinks int
+	numlinks  int
 
 	// A list of all the nodes in the network
 	all_nodes []*NNode
 	// NNodes that input into the network
-	inputs []*NNode
+	Inputs    []*NNode
 	// NNodes that output from the network
-	outputs []*NNode
+	Outputs   []*NNode
 }
 
 // Creates new network
 func NewNetwork(in, out, all []*NNode, net_id int) *Network {
 	n := Network{
 		Id:net_id,
-		inputs:in,
-		outputs:out,
+		Inputs:in,
+		Outputs:out,
 		all_nodes:all,
 		numlinks:-1,
 	}
@@ -59,7 +59,7 @@ func (n *Network) FlushCheck() error {
 // Prints the values of network outputs to the console
 func (n *Network) PrintActivation() {
 	fmt.Printf("Network %s with id %d outputs: (", n.Name, n.Id)
-	for i, node := range n.outputs {
+	for i, node := range n.Outputs {
 		fmt.Printf("[Output #%d: %s] ", i, node)
 	}
 	fmt.Println(")")
@@ -68,7 +68,7 @@ func (n *Network) PrintActivation() {
 // Print the values of network inputs to the console
 func (n *Network) PrintInput() {
 	fmt.Printf("Network %s with id %d inputs: (", n.Name, n.Id)
-	for i, node := range n.inputs {
+	for i, node := range n.Inputs {
 		fmt.Printf("[Input #%d: %s] ", i, node)
 	}
 	fmt.Println(")")
@@ -76,7 +76,7 @@ func (n *Network) PrintInput() {
 
 // If at least one output is not active then return true
 func (n *Network) OutputIsOff() bool {
-	for _, node := range n.outputs {
+	for _, node := range n.Outputs {
 		if node.ActivationsCount == 0 {
 			return true
 		}
@@ -156,18 +156,18 @@ func (n *Network) Activate() (bool, error) {
 
 // Adds a new input node
 func (n *Network) AddInputNode(node *NNode) {
-	n.inputs = append(n.inputs, node)
+	n.Inputs = append(n.Inputs, node)
 }
 
 // Adds a new output node
 func (n *Network) AddOutputNode(node *NNode) {
-	n.outputs = append(n.outputs, node)
+	n.Outputs = append(n.Outputs, node)
 }
 
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
 func (n *Network) LoadSensors(sensors []float64) {
 	counter := 0
-	for _, node := range n.inputs {
+	for _, node := range n.Inputs {
 		if node.IsSensor() {
 			node.SensorLoad(sensors[counter])
 			counter += 1
@@ -218,9 +218,9 @@ func (n *Network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) 
 }
 
 // Find the maximum number of neurons between an output and an input
-func (n *Network) MaxDepth() (int32, error) {
-	max := int32(0) // The max depth
-	for _, node := range n.outputs {
+func (n *Network) MaxDepth() (int, error) {
+	max := 0 // The max depth
+	for _, node := range n.Outputs {
 		curr_depth, err := node.Depth(0)
 		if err != nil {
 			return curr_depth, err
