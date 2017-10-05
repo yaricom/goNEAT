@@ -296,6 +296,17 @@ func (g *Genome) String() string {
 	return str
 }
 
+// Return # of non-disabled genes
+func (g *Genome) Extrons() int {
+	total := 0
+	for _, gene := range g.Genes {
+		if gene.IsEnabled {
+			total++
+		}
+	}
+	return total
+}
+
 // Return id of final NNode in Genome + 1
 func (g *Genome) getLastNodeId() (int, error) {
 	if len(g.Nodes) > 0 {
