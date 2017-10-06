@@ -426,7 +426,6 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	// Duplicate Genes
 	genes_dup := make([]*Gene, 0)
 	for _, gn := range g.Genes {
-		fmt.Println(gn)
 		// First find the nodes connected by the gene's link
 		in_node := gn.Link.InNode.Duplicate
 		out_node := gn.Link.OutNode.Duplicate
