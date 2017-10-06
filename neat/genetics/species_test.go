@@ -5,6 +5,7 @@ import (
 	"testing"
 	"github.com/yaricom/goNEAT/neat"
 	"sort"
+	"bytes"
 )
 
 func buildSpeciesWithOrganisms(id int) *Species {
@@ -18,6 +19,15 @@ func buildSpeciesWithOrganisms(id int) *Species {
 	sp.addOrganism(NewOrganism(10.0 * float64(id), gen, id))
 
 	return sp
+}
+
+func TestSpecies_Write(t *testing.T) {
+	sp := buildSpeciesWithOrganisms(1)
+
+	out_buf := bytes.NewBufferString("")
+	sp.Write(out_buf)
+
+	t.Log(out_buf)
 }
 
 // Tests Species adjustFitness

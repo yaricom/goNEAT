@@ -8,6 +8,7 @@ import (
 	"errors"
 	"math/rand"
 	//"github.com/yaricom/goNEAT/neat/network"
+	"io"
 )
 
 // A Species is a group of similar Organisms.
@@ -57,6 +58,24 @@ func newSpecies(id int) *Species {
 		Id:id,
 		Age:1,
 		Organisms:make([]*Organism, 0),
+	}
+}
+
+// Writes species to the specified writer
+func (s *Species) Write(w io.Writer) {
+	// Print a comment on the Species info
+	fmt.Fprintf(w, "/* Species #%d : (Size %d) (AF %.3f) (Age %d)  */\n",
+		s.Id, len(s.Organisms), s.AvgFitness, s.Age)
+
+	// Print all the Organisms' Genomes to the outFile
+	for _, org := range s.Organisms {
+		fmt.Fprintf(w, "/* Organism #%d Fitness: %.3f Error: %.3f */\n",
+			org.GNome.Id, org.Fitness, org.Error)
+		if org.IsWinner {
+			fmt.Fprintf(w, "/* ##------$ WINNER %d SPECIES # %d $------## */\n",
+				org.GNome.Id, s.Id)
+		}
+		org.GNome.Write(w)
 	}
 }
 
