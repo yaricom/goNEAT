@@ -541,7 +541,7 @@ func nodeInsert(nodes[]*network.NNode, n *network.NNode) []*network.NNode {
 // Mutate the genome by adding a new link between two random NNodes,
 // if NNodes are already connected, keep trying conf.NewLinkTries times
 func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, error) {
-	// If the phenotype does not exist, exit on false,print error
+	// If the phenotype does not exist, exit on false, print error
 	// Note: This should never happen - if it does there is a bug
 	if g.Phenotype == nil {
 		return false, errors.New("Attempt to add link to genome with no phenotype")
@@ -562,10 +562,10 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 	}
 
 	// Find the first non-sensor so that the to-node won't look at sensors as possible destinations
-	first_nonsensor := 0
+	first_non_sensor := 0
 	for _, n := range g.Nodes {
 		if n.NType == network.SENSOR {
-			first_nonsensor++
+			first_non_sensor++
 		} else {
 			break
 		}
@@ -587,15 +587,15 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 				loop_recur = true
 			}
 			if loop_recur {
-				node_num_1 = first_nonsensor + rand.Intn(nodes_len - first_nonsensor) // only NON SENSOR
+				node_num_1 = first_non_sensor + rand.Intn(nodes_len - first_non_sensor) // only NON SENSOR
 				node_num_2 = node_num_1
 			} else {
 				node_num_1 = rand.Intn(nodes_len)
-				node_num_2 = first_nonsensor + rand.Intn(nodes_len - first_nonsensor) // only NON SENSOR
+				node_num_2 = first_non_sensor + rand.Intn(nodes_len - first_non_sensor) // only NON SENSOR
 			}
 		} else {
 			node_num_1 = rand.Intn(nodes_len)
-			node_num_2 = first_nonsensor + rand.Intn(nodes_len - first_nonsensor) // only NON SENSOR
+			node_num_2 = first_non_sensor + rand.Intn(nodes_len - first_non_sensor) // only NON SENSOR
 		}
 
 		// get corresponding nodes
