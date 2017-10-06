@@ -346,7 +346,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	if context.IsDebugEnabled {
 		for _, sp := range sorted_species {
 			// Print out for Debugging/viewing what's going on
-			context.DebugLog(fmt.Sprintf("Orig. fitness of Species %d (Size %d): %f last improved %d \n",
+			context.DebugLog(fmt.Sprintf(">> Orig. fitness of Species %d (Size %d): %f last improved %d \n",
 				sp.Id, len(sp.Organisms), sp.Organisms[0].OriginalFitness, (sp.Age - sp.AgeOfLastImprovement)))
 		}
 	}
@@ -483,7 +483,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	// Keep only remained organisms in the population
 	p.Organisms = org_to_keep
 
-	context.DebugLog("Start Reproduction")
+	context.DebugLog("Start Reproduction >>>>>")
 
 	// Perform reproduction. Reproduction is done on a per-Species basis
 	// TODO (So this could be parallelised potentially)
@@ -494,7 +494,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		}
 	}
 
-	context.DebugLog("Reproduction Complete")
+	context.DebugLog(">>>>> Reproduction Complete")
 
 	// Destroy and remove the old generation from the organisms and species
 	for _, curr_org := range p.Organisms {
@@ -562,7 +562,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 			}
 		}
 	}
-	context.DebugLog("Epoch complete\n************\n")
+	context.DebugLog(">>>>> Epoch complete\n")
 
 	return true, nil
 }
