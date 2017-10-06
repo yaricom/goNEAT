@@ -17,19 +17,20 @@ import (
 //
 // This method performs evolution on XOR for specified number of generations. It will read NEAT context configuration
 // from contextPath, the start genome configuration from genomePath, and output results into outDirPath
-func XOR(contextPath, genomePath, outDirPath string, generations int) (*genetics.Population, error) {
+func XOR(context_path, genome_path, out_dir_path string, generations int) (*genetics.Population, error) {
 
 	// Load context configuration
-	configFile, err := os.Open(contextPath)
+	configFile, err := os.Open(context_path)
 	if err != nil {
 		fmt.Println("Failed to load context")
 		return nil, err
 	}
 	context := neat.LoadContext(configFile)
+	context.IsDebugEnabled = true
 
 	// Load Genome
 	fmt.Println("Loading start genome for XOR experiment")
-	genomeFile, err := os.Open(genomePath)
+	genomeFile, err := os.Open(genome_path)
 	if err != nil {
 		fmt.Println("Failed to open genome file")
 		return nil, err
@@ -42,9 +43,9 @@ func XOR(contextPath, genomePath, outDirPath string, generations int) (*genetics
 	fmt.Println(start_genome)
 
 	// Check if output dir exists
-	if _, err := os.Stat(outDirPath); os.IsNotExist(err) {
+	if _, err := os.Stat(out_dir_path); os.IsNotExist(err) {
 		// create output dir
-		err = os.MkdirAll(outDirPath, os.ModePerm)
+		err = os.MkdirAll(out_dir_path, os.ModePerm)
 		if err != nil {
 			return nil, err
 		}
@@ -59,32 +60,36 @@ func XOR(contextPath, genomePath, outDirPath string, generations int) (*genetics
 	var successful_pop *genetics.Population
 
 	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Println("Spawning new population")
+		fmt.Print("\n>>>>> Spawning new population ")
 		pop, err := genetics.NewPopulation(start_genome, context)
 		if err != nil {
 			fmt.Println("Failed to spawn new population from start genome")
 			return nil, err
+		} else {
+			fmt.Println("OK <<<<<")
 		}
-		fmt.Println("Verifying spawned population")
+		fmt.Print(">>>>> Verifying spawned population ")
 		_, err = pop.Verify()
 		if err != nil {
-			fmt.Println("Population verification failed!")
+			fmt.Println("\n!!!!! Population verification failed !!!!!")
 			return nil, err
+		} else {
+			fmt.Println("OK <<<<<\n")
 		}
 
 		for gen := 1; gen <= generations; gen ++ {
-			fmt.Printf("Epoch: %d\n", gen)
-			success, winnerNum, winnerGenes, winnerNodes, err := xor_epoch(pop, gen, outDirPath, context)
+			fmt.Printf(">>>>> Epoch: %d\n", gen)
+			success, winner_num, winner_genes, winner_nodes, err := xor_epoch(pop, gen, out_dir_path, context)
 			if err != nil {
-				fmt.Printf("Epoch evaluation failed for population: %s\n", pop)
+				fmt.Println("!!!!! Epoch evaluation failed !!!!!")
 				return nil, err
 			}
 			if success {
 				// Collect Stats on end of experiment
-				evals[exp_count] = context.PopSize * (gen - 1) + winnerNum
-				genes[exp_count] = winnerGenes
-				nodes[exp_count] = winnerNodes
-				fmt.Println("The winner organism found!")
+				evals[exp_count] = context.PopSize * (gen - 1) + winner_num
+				genes[exp_count] = winner_genes
+				nodes[exp_count] = winner_nodes
+				fmt.Println(">>>>> The winner organism found! <<<<<")
 				break
 			}
 		}
@@ -93,35 +98,35 @@ func XOR(contextPath, genomePath, outDirPath string, generations int) (*genetics
 
 	// Average and print stats
 
-	fmt.Println("Nodes: ")
+	fmt.Print("\n>>>>> Nodes: ")
 	total_nodes := 0
 	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Println(nodes[exp_count])
+		fmt.Printf("\t%d",nodes[exp_count])
 		total_nodes += nodes[exp_count]
 	}
 
-	fmt.Println("Genes: ")
+	fmt.Print("\n>>>>> Genes: ")
 	total_genes := 0
 	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Println(genes[exp_count])
+		fmt.Printf("\t%d", genes[exp_count])
 		total_genes += genes[exp_count]
 	}
 
-	fmt.Println("Evals: ")
+	fmt.Print("\n>>>>> Evals: ")
 	total_evals := 0
 	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Println(evals[exp_count])
+		fmt.Printf("\t%d", evals[exp_count])
 		total_evals += evals[exp_count]
 	}
 
-	fmt.Printf("Average Nodes:\t%d\nAverage Genes:\t%d\nAverage Evals:\t%d\n",
+	fmt.Printf("\n>>>>>\nAverage Nodes:\t%d\nAverage Genes:\t%d\nAverage Evals:\t%d\n",
 		total_nodes / context.NumRuns, total_genes / context.NumRuns, total_evals / context.NumRuns)
 
 	return successful_pop, nil
 }
 
 // This method evaluates one epoch for given population and prints results into specified directory if any.
-func xor_epoch(pop *genetics.Population, generation int, outDirPath string, context *neat.NeatContext) (success bool, winnerNum, winnerGenes, winnerNodes int, err error) {
+func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, context *neat.NeatContext) (success bool, winner_num, winner_genes, winner_nodes int, err error) {
 	// The flag to indicate that we have winner organism
 	success = false
 	// Evaluate each organism on a test
@@ -132,12 +137,12 @@ func xor_epoch(pop *genetics.Population, generation int, outDirPath string, cont
 		}
 		if res {
 			success = true
-			winnerNum = org.GNome.Id
-			winnerGenes = org.GNome.Extrons()
-			winnerNodes = len(org.GNome.Nodes)
-			if (winnerNodes == 5) {
+			winner_num = org.GNome.Id
+			winner_genes = org.GNome.Extrons()
+			winner_nodes = len(org.GNome.Nodes)
+			if (winner_nodes == 5) {
 				// You could dump out optimal genomes here if desired
-				opt_path := fmt.Sprintf("%s/%s", outDirPath, "xor_optimal")
+				opt_path := fmt.Sprintf("%s/%s", out_dir_path, "xor_optimal")
 				file, err := os.Create(opt_path)
 				if err != nil {
 					fmt.Printf("Failed to dump optimal genome, reason: %s\n", err)
@@ -159,12 +164,12 @@ func xor_epoch(pop *genetics.Population, generation int, outDirPath string, cont
 
 	// Only print to file every print_every generations
 	if success || generation % context.PrintEvery == 0 {
-		pop_path := fmt.Sprintf("%s/gen_%d", outDirPath, generation)
+		pop_path := fmt.Sprintf("%s/gen_%d", out_dir_path, generation)
 		file, err := os.Create(pop_path)
 		if err != nil {
 			fmt.Printf("Failed to dump population, reason: %s\n", err)
 		} else {
-			pop.Write(file)
+			pop.WriteBySpecies(file)
 		}
 	}
 
@@ -172,12 +177,13 @@ func xor_epoch(pop *genetics.Population, generation int, outDirPath string, cont
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				org_path := fmt.Sprintf("%s/%s", outDirPath, "xor_winner")
+				org_path := fmt.Sprintf("%s/%s", out_dir_path, "xor_winner")
 				file, err := os.Create(org_path)
 				if err != nil {
 					fmt.Printf("Failed to dump winner organism genome, reason: %s\n", err)
 				} else {
 					org.GNome.Write(file)
+					fmt.Printf("Generation #%d winner dumped to: %s\n", generation, org_path)
 				}
 				break
 			}
@@ -185,9 +191,10 @@ func xor_epoch(pop *genetics.Population, generation int, outDirPath string, cont
 	}
 
 	// Move to the next epoch
+	fmt.Println(">>>>> start next generation")
 	_, err = pop.Epoch(generation, context)
 
-	return success, winnerNum, winnerGenes, winnerNodes, err
+	return success, winner_num, winner_genes, winner_nodes, err
 }
 
 // This methods evalueates provided organism
@@ -200,8 +207,7 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 		{1.0, 1.0, 0.0},
 		{1.0, 1.0, 1.0}}
 
-	net := org.Net
-	net_depth, err := net.MaxDepth() // The max depth of the network to be activated
+	net_depth, err := org.Net.MaxDepth() // The max depth of the network to be activated
 	if err != nil {
 		fmt.Println("Failed to estimate maximal depth of the network")
 		return false, err
@@ -212,10 +218,10 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 
 	// Load and activate the network on each input
 	for count := 0; count < 3; count++ {
-		net.LoadSensors(in[count])
+		org.Net.LoadSensors(in[count])
 
 		// Relax net and get output
-		success, err = net.Activate()
+		success, err = org.Net.Activate()
 		if err != nil {
 			fmt.Println("Failed to activate network")
 			return false, err
@@ -223,19 +229,22 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 
 		// use depth to ensure relaxation
 		for relax := 0; relax <= net_depth; relax++ {
-			success, err = net.Activate()
+			success, err = org.Net.Activate()
 			if err != nil {
 				fmt.Println("Failed to activate network")
 				return false, err
 			}
 		}
-		out[count] = net.Outputs[0].Activation
+		out[count] = org.Net.Outputs[0].Activation
 
-		net.Flush()
+		fmt.Println(org.Net.Outputs)
+
+		org.Net.Flush()
 	}
 
 	error_sum := 0.0
 	if (success) {
+		// Mean Squared Error
 		error_sum = math.Abs(out[0]) + math.Abs(1.0 - out[1]) + math.Abs(1.0 - out[2]) + math.Abs(out[3])
 		org.Fitness = math.Pow(4.0 - error_sum, 2.0)
 		org.Error = error_sum
