@@ -1,3 +1,4 @@
+/* The XOR experiment start genome */
 genomestart 1
 trait 1 0.1 0 0 0 0 0 0 0
 trait 2 0.2 0 0 0 0 0 0 0
