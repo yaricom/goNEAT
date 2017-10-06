@@ -143,6 +143,14 @@ func (p *Population) Write(w io.Writer) {
 	}
 }
 
+// Writes given population by species
+func (p *Population) WriteBySpecies(w io.Writer) {
+	// Step through the Species and write them
+	for _, sp := range p.Species {
+		sp.Write(w)
+	}
+}
+
 // Default private constructor
 func newPopulation() *Population {
 	return &Population{
