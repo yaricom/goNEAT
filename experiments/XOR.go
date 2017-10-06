@@ -1,4 +1,4 @@
-package main
+package experiments
 
 import (
 	"github.com/yaricom/goNEAT/neat"
@@ -6,38 +6,7 @@ import (
 	"fmt"
 	"github.com/yaricom/goNEAT/neat/genetics"
 	"math"
-	"math/rand"
-	"time"
-	"bytes"
 )
-
-// The XOR experiment runner
-func main() {
-	out_dir_path, context_path, genome_path := "../out", "../data/xor.neat", "../data/xorstartgenes"
-	if len(os.Args) == 4 {
-		out_dir_path = os.Args[1]
-		context_path = os.Args[2]
-		genome_path = os.Args[3]
-	}
-
-	// Seed the random-number generator with current time so that
-      	// the numbers will be different every time we run.
-	rand.Seed(time.Now().Unix())
-
-	// The 100 generation XOR experiment
-	pop, err := XOR(context_path, genome_path, out_dir_path, 100)
-	if err != nil {
-		fmt.Println("Failed to perform XOR experiment:")
-		fmt.Println(err)
-		return
-	} else if pop != nil {
-		out_buf := bytes.NewBufferString("")
-		pop.Write(out_buf)
-
-		fmt.Println("The winning population:")
-		fmt.Println(out_buf)
-	}
-}
 
 // XOR is very simple and does not make a very interesting scientific experiment; however, it is a good way to
 // check whether your system works.
@@ -69,6 +38,16 @@ func XOR(contextPath, genomePath, outDirPath string, generations int) (*genetics
 	if err != nil {
 		fmt.Println("Failed to read start genome")
 		return nil, err
+	}
+	fmt.Println(start_genome)
+
+	// Check if output dir exists
+	if _, err := os.Stat(outDirPath); os.IsNotExist(err) {
+		// create output dir
+		err = os.MkdirAll(outDirPath, os.ModePerm)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 
