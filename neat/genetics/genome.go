@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"errors"
 	"math"
+	"bufio"
+	"strings"
 )
 
 // A Genome is the primary source of genotype information used to create  a phenotype.
@@ -188,7 +190,7 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 }
 
 // Reads Genome from reader
-func ReadGenome(r io.Reader, id int) (*Genome, error) {
+func ReadGenome(ir io.Reader, id int) (*Genome, error) {
 	gnome := Genome{
 		Id:id,
 		Traits:make([]*neat.Trait, 0),
@@ -196,48 +198,43 @@ func ReadGenome(r io.Reader, id int) (*Genome, error) {
 		Genes:make([]*Gene, 0),
 	}
 
-	done := false
-	var cur_word string
 	var g_id int
 	// Loop until file is finished, parsing each line
-	for !done {
-		fmt.Fscanf(r, "%s", &cur_word)
+	scanner := bufio.NewScanner(ir)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.SplitN(line, " ", 2)
+		lr := strings.NewReader(parts[1])
 
-		//fmt.Println(cur_word)
-
-		switch cur_word {
+		switch parts[0] {
 		case "trait":
 			// Read a Trait
-			new_trait := neat.ReadTrait(r)
+			new_trait := neat.ReadTrait(lr)
 			gnome.Traits = append(gnome.Traits, new_trait)
 
 		case "node":
 			// Read a NNode
-			new_node := network.ReadNNode(r, gnome.Traits)
+			new_node := network.ReadNNode(lr, gnome.Traits)
 			gnome.Nodes = append(gnome.Nodes, new_node)
 
 		case "gene":
 			// Read a Gene
-			new_gene := ReadGene(r, gnome.Traits, gnome.Nodes)
+			new_gene := ReadGene(lr, gnome.Traits, gnome.Nodes)
 			gnome.Genes = append(gnome.Genes, new_gene)
 
 		case "genomeend":
 			// Read Genome ID
-			fmt.Fscanf(r, "%d ", &g_id)
+			fmt.Fscanf(lr, "%d", &g_id)
 			// check that we have correct genome ID
 			if g_id != id {
 				return nil, errors.New(
 					fmt.Sprintf("Id mismatch in genome. Found: %d, expected: %d", g_id, id))
 			}
-			// Finish
-			done = true
 
 		case "/*":
 			// read all comments and print it
-			for cur_word != "*/" {
-				fmt.Fscanf(r, "%s", &cur_word)
-				fmt.Println(cur_word)
-			}
+			fmt.Println(line)
 		}
 	}
 	return &gnome, nil
@@ -429,6 +426,7 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	// Duplicate Genes
 	genes_dup := make([]*Gene, 0)
 	for _, gn := range g.Genes {
+		fmt.Println(gn)
 		// First find the nodes connected by the gene's link
 		in_node := gn.Link.InNode.Duplicate
 		out_node := gn.Link.OutNode.Duplicate

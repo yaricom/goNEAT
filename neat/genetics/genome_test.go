@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"reflect"
 	"math/rand"
+	"os"
 )
 
 const gnome_str = "genomestart 1\n" +
@@ -139,6 +140,68 @@ func TestGenome_ReadGenome(t *testing.T) {
 		}
 		if !g.IsEnabled {
 			t.Error("Gene's enabled flag is wrong",  g.IsEnabled)
+		}
+	}
+}
+
+func TestGenome_ReadGenomeFile(t *testing.T) {
+	genomePath := "../../data/xorstartgenes"
+	genomeFile, err := os.Open(genomePath)
+	if err != nil {
+		t.Error("Failed to open genome file")
+		return
+	}
+	genome, err := ReadGenome(genomeFile, 1)
+	if err != nil {
+		t.Error("Failed to read genome from file", err)
+		return
+	}
+
+
+	if len(genome.Genes) != 3 {
+		t.Error("len(gnome.Genes) != 3", len(genome.Genes))
+	}
+	if len(genome.Nodes) != 4 {
+		t.Error("len(gnome.Nodes) != 4", len(genome.Nodes))
+		return
+	}
+	for i, n := range genome.Nodes {
+		if n.Id != i + 1 {
+			t.Error("Wrong NNode Id", n.Id)
+		}
+		if i < 3 && n.NType != network.SENSOR {
+			t.Error("Wrong NNode type", n.NType)
+		}
+
+		if i == 3 {
+			if n.NType != network.NEURON {
+				t.Error("Wrong NNode type", n.NType)
+			}
+			if n.GenNodeLabel != network.OUTPUT {
+				t.Error("Wrong NNode placement", n.GenNodeLabel)
+			}
+		}
+
+		if (i == 0 && n.GenNodeLabel != network.BIAS) ||
+			(i > 0 && i < 3 && n.GenNodeLabel != network.INPUT) {
+			t.Error("Wrong NNode placement", n.GenNodeLabel)
+		}
+
+	}
+
+	if len(genome.Traits) != 3 {
+		t.Error("len(gnome.Traits) != 3", len(genome.Traits))
+		return
+	}
+	for i, tr := range genome.Traits {
+		if tr.Id != i + 1 {
+			t.Error("Wrong Traint ID", tr.Id)
+		}
+		if len(tr.Params) != 8 {
+			t.Error("Wrong Trait's parameters lenght", len(tr.Params))
+		}
+		if tr.Params[0] != float64(i + 1) / 10.0 {
+			t.Error("Wrong Trait params read", tr.Params[0])
 		}
 	}
 }
