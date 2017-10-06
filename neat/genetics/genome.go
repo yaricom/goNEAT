@@ -1021,6 +1021,23 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
 
+	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
+	for _, curr_node := range og.Nodes {
+		if curr_node.GenNodeLabel == network.INPUT ||
+			curr_node.GenNodeLabel == network.BIAS ||
+			curr_node.GenNodeLabel == network.OUTPUT {
+			node_trait_num := 0
+			if curr_node.Trait != nil {
+				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id
+			}
+			// Create a new node off the sensor or output
+			new_onode := network.NewNNodeCopy(curr_node, new_traits[node_trait_num])
+
+			// Add the new node
+			nodeInsert(new_nodes, new_onode)
+		}
+	}
+
 	// Figure out which genome is better. The worse genome should not be allowed to add extra structural baggage.
 	// If they are the same, use the smaller one's disjoint and excess genes only.
 	p1better := false // Tells if the first genome (this one) has better fitness or not
@@ -1179,6 +1196,23 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 	// The new genes and nodes created
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
+
+	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
+	for _, curr_node := range og.Nodes {
+		if curr_node.GenNodeLabel == network.INPUT ||
+			curr_node.GenNodeLabel == network.BIAS ||
+			curr_node.GenNodeLabel == network.OUTPUT {
+			node_trait_num := 0
+			if curr_node.Trait != nil {
+				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id
+			}
+			// Create a new node off the sensor or output
+			new_onode := network.NewNNodeCopy(curr_node, new_traits[node_trait_num])
+
+			// Add the new node
+			nodeInsert(new_nodes, new_onode)
+		}
+	}
 
 	// Figure out which genome is better. The worse genome should not be allowed to add extra structural baggage.
 	// If they are the same, use the smaller one's disjoint and excess genes only.
