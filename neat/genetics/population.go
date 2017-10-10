@@ -8,6 +8,10 @@ import (
 	"io"
 	"fmt"
 	"sort"
+	"bufio"
+	"strings"
+	"bytes"
+	"strconv"
 )
 
 // A Population is a group of Organisms including their species
@@ -83,19 +87,30 @@ func NewPopulationRandom(in, out, nmax int, recurrent bool, link_prob float64, c
 }
 
 // Reads population from provided reader
-func ReadPopulation(r io.Reader, conf *neat.NeatContext) (*Population, error) {
-	pop := newPopulation()
+func ReadPopulation(ir io.Reader, conf *neat.NeatContext) (pop *Population, err error) {
+	pop = newPopulation()
 
-	var cur_word string
-	for true {
-		_, ioerr := fmt.Fscanf(r, "%s", &cur_word)
-		if ioerr == io.EOF {
-			break
+	// Loop until file is finished, parsing each line
+	scanner := bufio.NewScanner(ir)
+	scanner.Split(bufio.ScanLines)
+	var out_buff *bytes.Buffer
+	var id_check int
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.SplitN(line, " ", 2)
+		if len(parts) < 2 {
+			return nil, errors.New(fmt.Sprintf("Line: [%s] can not be split when reading Population", line))
 		}
-		if cur_word == "genomestart" {
-			var id_check int
-			fmt.Fscanf(r, "%d", &id_check)
-			new_genome, err := ReadGenome(r, id_check)
+		switch parts[0] {
+		case "genomestart":
+			out_buff = bytes.NewBufferString(fmt.Sprintf("genomestart %s", parts[1]))
+			id_check, err = strconv.Atoi(parts[1])
+			if err != nil {
+				return nil, err
+			}
+		case "genomeend":
+			fmt.Fprintf(out_buff, "genomeend %d", id_check)
+			new_genome, err := ReadGenome(bufio.NewReader(out_buff), id_check)
 			if err != nil {
 				return nil, err
 			}
@@ -118,16 +133,20 @@ func ReadPopulation(r io.Reader, conf *neat.NeatContext) (*Population, error) {
 			} else {
 				return nil, err
 			}
+			// clear buffer
+			out_buff = nil
+			id_check = -1
 
-		} else if cur_word == "/*" {
-			// read comments and print it
-			for cur_word != "*/" {
-				fmt.Fscanf(r, "%s", &cur_word)
-				fmt.Println(cur_word)
-			}
+		case "/*":
+			// read all comments and print it
+			fmt.Println(line)
+		default:
+			// write line to buffer
+			fmt.Fprintln(out_buff, line)
 		}
+
 	}
-	err := pop.speciate(conf)
+	err = pop.speciate(conf)
 	if err != nil {
 		return nil, err
 	} else {
