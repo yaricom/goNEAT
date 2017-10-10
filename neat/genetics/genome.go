@@ -205,6 +205,9 @@ func ReadGenome(ir io.Reader, id int) (*Genome, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.SplitN(line, " ", 2)
+		if len(parts) < 2 {
+			return nil, errors.New(fmt.Sprintf("Line: [%s] can not be split when reading Genome", line))
+		}
 		lr := strings.NewReader(parts[1])
 
 		switch parts[0] {
