@@ -132,6 +132,7 @@ func TestReadPopulation(t *testing.T) {
 	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	if pop == nil {
 		t.Error("pop == nil")
@@ -177,6 +178,7 @@ func TestPopulation_verify(t *testing.T) {
 	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	if pop == nil {
 		t.Error("pop == nil")
