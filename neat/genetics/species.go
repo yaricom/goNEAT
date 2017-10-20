@@ -240,7 +240,7 @@ func (s *Species) findChampion() *Organism {
 func (s *Species) reproduce(generation int, pop *Population, sorted_species []*Species, context *neat.NeatContext) (bool, error) {
 	//Check for a mistake
 	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
-		return false, errors.New("ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")
+		return false, errors.New("SPECIES: ERROR: ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")
 	}
 
 	// The number of Organisms in the old generation
@@ -256,17 +256,17 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
-		context.DebugLog(fmt.Sprintf("\nOffspring #%d from %d", count, s.ExpectedOffspring))
+		context.DebugLog(fmt.Sprintf("\nSPECIES: Offspring #%d from %d", count, s.ExpectedOffspring))
 
 		mut_struct_baby, mate_baby := false, false
 
 		// Debug Trap
 		if s.ExpectedOffspring > context.PopSize {
-			fmt.Printf("ALERT: EXPECTED OFFSPRING = %d\n", s.ExpectedOffspring)
+			fmt.Printf("SPECIES: ALERT: EXPECTED OFFSPRING = %d\n", s.ExpectedOffspring)
 		}
 
 		if the_champ.SuperChampOffspring > 0 {
-			context.DebugLog("Reproduce super champion")
+			context.DebugLog("SPECIES: Reproduce super champion")
 
 			// If we have a super_champ (Population champion), finish off some special clones
 			mom := the_champ;
@@ -303,7 +303,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			the_champ.SuperChampOffspring--
 		} else if !champ_clone_done && s.ExpectedOffspring > 5 {
-			context.DebugLog("Clone species champion")
+			context.DebugLog("SPECIES: Clone species champion")
 
 			// If we have a Species champion, just clone it
 			mom := the_champ // Mom is the champ
@@ -315,7 +315,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			baby = NewOrganism(0.0, new_genome, generation)
 
 		} else if rand.Float64() < context.MutateOnlyProb || pool_size == 1 {
-			context.DebugLog("Reproduce by applying random mutation:")
+			context.DebugLog("SPECIES: Reproduce by applying random mutation:")
 
 			// Apply mutations
 			org_num := rand.Int31n(int32(pool_size)) // select random mom
@@ -324,7 +324,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			// Do the mutation depending on probabilities of various mutations
 			if rand.Float64() < context.MutateAddNodeProb {
-				context.DebugLog("---> mutateAddNode")
+				context.DebugLog("SPECIES: ---> mutateAddNode")
 
 				// Mutate add node
 				_, err := new_genome.mutateAddNode(pop)
@@ -333,7 +333,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 				mut_struct_baby = true
 			} else if rand.Float64() < context.MutateAddLinkProb {
-				context.DebugLog("---> mutateAddLink")
+				context.DebugLog("SPECIES: ---> mutateAddLink")
 
 				// Mutate add link
 				new_genome.genesis(generation)
@@ -343,7 +343,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 				mut_struct_baby = true
 			} else if rand.Float64() < context.MutateConnectSensors {
-				context.DebugLog("---> mutateConnectSensors")
+				context.DebugLog("SPECIES: ---> mutateConnectSensors")
 				link_added, err := new_genome.mutateConnectSensors(pop)
 				if err != nil {
 					return false, err
@@ -352,7 +352,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			}
 
 			if !mut_struct_baby {
-				context.DebugLog("---> mutateAllNonstructural")
+				context.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 				// If we didn't do a structural mutation, we do the other kinds
 				_, err := new_genome.mutateAllNonstructural(context)
@@ -364,7 +364,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Create the new baby organism
 			baby = NewOrganism(0.0, new_genome, generation);
 		} else {
-			context.DebugLog("Reproduce by mating:")
+			context.DebugLog("SPECIES: Reproduce by mating:")
 
 			// Otherwise we should mate
 			org_num := rand.Int31n(int32(pool_size)) // select random mom
@@ -373,13 +373,13 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Choose random dad
 			var dad *Organism
 			if rand.Float64() > context.InterspeciesMateRate {
-				context.DebugLog("---> mate within species")
+				context.DebugLog("SPECIES: ---> mate within species")
 
 				// Mate within Species
 				org_num = rand.Int31n(int32(pool_size))
 				dad = s.Organisms[org_num]
 			} else {
-				context.DebugLog("---> mate outside species")
+				context.DebugLog("SPECIES: ---> mate outside species")
 
 				// Mate outside Species
 				rand_species := s
@@ -405,7 +405,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			var new_genome *Genome
 			var err error
 			if rand.Float64() < context.MateMultipointProb {
-				context.DebugLog("------> mateMultipoint")
+				context.DebugLog("SPECIES: ------> mateMultipoint")
 
 				// mate multipoint baby
 				new_genome, err = mom.GNome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
@@ -413,7 +413,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					return false, err
 				}
 			} else if rand.Float64() < context.MateMultipointAvgProb / (context.MateMultipointAvgProb + context.MateSinglepointProb) {
-				context.DebugLog("------> mateMultipointAvg")
+				context.DebugLog("SPECIES: ------> mateMultipointAvg")
 
 				// mate multipoint_avg baby
 				new_genome, err = mom.GNome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
@@ -421,7 +421,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					return false, err
 				}
 			} else {
-				context.DebugLog("------> mateSinglepoint")
+				context.DebugLog("SPECIES: ------> mateSinglepoint")
 
 				new_genome, err = mom.GNome.mateSinglepoint(dad.GNome, count)
 				if err != nil {
@@ -436,11 +436,11 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			if rand.Float64() > context.MateOnlyProb ||
 				dad.GNome.Id == mom.GNome.Id ||
 				dad.GNome.compatibility(mom.GNome, context) == 0.0 {
-				context.DebugLog("------> Mutatte baby genome:")
+				context.DebugLog("SPECIES: ------> Mutatte baby genome:")
 
 				// Do the mutation depending on probabilities of  various mutations
 				if rand.Float64() < context.MutateAddNodeProb {
-					context.DebugLog("---------> mutateAddNode")
+					context.DebugLog("SPECIES: ---------> mutateAddNode")
 
 					// mutate_add_node
 					_, err = new_genome.mutateAddNode(pop)
@@ -449,7 +449,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					}
 					mut_struct_baby = true
 				} else if rand.Float64() < context.MutateAddLinkProb {
-					context.DebugLog("---------> mutateAddLink")
+					context.DebugLog("SPECIES: ---------> mutateAddLink")
 
 					// mutate_add_link
 					new_genome.genesis(generation)
@@ -459,7 +459,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					}
 					mut_struct_baby = true
 				} else if rand.Float64() < context.MutateConnectSensors {
-					context.DebugLog("---> mutateConnectSensors")
+					context.DebugLog("SPECIES: ---> mutateConnectSensors")
 					link_added, err := new_genome.mutateConnectSensors(pop)
 					if err != nil {
 						return false, err
@@ -468,7 +468,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 
 				if !mut_struct_baby {
-					context.DebugLog("---> mutateAllNonstructural")
+					context.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 					// If we didn't do a structural mutation, we do the other kinds
 					_, err := new_genome.mutateAllNonstructural(context)
@@ -487,11 +487,17 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 		baby.mateBaby = mate_baby
 
 		if len(pop.Species) == 0 {
-			context.DebugLog("Create first species for baby organism")
+			context.DebugLog("SPECIES: Create first species for baby organism because population is empty")
 
 			// Create the first species
 			createFirstSpecies(pop, baby)
+
+			context.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d", len(pop.Species)))
 		} else {
+			if context.CompatThreshold == 0 {
+				return false, errors.New("SPECIES: compatibility thershold is set to ZERO. Will not find any compatible species.")
+			}
+
 			found := false
 			for i := 0; i < len(pop.Species); i++ {
 				// point _species
@@ -503,7 +509,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					curr_compat := baby.GNome.compatibility(compare_org.GNome, context)
 
 					if curr_compat < context.CompatThreshold {
-						context.DebugLog("Compatible species found for baby organism")
+						context.DebugLog("SPECIES: Compatible species found for baby organism")
 
 						// Found compatible species, so add this baby to it
 						_specie.addOrganism(baby);
@@ -518,10 +524,11 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			// If match was not found, create a new species
 			if !found {
-				context.DebugLog("Create first species for baby organism")
+				context.DebugLog("SPECIES: Create first species for baby organism because compatible species isn't found")
 
 				createFirstSpecies(pop, baby)
 
+				context.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d", len(pop.Species)))
 			}
 		}
 
