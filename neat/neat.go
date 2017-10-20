@@ -123,7 +123,7 @@ func LoadContext(r io.Reader) *NeatContext {
 			c.ExcessCoeff = param
 		case "mutdiff_coeff":
 			c.MutdiffCoeff = param
-		case "compat_thresh":
+		case "compat_threshold":
 			c.CompatThreshold = param
 		case "age_significance":
 			c.AgeSignificance = param
