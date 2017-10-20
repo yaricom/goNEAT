@@ -8,7 +8,7 @@ import (
 	"math"
 )
 
-// The precision to use for XOR evaluation, i.e. one is x > 1 - precision and zero ix x < precision
+// The precision to use for XOR evaluation, i.e. one is x > 1 - precision and zero is x < precision
 const precision = 0.00001
 
 // XOR is very simple and does not make a very interesting scientific experiment; however, it is a good way to
