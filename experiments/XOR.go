@@ -259,9 +259,8 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 
 	if out[0] < precision && out[1] > 1 - precision && out[2] > 1 - precision && out[3] < precision {
 		org.IsWinner = true
-		fmt.Println(">>>> Output activations: ")
-		fmt.Println(out)
-		fmt.Println("")
+		fmt.Printf(">>>> Output activations: %e\n", out)
+
 	} else {
 		org.IsWinner = false
 	}

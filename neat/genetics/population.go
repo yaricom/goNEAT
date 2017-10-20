@@ -371,13 +371,13 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	// Used in debugging to see why (if) best species dies
 	best_species_id := sorted_species[0].Id
 	if context.IsDebugEnabled {
-		context.DebugLog("POPULATION: >> Sorted Species START<<")
+		context.DebugLog("POPULATION: >> Sorted Species START <<")
 		for _, sp := range sorted_species {
 			// Print out for Debugging/viewing what's going on
 			context.DebugLog(fmt.Sprintf("POPULATION: >> Orig. fitness of Species %d (Size %d): %f last improved %d \n",
 				sp.Id, len(sp.Organisms), sp.Organisms[0].OriginalFitness, (sp.Age - sp.AgeOfLastImprovement)))
 		}
-		context.DebugLog("POPULATION: >> Sorted Species END<<")
+		context.DebugLog("POPULATION: >> Sorted Species END <<\n")
 	}
 
 	// Check for Population-level stagnation
