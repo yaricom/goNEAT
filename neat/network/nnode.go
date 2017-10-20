@@ -251,13 +251,8 @@ func (n *NNode) Depth(d int) (int, error) {
 }
 
 func (n *NNode) String() string {
-	if n.IsSensor() {
-		return fmt.Sprintf("(S %3d, type: %d, step: %d = %.3f %.3f)",
-			n.Id, n.NType, n.ActivationsCount, n.Activation, n.Params)
-	} else {
-		return fmt.Sprintf("(N %3d, type: %d, step: %d = %.3f %.3f)",
-			n.Id, n.NType, n.ActivationsCount, n.Activation, n.Params)
-	}
+	return fmt.Sprintf("(%s %3d, layer: %s, step: %d = %.3f %.3f)",
+		NNodeTypeName(n.NType), n.Id, NNodeLayerName(n.GenNodeLabel), n.ActivationsCount, n.Activation, n.Params)
 }
 
 

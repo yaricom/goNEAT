@@ -11,6 +11,18 @@ const (
 	SENSOR
 )
 
+// Returns human readable NNode type name for given constant value
+func NNodeTypeName(ntype int) string {
+	switch ntype {
+	case NEURON:
+		return "NEURON"
+	case SENSOR:
+		return "SENSOR"
+	default:
+		return "!!! UNKNOWN TYPE !!!"
+	}
+}
+
 // These are NNode layer type
 const (
 	// The node is in hidden layer
@@ -22,6 +34,22 @@ const (
 	// The node is bias
 	BIAS
 )
+
+// Returns human readable NNode placement for give nconstant
+func NNodeLayerName(nlayer int) string {
+	switch nlayer {
+	case HIDDEN:
+		return "HIDDEN"
+	case INPUT:
+		return "INPUT"
+	case OUTPUT:
+		return "OUTPUT"
+	case BIAS:
+		return "BIAS"
+	default:
+		return "!!! UNKNOWN LAYER !!!"
+	}
+}
 
 // The neuron Activation function Types
 const (
