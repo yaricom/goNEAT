@@ -1,6 +1,9 @@
 # The experiments outputs
 out
 
+# The IDEA project forlder
+.idea
+
 # Binaries for programs and plugins
 *.exe
 *.dll
