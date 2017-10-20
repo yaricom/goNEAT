@@ -541,6 +541,112 @@ func nodeInsert(nodes[]*network.NNode, n *network.NNode) []*network.NNode {
 
 /* ******* MUTATORS ******* */
 
+// Mutate the genome by adding connections to disconnected inputs (sensors).
+// The reason this mutator is important is that if we can start NEAT with some inputs disconnected,
+// then we can allow NEAT to decide which inputs are important.
+// This process has two good effects:
+// 	(1) You can start minimally even in problems with many inputs and
+// 	(2) you don't need to know a priori what the important features of the domain are.
+// If all sensors already connected than do nothing.
+func (g *Genome) mutateConnectSensors(pop *Population) (bool, error) {
+
+	if len(g.Genes) == 0 {
+		return false, errors.New("Genome has no genes")
+	}
+
+	// Find all the sensors and outputs
+	sensors := make([]*network.NNode, 0)
+	outputs := make([]*network.NNode, 0)
+	for _, n := range g.Nodes {
+		if n.NType == network.SENSOR {
+			sensors = append(sensors, n)
+		} else if n.GenNodeLabel == network.OUTPUT {
+			outputs = append(outputs, n)
+		}
+	}
+
+	// eliminate from contention any sensors that are already connected
+	disconnected_sensors := make([]*network.NNode, 0)
+	for _, sensor := range sensors {
+		outputConnections := 0
+
+		// iterate over all genes and count number of output connections from given sensor
+		for _, gene := range g.Genes {
+			if gene.Link.InNode == sensor && gene.Link.OutNode.GenNodeLabel == network.OUTPUT {
+				outputConnections++
+			}
+		}
+
+		if outputConnections != len(outputs) {
+			// store found disconnected sensor
+			disconnected_sensors = append(disconnected_sensors, sensor)
+		}
+	}
+
+	// if all sensors are connected - stop
+	if len(disconnected_sensors) == 0 {
+		return false, nil
+	}
+
+	// pick randomly from disconnected sensors
+	sensor := disconnected_sensors[rand.Intn(len(disconnected_sensors))]
+	// add new links to chosen sensor, avoiding redundancy
+	link_added := false
+	for _, output := range outputs {
+		found := false
+		for _, gene := range g.Genes {
+			if gene.Link.InNode == sensor && gene.Link.OutNode == output {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			var new_gene *Gene
+			// Check to see if this innovation already occurred in the population
+			innovation_found := false
+			for _, inn := range pop.Innovations {
+				if inn.InnovationType == NEWLINK &&
+					inn.InNodeId ==  sensor.Id &&
+					inn.OutNodeId == output.Id &&
+					inn.IsRecurrent == false {
+
+					new_gene = NewGeneWithTrait(g.Traits[inn.NewTraitNum], inn.NewWeight,
+						sensor, output, false, inn.InnovationNum, 0)
+
+					innovation_found = true
+					break
+				}
+			}
+
+			// The innovation is totally novel
+			if !innovation_found {
+				// Choose a random trait
+				trait_num := rand.Intn(len(g.Traits))
+				// Choose the new weight
+				new_weight := float64(neat.RandPosNeg()) * rand.Float64() * 10.0
+				// read curr innovation with post increment
+				curr_innov := pop.getInnovationNumberAndIncrement()
+
+
+				// Create the new gene
+				new_gene = NewGeneWithTrait(g.Traits[trait_num], new_weight, sensor, output,
+					false, curr_innov,new_weight)
+
+				// Add the innovation for created link
+				new_innov := NewInnovationForLink(sensor.Id, output.Id, curr_innov,
+					new_weight, trait_num)
+				pop.Innovations = append(pop.Innovations, new_innov)
+			}
+
+			// Now add the new Gene to the Genome
+			g.Genes = append(g.Genes, new_gene)
+			link_added = true
+		}
+	}
+	return link_added, nil
+}
+
 // Mutate the genome by adding a new link between two random NNodes,
 // if NNodes are already connected, keep trying conf.NewLinkTries times
 func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, error) {
@@ -698,7 +804,7 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 // is chosen, then the method just exits with false.
 func (g *Genome) mutateAddNode(pop *Population) (bool, error) {
 	if len(g.Genes) == 0 {
-		return false, errors.New("Genome has no genes")
+		return false, nil // it's possible to have such a network without any link
 	}
 
 	// First, find a random gene already in the genome
@@ -1399,7 +1505,24 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
 
-	// Set up the avgene - this Gene is used to hold the average of the two genes to be averaged
+	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
+	for _, curr_node := range og.Nodes {
+		if curr_node.GenNodeLabel == network.INPUT ||
+			curr_node.GenNodeLabel == network.BIAS ||
+			curr_node.GenNodeLabel == network.OUTPUT {
+			node_trait_num := 0
+			if curr_node.Trait != nil {
+				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id
+			}
+			// Create a new node off the sensor or output
+			new_onode := network.NewNNodeCopy(curr_node, new_traits[node_trait_num])
+
+			// Add the new node
+			nodeInsert(new_nodes, new_onode)
+		}
+	}
+
+	// Set up the avg_gene - this Gene is used to hold the average of the two genes to be averaged
 	avg_gene := NewGeneWithTrait(nil, 0.0, nil, nil, false, 0, 0.0);
 
 	p1stop, p2stop, stopper, crosspoint := 0, 0, 0, 0
@@ -1422,7 +1545,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 	}
 
 	var chosen_gene *Gene
-	genecounter, i1, i2 := 0, 0, 0
+	gene_counter, i1, i2 := 0, 0, 0
 	// Now move through the Genes of each parent until both genomes end
 	for i2 < stopper {
 		skip := false
@@ -1443,9 +1566,9 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 			if p1innov == p2innov {
 				//Pick the chosen gene depending on whether we've crossed yet
-				if genecounter < crosspoint {
+				if gene_counter < crosspoint {
 					chosen_gene = p1gene
-				} else if genecounter > crosspoint {
+				} else if gene_counter > crosspoint {
 					chosen_gene = p2gene
 				} else {
 					// We are at the crosspoint here - average genes into the avgene
@@ -1482,12 +1605,12 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 				}
 				i1++
 				i2++
-				genecounter++
+				gene_counter++
 			} else if p1innov < p2innov {
-				if (genecounter < crosspoint) {
+				if (gene_counter < crosspoint) {
 					chosen_gene = p1gene
 					i1++
-					genecounter++
+					gene_counter++
 				} else {
 					chosen_gene = p2gene
 					i2++

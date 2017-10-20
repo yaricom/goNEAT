@@ -456,6 +456,45 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	//t.Log(gnome1.Genes[4])
 }
 
+func TestGenome_mutateConnectSensors(t *testing.T) {
+	rand.Seed(42)
+	gnome1 := buildTestGenome(1)
+	// The population (DUMMY)
+	pop := newPopulation()
+	// Create gnome phenotype
+	gnome1.genesis(1)
+
+	res, err := gnome1.mutateConnectSensors(pop)
+	if err != nil {
+		t.Error("err != nil", err)
+		return
+	}
+	if res {
+		t.Error("All inputs already connected - wrong return")
+	}
+
+	// adding disconnected input
+	gnome1.Nodes = append(gnome1.Nodes,
+		network.ReadNNode(strings.NewReader("5 0 1 1"), gnome1.Traits))
+	// Create gnome phenotype
+	gnome1.genesis(1)
+
+	res, err = gnome1.mutateConnectSensors(pop)
+	if err != nil {
+		t.Error("err != nil", err)
+		return
+	}
+	if !res {
+		t.Error("Its expected for disconnected sensor to be connected now")
+	}
+	if len(gnome1.Genes) != 4 {
+		t.Error("len(gnome1.Genes) != 4", len(gnome1.Genes))
+	}
+	if len(pop.Innovations) != 1 {
+		t.Error("len(pop.Innovations) != 1", len(pop.Innovations))
+	}
+}
+
 func TestGenome_mutateAddNode(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
