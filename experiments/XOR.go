@@ -8,6 +8,9 @@ import (
 	"math"
 )
 
+// The precision to use for XOR evaluation, i.e. one is x > 1 - precision and zero ix x < precision
+const precision = 0.00001
+
 // XOR is very simple and does not make a very interesting scientific experiment; however, it is a good way to
 // check whether your system works.
 // Make sure recurrency is disabled for the XOR test. If NEAT is able to add recurrent connections, it may solve XOR by
@@ -98,21 +101,21 @@ func XOR(context_path, genome_path, out_dir_path string, generations int) (*gene
 
 	// Average and print stats
 
-	fmt.Print("\n>>>>> Nodes: ")
+	fmt.Print("\nNodes: ")
 	total_nodes := 0
 	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
 		fmt.Printf("\t%d",nodes[exp_count])
 		total_nodes += nodes[exp_count]
 	}
 
-	fmt.Print("\n>>>>> Genes: ")
+	fmt.Print("\nGenes: ")
 	total_genes := 0
 	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
 		fmt.Printf("\t%d", genes[exp_count])
 		total_genes += genes[exp_count]
 	}
 
-	fmt.Print("\n>>>>> Evals: ")
+	fmt.Print("\nEvals: ")
 	total_evals := 0
 	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
 		fmt.Printf("\t%d", evals[exp_count])
@@ -237,7 +240,7 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 		}
 		out[count] = org.Net.Outputs[0].Activation
 
-		fmt.Println(org.Net.Outputs)
+		//fmt.Println(org.Net.Outputs)
 
 		org.Net.Flush()
 	}
@@ -254,8 +257,11 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 		org.Fitness = 0.001
 	}
 
-	if out[0] < 0.5 && out[1] >= 0.5 && out[2] >= 0.5 && out[3] < 0.5 {
+	if out[0] < precision && out[1] > 1 - precision && out[2] > 1 - precision && out[3] < precision {
 		org.IsWinner = true
+		fmt.Println(">>>> Output activations: ")
+		fmt.Println(out)
+		fmt.Println("")
 	} else {
 		org.IsWinner = false
 	}
