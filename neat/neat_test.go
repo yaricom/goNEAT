@@ -77,7 +77,7 @@ func TestLoadContext(t *testing.T) {
 	if nc.MutateAddLinkProb != 0.3 {
 		t.Error("MutateAddLinkProb")
 	}
-	if nc.MutateConnectInputs != 0.5 {
+	if nc.MutateConnectSensors != 0.5 {
 		t.Error("MutateConnectInputs")
 	}
 	if nc.InterspeciesMateRate != 0.001 {

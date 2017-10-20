@@ -14,40 +14,40 @@ const Num_trait_params = 8
 
 // The NEAT execution context holding common configuration parameters, etc.
 type NeatContext struct {
-	// Prob. of mutating a single trait param
+				       // Prob. of mutating a single trait param
 	TraitParamMutProb      float64
-	// Power of mutation on a single trait param
+				       // Power of mutation on a single trait param
 	TraitMutationPower     float64
-	// Amount that mutation_num changes for a trait change inside a link
+				       // Amount that mutation_num changes for a trait change inside a link
 	LinkTraitMutSig        float64
-	// Amount a mutation_num changes on a link connecting a node that changed its trait
+				       // Amount a mutation_num changes on a link connecting a node that changed its trait
 	NodeTraitMutSig        float64
-	// The power of a linkweight mutation
+				       // The power of a linkweight mutation
 	WeightMutPower         float64
 
-	// These 3 global coefficients are used to determine the formula for
-	// computing the compatibility between 2 genomes.  The formula is:
-	// disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg.
-	// See the compatibility method in the Genome class for more info
-	// They can be thought of as the importance of disjoint Genes,
-	// excess Genes, and parametric difference between Genes of the
-	// same function, respectively.
+				       // These 3 global coefficients are used to determine the formula for
+				       // computing the compatibility between 2 genomes.  The formula is:
+				       // disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg.
+				       // See the compatibility method in the Genome class for more info
+				       // They can be thought of as the importance of disjoint Genes,
+				       // excess Genes, and parametric difference between Genes of the
+				       // same function, respectively.
 	DisjointCoeff          float64
 	ExcessCoeff            float64
 	MutdiffCoeff           float64
 
-	// This global tells compatibility threshold under which
-	// two Genomes are considered the same species */
+				       // This global tells compatibility threshold under which
+				       // two Genomes are considered the same species */
 	CompatThreshold        float64
 
-	/* Globals involved in the epoch cycle - mating, reproduction, etc.. */
+				       /* Globals involved in the epoch cycle - mating, reproduction, etc.. */
 
-	// How much does age matter?
+				       // How much does age matter?
 	AgeSignificance        float64
-	// Percent of ave fitness for survival
+				       // Percent of ave fitness for survival
 	SurvivalThresh         float64
 
-	// Probabilities of a non-mating reproduction
+				       // Probabilities of a non-mating reproduction
 	MutateOnlyProb         float64
 	MutateRandomTraitProb  float64
 	MutateLinkTraitProb    float64
@@ -57,39 +57,39 @@ type NeatContext struct {
 	MutateGeneReenableProb float64
 	MutateAddNodeProb      float64
 	MutateAddLinkProb      float64
-	MutateConnectInputs    float64 // probability of mutation involving disconnected inputs connection
+	MutateConnectSensors   float64 // probability of mutation involving disconnected inputs connection
 
-	// Probabilities of a mate being outside species
+				       // Probabilities of a mate being outside species
 	InterspeciesMateRate   float64
 	MateMultipointProb     float64
 	MateMultipointAvgProb  float64
 	MateSinglepointProb    float64
 
-	// Prob. of mating without mutation
+				       // Prob. of mating without mutation
 	MateOnlyProb           float64
-	// Probability of forcing selection of ONLY links that are naturally recurrent
+				       // Probability of forcing selection of ONLY links that are naturally recurrent
 	RecurOnlyProb          float64
 
-	// Size of population
+				       // Size of population
 	PopSize                int
-	// Age when Species starts to be penalized
+				       // Age when Species starts to be penalized
 	DropOffAge             int
-	// Number of tries mutate_add_link will attempt to find an open link
+				       // Number of tries mutate_add_link will attempt to find an open link
 	NewLinkTries           int
 
-	// Tells to print population to file every n generations
+				       // Tells to print population to file every n generations
 	PrintEvery             int
 
-	// The number of babies to stolen off to the champions
+				       // The number of babies to stolen off to the champions
 	BabiesStolen           int
 
-	// The number of runs to average over in an experiment
+				       // The number of runs to average over in an experiment
 	NumRuns                int
 
-	// The flag to indicate whether to print additional debugging info
+				       // The flag to indicate whether to print additional debugging info
 	IsDebugEnabled         bool
 
-	/* OBSOLETE */
+				       /* OBSOLETE */
 	recurProb              float64
 }
 
@@ -147,8 +147,8 @@ func LoadContext(r io.Reader) *NeatContext {
 			c.MutateAddNodeProb = param
 		case "mutate_add_link_prob":
 			c.MutateAddLinkProb = param
-		case "mutate_connect_inputs":
-			c.MutateConnectInputs = param
+		case "mutate_connect_sensors":
+			c.MutateConnectSensors = param
 		case "interspecies_mate_rate":
 			c.InterspeciesMateRate = param
 		case "mate_multipoint_prob":
