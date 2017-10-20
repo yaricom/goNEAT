@@ -327,7 +327,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				context.DebugLog("---> mutateAddNode")
 
 				// Mutate add node
-				new_genome.mutateAddNode(pop)
+				_, err := new_genome.mutateAddNode(pop)
+				if err != nil {
+					return false, err
+				}
 				mut_struct_baby = true
 			} else if rand.Float64() < context.MutateAddLinkProb {
 				context.DebugLog("---> mutateAddLink")
@@ -339,7 +342,16 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					return false, err
 				}
 				mut_struct_baby = true
-			} else {
+			} else if rand.Float64() < context.MutateConnectSensors {
+				context.DebugLog("---> mutateConnectSensors")
+				link_added, err := new_genome.mutateConnectSensors(pop)
+				if err != nil {
+					return false, err
+				}
+				mut_struct_baby = link_added
+			}
+
+			if !mut_struct_baby {
 				context.DebugLog("---> mutateAllNonstructural")
 
 				// If we didn't do a structural mutation, we do the other kinds
@@ -431,7 +443,10 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					context.DebugLog("---------> mutateAddNode")
 
 					// mutate_add_node
-					new_genome.mutateAddNode(pop)
+					_, err = new_genome.mutateAddNode(pop)
+					if err != nil {
+						return false, err
+					}
 					mut_struct_baby = true
 				} else if rand.Float64() < context.MutateAddLinkProb {
 					context.DebugLog("---------> mutateAddLink")
@@ -443,11 +458,20 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 						return false, err
 					}
 					mut_struct_baby = true
-				} else {
-					context.DebugLog("---------> mutateAllNonstructural")
+				} else if rand.Float64() < context.MutateConnectSensors {
+					context.DebugLog("---> mutateConnectSensors")
+					link_added, err := new_genome.mutateConnectSensors(pop)
+					if err != nil {
+						return false, err
+					}
+					mut_struct_baby = link_added
+				}
 
-					// Only do other mutations when not doing structural mutations
-					_, err = new_genome.mutateAllNonstructural(context)
+				if !mut_struct_baby {
+					context.DebugLog("---> mutateAllNonstructural")
+
+					// If we didn't do a structural mutation, we do the other kinds
+					_, err := new_genome.mutateAllNonstructural(context)
 					if err != nil {
 						return false, err
 					}
