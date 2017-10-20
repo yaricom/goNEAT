@@ -57,6 +57,7 @@ type NeatContext struct {
 	MutateGeneReenableProb float64
 	MutateAddNodeProb      float64
 	MutateAddLinkProb      float64
+	MutateConnectInputs    float64 // probability of mutation involving disconnected inputs connection
 
 	// Probabilities of a mate being outside species
 	InterspeciesMateRate   float64
@@ -89,7 +90,7 @@ type NeatContext struct {
 	IsDebugEnabled         bool
 
 	/* OBSOLETE */
-	recurProb float64
+	recurProb              float64
 }
 
 // Loads context configuration from provided reader
@@ -97,72 +98,86 @@ func LoadContext(r io.Reader) *NeatContext {
 	c := NeatContext{}
 	// read configuration
 	var name string
-	// trait_param_mut_prob 0.5
-	fmt.Fscanf(r, "%s %f ", &name, &c.TraitParamMutProb)
-	// trait_mutation_power 1.0
-	fmt.Fscanf(r, "%s %f ", &name, &c.TraitMutationPower)
-	// linktrait_mut_sig 1.0
-	fmt.Fscanf(r, "%s %f ", &name, &c.LinkTraitMutSig)
-	// nodetrait_mut_sig 0.5
-	fmt.Fscanf(r, "%s %f ", &name, &c.NodeTraitMutSig)
-	// weight_mut_power 1.8
-	fmt.Fscanf(r, "%s %f ", &name, &c.WeightMutPower)
-	// recur_prob 0.05
-	fmt.Fscanf(r, "%s %f ", &name, &c.recurProb)
-	// disjoint_coeff 1.0
-	fmt.Fscanf(r, "%s %f ", &name, &c.DisjointCoeff)
-	// excess_coeff 1.0
-	fmt.Fscanf(r, "%s %f ", &name, &c.ExcessCoeff)
-	// mutdiff_coeff 3.0
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutdiffCoeff)
-	// compat_thresh 4.0
-	fmt.Fscanf(r, "%s %f ", &name, &c.CompatThreshold)
-	// age_significance 1.0
-	fmt.Fscanf(r, "%s %f ", &name, &c.AgeSignificance)
-	// survival_thresh 0.4
-	fmt.Fscanf(r, "%s %f ", &name, &c.SurvivalThresh)
-	// mutate_only_prob 0.25
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateOnlyProb)
-	// mutate_random_trait_prob 0.1
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateRandomTraitProb)
-	// mutate_link_trait_prob 0.1
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateLinkTraitProb)
-	// mutate_node_trait_prob 0.1
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateNodeTraitProb)
-	// mutate_link_weights_prob 0.8
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateLinkWeightsProb)
-	// mutate_toggle_enable_prob 0.1
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateToggleEnableProb)
-	// mutate_gene_reenable_prob 0.05
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateGeneReenableProb)
-	// mutate_add_node_prob 0.01
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateAddNodeProb)
-	// mutate_add_link_prob 0.3
-	fmt.Fscanf(r, "%s %f ", &name, &c.MutateAddLinkProb)
-	// interspecies_mate_rate 0.001
-	fmt.Fscanf(r, "%s %f ", &name, &c.InterspeciesMateRate)
-	// mate_multipoint_prob 0.6
-	fmt.Fscanf(r, "%s %f ", &name, &c.MateMultipointProb)
-	// mate_multipoint_avg_prob 0.4
-	fmt.Fscanf(r, "%s %f ", &name, &c.MateMultipointAvgProb)
-	// mate_singlepoint_prob 0.0
-	fmt.Fscanf(r, "%s %f ", &name, &c.MateSinglepointProb)
-	// mate_only_prob 0.2
-	fmt.Fscanf(r, "%s %f ", &name, &c.MateOnlyProb)
-	// recur_only_prob 0.2
-	fmt.Fscanf(r, "%s %f ", &name, &c.RecurOnlyProb)
-	// pop_size 1000
-	fmt.Fscanf(r, "%s %d ", &name, &c.PopSize)
-	// dropoff_age 15
-	fmt.Fscanf(r, "%s %d ", &name, &c.DropOffAge)
-	// newlink_tries 20
-	fmt.Fscanf(r, "%s %d ", &name, &c.NewLinkTries)
-	// print_every 60
-	fmt.Fscanf(r, "%s %d ", &name, &c.PrintEvery)
-	// babies_stolen 0
-	fmt.Fscanf(r, "%s %d ", &name, &c.BabiesStolen)
-	// num_runs 1
-	fmt.Fscanf(r, "%s %d ", &name, &c.NumRuns)
+	var param float64;
+	for true {
+		_, err := fmt.Fscanf(r, "%s %f", &name, &param)
+		if err == io.EOF {
+			break
+		}
+		switch name {
+		case "trait_param_mut_prob":
+			c.TraitParamMutProb = param
+		case "trait_mutation_power":
+			c.TraitMutationPower = param
+		case "linktrait_mut_sig":
+			c.LinkTraitMutSig = param
+		case "nodetrait_mut_sig":
+			c.NodeTraitMutSig = param
+		case "weight_mut_power":
+			c.WeightMutPower = param
+		case "recur_prob":
+			c.recurProb = param
+		case "disjoint_coeff":
+			c.DisjointCoeff = param
+		case "excess_coeff":
+			c.ExcessCoeff = param
+		case "mutdiff_coeff":
+			c.MutdiffCoeff = param
+		case "compat_thresh":
+			c.CompatThreshold = param
+		case "age_significance":
+			c.AgeSignificance = param
+		case "survival_thresh":
+			c.SurvivalThresh = param
+		case "mutate_only_prob":
+			c.MutateOnlyProb = param
+		case "mutate_random_trait_prob":
+			c.MutateRandomTraitProb = param
+		case "mutate_link_trait_prob":
+			c.MutateLinkTraitProb = param
+		case "mutate_node_trait_prob":
+			c.MutateNodeTraitProb = param
+		case "mutate_link_weights_prob":
+			c.MutateLinkWeightsProb = param
+		case "mutate_toggle_enable_prob":
+			c.MutateToggleEnableProb = param
+		case "mutate_gene_reenable_prob":
+			c.MutateGeneReenableProb = param
+		case "mutate_add_node_prob":
+			c.MutateAddNodeProb = param
+		case "mutate_add_link_prob":
+			c.MutateAddLinkProb = param
+		case "mutate_connect_inputs":
+			c.MutateConnectInputs = param
+		case "interspecies_mate_rate":
+			c.InterspeciesMateRate = param
+		case "mate_multipoint_prob":
+			c.MateMultipointProb = param
+		case "mate_multipoint_avg_prob":
+			c.MateMultipointAvgProb = param
+		case "mate_singlepoint_prob":
+			c.MateSinglepointProb = param
+		case "mate_only_prob":
+			c.MateOnlyProb = param
+		case "recur_only_prob":
+			c.RecurOnlyProb = param
+		case "pop_size":
+			c.PopSize = int(param)
+		case "dropoff_age":
+			c.DropOffAge = int(param)
+		case "newlink_tries":
+			c.NewLinkTries = int(param)
+		case "print_every":
+			c.PrintEvery = int(param)
+		case "babies_stolen":
+			c.BabiesStolen = int(param)
+		case "num_runs":
+			c.NumRuns = int(param)
+		default:
+			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %.f\n", name, param)
+		}
+	}
+
 
 	return &c
 }
