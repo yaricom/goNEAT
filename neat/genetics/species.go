@@ -393,7 +393,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 						rand_mult = 1.0
 					}
 					// This tends to select better species
-					rand_species_num := int(math.Floor(rand_mult * (float64(len(sorted_species)) - 1.0) + 0.5))
+					rand_species_num := int(math.Floor(rand_mult * float64(len(sorted_species) - 1) + 0.5))
 					rand_species = sorted_species[rand_species_num]
 
 					giveup++
