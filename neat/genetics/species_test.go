@@ -6,6 +6,8 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 	"sort"
 	"bytes"
+	"math"
+	"fmt"
 )
 
 func buildSpeciesWithOrganisms(id int) *Species {
@@ -19,6 +21,22 @@ func buildSpeciesWithOrganisms(id int) *Species {
 	sp.addOrganism(NewOrganism(10.0 * float64(id), gen, id))
 
 	return sp
+}
+
+func TestSpecies_GaussianMate(t *testing.T) {
+	s, rand_species := 1, 1
+	sorted_species := []int {6, 5, 4, 3, 2, 1, 0}
+	giveup := 0
+	for ; rand_species == s && giveup < 5; {
+		// Choose a random species tending towards better species
+		rand_mult := (gaussian.StdGaussian() / 2.0 + 1.0) / 4.0
+		// This tends to select better species
+		rand_species_num := int(math.Floor(rand_mult * float64(len(sorted_species) - 1) + 0.5))
+		fmt.Printf("rand_species_num: %d, rand_mult: %f\n", rand_species_num, rand_mult)
+		rand_species = sorted_species[rand_species_num]
+
+		giveup++
+	}
 }
 
 func TestSpecies_Write(t *testing.T) {
