@@ -388,9 +388,9 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				giveup := 0
 				for ; rand_species == s && giveup < 5; {
 					// Choose a random species tending towards better species
-					rand_mult := (gaussian.StdGaussian() / 2.0 + 1.0) / 4.0
+					rand_mult := rand.Float64() / 4.0
 					// This tends to select better species
-					rand_species_num := int(math.Floor(rand_mult * float64(len(sorted_species) - 1) + 0.5))
+					rand_species_num := int(math.Floor(rand_mult * float64(len(sorted_species))))
 					rand_species = sorted_species[rand_species_num]
 
 					giveup++
