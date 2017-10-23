@@ -1,11 +1,6 @@
 // Package genetics holds data holders and helper utilities used to implement genetic evolution algorithm
 package genetics
 
-import (
-	"github.com/leesper/go_rng"
-	"time"
-)
-
 // The innovation method to be applied
 const (
 	// The novelty will be introduced by new NN node
@@ -22,5 +17,3 @@ const (
 	COLD_GAUSSIAN
 )
 
-// The Gaussian random number generator
-var gaussian = rng.NewGaussianGenerator(time.Now().UnixNano())
