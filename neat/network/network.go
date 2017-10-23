@@ -102,7 +102,7 @@ func (n *Network) Activate() (bool, error) {
 		abort_count += 1
 
 		if abort_count >= 20 {
-			return false, errors.New("Inputs disconnected from outputs!")
+			return false, nil//errors.New("Inputs disconnected from outputs!")
 		}
 
 		// For each neuron node, compute the sum of its incoming activation
