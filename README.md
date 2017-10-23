@@ -8,7 +8,7 @@ optimal NN parameters and topology. Neuroevolution of NN may assume search for o
 NN nodes as well as search for optimal topology of resulting NN. The NEAT method implemented in this work do search for
 both: optimal connections weights and topology for given task (number of NN nodes per layer and their interconnections).
 
-### System Requirements
+#### System Requirements
 The source code written and compiled against GO 1.8.x.
 
 ## Performance Evaluations
@@ -20,13 +20,13 @@ of NEAT algorithm against proven results by many of other algorithms. I.e. we ca
 other algorithms and find out if it performs better or worse.
 
 
-### The XOR Experiments
+### 1. The XOR Experiments
 Because XOR is not linearly separable, a neural network requires hidden units to solve it. The two inputs must be
 combined at some hidden unit, as opposed to only at the out- put node, because there is no function over a linear
 combination of the inputs that can separate the inputs into the proper classes. These structural requirements make XOR
 suitable for testing NEAT’s ability to evolve structure.
 
-#### The XOR Experiment with connected inputs instart genome
+#### >>> The XOR Experiment with connected inputs in start genome
 In this experiment we will use start (seed) genome with inputs connected to the output. Thus it will check mostly the
 ability of NEAT to grow new hidden unit necessary for solving XOR problem.
 
@@ -39,7 +39,7 @@ $go run xor_runner.go ./out ./data/xor.neat ./data/xorstartgenes
 Where: ./data/xor.neat is the configuration of NEAT execution context and ./data/xorstartgenes is the start genome
 configuration.
 
-As result of execution in the ./out directory will be stored several 'gen_x' files with snapshots of population per 'print_every'
+As result of execution into the ./out directory will be stored several 'gen_x' files with snapshots of population per 'print_every'
 epoch or when winner solution found. Also in mentioned directory will be stored 'xor_winner' with winner genome and
 'xor_optimal' with optimal XOR solution if any (has exactly 5 units).
 
@@ -48,7 +48,7 @@ to solve XOR problem which is proof that it works as expected.
 
 The XOR experiment for start genes with inputs connected will not fail almost always (at least 100 simulations)
 
-#### The XOR experiment with disconnected inputs in start genome
+#### >>> The XOR experiment with disconnected inputs in start genome
 This experiment will use start genome with disconnected inputs in order to check ability of algorithm to not only grow
 need hidden nodes, but also to build missed connections between input nodes and rest of the network.
 
@@ -59,7 +59,7 @@ $go run xor_runner.go ./out ./data/xor.neat ./data/xordisconnectedstartgenes
 
 ```
 
-The results of experiment execution will be saved in the ./out directory as in previous experiment.
+The results of experiment execution will be saved into the ./out directory as in previous experiment.
 
 The experiment will fail sometimes to produce XOR solution over 100 epochs, but most of times solution will be found. This
 confirms that algorithm is able not only grow needed hidden units, but also to restore input connections as needed.
@@ -67,5 +67,3 @@ confirms that algorithm is able not only grow needed hidden units, but also to r
 
 
 [1]:http://www.cs.ucf.edu/~kstanley/neat.html
-
-
