@@ -219,6 +219,9 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 		return false, err
 	}
 	fmt.Printf("Network depth: %d for organism: %d\n", net_depth, org.GNome.Id)
+	if net_depth == 0 {
+		fmt.Println(org.GNome)
+	}
 
 	success := false  // Check for successful activation
 	out := make([]float64, 4) // The four outputs
