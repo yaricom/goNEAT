@@ -9,7 +9,7 @@ import (
 )
 
 // The precision to use for XOR evaluation, i.e. one is x > 1 - precision and zero is x < precision
-const precision = 0.00001
+const precision = 0.5
 
 // XOR is very simple and does not make a very interesting scientific experiment; however, it is a good way to
 // check whether your system works.
@@ -46,12 +46,14 @@ func XOR(context_path, genome_path, out_dir_path string, generations int) (*gene
 	fmt.Println(start_genome)
 
 	// Check if output dir exists
-	if _, err := os.Stat(out_dir_path); os.IsNotExist(err) {
-		// create output dir
-		err = os.MkdirAll(out_dir_path, os.ModePerm)
-		if err != nil {
-			return nil, err
-		}
+	if _, err := os.Stat(out_dir_path); err == nil {
+		// clear it
+		os.RemoveAll(out_dir_path)
+	}
+	// create output dir
+	err = os.MkdirAll(out_dir_path, os.ModePerm)
+	if err != nil {
+		return nil, err
 	}
 
 
@@ -77,7 +79,7 @@ func XOR(context_path, genome_path, out_dir_path string, generations int) (*gene
 			fmt.Println("\n!!!!! Population verification failed !!!!!")
 			return nil, err
 		} else {
-			fmt.Println("OK <<<<<\n")
+			fmt.Println("OK <<<<<")
 		}
 
 		for gen := 1; gen <= generations; gen ++ {
@@ -177,6 +179,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 	}
 
 	if success {
+		// print winner organism
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
@@ -191,11 +194,11 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 				break
 			}
 		}
+	} else {
+		// Move to the next epoch if failed to find winner
+		fmt.Println(">>>>> start next generation")
+		_, err = pop.Epoch(generation, context)
 	}
-
-	// Move to the next epoch
-	fmt.Println(">>>>> start next generation")
-	_, err = pop.Epoch(generation, context)
 
 	return success, winner_num, winner_genes, winner_nodes, err
 }
@@ -215,12 +218,13 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 		fmt.Println("Failed to estimate maximal depth of the network")
 		return false, err
 	}
+	fmt.Printf("Network depth: %d for organism: %d\n", net_depth, org.GNome.Id)
 
 	success := false  // Check for successful activation
 	out := make([]float64, 4) // The four outputs
 
 	// Load and activate the network on each input
-	for count := 0; count < 3; count++ {
+	for count := 0; count < 4; count++ {
 		org.Net.LoadSensors(in[count])
 
 		// Relax net and get output
@@ -257,7 +261,7 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 		org.Fitness = 0.001
 	}
 
-	if out[0] < precision && out[1] > 1 - precision && out[2] > 1 - precision && out[3] < precision {
+	if out[0] < precision && out[1] >= 1 - precision && out[2] >= 1 - precision && out[3] < precision {
 		org.IsWinner = true
 		fmt.Printf(">>>> Output activations: %e\n", out)
 
