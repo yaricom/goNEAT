@@ -147,7 +147,7 @@ func (s *Species) adjustFitness(conf *neat.NeatContext) {
 	// Adding 1.0 ensures that at least one will survive
 	num_parents := int(math.Floor(conf.SurvivalThresh * float64(len(s.Organisms)) + 1.0))
 
-	//Mark for death those who are ranked too low to be parents
+	// Mark for death those who are ranked too low to be parents
 	s.Organisms[0].IsChampion = true // Mark the champ as such
 	for c := num_parents; c < len(s.Organisms); c++ {
 		s.Organisms[c].ToEliminate = true
@@ -256,7 +256,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
-		context.DebugLog(fmt.Sprintf("\nSPECIES: Offspring #%d from %d", count, s.ExpectedOffspring))
+		context.DebugLog(fmt.Sprintf("\nSPECIES: Offspring #%d from %d, (species: %d)",
+			count, s.ExpectedOffspring, s.Id))
 
 		mut_struct_baby, mate_baby := false, false
 
@@ -496,27 +497,31 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			}
 
 			found := false
-			for i := 0; i < len(pop.Species); i++ {
+			var best_compatible *Species // the best compatible species
+			best_compat_value := math.MaxFloat64
+			for _, _specie := range pop.Species {
 				// point _species
-				_specie := pop.Species[i]
 				if len(_specie.Organisms) > 0 {
 					// point to first organism of this _specie
 					compare_org := _specie.Organisms[0]
 					// compare baby organism with first organism in current specie
 					curr_compat := baby.GNome.compatibility(compare_org.GNome, context)
 
-					if curr_compat < context.CompatThreshold {
-						context.DebugLog("SPECIES: Compatible species found for baby organism")
-
-						// Found compatible species, so add this baby to it
-						_specie.addOrganism(baby);
-						// update in baby pointer to its species
-						baby.SpeciesOf = _specie
+					if curr_compat < context.CompatThreshold && curr_compat < best_compat_value {
+						best_compatible = _specie
+						best_compat_value = curr_compat
 						found = true
-						// force exit from this block ...
-						break
 					}
 				}
+			}
+
+			if found {
+				context.DebugLog(fmt.Sprintf("SPECIES: Compatible species [%d] found for baby organism",
+					best_compatible.Id))
+				// Found compatible species, so add this baby to it
+				best_compatible.addOrganism(baby);
+				// update in baby pointer to its species
+				baby.SpeciesOf = best_compatible
 			}
 
 			// If match was not found, create a new species
