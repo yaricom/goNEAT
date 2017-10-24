@@ -361,6 +361,15 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		}
 	}
 
+	// Remove stagnated species which can not produce any offspring any more
+	species_to_keep := make([]*Species, 0)
+	for _, sp := range p.Species {
+		if sp.ExpectedOffspring > 0 {
+			species_to_keep = append(species_to_keep, sp)
+		}
+	}
+	p.Species = species_to_keep
+
 	// Stick the Species pointers into a new Species list for sorting
 	sorted_species := make([]*Species, len(p.Species))
 	copy(sorted_species, p.Species)
@@ -374,10 +383,12 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		context.DebugLog("POPULATION: >> Sorted Species START <<")
 		for _, sp := range sorted_species {
 			// Print out for Debugging/viewing what's going on
-			context.DebugLog(fmt.Sprintf("POPULATION: >> Orig. fitness of Species %d (Size %d): %f last improved %d \n",
-				sp.Id, len(sp.Organisms), sp.Organisms[0].OriginalFitness, (sp.Age - sp.AgeOfLastImprovement)))
+			context.DebugLog(
+				fmt.Sprintf("POPULATION: >> Orig. fitness of Species %d (Size %d): %f, current fitness: %f, expected offspring: %d, last improved %d \n",
+				sp.Id, len(sp.Organisms), sp.Organisms[0].OriginalFitness, sp.Organisms[0].Fitness, sp.ExpectedOffspring, (sp.Age - sp.AgeOfLastImprovement)))
 		}
 		context.DebugLog("POPULATION: >> Sorted Species END <<\n")
+
 	}
 
 	// Check for Population-level stagnation
@@ -532,13 +543,18 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		if err != nil {
 			return false, err
 		}
+
+		if context.IsDebugEnabled && curr_org.SpeciesOf.Id == best_species_id {
+			context.DebugLog(fmt.Sprintf("POPULATION: Removed organism [%d] from best species [%d]. Remain %d organisms",
+			curr_org.GNome.Id, best_species_id, len(curr_org.SpeciesOf.Organisms)))
+		}
 	}
 	p.Organisms = make([]*Organism, 0)
 
 	// Remove all empty Species and age ones that survive.
 	// As this happens, create master organism list for the new generation.
 	org_count := 0
-	species_to_keep := make([]*Species, 0)
+	species_to_keep = make([]*Species, 0)
 	for _, curr_species := range p.Species {
 		if len(curr_species.Organisms) > 0 {
 			// Age surviving Species
