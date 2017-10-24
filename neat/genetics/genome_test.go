@@ -389,6 +389,25 @@ func TestGenome_Compatibility(t *testing.T) {
 	}
 }
 
+func TestGenome_Compatibility_Duplicate(t *testing.T) {
+	rand.Seed(42)
+	gnome1 := buildTestGenome(1)
+	gnome2 := gnome1.duplicate(2)
+
+	// Configuration
+	conf := neat.NeatContext{
+		DisjointCoeff:0.5,
+		ExcessCoeff:0.5,
+		MutdiffCoeff:0.5,
+	}
+
+	// Test fully compatible
+	comp := gnome1.compatibility(gnome2, &conf)
+	if comp != 0 {
+		t.Error("comp != 0 ", comp)
+	}
+}
+
 func TestGenome_mutateAddLink(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
