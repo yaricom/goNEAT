@@ -86,7 +86,7 @@ func XOR(context_path, genome_path, out_dir_path string, generations int) (*gene
 			fmt.Printf(">>>>> Epoch: %d\n", gen)
 			success, winner_num, winner_genes, winner_nodes, err := xor_epoch(pop, gen, out_dir_path, context)
 			if err != nil {
-				fmt.Println("!!!!! Epoch evaluation failed !!!!!")
+				fmt.Printf("!!!!! Epoch %d evaluation failed !!!!!\n", gen)
 				return nil, err
 			}
 			if success {
@@ -94,7 +94,7 @@ func XOR(context_path, genome_path, out_dir_path string, generations int) (*gene
 				evals[exp_count] = context.PopSize * (gen - 1) + winner_num
 				genes[exp_count] = winner_genes
 				nodes[exp_count] = winner_nodes
-				fmt.Println(">>>>> The winner organism found! <<<<<")
+				fmt.Printf(">>>>> The winner organism found in epoch %d! <<<<<\n", gen)
 				break
 			}
 		}
@@ -126,6 +126,9 @@ func XOR(context_path, genome_path, out_dir_path string, generations int) (*gene
 
 	fmt.Printf("\n>>>>>\nAverage Nodes:\t%d\nAverage Genes:\t%d\nAverage Evals:\t%d\n",
 		total_nodes / context.NumRuns, total_genes / context.NumRuns, total_evals / context.NumRuns)
+
+	fmt.Printf(">>> Start genome file:  %s\n", genome_path)
+	fmt.Printf(">>> Configuration file: %s\n", context_path)
 
 	return successful_pop, nil
 }
@@ -216,6 +219,7 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 	net_depth, err := org.Net.MaxDepth() // The max depth of the network to be activated
 	if err != nil {
 		fmt.Println("Failed to estimate maximal depth of the network")
+		fmt.Println(org.GNome)
 		return false, err
 	}
 	fmt.Printf("Network depth: %d for organism: %d\n", net_depth, org.GNome.Id)
