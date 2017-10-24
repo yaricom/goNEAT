@@ -649,7 +649,7 @@ func (g *Genome) mutateConnectSensors(pop *Population) (bool, error) {
 
 // Mutate the genome by adding a new link between two random NNodes,
 // if NNodes are already connected, keep trying conf.NewLinkTries times
-func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, error) {
+func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool, error) {
 	// If the phenotype does not exist, exit on false, print error
 	// Note: This should never happen - if it does there is a bug
 	if g.Phenotype == nil {
@@ -666,7 +666,7 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 
 	// Decide whether to make link recurrent
 	do_recur := false
-	if rand.Float64() < conf.RecurOnlyProb {
+	if rand.Float64() < context.RecurOnlyProb {
 		do_recur = true
 	}
 
@@ -684,10 +684,10 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 	try_count := 0
 
 	// Iterate over nodes and try to add new link
-	var node_num_1, node_num_2 int
 	var node_1, node_2 *network.NNode
 	found := false
-	for try_count < conf.NewLinkTries {
+	for try_count < context.NewLinkTries {
+		node_num_1, node_num_2 := 0, 0
 		if do_recur {
 			// 50% of prob to decide create a recurrent link (node X to node X)
 			// 50% of a normal link (node X to node Y)
@@ -699,12 +699,16 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 				node_num_1 = first_non_sensor + rand.Intn(nodes_len - first_non_sensor) // only NON SENSOR
 				node_num_2 = node_num_1
 			} else {
+				for node_num_1 == node_num_2 {
+					node_num_1 = rand.Intn(nodes_len)
+					node_num_2 = first_non_sensor + rand.Intn(nodes_len - first_non_sensor) // only NON SENSOR
+				}
+			}
+		} else {
+			for node_num_1 == node_num_2 {
 				node_num_1 = rand.Intn(nodes_len)
 				node_num_2 = first_non_sensor + rand.Intn(nodes_len - first_non_sensor) // only NON SENSOR
 			}
-		} else {
-			node_num_1 = rand.Intn(nodes_len)
-			node_num_2 = first_non_sensor + rand.Intn(nodes_len - first_non_sensor) // only NON SENSOR
 		}
 
 		// get corresponding nodes
@@ -736,7 +740,9 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 
 			// Exit if the network is faulty (contains an infinite loop)
 			if count > thresh {
-				return false, errors.New("LOOP DETECTED DURING A RECURRENCY CHECK")
+				context.DebugLog(fmt.Sprintf("Recurency -> node in: %s <-> node out: %s",
+					node_1.Analogue, node_2.Analogue))
+				return false, errors.New("GENOME: ERROR: LOOP DETECTED DURING A RECURRENCY CHECK")
 			}
 
 			// Make sure it finds the right kind of link (recurrent or not)
@@ -744,7 +750,7 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 				try_count++
 			} else {
 				// The open link found
-				try_count = conf.NewLinkTries
+				try_count = context.NewLinkTries
 				found = true
 			}
 		} else {
@@ -764,7 +770,7 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 				inn.OutNodeId == node_2.Id &&
 				inn.IsRecurrent == do_recur {
 
-				//Create new gene
+				// Create new gene
 				new_gene = NewGeneWithTrait(g.Traits[inn.NewTraitNum], inn.NewWeight, node_1, node_2, do_recur, inn.InnovationNum, 0)
 
 				innovation_found = true
@@ -788,6 +794,12 @@ func (g *Genome) mutateAddLink(pop *Population, conf *neat.NeatContext) (bool, e
 			new_innov := NewInnovationForRecurrentLink(node_1.Id, node_2.Id, curr_innov,
 				new_weight, trait_num, do_recur)
 			pop.Innovations = append(pop.Innovations, new_innov)
+		}
+
+		// sanity check
+		if new_gene.Link.InNode == new_gene.Link.OutNode && !do_recur {
+			context.DebugLog(fmt.Sprintf("Recurent link created when recurency is not enabled: %s", new_gene))
+			return false, errors.New("GENOME: ERROR: Wrong gene created!")
 		}
 
 		// Now add the new Gene to the Genome
