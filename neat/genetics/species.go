@@ -125,7 +125,7 @@ func (s *Species) adjustFitness(conf *neat.NeatContext) {
 		if s.Age <= 10 {
 			org.Fitness = org.Fitness * conf.AgeSignificance
 		}
-		//Do not allow negative fitness
+		// Do not allow negative fitness
 		if org.Fitness < 0.0 {
 			org.Fitness = 0.0001
 		}
@@ -485,12 +485,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 		baby.mateBaby = mate_baby
 
 		if len(pop.Species) == 0 {
-			context.DebugLog("SPECIES: Create first species for baby organism because population is empty")
-
 			// Create the first species
-			createFirstSpecies(pop, baby)
-
-			context.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d", len(pop.Species)))
+			createFirstSpecies(pop, baby, context)
 		} else {
 			if context.CompatThreshold == 0 {
 				return false, errors.New("SPECIES: compatibility thershold is set to ZERO. Will not find any compatible species.")
@@ -516,8 +512,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			}
 
 			if found {
-				context.DebugLog(fmt.Sprintf("SPECIES: Compatible species [%d] found for baby organism",
-					best_compatible.Id))
+				context.DebugLog(fmt.Sprintf("SPECIES: Compatible species [%d] found for baby organism [%d]",
+					best_compatible.Id, baby.GNome.Id))
 				// Found compatible species, so add this baby to it
 				best_compatible.addOrganism(baby);
 				// update in baby pointer to its species
@@ -526,11 +522,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			// If match was not found, create a new species
 			if !found {
-				context.DebugLog("SPECIES: Create first species for baby organism because compatible species isn't found")
-
-				createFirstSpecies(pop, baby)
-
-				context.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d", len(pop.Species)))
+				createFirstSpecies(pop, baby, context)
 			}
 		}
 
@@ -538,12 +530,16 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 	return true, nil
 }
 
-func createFirstSpecies(pop *Population, baby *Organism) {
+func createFirstSpecies(pop *Population, baby *Organism, context *neat.NeatContext) {
+	context.DebugLog(fmt.Sprintf("SPECIES: Create first species for baby organism [%d]", baby.GNome.Id))
+
 	pop.LastSpecies++
 	new_species := NewSpeciesNovel(pop.LastSpecies, true)
 	pop.Species = append(pop.Species, new_species)
 	new_species.addOrganism(baby) // Add the baby
 	baby.SpeciesOf = new_species //Point baby to its species
+
+	context.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d", len(pop.Species)))
 }
 
 func (s *Species) String() string {
