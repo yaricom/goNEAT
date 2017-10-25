@@ -344,7 +344,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				mut_struct_baby = true
 			} else if rand.Float64() < context.MutateConnectSensors {
 				context.DebugLog("SPECIES: ---> mutateConnectSensors")
-				link_added, err := new_genome.mutateConnectSensors(pop)
+				link_added, err := new_genome.mutateConnectSensors(pop, context)
 				if err != nil {
 					return false, err
 				}
@@ -457,7 +457,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					mut_struct_baby = true
 				} else if rand.Float64() < context.MutateConnectSensors {
 					context.DebugLog("SPECIES: ---> mutateConnectSensors")
-					link_added, err := new_genome.mutateConnectSensors(pop)
+					link_added, err := new_genome.mutateConnectSensors(pop, context)
 					if err != nil {
 						return false, err
 					}
