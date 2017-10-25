@@ -419,6 +419,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	}
 	// The population (DUMMY)
 	pop := newPopulation()
+	pop.currInnovNum = int64(4)
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
@@ -430,8 +431,8 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	if err != nil {
 		t.Error("err != nil", err)
 	}
-	if pop.currInnovNum != 1 {
-		t.Error("pop.currInnovNum != 1", pop.currInnovNum)
+	if pop.currInnovNum != 5 {
+		t.Error("pop.currInnovNum != 5", pop.currInnovNum)
 	}
 	if len(pop.Innovations) != 1 {
 		t.Error("len(pop.Innovations) != 1", len(pop.Innovations))
@@ -439,8 +440,8 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	if len(gnome1.Genes) != 4 {
 		t.Error("No new gene was added")
 	}
-	if gnome1.Genes[3].InnovationNum != 0 {
-		t.Error("gnome1.Genes[3].InnovationNum != 0")
+	if gnome1.Genes[3].InnovationNum != 4 {
+		t.Error("gnome1.Genes[3].InnovationNum != 4", gnome1.Genes[3].InnovationNum)
 	}
 	if !gnome1.Genes[3].Link.IsRecurrent {
 		t.Error("New gene must be recurrent, because only one NEURON node exists")
@@ -460,8 +461,8 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	if err != nil {
 		t.Error("err != nil", err)
 	}
-	if pop.currInnovNum != 2 {
-		t.Error("pop.currInnovNum != 2", pop.currInnovNum)
+	if pop.currInnovNum != 6 {
+		t.Error("pop.currInnovNum != 6", pop.currInnovNum)
 	}
 	if len(pop.Innovations) != 2 {
 		t.Error("len(pop.Innovations) != 2", len(pop.Innovations))
@@ -841,5 +842,25 @@ func TestGenome_mateSinglepoint(t *testing.T) {
 	}
 	if len(gnome_child.Traits) != 3 {
 		t.Error("len(gnome_child.Traits) != 3")
+	}
+}
+
+func TestGenome_geneInsert(t *testing.T) {
+	gnome := buildTestGenome(1)
+	gnome.Genes = append(gnome.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 5 0 false"),
+		gnome.Traits, gnome.Nodes))
+
+	gene := ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"), gnome.Traits, gnome.Nodes)
+	genes := geneInsert(gnome.Genes, gene)
+	if len(genes) != 5 {
+		t.Error("len(genes) != 5", len(genes))
+		return
+	}
+
+	for i, g := range genes {
+		if g.InnovationNum != int64(i + 1) {
+			t.Error("g.InnovationNum != i + 1", g.InnovationNum, i + 1)
+			return
+		}
 	}
 }

@@ -539,6 +539,25 @@ func nodeInsert(nodes[]*network.NNode, n *network.NNode) []*network.NNode {
 	return nodes
 }
 
+// Inserts a new gene that has been created through a mutation in the
+// *correct order* into the list of genes in the genome, i.e. ordered by innovation number ascending
+func geneInsert(genes[]*Gene, g *Gene) []*Gene {
+	index := len(genes) // to make sure that greater IDs appended at the end
+	for i, gene := range genes {
+		if gene.InnovationNum >= g.InnovationNum {
+			index = i
+			break
+		}
+	}
+	first := make([]*Gene, index + 1)
+	copy(first, genes[0:index])
+	first[index] = g
+	second := genes[index:]
+	genes = append(first, second...)
+	return genes
+
+}
+
 /* ******* MUTATORS ******* */
 
 // Mutate the genome by adding connections to disconnected inputs (sensors).
@@ -640,7 +659,7 @@ func (g *Genome) mutateConnectSensors(pop *Population) (bool, error) {
 			}
 
 			// Now add the new Gene to the Genome
-			g.Genes = append(g.Genes, new_gene)
+			g.Genes = geneInsert(g.Genes, new_gene)
 			link_added = true
 		}
 	}
@@ -722,8 +741,8 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			bypass = true
 		} else {
 			for _, gene := range g.Genes {
-				if gene.Link.InNode == node_1 &&
-					gene.Link.OutNode == node_2 &&
+				if gene.Link.InNode.Id == node_1.Id &&
+					gene.Link.OutNode.Id == node_2.Id &&
 					gene.Link.IsRecurrent == do_recur {
 					// link already exists
 					bypass = true;
@@ -797,13 +816,13 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 		}
 
 		// sanity check
-		if new_gene.Link.InNode == new_gene.Link.OutNode && !do_recur {
+		if new_gene.Link.InNode.Id == new_gene.Link.OutNode.Id && !do_recur {
 			context.DebugLog(fmt.Sprintf("Recurent link created when recurency is not enabled: %s", new_gene))
-			return false, errors.New("GENOME: ERROR: Wrong gene created!")
+			return false, errors.New(fmt.Sprintf("GENOME: ERROR: Wrong gene created!\n%s", g))
 		}
 
 		// Now add the new Gene to the Genome
-		g.Genes = append(g.Genes, new_gene)
+		g.Genes = geneInsert(g.Genes, new_gene)
 	}
 
 	return found, nil
@@ -921,8 +940,8 @@ func (g *Genome) mutateAddNode(pop *Population) (bool, error) {
 	}
 
 	// Now add the new NNode and new Genes to the Genome
-	g.Genes = append(g.Genes, new_gene_1)
-	g.Genes = append(g.Genes, new_gene_2)
+	g.Genes = geneInsert(g.Genes, new_gene_1)
+	g.Genes = geneInsert(g.Genes, new_gene_2)
 	g.Nodes = nodeInsert(g.Nodes, new_node)
 
 	return true, nil
