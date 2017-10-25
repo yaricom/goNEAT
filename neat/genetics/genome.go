@@ -325,13 +325,29 @@ func (g *Genome) getLastGeneInnovNum() (int64, error) {
 	}
 }
 
-// Returns true if this Genome has provided node
+// Returns true if this Genome already includes provided node
 func (g *Genome) hasNode(node *network.NNode) bool {
 	if id, _ := g.getLastNodeId(); node.Id >= id {
 		return false
 	}
 	for _, n := range g.Nodes {
 		if n.Id == node.Id {
+			return true
+		}
+	}
+	return false
+}
+
+// Returns true if this Genome already includes provided gene
+func (g *Genome) hasGene(gene *Gene) bool {
+	if inn, _ := g.getLastGeneInnovNum(); gene.InnovationNum >= inn {
+		return false
+	}
+
+	for _, g := range g.Genes {
+		if g.Link.InNode.Id == gene.Link.InNode.Id &&
+			g.Link.OutNode.Id == gene.Link.OutNode.Id &&
+			g.Link.IsRecurrent == gene.Link.IsRecurrent {
 			return true
 		}
 	}
@@ -580,7 +596,7 @@ func geneInsert(genes[]*Gene, g *Gene) []*Gene {
 // 	(1) You can start minimally even in problems with many inputs and
 // 	(2) you don't need to know a priori what the important features of the domain are.
 // If all sensors already connected than do nothing.
-func (g *Genome) mutateConnectSensors(pop *Population) (bool, error) {
+func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext) (bool, error) {
 
 	if len(g.Genes) == 0 {
 		return false, errors.New("Genome has no genes")
@@ -669,6 +685,14 @@ func (g *Genome) mutateConnectSensors(pop *Population) (bool, error) {
 				new_innov := NewInnovationForLink(sensor.Id, output.Id, curr_innov,
 					new_weight, trait_num)
 				pop.Innovations = append(pop.Innovations, new_innov)
+			} else if g.hasGene(new_gene) {
+				// The gene for already occurred innovation already in this genome.
+				// This may happen as result of parent genome mutation in current epoch which is
+				// repeated in the child after parent's genome transferred to child during mating
+				context.DebugLog(
+					fmt.Sprintf("GENOME: ALERT: Connect sensors innovation found [%t] in the same genome [%d] for gene: %s\n%s",
+						innovation_found, g.Id, new_gene, g))
+				return false, nil
 			}
 
 			// Now add the new Gene to the Genome
@@ -826,6 +850,14 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			new_innov := NewInnovationForRecurrentLink(node_1.Id, node_2.Id, curr_innov,
 				new_weight, trait_num, do_recur)
 			pop.Innovations = append(pop.Innovations, new_innov)
+		} else if g.hasGene(new_gene) {
+			// The gene for already occurred innovation already in this genome.
+			// This may happen as result of parent genome mutation in current epoch which is
+			// repeated in the child after parent's genome transferred to child during mating
+			context.DebugLog(
+				fmt.Sprintf("GENOME: ALERT: Mutate add link innovation found [%t] in the same genome [%d] for gene: %s\n%s",
+					innovation_found, g.Id, new_gene, g))
+			return false, nil
 		}
 
 		// sanity check
