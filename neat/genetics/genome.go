@@ -325,6 +325,19 @@ func (g *Genome) getLastGeneInnovNum() (int64, error) {
 	}
 }
 
+// Returns true if this Genome has provided node
+func (g *Genome) hasNode(node *network.NNode) bool {
+	if id, _ := g.getLastNodeId(); node.Id >= id {
+		return false
+	}
+	for _, n := range g.Nodes {
+		if n.Id == node.Id {
+			return true
+		}
+	}
+	return false
+}
+
 // Generate a Network phenotype from this Genome with specified id
 func (g *Genome) genesis(net_id int) *network.Network {
 	// Inputs and outputs will be collected here for the network.
@@ -626,7 +639,7 @@ func (g *Genome) mutateConnectSensors(pop *Population) (bool, error) {
 			innovation_found := false
 			for _, inn := range pop.Innovations {
 				if inn.InnovationType == NEWLINK &&
-					inn.InNodeId ==  sensor.Id &&
+					inn.InNodeId == sensor.Id &&
 					inn.OutNodeId == output.Id &&
 					inn.IsRecurrent == false {
 
@@ -650,7 +663,7 @@ func (g *Genome) mutateConnectSensors(pop *Population) (bool, error) {
 
 				// Create the new gene
 				new_gene = NewGeneWithTrait(g.Traits[trait_num], new_weight, sensor, output,
-					false, curr_innov,new_weight)
+					false, curr_innov, new_weight)
 
 				// Add the innovation for created link
 				new_innov := NewInnovationForLink(sensor.Id, output.Id, curr_innov,
@@ -833,7 +846,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 // The innovations list from population is used to compare the innovation with other innovations in the list and see
 // whether they match. If they do, the same innovation numbers will be assigned to the new genes. If a disabled link
 // is chosen, then the method just exits with false.
-func (g *Genome) mutateAddNode(pop *Population) (bool, error) {
+func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool, error) {
 	if len(g.Genes) == 0 {
 		return false, nil // it's possible to have such a network without any link
 	}
@@ -937,7 +950,19 @@ func (g *Genome) mutateAddNode(pop *Population) (bool, error) {
 		// Store innovation
 		innov := NewInnovationForNode(in_node.Id, out_node.Id, gene_innov_1, gene_innov_2, new_node.Id, gene.InnovationNum)
 		pop.Innovations = append(pop.Innovations, innov)
+	} else if g.hasNode(new_node) {
+		// The same add node innovation occurred in the same genome (parent) - just skip.
+		// This may happen when parent of this organism experienced the same mutation in current epoch earlier
+		// and after that parent's genome was duplicated to child by mating and the same mutation parameters
+		// was selected again (in_node.Id, out_node.Id, gene.InnovationNum). As result the innovation with given
+		// parameters will be found and new node will be created with ID which alredy exists in child genome.
+		// If proceed than we will have duplicated Node and genes - so we're skipping this.
+		context.DebugLog(
+			fmt.Sprintf("GENOME: ALERT: Add node innovation found [%t] in the same genome [%d] for node [%d]\n%s",
+				innovation_found, g.Id, new_node.Id, g))
+		return false, nil
 	}
+
 
 	// Now add the new NNode and new Genes to the Genome
 	g.Genes = geneInsert(g.Genes, new_gene_1)
