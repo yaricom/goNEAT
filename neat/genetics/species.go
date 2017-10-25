@@ -29,8 +29,6 @@ type Species struct {
 
 	// Is it novel
 	IsNovel              bool
-	// Is it tested
-	IsChecked            bool
 
 	// The organisms in the Species
 	Organisms            []*Organism
@@ -263,7 +261,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 		// Debug Trap
 		if s.ExpectedOffspring > context.PopSize {
-			fmt.Printf("SPECIES: ALERT: EXPECTED OFFSPRING = %d\n", s.ExpectedOffspring)
+			fmt.Printf("SPECIES: ALERT: Species [%d] expected offspring: %d exceeds population size limit: %d\n",
+				s.Id, s.ExpectedOffspring, context.PopSize)
 		}
 
 		if the_champ.SuperChampOffspring > 0 {
@@ -489,7 +488,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			createFirstSpecies(pop, baby, context)
 		} else {
 			if context.CompatThreshold == 0 {
-				return false, errors.New("SPECIES: compatibility thershold is set to ZERO. Will not find any compatible species.")
+				return false, errors.New("SPECIES: compatibility thershold is set to ZERO. " +
+					"Will not find any compatible species.")
 			}
 
 			found := false
@@ -537,9 +537,10 @@ func createFirstSpecies(pop *Population, baby *Organism, context *neat.NeatConte
 	new_species := NewSpeciesNovel(pop.LastSpecies, true)
 	pop.Species = append(pop.Species, new_species)
 	new_species.addOrganism(baby) // Add the baby
-	baby.SpeciesOf = new_species //Point baby to its species
+	baby.SpeciesOf = new_species // Point baby to its species
 
-	context.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d", len(pop.Species)))
+	context.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d, new species id: %d",
+		len(pop.Species), new_species.Id))
 }
 
 func (s *Species) String() string {
