@@ -526,11 +526,17 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	context.DebugLog("POPULATION: Start Reproduction >>>>>")
 
 	// Perform reproduction. Reproduction is done on a per-Species basis
+	best_species_reproduced := false
 	// TODO (So this could be parallelised potentially)
 	for _, curr_species := range p.Species {
-		_, err := curr_species.reproduce(generation, p, sorted_species, context)
+		reproduced, err := curr_species.reproduce(generation, p, sorted_species, context)
 		if err != nil {
 			return false, err
+		}
+		if curr_species.Id == best_species_id {
+			// store flag if best species reproduced - it will be used to determine if best species
+			// produced offspring before died
+			best_species_reproduced = reproduced
 		}
 	}
 
@@ -545,7 +551,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		}
 
 		if context.IsDebugEnabled && curr_org.SpeciesOf.Id == best_species_id {
-			context.DebugLog(fmt.Sprintf("POPULATION: Removed organism [%d] from best species [%d]. Remain %d organisms",
+			context.DebugLog(fmt.Sprintf("POPULATION: Removed organism [%d] from best species [%d] - %d organisms remained",
 			curr_org.GNome.Id, best_species_id, len(curr_org.SpeciesOf.Organisms)))
 		}
 	}
@@ -571,6 +577,9 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 			}
 			// keep this species
 			species_to_keep = append(species_to_keep, curr_species)
+		} else if context.IsDebugEnabled {
+			context.DebugLog(fmt.Sprintf("POPULATION: >> Species [%d] have not survived reproduction!",
+				curr_species.Id))
 		}
 	}
 	// Keep only survived species
@@ -583,6 +592,8 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	p.Innovations = make([]*Innovation, 0)
 
 	// Check to see if the best species died somehow. We don't want this to happen!!!
+	// N.B. the mutated offspring of best species may be added to other more compatible species and as result
+	// the best species from previous generation will be removed, but their offspring still be alive
 	best_ok := false
 	for _, curr_species := range p.Species {
 		context.DebugLog(fmt.Sprintf("POPULATION: %d <> %d\n", curr_species.Id, best_species_id))
@@ -591,8 +602,8 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 			break
 		}
 	}
-	if !best_ok {
-		return false, errors.New("POPULATION: ERROR: THE BEST SPECIES DIED!")
+	if !best_ok && !best_species_reproduced{
+		return false, errors.New("POPULATION: ERROR: The best species died without offspring!")
 	} else {
 		context.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d", best_species_id))
 	}
