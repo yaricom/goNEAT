@@ -327,7 +327,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				context.DebugLog("SPECIES: ---> mutateAddNode")
 
 				// Mutate add node
-				_, err := new_genome.mutateAddNode(pop)
+				_, err := new_genome.mutateAddNode(pop, context)
 				if err != nil {
 					return false, err
 				}
@@ -440,7 +440,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					context.DebugLog("SPECIES: ---------> mutateAddNode")
 
 					// mutate_add_node
-					_, err = new_genome.mutateAddNode(pop)
+					_, err = new_genome.mutateAddNode(pop, context)
 					if err != nil {
 						return false, err
 					}
