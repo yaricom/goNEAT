@@ -8,10 +8,6 @@ import (
 	"io"
 )
 
-// The number of parameters used in neurons that learn through habituation,
-// sensitization, or Hebbian-type processes
-const Num_trait_params = 8
-
 // The NEAT execution context holding common configuration parameters, etc.
 type NeatContext struct {
 				       // Prob. of mutating a single trait param
@@ -88,9 +84,6 @@ type NeatContext struct {
 
 				       // The flag to indicate whether to print additional debugging info
 	IsDebugEnabled         bool
-
-				       /* OBSOLETE */
-	recurProb              float64
 }
 
 // Loads context configuration from provided reader
@@ -115,8 +108,6 @@ func LoadContext(r io.Reader) *NeatContext {
 			c.NodeTraitMutSig = param
 		case "weight_mut_power":
 			c.WeightMutPower = param
-		case "recur_prob":
-			c.recurProb = param
 		case "disjoint_coeff":
 			c.DisjointCoeff = param
 		case "excess_coeff":
@@ -177,7 +168,6 @@ func LoadContext(r io.Reader) *NeatContext {
 			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %.f\n", name, param)
 		}
 	}
-
 
 	return &c
 }
