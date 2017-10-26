@@ -202,16 +202,16 @@ func (n *NNode) Flushback() {
 // Verify flushing for debuginh
 func (n *NNode) FlushbackCheck() error {
 	if n.ActivationsCount > 0 {
-		return errors.New(fmt.Sprintf("NNODE: ALERT: %s has activation count %d", n, n.ActivationsCount))
+		return errors.New(fmt.Sprintf("NNODE: %s has activation count %d", n, n.ActivationsCount))
 	}
 	if n.Activation > 0 {
-		return errors.New(fmt.Sprintf("NNODE: ALERT: %s has activation %f", n, n.Activation))
+		return errors.New(fmt.Sprintf("NNODE: %s has activation %f", n, n.Activation))
 	}
 	if n.lastActivation > 0 {
-		return errors.New(fmt.Sprintf("NNODE: ALERT: %s has last_activation %f", n, n.lastActivation))
+		return errors.New(fmt.Sprintf("NNODE: %s has last_activation %f", n, n.lastActivation))
 	}
 	if n.lastActivation2 > 0 {
-		return errors.New(fmt.Sprintf("NNODE: ALERT: %s has last_activation2 %f", n, n.lastActivation2))
+		return errors.New(fmt.Sprintf("NNODE: %s has last_activation2 %f", n, n.lastActivation2))
 	}
 	return nil
 }
@@ -228,7 +228,7 @@ func (n *NNode) Write(w io.Writer) {
 // Find the greatest depth starting from this neuron at depth d
 func (n *NNode) Depth(d int) (int, error) {
 	if d > 100 {
-		return 10, nil//errors.New("NNODE: ERROR: DEPTH NOT DETERMINED FOR NETWORK WITH LOOP");
+		return 10, nil//errors.New("NNODE: DEPTH NOT DETERMINED FOR NETWORK WITH LOOP");
 	}
 	// Base Case
 	if n.IsSensor() {

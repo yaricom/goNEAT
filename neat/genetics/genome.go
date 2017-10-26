@@ -383,12 +383,11 @@ func (g *Genome) genesis(net_id int) *network.Network {
 	}
 
 	if len(g.Genes) == 0 {
-		neat.WarnLog("ALERT : the network built whitout GENES; the result can be unpredictable")
+		neat.WarnLog("The network built whitout GENES; the result can be unpredictable")
 	}
 
 	if len(out_list) == 0 {
-		neat.WarnLog("ALERT : the network whitout OUTPUTS; the result can be unpredictable");
-		neat.WarnLog(g)
+		neat.WarnLog(fmt.Sprintf("The network whitout OUTPUTS; the result can be unpredictable. Genome: %s", g))
 	}
 
 	var in_node, out_node *network.NNode
@@ -689,8 +688,8 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 				// The gene for already occurred innovation already in this genome.
 				// This may happen as result of parent genome mutation in current epoch which is
 				// repeated in the child after parent's genome transferred to child during mating
-				neat.DebugLog(
-					fmt.Sprintf("GENOME: ALERT: Connect sensors innovation found [%t] in the same genome [%d] for gene: %s\n%s",
+				neat.InfoLog(
+					fmt.Sprintf("GENOME: Connect sensors innovation found [%t] in the same genome [%d] for gene: %s\n%s",
 						innovation_found, g.Id, new_gene, g))
 				return false, nil
 			}
@@ -798,7 +797,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			if count > thresh {
 				neat.DebugLog(fmt.Sprintf("Recurency -> node in: %s <-> node out: %s",
 					node_1.Analogue, node_2.Analogue))
-				return false, errors.New("GENOME: ERROR: LOOP DETECTED DURING A RECURRENCY CHECK")
+				return false, errors.New("GENOME: LOOP DETECTED DURING A RECURRENCY CHECK")
 			}
 
 			// Make sure it finds the right kind of link (recurrent or not)
@@ -854,8 +853,8 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			// The gene for already occurred innovation already in this genome.
 			// This may happen as result of parent genome mutation in current epoch which is
 			// repeated in the child after parent's genome transferred to child during mating
-			neat.DebugLog(
-				fmt.Sprintf("GENOME: ALERT: Mutate add link innovation found [%t] in the same genome [%d] for gene: %s\n%s",
+			neat.InfoLog(
+				fmt.Sprintf("GENOME: Mutate add link innovation found [%t] in the same genome [%d] for gene: %s\n%s",
 					innovation_found, g.Id, new_gene, g))
 			return false, nil
 		}
@@ -863,7 +862,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 		// sanity check
 		if new_gene.Link.InNode.Id == new_gene.Link.OutNode.Id && !do_recur {
 			neat.DebugLog(fmt.Sprintf("Recurent link created when recurency is not enabled: %s", new_gene))
-			return false, errors.New(fmt.Sprintf("GENOME: ERROR: Wrong gene created!\n%s", g))
+			return false, errors.New(fmt.Sprintf("GENOME: Wrong gene created!\n%s", g))
 		}
 
 		// Now add the new Gene to the Genome
@@ -989,8 +988,8 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 		// was selected again (in_node.Id, out_node.Id, gene.InnovationNum). As result the innovation with given
 		// parameters will be found and new node will be created with ID which alredy exists in child genome.
 		// If proceed than we will have duplicated Node and genes - so we're skipping this.
-		neat.DebugLog(
-			fmt.Sprintf("GENOME: ALERT: Add node innovation found [%t] in the same genome [%d] for node [%d]\n%s",
+		neat.InfoLog(
+			fmt.Sprintf("GENOME: Add node innovation found [%t] in the same genome [%d] for node [%d]\n%s",
 				innovation_found, g.Id, new_node.Id, g))
 		return false, nil
 	}

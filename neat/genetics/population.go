@@ -603,7 +603,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		}
 	}
 	if !best_ok && !best_species_reproduced{
-		return false, errors.New("POPULATION: ERROR: The best species died without offspring!")
+		return false, errors.New("POPULATION: The best species died without offspring!")
 	} else {
 		neat.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d", best_species_id))
 	}

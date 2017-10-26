@@ -91,7 +91,7 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 		}
 	}
 	if len(orgs) != len(s.Organisms) - 1 {
-		return false, errors.New("ALERT: Attempt to remove nonexistent Organism from Species")
+		return false, errors.New("SPECIES: Attempt to remove nonexistent Organism from Species")
 	} else {
 		s.Organisms = orgs
 		return true, nil
@@ -238,7 +238,7 @@ func (s *Species) findChampion() *Organism {
 func (s *Species) reproduce(generation int, pop *Population, sorted_species []*Species, context *neat.NeatContext) (bool, error) {
 	//Check for a mistake
 	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
-		return false, errors.New("SPECIES: ERROR: ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")
+		return false, errors.New("SPECIES: ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")
 	}
 
 	// The number of Organisms in the old generation
@@ -261,7 +261,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 		// Debug Trap
 		if s.ExpectedOffspring > context.PopSize {
-			neat.WarnLog(fmt.Sprintf("SPECIES: ALERT: Species [%d] expected offspring: %d exceeds population size limit: %d\n",
+			neat.WarnLog(fmt.Sprintf("SPECIES: Species [%d] expected offspring: %d exceeds population size limit: %d\n",
 				s.Id, s.ExpectedOffspring, context.PopSize))
 		}
 
