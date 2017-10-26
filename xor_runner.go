@@ -30,7 +30,6 @@ func main() {
 		return
 	}
 	context := neat.LoadContext(configFile)
-	context.IsDebugEnabled = true
 
 	// Load Genome
 	fmt.Println("Loading start genome for XOR experiment")
