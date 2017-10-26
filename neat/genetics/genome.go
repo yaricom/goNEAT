@@ -713,11 +713,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 		return false, errors.New("Genome has no nodes to be connected by new link")
 	}
 
-	// These are used to avoid getting stuck in an infinite loop checking for recursion
-	// Note that we check for recursion to control the frequency of adding recurrent links rather than to prevent
-	// any particular kind of error
 	nodes_len := len(g.Nodes)
-	thresh := nodes_len * nodes_len
 
 	// Decide whether to make link recurrent
 	do_recur := false
@@ -771,33 +767,36 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 		node_2 = g.Nodes[node_num_2]
 
 		// See if a link already exists  ALSO STOP AT END OF GENES!!!!
-		bypass := false
+		link_exists := false
 		if node_2.NType == network.SENSOR {
 			// Don't allow SENSORS to get input
-			bypass = true
+			link_exists = true
 		} else {
 			for _, gene := range g.Genes {
 				if gene.Link.InNode.Id == node_1.Id &&
 					gene.Link.OutNode.Id == node_2.Id &&
 					gene.Link.IsRecurrent == do_recur {
 					// link already exists
-					bypass = true;
+					link_exists = true;
 					break;
 				}
 
 			}
 		}
 
-		if !bypass {
-			// check if link is open
+		if !link_exists {
+			// These are used to avoid getting stuck in an infinite loop checking for recursion
+			// Note that we check for recursion to control the frequency of adding recurrent links rather
+			// than to prevent any particular kind of error
+			thresh := nodes_len * nodes_len
 			count := 0
 			recur_flag := g.Phenotype.IsRecurrent(node_1.Analogue, node_2.Analogue, &count, thresh)
 
-			// Exit if the network is faulty (contains an infinite loop)
+			// NOTE: A loop doesn't really matter - just debug output it
 			if count > thresh {
-				neat.DebugLog(fmt.Sprintf("Recurency -> node in: %s <-> node out: %s",
-					node_1.Analogue, node_2.Analogue))
-				return false, errors.New("GENOME: LOOP DETECTED DURING A RECURRENCY CHECK")
+				neat.DebugLog(
+					fmt.Sprintf("GENOME: LOOP DETECTED DURING A RECURRENCY CHECK -> " +
+						"node in: %s <-> node out: %s", node_1.Analogue, node_2.Analogue))
 			}
 
 			// Make sure it finds the right kind of link (recurrent or not)
