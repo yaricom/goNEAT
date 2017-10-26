@@ -11,6 +11,13 @@ both: optimal connections weights and topology for given task (number of NN node
 #### System Requirements
 The source code written and compiled against GO 1.8.x.
 
+## Installation
+Make sure that you have at least GO 1.8.x. environment installed onto your system and execute following command:
+```bash
+
+go get github.com/yaricom/goNEAT
+```
+
 ## Performance Evaluations
 The basic system's performance is evaluated by two kind of experiments:
 1. The XOR experiment which test whether topology augmenting actually happens by NEAT algorithm evaluation. To build XOR
@@ -22,7 +29,7 @@ other algorithms and find out if it performs better or worse.
 
 ### 1. The XOR Experiments
 Because XOR is not linearly separable, a neural network requires hidden units to solve it. The two inputs must be
-combined at some hidden unit, as opposed to only at the out- put node, because there is no function over a linear
+combined at some hidden unit, as opposed to only at the output node, because there is no function over a linear
 combination of the inputs that can separate the inputs into the proper classes. These structural requirements make XOR
 suitable for testing NEAT’s ability to evolve structure.
 
@@ -30,9 +37,10 @@ suitable for testing NEAT’s ability to evolve structure.
 In this experiment we will use start (seed) genome with inputs connected to the output. Thus it will check mostly the
 ability of NEAT to grow new hidden unit necessary for solving XOR problem.
 
-To run this experiment execute following command in the project root directory:
+To run this experiment execute following commands:
 ```bash
 
+cd $GOPATH/src/github.com/yaricom/goNEAT
 $go run xor_runner.go ./out ./data/xor.neat ./data/xorstartgenes
 
 ```
@@ -52,9 +60,10 @@ The XOR experiment for start genes with inputs connected will not fail almost al
 This experiment will use start genome with disconnected inputs in order to check ability of algorithm to not only grow
 need hidden nodes, but also to build missed connections between input nodes and rest of the network.
 
-To run this experiment execute following command in the project root directory:
+To run this experiment execute following commands:
 ```bash
 
+cd $GOPATH/src/github.com/yaricom/goNEAT
 $go run xor_runner.go ./out ./data/xor.neat ./data/xordisconnectedstartgenes
 
 ```
