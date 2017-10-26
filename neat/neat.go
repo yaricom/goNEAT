@@ -82,6 +82,9 @@ type NeatContext struct {
 				       // The number of runs to average over in an experiment
 	NumRuns                int
 
+				       // The number of epochs (generations) to execute training
+	NumGenerations         int
+
 				       // The flag to indicate whether to print additional debugging info
 	IsDebugEnabled         bool
 }
@@ -164,6 +167,8 @@ func LoadContext(r io.Reader) *NeatContext {
 			c.BabiesStolen = int(param)
 		case "num_runs":
 			c.NumRuns = int(param)
+		case "num_generations":
+			c.NumGenerations = int(param)
 		default:
 			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %.f\n", name, param)
 		}

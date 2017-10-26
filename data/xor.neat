@@ -31,3 +31,4 @@ newlink_tries  50
 print_every  10
 babies_stolen  0
 num_runs  1
+num_generations 100
