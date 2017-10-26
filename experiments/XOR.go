@@ -28,7 +28,7 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 	nodes = make([]int, context.NumRuns)
 
 	var pop *genetics.Population
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
+	for run := 0; run < context.NumRuns; run++ {
 		fmt.Print("\n>>>>> Spawning new population ")
 		pop, err = genetics.NewPopulation(start_genome, context)
 		if err != nil {
@@ -49,7 +49,7 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 		var success bool
 		var winner_num, winner_genes, winner_nodes int
 		for gen := 1; gen <= context.NumGenerations; gen ++ {
-			fmt.Printf(">>>>> Epoch: %d\n", gen)
+			fmt.Printf(">>>>> Epoch: %d\tRun: %d\n", gen, run)
 			success, winner_num, winner_genes, winner_nodes, err = xor_epoch(pop, gen, out_dir_path, context)
 			if err != nil {
 				fmt.Printf("!!!!! Epoch %d evaluation failed !!!!!\n", gen)
@@ -57,9 +57,9 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 			}
 			if success {
 				// Collect Stats on end of experiment
-				evals[exp_count] = context.PopSize * (gen - 1) + winner_num
-				genes[exp_count] = winner_genes
-				nodes[exp_count] = winner_nodes
+				evals[run] = context.PopSize * (gen - 1) + winner_num
+				genes[run] = winner_genes
+				nodes[run] = winner_nodes
 				fmt.Printf(">>>>> The winner organism found in epoch %d! <<<<<\n", gen)
 				break
 			}
