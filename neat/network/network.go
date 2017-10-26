@@ -210,7 +210,7 @@ func (n *Network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) 
 		for _, link := range in_node.Incoming {
 			// But skip links that are already recurrent -
 			// We want to check back through the forward flow of signals only
-			if link.IsRecurrent != true {
+			if !link.IsRecurrent {
 				if n.IsRecurrent(link.InNode, out_node, count, thresh) {
 					return true
 				}
