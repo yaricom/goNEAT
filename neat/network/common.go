@@ -3,30 +3,36 @@ package network
 
 import "math"
 
-// These are NNode types
+// NNodeType defines the type of NNode to create
+type NodeType byte
+
+// Predefined NNode types
 const (
 	// The neuron type
-	NEURON = iota
+	NEURON NodeType = iota
 	// The sensor type
 	SENSOR
 )
 
 // Returns human readable NNode type name for given constant value
-func NNodeTypeName(ntype int) string {
+func NodeTypeName(ntype NodeType) string {
 	switch ntype {
 	case NEURON:
 		return "NEURON"
 	case SENSOR:
 		return "SENSOR"
 	default:
-		return "!!! UNKNOWN TYPE !!!"
+		return "!!! UNKNOWN NODE TYPE !!!"
 	}
 }
+
+// NeuronType defines the type of neuron to create
+type NeuronType byte
 
 // These are NNode layer type
 const (
 	// The node is in hidden layer
-	HIDDEN = iota
+	HIDDEN NeuronType = iota
 	// The node is in input layer
 	INPUT
 	// The node is in output layer
@@ -35,8 +41,8 @@ const (
 	BIAS
 )
 
-// Returns human readable NNode placement for give nconstant
-func NNodeLayerName(nlayer int) string {
+// Returns human readable neuron type name for given constant
+func NeuronTypeName(nlayer NeuronType) string {
 	switch nlayer {
 	case HIDDEN:
 		return "HIDDEN"
@@ -47,14 +53,17 @@ func NNodeLayerName(nlayer int) string {
 	case BIAS:
 		return "BIAS"
 	default:
-		return "!!! UNKNOWN LAYER !!!"
+		return "!!! UNKNOWN NEURON TYPE !!!"
 	}
 }
+
+// ActivationType defines the type of activation function to use for the neuron
+type ActivationType byte
 
 // The neuron Activation function Types
 const (
 	// The sigmoid activation function
-	SIGMOID = iota
+	SIGMOID ActivationType = iota
 )
 
 // The neuron activator function

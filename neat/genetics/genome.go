@@ -272,7 +272,7 @@ func (g *Genome) String() string {
 	str := "GENOME START\nNodes:\n"
 	for _, n := range g.Nodes {
 		n_type := ""
-		switch n.NType {
+		switch n.NeuronType {
 		case network.INPUT:
 			n_type = "I"
 		case network.OUTPUT:
@@ -369,9 +369,9 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		new_node = network.NewNNodeCopy(n, n.Trait)
 
 		// Check for input or output designation of node
-		if n.GenNodeLabel == network.INPUT || n.GenNodeLabel == network.BIAS {
+		if n.NeuronType == network.INPUT || n.NeuronType == network.BIAS {
 			in_list = append(in_list, new_node)
-		} else if n.GenNodeLabel == network.OUTPUT {
+		} else if n.NeuronType == network.OUTPUT {
 			out_list = append(out_list, new_node)
 		}
 
@@ -605,9 +605,9 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 	sensors := make([]*network.NNode, 0)
 	outputs := make([]*network.NNode, 0)
 	for _, n := range g.Nodes {
-		if n.NType == network.SENSOR {
+		if n.NodeType == network.SENSOR {
 			sensors = append(sensors, n)
-		} else if n.GenNodeLabel == network.OUTPUT {
+		} else if n.NeuronType == network.OUTPUT {
 			outputs = append(outputs, n)
 		}
 	}
@@ -619,7 +619,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 
 		// iterate over all genes and count number of output connections from given sensor
 		for _, gene := range g.Genes {
-			if gene.Link.InNode == sensor && gene.Link.OutNode.GenNodeLabel == network.OUTPUT {
+			if gene.Link.InNode == sensor && gene.Link.OutNode.NeuronType == network.OUTPUT {
 				outputConnections++
 			}
 		}
@@ -724,7 +724,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 	// Find the first non-sensor so that the to-node won't look at sensors as possible destinations
 	first_non_sensor := 0
 	for _, n := range g.Nodes {
-		if n.NType == network.SENSOR {
+		if n.NodeType == network.SENSOR {
 			first_non_sensor++
 		} else {
 			break
@@ -768,7 +768,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 
 		// See if a link already exists  ALSO STOP AT END OF GENES!!!!
 		link_exists := false
-		if node_2.NType == network.SENSOR {
+		if node_2.NodeType == network.SENSOR {
 			// Don't allow SENSORS to get input
 			link_exists = true
 		} else {
@@ -890,7 +890,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 	if len(g.Genes) < 15 {
 		for _, gn := range g.Genes {
 			// Now randomize which gene is chosen.
-			if gn.IsEnabled && gn.Link.InNode.NType != network.BIAS && rand.Float32() >= 0.3 {
+			if gn.IsEnabled && gn.Link.InNode.NeuronType != network.BIAS && rand.Float32() >= 0.3 {
 				gene = gn
 				found = true
 				break
@@ -902,7 +902,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 		for try_count < 20 && !found {
 			gene_num := rand.Intn(len(g.Genes))
 			gene = g.Genes[gene_num]
-			if gene.IsEnabled && gene.Link.InNode.NType != network.BIAS {
+			if gene.IsEnabled && gene.Link.InNode.NeuronType != network.BIAS {
 				found = true
 			}
 			try_count++
@@ -1218,9 +1218,9 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
-		if curr_node.GenNodeLabel == network.INPUT ||
-			curr_node.GenNodeLabel == network.BIAS ||
-			curr_node.GenNodeLabel == network.OUTPUT {
+		if curr_node.NeuronType == network.INPUT ||
+			curr_node.NeuronType == network.BIAS ||
+			curr_node.NeuronType == network.OUTPUT {
 			node_trait_num := 0
 			if curr_node.Trait != nil {
 				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id
@@ -1394,9 +1394,9 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
-		if curr_node.GenNodeLabel == network.INPUT ||
-			curr_node.GenNodeLabel == network.BIAS ||
-			curr_node.GenNodeLabel == network.OUTPUT {
+		if curr_node.NeuronType == network.INPUT ||
+			curr_node.NeuronType == network.BIAS ||
+			curr_node.NeuronType == network.OUTPUT {
 			node_trait_num := 0
 			if curr_node.Trait != nil {
 				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id
@@ -1593,9 +1593,9 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
-		if curr_node.GenNodeLabel == network.INPUT ||
-			curr_node.GenNodeLabel == network.BIAS ||
-			curr_node.GenNodeLabel == network.OUTPUT {
+		if curr_node.NeuronType == network.INPUT ||
+			curr_node.NeuronType == network.BIAS ||
+			curr_node.NeuronType == network.OUTPUT {
 			node_trait_num := 0
 			if curr_node.Trait != nil {
 				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id

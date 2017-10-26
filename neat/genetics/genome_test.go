@@ -91,22 +91,22 @@ func TestGenome_ReadGenome(t *testing.T) {
 		if n.Id != i + 1 {
 			t.Error("Wrong NNode Id", n.Id)
 		}
-		if i < 3 && n.NType != network.SENSOR {
-			t.Error("Wrong NNode type", n.NType)
+		if i < 3 && n.NodeType != network.SENSOR {
+			t.Error("Wrong NNode type", n.NodeType)
 		}
 
 		if i == 3 {
-			if n.NType != network.NEURON {
-				t.Error("Wrong NNode type", n.NType)
+			if n.NodeType != network.NEURON {
+				t.Error("Wrong NNode type", n.NodeType)
 			}
-			if n.GenNodeLabel != network.OUTPUT {
-				t.Error("Wrong NNode placement", n.GenNodeLabel)
+			if n.NeuronType != network.OUTPUT {
+				t.Error("Wrong NNode placement", n.NeuronType)
 			}
 		}
 
-		if (i < 2 && n.GenNodeLabel != network.INPUT) ||
-			(i == 2 && n.GenNodeLabel != network.BIAS) {
-			t.Error("Wrong NNode placement", n.GenNodeLabel)
+		if (i < 2 && n.NeuronType != network.INPUT) ||
+			(i == 2 && n.NeuronType != network.BIAS) {
+			t.Error("Wrong NNode placement", n.NeuronType)
 		}
 
 	}
@@ -169,22 +169,22 @@ func TestGenome_ReadGenomeFile(t *testing.T) {
 		if n.Id != i + 1 {
 			t.Error("Wrong NNode Id", n.Id)
 		}
-		if i < 3 && n.NType != network.SENSOR {
-			t.Error("Wrong NNode type", n.NType)
+		if i < 3 && n.NodeType != network.SENSOR {
+			t.Error("Wrong NNode type", n.NodeType)
 		}
 
 		if i == 3 {
-			if n.NType != network.NEURON {
-				t.Error("Wrong NNode type", n.NType)
+			if n.NodeType != network.NEURON {
+				t.Error("Wrong NNode type", n.NodeType)
 			}
-			if n.GenNodeLabel != network.OUTPUT {
-				t.Error("Wrong NNode placement", n.GenNodeLabel)
+			if n.NeuronType != network.OUTPUT {
+				t.Error("Wrong NNode placement", n.NeuronType)
 			}
 		}
 
-		if (i == 0 && n.GenNodeLabel != network.BIAS) ||
-			(i > 0 && i < 3 && n.GenNodeLabel != network.INPUT) {
-			t.Error("Wrong NNode placement", n.GenNodeLabel)
+		if (i == 0 && n.NeuronType != network.BIAS) ||
+			(i > 0 && i < 3 && n.NeuronType != network.INPUT) {
+			t.Error("Wrong NNode placement", n.NeuronType)
 		}
 
 	}

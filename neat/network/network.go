@@ -139,11 +139,11 @@ func (n *Network) Activate() (bool, error) {
 					// Keep a memory of activations for potential time delayed connections
 					np.saveActivations()
 					// Now run the net activation through an activation function
-					if np.FType == SIGMOID {
+					if np.ActivationType == SIGMOID {
 						np.Activation = sigmoid.Activation(np, 4.924273, 2.4621365)
 					} else {
 						return false, errors.New(
-							fmt.Sprintf("Unknown activation function type: %d", np.FType))
+							fmt.Sprintf("Unknown activation function type: %d", np.ActivationType))
 					}
 					// Increment the activation_count
 					// First activation cannot be from nothing!!

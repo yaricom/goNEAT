@@ -25,11 +25,11 @@ func TestReadNNode(t *testing.T) {
 	if node.Trait != trait {
 		t.Error("The wrong Trait found in the node")
 	}
-	if node.NType != ntype {
-		t.Errorf("Wrong node type found, %d != %d", ntype, node.NType)
+	if node.NodeType != ntype {
+		t.Errorf("Wrong node type found, %d != %d", ntype, node.NodeType)
 	}
-	if node.GenNodeLabel != gen_node_label {
-		t.Errorf("The wrong node placement label found, %d != %d", gen_node_label, node.GenNodeLabel)
+	if node.NeuronType != gen_node_label {
+		t.Errorf("The wrong node placement label found, %d != %d", gen_node_label, node.NeuronType)
 	}
 }
 
