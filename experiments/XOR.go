@@ -18,58 +18,22 @@ const precision = 0.5
 // documented experiments with XOR are without recurrent connections. Interestingly, XOR can be solved by a recurrent
 // network with no hidden nodes.
 //
-// This method performs evolution on XOR for specified number of generations. It will read NEAT context configuration
-// from contextPath, the start genome configuration from genomePath, and output results into outDirPath
-func XOR(context_path, genome_path, out_dir_path string, generations int) (*genetics.Population, error) {
-
-	// Load context configuration
-	configFile, err := os.Open(context_path)
-	if err != nil {
-		fmt.Println("Failed to load context")
-		return nil, err
-	}
-	context := neat.LoadContext(configFile)
-	context.IsDebugEnabled = true
-
-	// Load Genome
-	fmt.Println("Loading start genome for XOR experiment")
-	genomeFile, err := os.Open(genome_path)
-	if err != nil {
-		fmt.Println("Failed to open genome file")
-		return nil, err
-	}
-	start_genome, err := genetics.ReadGenome(genomeFile, 1)
-	if err != nil {
-		fmt.Println("Failed to read start genome")
-		return nil, err
-	}
-	fmt.Println(start_genome)
-
-	// Check if output dir exists
-	if _, err := os.Stat(out_dir_path); err == nil {
-		// clear it
-		os.RemoveAll(out_dir_path)
-	}
-	// create output dir
-	err = os.MkdirAll(out_dir_path, os.ModePerm)
-	if err != nil {
-		return nil, err
-	}
-
+// This method performs evolution on XOR for specified number of generations and output results into outDirPath
+// It also returns number of nodes, genes, and evaluations performed per each run (context.NumRuns)
+func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path string) (nodes, genes, evals []int, err error) {
 
 	// Holders of records for each run
-	evals := make([]int, context.NumRuns)
-	genes := make([]int, context.NumRuns)
-	nodes := make([]int, context.NumRuns)
+	evals = make([]int, context.NumRuns)
+	genes = make([]int, context.NumRuns)
+	nodes = make([]int, context.NumRuns)
 
-	var successful_pop *genetics.Population
-
+	var pop *genetics.Population
 	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
 		fmt.Print("\n>>>>> Spawning new population ")
-		pop, err := genetics.NewPopulation(start_genome, context)
+		pop, err = genetics.NewPopulation(start_genome, context)
 		if err != nil {
 			fmt.Println("Failed to spawn new population from start genome")
-			return nil, err
+			return nodes, genes, evals, err
 		} else {
 			fmt.Println("OK <<<<<")
 		}
@@ -77,17 +41,19 @@ func XOR(context_path, genome_path, out_dir_path string, generations int) (*gene
 		_, err = pop.Verify()
 		if err != nil {
 			fmt.Println("\n!!!!! Population verification failed !!!!!")
-			return nil, err
+			return nodes, genes, evals, err
 		} else {
 			fmt.Println("OK <<<<<")
 		}
 
-		for gen := 1; gen <= generations; gen ++ {
+		var success bool
+		var winner_num, winner_genes, winner_nodes int
+		for gen := 1; gen <= context.NumGenerations; gen ++ {
 			fmt.Printf(">>>>> Epoch: %d\n", gen)
-			success, winner_num, winner_genes, winner_nodes, err := xor_epoch(pop, gen, out_dir_path, context)
+			success, winner_num, winner_genes, winner_nodes, err = xor_epoch(pop, gen, out_dir_path, context)
 			if err != nil {
 				fmt.Printf("!!!!! Epoch %d evaluation failed !!!!!\n", gen)
-				return nil, err
+				return nodes, genes, evals, err
 			}
 			if success {
 				// Collect Stats on end of experiment
@@ -101,36 +67,7 @@ func XOR(context_path, genome_path, out_dir_path string, generations int) (*gene
 
 	}
 
-	// Average and print stats
-
-	fmt.Print("\nNodes: ")
-	total_nodes := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Printf("\t%d",nodes[exp_count])
-		total_nodes += nodes[exp_count]
-	}
-
-	fmt.Print("\nGenes: ")
-	total_genes := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Printf("\t%d", genes[exp_count])
-		total_genes += genes[exp_count]
-	}
-
-	fmt.Print("\nEvals: ")
-	total_evals := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Printf("\t%d", evals[exp_count])
-		total_evals += evals[exp_count]
-	}
-
-	fmt.Printf("\n>>>>>\nAverage Nodes:\t%d\nAverage Genes:\t%d\nAverage Evals:\t%d\n",
-		total_nodes / context.NumRuns, total_genes / context.NumRuns, total_evals / context.NumRuns)
-
-	fmt.Printf(">>> Start genome file:  %s\n", genome_path)
-	fmt.Printf(">>> Configuration file: %s\n", context_path)
-
-	return successful_pop, nil
+	return nodes, genes, evals, nil
 }
 
 // This method evaluates one epoch for given population and prints results into specified directory if any.
@@ -139,7 +76,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 	success = false
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
-		res, err := xor_evaluate(org)
+		res, err := xor_evaluate(org, context)
 		if err != nil {
 			return false, -1, -1, -1, err
 		}
@@ -199,7 +136,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 		}
 	} else {
 		// Move to the next epoch if failed to find winner
-		fmt.Println(">>>>> start next generation")
+		context.DebugLog(">>>>> start next generation")
 		_, err = pop.Epoch(generation, context)
 	}
 
@@ -207,7 +144,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 }
 
 // This methods evalueates provided organism
-func xor_evaluate(org *genetics.Organism) (bool, error) {
+func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool, error) {
 	// The four possible input combinations to xor
 	// The first number is for biasing
 	in := [][]float64{
@@ -216,15 +153,15 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 		{1.0, 1.0, 0.0},
 		{1.0, 1.0, 1.0}}
 
-	net_depth, err := org.Net.MaxDepth() // The max depth of the network to be activated
+	net_depth, err := organism.Net.MaxDepth() // The max depth of the network to be activated
 	if err != nil {
 		fmt.Println("Failed to estimate maximal depth of the network")
-		fmt.Println(org.GNome)
+		fmt.Println(organism.GNome)
 		return false, err
 	}
-	fmt.Printf("Network depth: %d for organism: %d\n", net_depth, org.GNome.Id)
+	context.DebugLog(fmt.Sprintf("Network depth: %d for organism: %d\n", net_depth, organism.GNome.Id))
 	if net_depth == 0 {
-		fmt.Println(org.GNome)
+		context.DebugLog(fmt.Sprintf("ALERT: Network depth is ZERO for Genome: %s", organism.GNome))
 	}
 
 	success := false  // Check for successful activation
@@ -232,10 +169,10 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 
 	// Load and activate the network on each input
 	for count := 0; count < 4; count++ {
-		org.Net.LoadSensors(in[count])
+		organism.Net.LoadSensors(in[count])
 
 		// Relax net and get output
-		success, err = org.Net.Activate()
+		success, err = organism.Net.Activate()
 		if err != nil {
 			fmt.Println("Failed to activate network")
 			return false, err
@@ -243,37 +180,37 @@ func xor_evaluate(org *genetics.Organism) (bool, error) {
 
 		// use depth to ensure relaxation
 		for relax := 0; relax <= net_depth; relax++ {
-			success, err = org.Net.Activate()
+			success, err = organism.Net.Activate()
 			if err != nil {
 				fmt.Println("Failed to activate network")
 				return false, err
 			}
 		}
-		out[count] = org.Net.Outputs[0].Activation
+		out[count] = organism.Net.Outputs[0].Activation
 
 		//fmt.Println(org.Net.Outputs)
 
-		org.Net.Flush()
+		organism.Net.Flush()
 	}
 
 	error_sum := 0.0
 	if (success) {
 		// Mean Squared Error
 		error_sum = math.Abs(out[0]) + math.Abs(1.0 - out[1]) + math.Abs(1.0 - out[2]) + math.Abs(out[3])
-		org.Fitness = math.Pow(4.0 - error_sum, 2.0)
-		org.Error = error_sum
+		organism.Fitness = math.Pow(4.0 - error_sum, 2.0)
+		organism.Error = error_sum
 	} else {
 		// The network is flawed (shouldn't happen)
 		error_sum = 999.0
-		org.Fitness = 0.001
+		organism.Fitness = 0.001
 	}
 
 	if out[0] < precision && out[1] >= 1 - precision && out[2] >= 1 - precision && out[3] < precision {
-		org.IsWinner = true
+		organism.IsWinner = true
 		fmt.Printf(">>>> Output activations: %e\n", out)
 
 	} else {
-		org.IsWinner = false
+		organism.IsWinner = false
 	}
-	return org.IsWinner, nil
+	return organism.IsWinner, nil
 }
