@@ -259,7 +259,6 @@ func TestPopulation_epoch(t *testing.T) {
 		DropOffAge:1,
 		PopSize: 30,
 		BabiesStolen:10,
-		IsDebugEnabled:true,
 		RecurOnlyProb:0.2,
 	}
 	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)

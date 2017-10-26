@@ -29,9 +29,6 @@ func TestLoadContext(t *testing.T) {
 	if nc.WeightMutPower != 1.8 {
 		t.Error("nc.WeightMutPower != 1.8")
 	}
-	if nc.recurProb != 0.05 {
-		t.Error("nc.recurProb != 0.05")
-	}
 	if nc.DisjointCoeff != 1.0 {
 		t.Error("nc.DisjointCoeff != 1.0")
 	}
