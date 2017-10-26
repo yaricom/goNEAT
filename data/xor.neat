@@ -32,3 +32,4 @@ print_every  10
 babies_stolen  0
 num_runs  1
 num_generations 100
+log_level 0

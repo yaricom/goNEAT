@@ -87,7 +87,7 @@ func NewPopulationRandom(in, out, nmax int, recurrent bool, link_prob float64, c
 }
 
 // Reads population from provided reader
-func ReadPopulation(ir io.Reader, conf *neat.NeatContext) (pop *Population, err error) {
+func ReadPopulation(ir io.Reader, context *neat.NeatContext) (pop *Population, err error) {
 	pop = newPopulation()
 
 	// Loop until file is finished, parsing each line
@@ -139,14 +139,14 @@ func ReadPopulation(ir io.Reader, conf *neat.NeatContext) (pop *Population, err 
 
 		case "/*":
 			// read all comments and print it
-			fmt.Println(line)
+			neat.InfoLog(line)
 		default:
 			// write line to buffer
 			fmt.Fprintln(out_buff, line)
 		}
 
 	}
-	err = pop.speciate(conf)
+	err = pop.speciate(context)
 	if err != nil {
 		return nil, err
 	} else {
@@ -305,7 +305,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	}
 	// The average modified fitness among ALL organisms
 	overall_average := total / float64(total_organisms)
-	context.DebugLog(fmt.Sprintf(
+	neat.DebugLog(fmt.Sprintf(
 		"POPULATION: Generation %d: overall average fitness = %.3f, # of organisms: %d, # of species: %d\n",
 		generation, overall_average, len(p.Organisms), len(p.Species)))
 
@@ -351,7 +351,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		// fitness. If the average fitness is allowed to hit 0, then we no longer have an average we can use to
 		// assign offspring.
 		if final_expected < total_organisms {
-			context.DebugLog(
+			neat.DebugLog(
 				fmt.Sprintf("POPULATION: Population died !!! (expected/total) %d/%d",
 					final_expected, total_organisms))
 			for _, sp := range p.Species {
@@ -379,15 +379,15 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 
 	// Used in debugging to see why (if) best species dies
 	best_species_id := sorted_species[0].Id
-	if context.IsDebugEnabled {
-		context.DebugLog("POPULATION: >> Sorted Species START <<")
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog("POPULATION: >> Sorted Species START <<")
 		for _, sp := range sorted_species {
 			// Print out for Debugging/viewing what's going on
-			context.DebugLog(
+			neat.DebugLog(
 				fmt.Sprintf("POPULATION: >> Orig. fitness of Species %d (Size %d): %f, current fitness: %f, expected offspring: %d, last improved %d \n",
 				sp.Id, len(sp.Organisms), sp.Organisms[0].OriginalFitness, sp.Organisms[0].Fitness, sp.ExpectedOffspring, (sp.Age - sp.AgeOfLastImprovement)))
 		}
-		context.DebugLog("POPULATION: >> Sorted Species END <<\n")
+		neat.DebugLog("POPULATION: >> Sorted Species END <<\n")
 
 	}
 
@@ -397,21 +397,21 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	if curr_species.Organisms[0].OriginalFitness > p.HighestFitness {
 		p.HighestFitness = curr_species.Organisms[0].OriginalFitness
 		p.HighestLastChanged = 0
-		context.DebugLog(fmt.Sprintf("POPULATION: NEW POPULATION RECORD FITNESS: %f of SPECIES with ID: %d\n", p.HighestFitness, best_species_id))
+		neat.DebugLog(fmt.Sprintf("POPULATION: NEW POPULATION RECORD FITNESS: %f of SPECIES with ID: %d\n", p.HighestFitness, best_species_id))
 
 	} else {
 		p.HighestLastChanged += 1
-		context.DebugLog(fmt.Sprintf(" generations since last population fitness record: %f\n", p.HighestFitness))
+		neat.DebugLog(fmt.Sprintf(" generations since last population fitness record: %f\n", p.HighestFitness))
 	}
 
 	// Check for stagnation - if there is stagnation, perform delta-coding
 	if p.HighestLastChanged >= context.DropOffAge + 5 {
-		context.DebugLog("POPULATION: PERFORMING DELTA CODING")
+		neat.DebugLog("POPULATION: PERFORMING DELTA CODING")
 
 		p.HighestLastChanged = 0
 		half_pop := context.PopSize / 2
 
-		context.DebugLog(fmt.Sprintf("half_pop: [%d] (pop_size - halfpop): [%d]\n",
+		neat.DebugLog(fmt.Sprintf("half_pop: [%d] (pop_size - halfpop): [%d]\n",
 			half_pop, context.PopSize - half_pop))
 
 		if len(sorted_species) > 1 {
@@ -458,7 +458,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 			}
 		}
 
-		context.DebugLog(fmt.Sprintf("POPULATION: STOLEN BABIES: %d\n", stolen_babies))
+		neat.DebugLog(fmt.Sprintf("POPULATION: STOLEN BABIES: %d\n", stolen_babies))
 
 		// Mark the best champions of the top species to be the super champs who will take on the extra
 		// offspring for cloning or mutant cloning.
@@ -523,7 +523,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	// Keep only remained organisms in the population
 	p.Organisms = org_to_keep
 
-	context.DebugLog("POPULATION: Start Reproduction >>>>>")
+	neat.DebugLog("POPULATION: Start Reproduction >>>>>")
 
 	// Perform reproduction. Reproduction is done on a per-Species basis
 	best_species_reproduced := false
@@ -540,7 +540,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		}
 	}
 
-	context.DebugLog("POPULATION: >>>>> Reproduction Complete")
+	neat.DebugLog("POPULATION: >>>>> Reproduction Complete")
 
 	// Destroy and remove the old generation from the organisms and species
 	for _, curr_org := range p.Organisms {
@@ -550,8 +550,8 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 			return false, err
 		}
 
-		if context.IsDebugEnabled && curr_org.SpeciesOf.Id == best_species_id {
-			context.DebugLog(fmt.Sprintf("POPULATION: Removed organism [%d] from best species [%d] - %d organisms remained",
+		if neat.LogLevel == neat.LogLevelDebug && curr_org.SpeciesOf.Id == best_species_id {
+			neat.DebugLog(fmt.Sprintf("POPULATION: Removed organism [%d] from best species [%d] - %d organisms remained",
 			curr_org.GNome.Id, best_species_id, len(curr_org.SpeciesOf.Organisms)))
 		}
 	}
@@ -577,15 +577,15 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 			}
 			// keep this species
 			species_to_keep = append(species_to_keep, curr_species)
-		} else if context.IsDebugEnabled {
-			context.DebugLog(fmt.Sprintf("POPULATION: >> Species [%d] have not survived reproduction!",
+		} else if neat.LogLevel == neat.LogLevelDebug {
+			neat.DebugLog(fmt.Sprintf("POPULATION: >> Species [%d] have not survived reproduction!",
 				curr_species.Id))
 		}
 	}
 	// Keep only survived species
 	p.Species = species_to_keep
 
-	context.DebugLog(fmt.Sprintf("POPULATION: # of species survived: %d, # of organisms survived: %d\n",
+	neat.DebugLog(fmt.Sprintf("POPULATION: # of species survived: %d, # of organisms survived: %d\n",
 		len(p.Species), len(p.Organisms)))
 
 	// Remove the innovations of the current generation
@@ -596,7 +596,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	// the best species from previous generation will be removed, but their offspring still be alive
 	best_ok := false
 	for _, curr_species := range p.Species {
-		context.DebugLog(fmt.Sprintf("POPULATION: %d <> %d\n", curr_species.Id, best_species_id))
+		neat.DebugLog(fmt.Sprintf("POPULATION: %d <> %d\n", curr_species.Id, best_species_id))
 		if curr_species.Id == best_species_id {
 			best_ok = true
 			break
@@ -605,21 +605,21 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	if !best_ok && !best_species_reproduced{
 		return false, errors.New("POPULATION: ERROR: The best species died without offspring!")
 	} else {
-		context.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d", best_species_id))
+		neat.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d", best_species_id))
 	}
 
 	// DEBUG: Checking the top organism's duplicate in the next gen
 	// This prints the champ's child to the screen
-	if context.IsDebugEnabled {
+	if neat.LogLevel == neat.LogLevelDebug {
 		for _, curr_org := range p.Organisms {
 			if curr_org.IsPopulationChampionChild {
-				context.DebugLog(
+				neat.DebugLog(
 					fmt.Sprintf("POPULATION: At end of reproduction cycle, the child of the pop champ is: %s",
 						curr_org.GNome))
 			}
 		}
 	}
-	context.DebugLog(fmt.Sprintf("POPULATION: >>>>> Epoch %d complete\n", generation))
+	neat.DebugLog(fmt.Sprintf("POPULATION: >>>>> Epoch %d complete\n", generation))
 
 	return true, nil
 }

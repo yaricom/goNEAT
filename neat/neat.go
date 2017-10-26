@@ -8,6 +8,19 @@ import (
 	"io"
 )
 
+const (
+	// The Debug log level
+	LogLevelDebug = iota
+	// The Info log level
+	LogLevelInfo
+	// The Warning log level
+	LogLevelWarning
+	// The Error log level
+	LogLevelError
+)
+// The current log level of context
+var LogLevel int
+
 // The NEAT execution context holding common configuration parameters, etc.
 type NeatContext struct {
 				       // Prob. of mutating a single trait param
@@ -84,9 +97,6 @@ type NeatContext struct {
 
 				       // The number of epochs (generations) to execute training
 	NumGenerations         int
-
-				       // The flag to indicate whether to print additional debugging info
-	IsDebugEnabled         bool
 }
 
 // Loads context configuration from provided reader
@@ -169,6 +179,8 @@ func LoadContext(r io.Reader) *NeatContext {
 			c.NumRuns = int(param)
 		case "num_generations":
 			c.NumGenerations = int(param)
+		case "log_level":
+			LogLevel = int(param)
 		default:
 			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %.f\n", name, param)
 		}
@@ -177,10 +189,30 @@ func LoadContext(r io.Reader) *NeatContext {
 	return &c
 }
 
-func (c *NeatContext) DebugLog(rec string) {
-	if c.IsDebugEnabled {
+func DebugLog(rec string) {
+	log(rec, LogLevelDebug)
+}
+
+func InfoLog(rec string) {
+	log(rec, LogLevelInfo)
+}
+
+func WarnLog(rec string) {
+	logWithPrefix("ALERT", rec, LogLevelWarning)
+}
+
+func ErrorLog(rec string) {
+	logWithPrefix("ERROR", rec, LogLevelError)
+}
+
+func log(rec string, level int) {
+	if LogLevel <= level {
 		fmt.Println(rec)
 	}
+}
+
+func logWithPrefix(prefix, rec string, level int) {
+	log(fmt.Sprintf("%s: %s", prefix, rec), level)
 }
 
 // Returns

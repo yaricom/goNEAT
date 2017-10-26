@@ -29,30 +29,30 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 
 	var pop *genetics.Population
 	for run := 0; run < context.NumRuns; run++ {
-		fmt.Print("\n>>>>> Spawning new population ")
+		neat.InfoLog("\n>>>>> Spawning new population ")
 		pop, err = genetics.NewPopulation(start_genome, context)
 		if err != nil {
-			fmt.Println("Failed to spawn new population from start genome")
+			neat.InfoLog("Failed to spawn new population from start genome")
 			return nodes, genes, evals, err
 		} else {
-			fmt.Println("OK <<<<<")
+			neat.InfoLog("OK <<<<<")
 		}
-		fmt.Print(">>>>> Verifying spawned population ")
+		neat.InfoLog(">>>>> Verifying spawned population ")
 		_, err = pop.Verify()
 		if err != nil {
-			fmt.Println("\n!!!!! Population verification failed !!!!!")
+			neat.ErrorLog("\n!!!!! Population verification failed !!!!!")
 			return nodes, genes, evals, err
 		} else {
-			fmt.Println("OK <<<<<")
+			neat.InfoLog("OK <<<<<")
 		}
 
 		var success bool
 		var winner_num, winner_genes, winner_nodes int
 		for gen := 1; gen <= context.NumGenerations; gen ++ {
-			fmt.Printf(">>>>> Epoch: %d\tRun: %d\n", gen, run)
+			neat.InfoLog(fmt.Sprintf(">>>>> Epoch: %d\tRun: %d\n", gen, run))
 			success, winner_num, winner_genes, winner_nodes, err = xor_epoch(pop, gen, out_dir_path, context)
 			if err != nil {
-				fmt.Printf("!!!!! Epoch %d evaluation failed !!!!!\n", gen)
+				neat.InfoLog(fmt.Sprintf("!!!!! Epoch %d evaluation failed !!!!!\n", gen))
 				return nodes, genes, evals, err
 			}
 			if success {
@@ -60,7 +60,7 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 				evals[run] = context.PopSize * (gen - 1) + winner_num
 				genes[run] = winner_genes
 				nodes[run] = winner_nodes
-				fmt.Printf(">>>>> The winner organism found in epoch %d! <<<<<\n", gen)
+				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in epoch %d! <<<<<\n", gen))
 				break
 			}
 		}
@@ -90,10 +90,10 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 				opt_path := fmt.Sprintf("%s/%s", out_dir_path, "xor_optimal")
 				file, err := os.Create(opt_path)
 				if err != nil {
-					fmt.Printf("Failed to dump optimal genome, reason: %s\n", err)
+					neat.ErrorLog(fmt.Sprintf("Failed to dump optimal genome, reason: %s\n", err))
 				} else {
 					org.GNome.Write(file)
-					fmt.Printf("Dumped optimal genome to: %s\n", opt_path)
+					neat.InfoLog(fmt.Sprintf("Dumped optimal genome to: %s\n", opt_path))
 				}
 			}
 			break // we have winner
@@ -112,7 +112,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 		pop_path := fmt.Sprintf("%s/gen_%d", out_dir_path, generation)
 		file, err := os.Create(pop_path)
 		if err != nil {
-			fmt.Printf("Failed to dump population, reason: %s\n", err)
+			neat.ErrorLog(fmt.Sprintf("Failed to dump population, reason: %s\n", err))
 		} else {
 			pop.WriteBySpecies(file)
 		}
@@ -126,17 +126,17 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 				org_path := fmt.Sprintf("%s/%s", out_dir_path, "xor_winner")
 				file, err := os.Create(org_path)
 				if err != nil {
-					fmt.Printf("Failed to dump winner organism genome, reason: %s\n", err)
+					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
 				} else {
 					org.GNome.Write(file)
-					fmt.Printf("Generation #%d winner dumped to: %s\n", generation, org_path)
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", generation, org_path))
 				}
 				break
 			}
 		}
 	} else {
 		// Move to the next epoch if failed to find winner
-		context.DebugLog(">>>>> start next generation")
+		neat.DebugLog(">>>>> start next generation")
 		_, err = pop.Epoch(generation, context)
 	}
 
@@ -155,13 +155,12 @@ func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool,
 
 	net_depth, err := organism.Net.MaxDepth() // The max depth of the network to be activated
 	if err != nil {
-		fmt.Println("Failed to estimate maximal depth of the network")
-		fmt.Println(organism.GNome)
+		neat.ErrorLog(fmt.Sprintf("Failed to estimate maximal depth of the network with genome:\n%s", organism.GNome))
 		return false, err
 	}
-	context.DebugLog(fmt.Sprintf("Network depth: %d for organism: %d\n", net_depth, organism.GNome.Id))
+	neat.DebugLog(fmt.Sprintf("Network depth: %d for organism: %d\n", net_depth, organism.GNome.Id))
 	if net_depth == 0 {
-		context.DebugLog(fmt.Sprintf("ALERT: Network depth is ZERO for Genome: %s", organism.GNome))
+		neat.DebugLog(fmt.Sprintf("ALERT: Network depth is ZERO for Genome: %s", organism.GNome))
 	}
 
 	success := false  // Check for successful activation
@@ -174,7 +173,7 @@ func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool,
 		// Relax net and get output
 		success, err = organism.Net.Activate()
 		if err != nil {
-			fmt.Println("Failed to activate network")
+			neat.ErrorLog("Failed to activate network")
 			return false, err
 		}
 
@@ -182,13 +181,11 @@ func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool,
 		for relax := 0; relax <= net_depth; relax++ {
 			success, err = organism.Net.Activate()
 			if err != nil {
-				fmt.Println("Failed to activate network")
+				neat.ErrorLog("Failed to activate network")
 				return false, err
 			}
 		}
 		out[count] = organism.Net.Outputs[0].Activation
-
-		//fmt.Println(org.Net.Outputs)
 
 		organism.Net.Flush()
 	}
@@ -207,7 +204,7 @@ func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool,
 
 	if out[0] < precision && out[1] >= 1 - precision && out[2] >= 1 - precision && out[3] < precision {
 		organism.IsWinner = true
-		fmt.Printf(">>>> Output activations: %e\n", out)
+		neat.InfoLog(fmt.Sprintf(">>>> Output activations: %e\n", out))
 
 	} else {
 		organism.IsWinner = false

@@ -254,19 +254,19 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
-		context.DebugLog(fmt.Sprintf("\nSPECIES: Offspring #%d from %d, (species: %d)",
+		neat.DebugLog(fmt.Sprintf("\nSPECIES: Offspring #%d from %d, (species: %d)",
 			count, s.ExpectedOffspring, s.Id))
 
 		mut_struct_baby, mate_baby := false, false
 
 		// Debug Trap
 		if s.ExpectedOffspring > context.PopSize {
-			fmt.Printf("SPECIES: ALERT: Species [%d] expected offspring: %d exceeds population size limit: %d\n",
-				s.Id, s.ExpectedOffspring, context.PopSize)
+			neat.WarnLog(fmt.Sprintf("SPECIES: ALERT: Species [%d] expected offspring: %d exceeds population size limit: %d\n",
+				s.Id, s.ExpectedOffspring, context.PopSize))
 		}
 
 		if the_champ.SuperChampOffspring > 0 {
-			context.DebugLog("SPECIES: Reproduce super champion")
+			neat.DebugLog("SPECIES: Reproduce super champion")
 
 			// If we have a super_champ (Population champion), finish off some special clones
 			mom := the_champ;
@@ -303,7 +303,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			the_champ.SuperChampOffspring--
 		} else if !champ_clone_done && s.ExpectedOffspring > 5 {
-			context.DebugLog("SPECIES: Clone species champion")
+			neat.DebugLog("SPECIES: Clone species champion")
 
 			// If we have a Species champion, just clone it
 			mom := the_champ // Mom is the champ
@@ -315,7 +315,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			baby = NewOrganism(0.0, new_genome, generation)
 
 		} else if rand.Float64() < context.MutateOnlyProb || pool_size == 1 {
-			context.DebugLog("SPECIES: Reproduce by applying random mutation:")
+			neat.DebugLog("SPECIES: Reproduce by applying random mutation:")
 
 			// Apply mutations
 			org_num := rand.Int31n(int32(pool_size)) // select random mom
@@ -324,7 +324,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			// Do the mutation depending on probabilities of various mutations
 			if rand.Float64() < context.MutateAddNodeProb {
-				context.DebugLog("SPECIES: ---> mutateAddNode")
+				neat.DebugLog("SPECIES: ---> mutateAddNode")
 
 				// Mutate add node
 				_, err := new_genome.mutateAddNode(pop, context)
@@ -333,7 +333,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 				mut_struct_baby = true
 			} else if rand.Float64() < context.MutateAddLinkProb {
-				context.DebugLog("SPECIES: ---> mutateAddLink")
+				neat.DebugLog("SPECIES: ---> mutateAddLink")
 
 				// Mutate add link
 				new_genome.genesis(generation)
@@ -343,7 +343,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 				mut_struct_baby = true
 			} else if rand.Float64() < context.MutateConnectSensors {
-				context.DebugLog("SPECIES: ---> mutateConnectSensors")
+				neat.DebugLog("SPECIES: ---> mutateConnectSensors")
 				link_added, err := new_genome.mutateConnectSensors(pop, context)
 				if err != nil {
 					return false, err
@@ -352,7 +352,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			}
 
 			if !mut_struct_baby {
-				context.DebugLog("SPECIES: ---> mutateAllNonstructural")
+				neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 				// If we didn't do a structural mutation, we do the other kinds
 				_, err := new_genome.mutateAllNonstructural(context)
@@ -364,7 +364,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Create the new baby organism
 			baby = NewOrganism(0.0, new_genome, generation);
 		} else {
-			context.DebugLog("SPECIES: Reproduce by mating:")
+			neat.DebugLog("SPECIES: Reproduce by mating:")
 
 			// Otherwise we should mate
 			org_num := rand.Int31n(int32(pool_size)) // select random mom
@@ -373,13 +373,13 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Choose random dad
 			var dad *Organism
 			if rand.Float64() > context.InterspeciesMateRate {
-				context.DebugLog("SPECIES: ---> mate within species")
+				neat.DebugLog("SPECIES: ---> mate within species")
 
 				// Mate within Species
 				org_num = rand.Int31n(int32(pool_size))
 				dad = s.Organisms[org_num]
 			} else {
-				context.DebugLog("SPECIES: ---> mate outside species")
+				neat.DebugLog("SPECIES: ---> mate outside species")
 
 				// Mate outside Species
 				rand_species := s
@@ -402,7 +402,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			var new_genome *Genome
 			var err error
 			if rand.Float64() < context.MateMultipointProb {
-				context.DebugLog("SPECIES: ------> mateMultipoint")
+				neat.DebugLog("SPECIES: ------> mateMultipoint")
 
 				// mate multipoint baby
 				new_genome, err = mom.GNome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
@@ -410,7 +410,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					return false, err
 				}
 			} else if rand.Float64() < context.MateMultipointAvgProb / (context.MateMultipointAvgProb + context.MateSinglepointProb) {
-				context.DebugLog("SPECIES: ------> mateMultipointAvg")
+				neat.DebugLog("SPECIES: ------> mateMultipointAvg")
 
 				// mate multipoint_avg baby
 				new_genome, err = mom.GNome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
@@ -418,7 +418,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					return false, err
 				}
 			} else {
-				context.DebugLog("SPECIES: ------> mateSinglepoint")
+				neat.DebugLog("SPECIES: ------> mateSinglepoint")
 
 				new_genome, err = mom.GNome.mateSinglepoint(dad.GNome, count)
 				if err != nil {
@@ -433,11 +433,11 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			if rand.Float64() > context.MateOnlyProb ||
 				dad.GNome.Id == mom.GNome.Id ||
 				dad.GNome.compatibility(mom.GNome, context) == 0.0 {
-				context.DebugLog("SPECIES: ------> Mutatte baby genome:")
+				neat.DebugLog("SPECIES: ------> Mutatte baby genome:")
 
 				// Do the mutation depending on probabilities of  various mutations
 				if rand.Float64() < context.MutateAddNodeProb {
-					context.DebugLog("SPECIES: ---------> mutateAddNode")
+					neat.DebugLog("SPECIES: ---------> mutateAddNode")
 
 					// mutate_add_node
 					_, err = new_genome.mutateAddNode(pop, context)
@@ -446,7 +446,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					}
 					mut_struct_baby = true
 				} else if rand.Float64() < context.MutateAddLinkProb {
-					context.DebugLog("SPECIES: ---------> mutateAddLink")
+					neat.DebugLog("SPECIES: ---------> mutateAddLink")
 
 					// mutate_add_link
 					new_genome.genesis(generation)
@@ -456,7 +456,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					}
 					mut_struct_baby = true
 				} else if rand.Float64() < context.MutateConnectSensors {
-					context.DebugLog("SPECIES: ---> mutateConnectSensors")
+					neat.DebugLog("SPECIES: ---> mutateConnectSensors")
 					link_added, err := new_genome.mutateConnectSensors(pop, context)
 					if err != nil {
 						return false, err
@@ -465,7 +465,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				}
 
 				if !mut_struct_baby {
-					context.DebugLog("SPECIES: ---> mutateAllNonstructural")
+					neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 					// If we didn't do a structural mutation, we do the other kinds
 					_, err := new_genome.mutateAllNonstructural(context)
@@ -485,7 +485,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 		if len(pop.Species) == 0 {
 			// Create the first species
-			createFirstSpecies(pop, baby, context)
+			createFirstSpecies(pop, baby)
 		} else {
 			if context.CompatThreshold == 0 {
 				return false, errors.New("SPECIES: compatibility thershold is set to ZERO. " +
@@ -512,7 +512,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			}
 
 			if found {
-				context.DebugLog(fmt.Sprintf("SPECIES: Compatible species [%d] found for baby organism [%d]",
+				neat.DebugLog(fmt.Sprintf("SPECIES: Compatible species [%d] found for baby organism [%d]",
 					best_compatible.Id, baby.GNome.Id))
 				// Found compatible species, so add this baby to it
 				best_compatible.addOrganism(baby);
@@ -522,7 +522,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			// If match was not found, create a new species
 			if !found {
-				createFirstSpecies(pop, baby, context)
+				createFirstSpecies(pop, baby)
 			}
 		}
 
@@ -530,8 +530,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 	return true, nil
 }
 
-func createFirstSpecies(pop *Population, baby *Organism, context *neat.NeatContext) {
-	context.DebugLog(fmt.Sprintf("SPECIES: Create first species for baby organism [%d]", baby.GNome.Id))
+func createFirstSpecies(pop *Population, baby *Organism) {
+	neat.DebugLog(fmt.Sprintf("SPECIES: Create first species for baby organism [%d]", baby.GNome.Id))
 
 	pop.LastSpecies++
 	new_species := NewSpeciesNovel(pop.LastSpecies, true)
@@ -539,7 +539,7 @@ func createFirstSpecies(pop *Population, baby *Organism, context *neat.NeatConte
 	new_species.addOrganism(baby) // Add the baby
 	baby.SpeciesOf = new_species // Point baby to its species
 
-	context.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d, new species id: %d",
+	neat.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d, new species id: %d",
 		len(pop.Species), new_species.Id))
 }
 

@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 	"errors"
+	"bytes"
 )
 
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
@@ -57,21 +58,23 @@ func (n *Network) FlushCheck() error {
 }
 
 // Prints the values of network outputs to the console
-func (n *Network) PrintActivation() {
-	fmt.Printf("Network %s with id %d outputs: (", n.Name, n.Id)
+func (n *Network) PrintActivation() string {
+	out := bytes.NewBufferString(fmt.Sprintf("Network %s with id %d outputs: (", n.Name, n.Id))
 	for i, node := range n.Outputs {
-		fmt.Printf("[Output #%d: %s] ", i, node)
+		fmt.Fprintf(out, "[Output #%d: %s] ", i, node)
 	}
-	fmt.Println(")")
+	fmt.Fprint(out, ")")
+	return string(out)
 }
 
 // Print the values of network inputs to the console
-func (n *Network) PrintInput() {
-	fmt.Printf("Network %s with id %d inputs: (", n.Name, n.Id)
+func (n *Network) PrintInput() string {
+	out := bytes.NewBufferString(fmt.Sprintf("Network %s with id %d inputs: (", n.Name, n.Id))
 	for i, node := range n.Inputs {
-		fmt.Printf("[Input #%d: %s] ", i, node)
+		fmt.Fprintf(out, "[Input #%d: %s] ", i, node)
 	}
-	fmt.Println(")")
+	fmt.Fprint(out, ")")
+	return string(out)
 }
 
 // If at least one output is not active then return true
