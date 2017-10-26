@@ -31,7 +31,7 @@ type Species struct {
 	IsNovel              bool
 
 	// The organisms in the Species
-	Organisms            []*Organism
+	Organisms            Organisms
 	// If this is too long ago, the Species will goes extinct
 	AgeOfLastImprovement int
 }
@@ -133,7 +133,7 @@ func (s *Species) adjustFitness(conf *neat.NeatContext) {
 	}
 
 	// Sort the population (most fit first) and mark for death those after : survival_thresh * pop_size
-	sort.Sort(ByFitness(s.Organisms))
+	sort.Sort(sort.Reverse(s.Organisms))
 
 	// Update age_of_last_improvement here
 	if s.Organisms[0].OriginalFitness > s.MaxFitnessEver {

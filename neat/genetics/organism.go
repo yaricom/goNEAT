@@ -83,14 +83,15 @@ func (o *Organism) String() string {
 		o.Generation, o.Fitness, o.OriginalFitness, champStr, eliminStr)
 }
 
-// ByFitness implements sort.Interface for []Organism based on the Fitness field in descending order.
-type ByFitness []*Organism
-func (f ByFitness) Len() int {
+// Organisms is sortable list of organisms by fitness
+type Organisms []*Organism
+
+func (f Organisms) Len() int {
 	return len(f)
 }
-func (f ByFitness) Swap(i, j int) {
+func (f Organisms) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
-func (f ByFitness) Less(i, j int) bool {
-	return f[i].Fitness > f[j].Fitness
+func (f Organisms) Less(i, j int) bool {
+	return (*f[i]).Fitness < (*f[j]).Fitness // lower fitness is less
 }
