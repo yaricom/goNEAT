@@ -484,7 +484,9 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
-	res, err := gnome1.mutateConnectSensors(pop)
+	context := neat.NeatContext{}
+
+	res, err := gnome1.mutateConnectSensors(pop, &context)
 	if err != nil {
 		t.Error("err != nil", err)
 		return
@@ -499,7 +501,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
-	res, err = gnome1.mutateConnectSensors(pop)
+	res, err = gnome1.mutateConnectSensors(pop, &context)
 	if err != nil {
 		t.Error("err != nil", err)
 		return
@@ -524,7 +526,9 @@ func TestGenome_mutateAddNode(t *testing.T) {
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
-	res, err := gnome1.mutateAddNode(pop)
+	context := neat.NeatContext{}
+
+	res, err := gnome1.mutateAddNode(pop, &context)
 	if !res || err != nil {
 		t.Error("Failed to add new node")
 	}
