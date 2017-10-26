@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"errors"
 	"bytes"
 )
 
@@ -96,9 +95,6 @@ func (n *Network) Activate() (bool, error) {
 	//Used in case the output is somehow truncated from the network
 	abort_count := 0
 
-	// The sigmoid activator function
-	sigmoid := ActivationFunc(SigmoidActivation)
-
 	// Keep activating until all the outputs have become active
 	// (This only happens on the first activation, because after that they are always active)
 	for n.OutputIsOff() || !one_time {
@@ -138,13 +134,10 @@ func (n *Network) Activate() (bool, error) {
 				if np.IsActive {
 					// Keep a memory of activations for potential time delayed connections
 					np.saveActivations()
+
 					// Now run the net activation through an activation function
-					if np.ActivationType == SIGMOID {
-						np.Activation = sigmoid.Activation(np, 4.924273, 2.4621365)
-					} else {
-						return false, errors.New(
-							fmt.Sprintf("Unknown activation function type: %d", np.ActivationType))
-					}
+					np.Activation = activate(np)
+
 					// Increment the activation_count
 					// First activation cannot be from nothing!!
 					np.ActivationsCount++
@@ -190,6 +183,11 @@ func (n *Network) LinkCount() int {
 		n.numlinks += len(node.Incoming)
 	}
 	return n.numlinks
+}
+
+// Returns complexity of this network which is sum of nodes count and links count
+func (n *Network) Complexity() int {
+	return n.NodeCount() + n.LinkCount()
 }
 
 // This checks a POTENTIAL link between a potential in_node

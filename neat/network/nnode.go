@@ -113,7 +113,7 @@ func newNode(ntype NodeType) *NNode {
 	return &NNode{
 		NodeType:ntype,
 		NeuronType:HIDDEN,
-		ActivationType:SIGMOID,
+		ActivationType:SigmoidSteepened,
 		Incoming:make([]*Link, 0),
 		Outgoing:make([]*Link, 0),
 	}
