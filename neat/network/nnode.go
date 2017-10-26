@@ -228,7 +228,7 @@ func (n *NNode) Write(w io.Writer) {
 // Find the greatest depth starting from this neuron at depth d
 func (n *NNode) Depth(d int) (int, error) {
 	if d > 100 {
-		return 10, errors.New("NNODE: ERROR: DEPTH NOT DETERMINED FOR NETWORK WITH LOOP");
+		return 10, nil//errors.New("NNODE: ERROR: DEPTH NOT DETERMINED FOR NETWORK WITH LOOP");
 	}
 	// Base Case
 	if n.IsSensor() {
