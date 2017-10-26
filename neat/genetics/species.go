@@ -565,5 +565,5 @@ func (f ByOrganismOrigFitness) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
 func (f ByOrganismOrigFitness) Less(i, j int) bool {
-	return f[i].Organisms[0].OriginalFitness > f[j].Organisms[0].OriginalFitness
+	return f[i].Organisms[0].OriginalFitness < f[j].Organisms[0].OriginalFitness // Lower fitness is less
 }
