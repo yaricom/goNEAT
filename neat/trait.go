@@ -6,6 +6,10 @@ import (
 	"math/rand"
 )
 
+// The number of parameters used in neurons that learn through habituation,
+// sensitization, or Hebbian-type processes
+const Num_trait_params = 8
+
 // TRAIT: A Trait is a group of parameters that can be expressed as a group more than one time. Traits save a genetic
 // algorithm from having to search vast parameter landscapes on every node. Instead, each node can simply point to a trait
 // and those traits can evolve on their own.
