@@ -64,7 +64,7 @@ func (n *Network) PrintActivation() string {
 		fmt.Fprintf(out, "[Output #%d: %s] ", i, node)
 	}
 	fmt.Fprint(out, ")")
-	return string(out)
+	return out.String()
 }
 
 // Print the values of network inputs to the console
@@ -74,7 +74,7 @@ func (n *Network) PrintInput() string {
 		fmt.Fprintf(out, "[Input #%d: %s] ", i, node)
 	}
 	fmt.Fprint(out, ")")
-	return string(out)
+	return out.String()
 }
 
 // If at least one output is not active then return true
