@@ -74,12 +74,21 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, context *neat.NeatContext) (success bool, winner_num, winner_genes, winner_nodes int, err error) {
 	// The flag to indicate that we have winner organism
 	success = false
+	// The best organism and it's fintess
+	//var best_organism genetics.Organism
+	//max_fitness := 0.0
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
 		res, err := xor_evaluate(org, context)
 		if err != nil {
 			return false, -1, -1, -1, err
 		}
+		//if org.Fitness > max_fitness {
+		//	// store for epoch statistics
+		//	max_fitness = org.Fitness
+		//	best_organism = org
+		//}
+
 		if res {
 			success = true
 			winner_num = org.Genotype.Id
