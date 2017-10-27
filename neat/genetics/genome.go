@@ -588,7 +588,7 @@ func geneInsert(genes[]*Gene, g *Gene) []*Gene {
 
 /* ******* MUTATORS ******* */
 
-// Mutate the genome by adding connections to disconnected inputs (sensors).
+// Mutate the genome by adding connections to disconnected sensors (input, bias type neurons).
 // The reason this mutator is important is that if we can start NEAT with some inputs disconnected,
 // then we can allow NEAT to decide which inputs are important.
 // This process has two good effects:
@@ -607,7 +607,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 	for _, n := range g.Nodes {
 		if n.NodeType == network.SensorNode {
 			sensors = append(sensors, n)
-		} else if n.NeuronType != network.BiasNeuron {
+		} else {
 			outputs = append(outputs, n)
 		}
 	}
