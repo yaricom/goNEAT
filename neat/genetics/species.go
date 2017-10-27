@@ -254,7 +254,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
-		neat.DebugLog(fmt.Sprintf("\nSPECIES: Offspring #%d from %d, (species: %d)",
+		neat.DebugLog(fmt.Sprintf("SPECIES: Offspring #%d from %d, (species: %d)",
 			count, s.ExpectedOffspring, s.Id))
 
 		mut_struct_baby, mate_baby := false, false

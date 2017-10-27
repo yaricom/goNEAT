@@ -6,11 +6,16 @@ import (
 	"math/rand"
 	"fmt"
 	"io"
+	"log"
+	"os"
 )
+
+// LoggerLevel type to specify logger output level
+type LoggerLevel byte
 
 const (
 	// The Debug log level
-	LogLevelDebug = iota
+	LogLevelDebug LoggerLevel = iota
 	// The Info log level
 	LogLevelInfo
 	// The Warning log level
@@ -18,8 +23,42 @@ const (
 	// The Error log level
 	LogLevelError
 )
-// The current log level of context
-var LogLevel int
+
+var (
+	// The current log level of the context
+	LogLevel LoggerLevel
+
+	loggerDebug = log.New(os.Stdout, "DEBUG: ", log.Ltime | log.Lshortfile)
+	loggerInfo = log.New(os.Stdout, "INFO: ", log.Ltime | log.Lshortfile)
+	loggerWarn = log.New(os.Stdout, "ALERT: ", log.Ltime | log.Lshortfile)
+	loggerError = log.New(os.Stderr, "ERROR: ", log.Ltime | log.Lshortfile)
+
+	// The logger to output all messages
+	DebugLog = func(message string) {
+		if LogLevel <= LogLevelDebug {
+			loggerDebug.Output(2, message)
+		}
+	}
+	// The logger to output messages with Info and up level
+	InfoLog = func(message string) {
+		if LogLevel <= LogLevelInfo {
+			loggerInfo.Output(2, message)
+		}
+	}
+	// The logger to output messages with Warn and up level
+	WarnLog = func(message string) {
+		if LogLevel <= LogLevelWarning {
+			loggerWarn.Output(2, message)
+		}
+	}
+	// The logger to output messages with Error and up level
+	ErrorLog = func(message string) {
+		if LogLevel <= LogLevelError {
+			loggerError.Output(2, message)
+		}
+	}
+)
+
 
 // The NEAT execution context holding common configuration parameters, etc.
 type NeatContext struct {
@@ -180,39 +219,13 @@ func LoadContext(r io.Reader) *NeatContext {
 		case "num_generations":
 			c.NumGenerations = int(param)
 		case "log_level":
-			LogLevel = int(param)
+			LogLevel = LoggerLevel(param)
 		default:
 			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %.f\n", name, param)
 		}
 	}
 
 	return &c
-}
-
-func DebugLog(rec string) {
-	log(rec, LogLevelDebug)
-}
-
-func InfoLog(rec string) {
-	log(rec, LogLevelInfo)
-}
-
-func WarnLog(rec string) {
-	logWithPrefix("ALERT", rec, LogLevelWarning)
-}
-
-func ErrorLog(rec string) {
-	logWithPrefix("ERROR", rec, LogLevelError)
-}
-
-func log(rec string, level int) {
-	if LogLevel <= level {
-		fmt.Println(rec)
-	}
-}
-
-func logWithPrefix(prefix, rec string, level int) {
-	log(fmt.Sprintf("%s: %s", prefix, rec), level)
 }
 
 // Returns
