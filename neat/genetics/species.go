@@ -569,5 +569,18 @@ func (f ByOrganismOrigFitness) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
 func (f ByOrganismOrigFitness) Less(i, j int) bool {
-	return f[i].Organisms[0].OriginalFitness < f[j].Organisms[0].OriginalFitness // Lower fitness is less
+	org1 := f[i].Organisms[0]
+	org2 := f[j].Organisms[0]
+	if org1.OriginalFitness < org2.OriginalFitness {
+		return true // Lower fitness is less
+	} else if org1.OriginalFitness == org2.OriginalFitness {
+		c1 := org1.Phenotype.Complexity()
+		c2 := org2.Phenotype.Complexity()
+		if c1 > c2 {
+			return true // Higher complexity is "less"
+		} else if c1 == c2 {
+			return f[i].Age > f[j].Age // Higher Age is Less
+		}
+	}
+	return false
 }
