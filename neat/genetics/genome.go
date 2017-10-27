@@ -607,24 +607,25 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 	for _, n := range g.Nodes {
 		if n.NodeType == network.SensorNode {
 			sensors = append(sensors, n)
-		} else if n.NeuronType == network.OutputNeuron {
+		} else if n.NeuronType != network.BiasNeuron {
 			outputs = append(outputs, n)
 		}
 	}
 
-	// eliminate from contention any sensors that are already connected
+	// Find not connected sensors if any
 	disconnected_sensors := make([]*network.NNode, 0)
 	for _, sensor := range sensors {
-		outputConnections := 0
+		connected := false
 
 		// iterate over all genes and count number of output connections from given sensor
 		for _, gene := range g.Genes {
-			if gene.Link.InNode == sensor && gene.Link.OutNode.NeuronType == network.OutputNeuron {
-				outputConnections++
+			if gene.Link.InNode == sensor {
+				connected = true
+				break
 			}
 		}
 
-		if outputConnections != len(outputs) {
+		if !connected {
 			// store found disconnected sensor
 			disconnected_sensors = append(disconnected_sensors, sensor)
 		}
