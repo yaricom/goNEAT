@@ -75,8 +75,7 @@ func (s *Species) Write(w io.Writer) {
 		fmt.Fprintf(w, "/* Organism #%d Fitness: %.3f Error: %.3f */\n",
 			org.GNome.Id, org.Fitness, org.Error)
 		if org.IsWinner {
-			fmt.Fprintf(w, "/* ##------$ WINNER ORGANISM #%d SPECIES #%d $------## */\n",
-				org.GNome.Id, s.Id)
+			fmt.Fprintf(w, "/* ## $ WINNER ORGANISM FOR SPECIES #%d $ ## */\n", s.Id)
 		}
 		org.GNome.Write(w)
 	}
