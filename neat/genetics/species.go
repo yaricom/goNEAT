@@ -65,12 +65,17 @@ func (s *Species) Write(w io.Writer) {
 	fmt.Fprintf(w, "/* Species #%d : (Size %d) (AF %.3f) (Age %d)  */\n",
 		s.Id, len(s.Organisms), s.AvgFitness, s.Age)
 
+	// Sort organisms - best fitness first
+	sorted_organisms := make(Organisms, len(s.Organisms))
+	copy(sorted_organisms, s.Organisms)
+	sort.Sort(sort.Reverse(sorted_organisms))
+
 	// Print all the Organisms' Genomes to the outFile
-	for _, org := range s.Organisms {
+	for _, org := range sorted_organisms {
 		fmt.Fprintf(w, "/* Organism #%d Fitness: %.3f Error: %.3f */\n",
 			org.GNome.Id, org.Fitness, org.Error)
 		if org.IsWinner {
-			fmt.Fprintf(w, "/* ##------$ WINNER %d SPECIES # %d $------## */\n",
+			fmt.Fprintf(w, "/* ##------$ WINNER ORGANISM #%d SPECIES #%d $------## */\n",
 				org.GNome.Id, s.Id)
 		}
 		org.GNome.Write(w)
