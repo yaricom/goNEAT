@@ -89,7 +89,7 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 
 // Read a NNode from specified Reader and applies corresponding trait to it from a list of traits provided
 func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
-	n := newNode(NEURON)
+	n := newNode(NeuronNode)
 	var trait_id int
 	fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &n.NodeType, &n.NeuronType)
 	if trait_id != 0 && traits != nil {
@@ -112,7 +112,7 @@ func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
 func newNode(ntype NodeType) *NNode {
 	return &NNode{
 		NodeType:ntype,
-		NeuronType:HIDDEN,
+		NeuronType:HiddenNeuron,
 		ActivationType:SigmoidSteepened,
 		Incoming:make([]*Link, 0),
 		Outgoing:make([]*Link, 0),
@@ -155,12 +155,12 @@ func (n *NNode) GetActiveOutTd() float64 {
 
 // Returns true if this node is SENSOR
 func (n *NNode) IsSensor() bool {
-	return n.NodeType == SENSOR
+	return n.NodeType == SensorNode
 }
 
 // returns true if this node is NEURON
 func (n *NNode) IsNeuron() bool {
-	return n.NodeType == NEURON
+	return n.NodeType == NeuronNode
 }
 
 // If the node is a SENSOR, returns TRUE and loads the value

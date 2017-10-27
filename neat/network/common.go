@@ -9,17 +9,17 @@ type NodeType byte
 // Predefined NNode types
 const (
 	// The neuron type
-	NEURON NodeType = iota
+	NeuronNode NodeType = iota
 	// The sensor type
-	SENSOR
+	SensorNode
 )
 
 // Returns human readable NNode type name for given constant value
 func NodeTypeName(ntype NodeType) string {
 	switch ntype {
-	case NEURON:
+	case NeuronNode:
 		return "NEURON"
-	case SENSOR:
+	case SensorNode:
 		return "SENSOR"
 	default:
 		return "!!! UNKNOWN NODE TYPE !!!"
@@ -32,25 +32,25 @@ type NeuronType byte
 // These are NNode layer type
 const (
 	// The node is in hidden layer
-	HIDDEN NeuronType = iota
+	HiddenNeuron NeuronType = iota
 	// The node is in input layer
-	INPUT
+	InputNeuron
 	// The node is in output layer
-	OUTPUT
+	OutputNeuron
 	// The node is bias
-	BIAS
+	BiasNeuron
 )
 
 // Returns human readable neuron type name for given constant
 func NeuronTypeName(nlayer NeuronType) string {
 	switch nlayer {
-	case HIDDEN:
+	case HiddenNeuron:
 		return "HIDDEN"
-	case INPUT:
+	case InputNeuron:
 		return "INPUT"
-	case OUTPUT:
+	case OutputNeuron:
 		return "OUTPUT"
-	case BIAS:
+	case BiasNeuron:
 		return "BIAS"
 	default:
 		return "!!! UNKNOWN NEURON TYPE !!!"

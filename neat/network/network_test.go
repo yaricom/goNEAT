@@ -6,14 +6,14 @@ import (
 
 func buildNetwork() *Network {
 	all_nodes := []*NNode {
-		NewNNodeInPlace(SENSOR, 1, INPUT),
-		NewNNodeInPlace(SENSOR, 2, INPUT),
-		NewNNodeInPlace(SENSOR, 3, INPUT),
-		NewNNodeInPlace(NEURON, 4, HIDDEN),
-		NewNNodeInPlace(NEURON, 5, HIDDEN),
-		NewNNodeInPlace(NEURON, 6, HIDDEN),
-		NewNNodeInPlace(NEURON, 7, OUTPUT),
-		NewNNodeInPlace(NEURON, 8, OUTPUT),
+		NewNNodeInPlace(SensorNode, 1, InputNeuron),
+		NewNNodeInPlace(SensorNode, 2, InputNeuron),
+		NewNNodeInPlace(SensorNode, 3, InputNeuron),
+		NewNNodeInPlace(NeuronNode, 4, HiddenNeuron),
+		NewNNodeInPlace(NeuronNode, 5, HiddenNeuron),
+		NewNNodeInPlace(NeuronNode, 6, HiddenNeuron),
+		NewNNodeInPlace(NeuronNode, 7, OutputNeuron),
+		NewNNodeInPlace(NeuronNode, 8, OutputNeuron),
 	}
 
 	// HIDDEN 4

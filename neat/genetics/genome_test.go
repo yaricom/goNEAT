@@ -91,21 +91,21 @@ func TestGenome_ReadGenome(t *testing.T) {
 		if n.Id != i + 1 {
 			t.Error("Wrong NNode Id", n.Id)
 		}
-		if i < 3 && n.NodeType != network.SENSOR {
+		if i < 3 && n.NodeType != network.SensorNode {
 			t.Error("Wrong NNode type", n.NodeType)
 		}
 
 		if i == 3 {
-			if n.NodeType != network.NEURON {
+			if n.NodeType != network.NeuronNode {
 				t.Error("Wrong NNode type", n.NodeType)
 			}
-			if n.NeuronType != network.OUTPUT {
+			if n.NeuronType != network.OutputNeuron {
 				t.Error("Wrong NNode placement", n.NeuronType)
 			}
 		}
 
-		if (i < 2 && n.NeuronType != network.INPUT) ||
-			(i == 2 && n.NeuronType != network.BIAS) {
+		if (i < 2 && n.NeuronType != network.InputNeuron) ||
+			(i == 2 && n.NeuronType != network.BiasNeuron) {
 			t.Error("Wrong NNode placement", n.NeuronType)
 		}
 
@@ -169,21 +169,21 @@ func TestGenome_ReadGenomeFile(t *testing.T) {
 		if n.Id != i + 1 {
 			t.Error("Wrong NNode Id", n.Id)
 		}
-		if i < 3 && n.NodeType != network.SENSOR {
+		if i < 3 && n.NodeType != network.SensorNode {
 			t.Error("Wrong NNode type", n.NodeType)
 		}
 
 		if i == 3 {
-			if n.NodeType != network.NEURON {
+			if n.NodeType != network.NeuronNode {
 				t.Error("Wrong NNode type", n.NodeType)
 			}
-			if n.NeuronType != network.OUTPUT {
+			if n.NeuronType != network.OutputNeuron {
 				t.Error("Wrong NNode placement", n.NeuronType)
 			}
 		}
 
-		if (i == 0 && n.NeuronType != network.BIAS) ||
-			(i > 0 && i < 3 && n.NeuronType != network.INPUT) {
+		if (i == 0 && n.NeuronType != network.BiasNeuron) ||
+			(i > 0 && i < 3 && n.NeuronType != network.InputNeuron) {
 			t.Error("Wrong NNode placement", n.NeuronType)
 		}
 
@@ -322,8 +322,8 @@ func TestGene_Verify(t *testing.T) {
 	}
 
 	// Test gene error
-	new_gene := NewGene(1.0, network.NewNNodeInPlace(network.SENSOR, 100, network.INPUT),
-		network.NewNNodeInPlace(network.SENSOR, 101, network.OUTPUT), false, 1, 1.0)
+	new_gene := NewGene(1.0, network.NewNNodeInPlace(network.SensorNode, 100, network.InputNeuron),
+		network.NewNNodeInPlace(network.SensorNode, 101, network.OutputNeuron), false, 1, 1.0)
 	gnome.Genes = append(gnome.Genes, new_gene)
 	res, err = gnome.verify()
 	if res {
@@ -335,10 +335,10 @@ func TestGene_Verify(t *testing.T) {
 
 	// Test duplicate genes
 	gnome = buildTestGenome(1)
-	gnome.Genes = append(gnome.Genes, NewGene(1.0, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
-		network.NewNNodeInPlace(network.SENSOR, 1, network.OUTPUT), false, 1, 1.0))
-	gnome.Genes = append(gnome.Genes, NewGene(1.0, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
-		network.NewNNodeInPlace(network.SENSOR, 1, network.OUTPUT), false, 1, 1.0))
+	gnome.Genes = append(gnome.Genes, NewGene(1.0, network.NewNNodeInPlace(network.SensorNode, 1, network.InputNeuron),
+		network.NewNNodeInPlace(network.SensorNode, 1, network.OutputNeuron), false, 1, 1.0))
+	gnome.Genes = append(gnome.Genes, NewGene(1.0, network.NewNNodeInPlace(network.SensorNode, 1, network.InputNeuron),
+		network.NewNNodeInPlace(network.SensorNode, 1, network.OutputNeuron), false, 1, 1.0))
 	res, err = gnome.verify()
 	if res {
 		t.Error("Validation should fail")
@@ -368,15 +368,15 @@ func TestGenome_Compatibility(t *testing.T) {
 	}
 
 	// Test incompatible
-	gnome2.Genes = append(gnome2.Genes, NewGene(1.0, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
-		network.NewNNodeInPlace(network.SENSOR, 1, network.OUTPUT), false, 10, 1.0))
+	gnome2.Genes = append(gnome2.Genes, NewGene(1.0, network.NewNNodeInPlace(network.SensorNode, 1, network.InputNeuron),
+		network.NewNNodeInPlace(network.SensorNode, 1, network.OutputNeuron), false, 10, 1.0))
 	comp = gnome1.compatibility(gnome2, &conf)
 	if comp != 0.5 {
 		t.Error("comp != 0.5", comp)
 	}
 
-	gnome2.Genes = append(gnome2.Genes, NewGene(2.0, network.NewNNodeInPlace(network.SENSOR, 1, network.INPUT),
-		network.NewNNodeInPlace(network.SENSOR, 1, network.OUTPUT), false, 5, 1.0))
+	gnome2.Genes = append(gnome2.Genes, NewGene(2.0, network.NewNNodeInPlace(network.SensorNode, 1, network.InputNeuron),
+		network.NewNNodeInPlace(network.SensorNode, 1, network.OutputNeuron), false, 5, 1.0))
 	comp = gnome1.compatibility(gnome2, &conf)
 	if comp != 1 {
 		t.Error("comp != 1", comp)

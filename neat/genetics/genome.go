@@ -102,9 +102,9 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 	// Build the input nodes
 	for ncount := 1; ncount <= in; ncount++ {
 		if ncount < in {
-			new_node = network.NewNNodeInPlace(network.SENSOR, ncount, network.INPUT)
+			new_node = network.NewNNodeInPlace(network.SensorNode, ncount, network.InputNeuron)
 		} else {
-			new_node = network.NewNNodeInPlace(network.SENSOR, ncount, network.BIAS)
+			new_node = network.NewNNodeInPlace(network.SensorNode, ncount, network.BiasNeuron)
 		}
 		new_node.Trait = new_trait
 		gnome.Nodes = append(gnome.Nodes, new_node)
@@ -112,14 +112,14 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 
 	// Build the hidden nodes
 	for ncount := in + 1; ncount <= in + n; ncount++ {
-		new_node = network.NewNNodeInPlace(network.NEURON, ncount, network.HIDDEN)
+		new_node = network.NewNNodeInPlace(network.NeuronNode, ncount, network.HiddenNeuron)
 		new_node.Trait = new_trait
 		gnome.Nodes = append(gnome.Nodes, new_node)
 	}
 
 	// Build the output nodes
 	for ncount := first_output; ncount <= total_nodes; ncount++ {
-		new_node = network.NewNNodeInPlace(network.NEURON, ncount, network.OUTPUT)
+		new_node = network.NewNNodeInPlace(network.NeuronNode, ncount, network.OutputNeuron)
 		new_node.Trait = new_trait
 		gnome.Nodes = append(gnome.Nodes, new_node)
 	}
@@ -273,13 +273,13 @@ func (g *Genome) String() string {
 	for _, n := range g.Nodes {
 		n_type := ""
 		switch n.NeuronType {
-		case network.INPUT:
+		case network.InputNeuron:
 			n_type = "I"
-		case network.OUTPUT:
+		case network.OutputNeuron:
 			n_type = "O"
-		case network.BIAS:
+		case network.BiasNeuron:
 			n_type = "B"
-		case network.HIDDEN:
+		case network.HiddenNeuron:
 			n_type = "H"
 		}
 		str += fmt.Sprintf("\t%s%s \n", n_type, n)
@@ -369,9 +369,9 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		new_node = network.NewNNodeCopy(n, n.Trait)
 
 		// Check for input or output designation of node
-		if n.NeuronType == network.INPUT || n.NeuronType == network.BIAS {
+		if n.NeuronType == network.InputNeuron || n.NeuronType == network.BiasNeuron {
 			in_list = append(in_list, new_node)
-		} else if n.NeuronType == network.OUTPUT {
+		} else if n.NeuronType == network.OutputNeuron {
 			out_list = append(out_list, new_node)
 		}
 
@@ -605,9 +605,9 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 	sensors := make([]*network.NNode, 0)
 	outputs := make([]*network.NNode, 0)
 	for _, n := range g.Nodes {
-		if n.NodeType == network.SENSOR {
+		if n.NodeType == network.SensorNode {
 			sensors = append(sensors, n)
-		} else if n.NeuronType == network.OUTPUT {
+		} else if n.NeuronType == network.OutputNeuron {
 			outputs = append(outputs, n)
 		}
 	}
@@ -619,7 +619,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 
 		// iterate over all genes and count number of output connections from given sensor
 		for _, gene := range g.Genes {
-			if gene.Link.InNode == sensor && gene.Link.OutNode.NeuronType == network.OUTPUT {
+			if gene.Link.InNode == sensor && gene.Link.OutNode.NeuronType == network.OutputNeuron {
 				outputConnections++
 			}
 		}
@@ -724,7 +724,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 	// Find the first non-sensor so that the to-node won't look at sensors as possible destinations
 	first_non_sensor := 0
 	for _, n := range g.Nodes {
-		if n.NodeType == network.SENSOR {
+		if n.NodeType == network.SensorNode {
 			first_non_sensor++
 		} else {
 			break
@@ -768,7 +768,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 
 		// See if a link already exists  ALSO STOP AT END OF GENES!!!!
 		link_exists := false
-		if node_2.NodeType == network.SENSOR {
+		if node_2.NodeType == network.SensorNode {
 			// Don't allow SENSORS to get input
 			link_exists = true
 		} else {
@@ -890,7 +890,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 	if len(g.Genes) < 15 {
 		for _, gn := range g.Genes {
 			// Now randomize which gene is chosen.
-			if gn.IsEnabled && gn.Link.InNode.NeuronType != network.BIAS && rand.Float32() >= 0.3 {
+			if gn.IsEnabled && gn.Link.InNode.NeuronType != network.BiasNeuron && rand.Float32() >= 0.3 {
 				gene = gn
 				found = true
 				break
@@ -902,7 +902,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 		for try_count < 20 && !found {
 			gene_num := rand.Intn(len(g.Genes))
 			gene = g.Genes[gene_num]
-			if gene.IsEnabled && gene.Link.InNode.NeuronType != network.BIAS {
+			if gene.IsEnabled && gene.Link.InNode.NeuronType != network.BiasNeuron {
 				found = true
 			}
 			try_count++
@@ -944,7 +944,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 			inn.OldInnovNum == gene.InnovationNum {
 
 			// Create the new NNode
-			new_node = network.NewNNodeInPlace(network.NEURON, inn.NewNodeId, network.HIDDEN)
+			new_node = network.NewNNodeInPlace(network.NeuronNode, inn.NewNodeId, network.HiddenNeuron)
 			// By convention, it will point to the first trait
 			// Note: In future may want to change this
 			new_node.Trait = g.Traits[0]
@@ -963,7 +963,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 		curr_node_id := pop.getCurrentNodeIdAndIncrement()
 
 		// Create the new NNode
-		new_node = network.NewNNodeInPlace(network.NEURON, curr_node_id, network.HIDDEN)
+		new_node = network.NewNNodeInPlace(network.NeuronNode, curr_node_id, network.HiddenNeuron)
 		// By convention, it will point to the first trait
 		new_node.Trait = g.Traits[0]
 
@@ -1218,9 +1218,9 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
-		if curr_node.NeuronType == network.INPUT ||
-			curr_node.NeuronType == network.BIAS ||
-			curr_node.NeuronType == network.OUTPUT {
+		if curr_node.NeuronType == network.InputNeuron ||
+			curr_node.NeuronType == network.BiasNeuron ||
+			curr_node.NeuronType == network.OutputNeuron {
 			node_trait_num := 0
 			if curr_node.Trait != nil {
 				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id
@@ -1394,9 +1394,9 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
-		if curr_node.NeuronType == network.INPUT ||
-			curr_node.NeuronType == network.BIAS ||
-			curr_node.NeuronType == network.OUTPUT {
+		if curr_node.NeuronType == network.InputNeuron ||
+			curr_node.NeuronType == network.BiasNeuron ||
+			curr_node.NeuronType == network.OutputNeuron {
 			node_trait_num := 0
 			if curr_node.Trait != nil {
 				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id
@@ -1593,9 +1593,9 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
-		if curr_node.NeuronType == network.INPUT ||
-			curr_node.NeuronType == network.BIAS ||
-			curr_node.NeuronType == network.OUTPUT {
+		if curr_node.NeuronType == network.InputNeuron ||
+			curr_node.NeuronType == network.BiasNeuron ||
+			curr_node.NeuronType == network.OutputNeuron {
 			node_trait_num := 0
 			if curr_node.Trait != nil {
 				node_trait_num = curr_node.Trait.Id - gen.Traits[0].Id
