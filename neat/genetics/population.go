@@ -12,6 +12,7 @@ import (
 	"strings"
 	"bytes"
 	"strconv"
+	"math"
 )
 
 // A Population is a group of Organisms including their species
@@ -244,20 +245,27 @@ func (p *Population) speciate(context *neat.NeatContext) error {
 		} else {
 			// For each organism, search for a species it is compatible to
 			done := false
+			var best_compatible *Species // the best compatible species
+			best_compat_value := math.MaxFloat64
 			for _, curr_species := range p.Species {
 				comp_org := curr_species.firstOrganism()
 				// compare current organism with first organism in current specie
-				if comp_org != nil &&
-					curr_org.GNome.compatibility(comp_org.GNome, context) < context.CompatThreshold {
-					// Found compatible species, so add this organism to it
-					curr_species.addOrganism(curr_org)
-					curr_org.SpeciesOf = curr_species // Point organism to its species
-					done = true
-					break
+				if comp_org != nil {
+					curr_compat := curr_org.GNome.compatibility(comp_org.GNome, context)
+					if curr_compat < context.CompatThreshold && curr_compat < best_compat_value {
+						best_compatible = curr_species
+						best_compat_value = curr_compat
+						done = true
+					}
 				}
 			}
-			// If we didn't find a match, create a new species
-			if !done {
+			if done {
+				// Found compatible species, so add current organism to it
+				best_compatible.addOrganism(curr_org);
+				// Point organism to its species
+				curr_org.SpeciesOf = best_compatible
+			} else {
+				// If we didn't find a match, create a new species
 				new_species := NewSpecies(species_counter)
 				p.Species = append(p.Species, new_species)
 				new_species.addOrganism(curr_org)
