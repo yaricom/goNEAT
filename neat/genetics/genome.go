@@ -1067,7 +1067,7 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type mutatorTyp
 }
 
 // Perturb params in one trait
-func (g *Genome) mutateRandomTrait(conf *neat.NeatContext) (bool, error) {
+func (g *Genome) mutateRandomTrait(context *neat.NeatContext) (bool, error) {
 	if len(g.Traits) == 0 {
 		return false, errors.New("Genome has no traits")
 	}
@@ -1075,7 +1075,7 @@ func (g *Genome) mutateRandomTrait(conf *neat.NeatContext) (bool, error) {
 	trait_num := rand.Intn(len(g.Traits))
 
 	// Retrieve the trait and mutate it
-	g.Traits[trait_num].Mutate(conf.TraitMutationPower, conf.TraitParamMutProb)
+	g.Traits[trait_num].Mutate(context.TraitMutationPower, context.TraitParamMutProb)
 
 	return true, nil
 }
@@ -1159,35 +1159,35 @@ func (g *Genome) mutateGeneReenable() (bool, error) {
 }
 
 // Applies all non-structural mutations to this genome
-func (g *Genome) mutateAllNonstructural(conf *neat.NeatContext) (bool, error) {
+func (g *Genome) mutateAllNonstructural(context *neat.NeatContext) (bool, error) {
 	res := false
 	var err error
-	if rand.Float64() < conf.MutateRandomTraitProb {
+	if rand.Float64() < context.MutateRandomTraitProb {
 		// mutate random trait
-		res, err = g.mutateRandomTrait(conf)
+		res, err = g.mutateRandomTrait(context)
 	}
 
-	if err == nil && rand.Float64() < conf.MutateLinkTraitProb {
+	if err == nil && rand.Float64() < context.MutateLinkTraitProb {
 		// mutate link trait
 		res, err = g.mutateLinkTrait(1)
 	}
 
-	if err == nil && rand.Float64() < conf.MutateNodeTraitProb {
+	if err == nil && rand.Float64() < context.MutateNodeTraitProb {
 		// mutate node trait
 		res, err = g.mutateNodeTrait(1)
 	}
 
-	if err == nil && rand.Float64() < conf.MutateLinkWeightsProb {
+	if err == nil && rand.Float64() < context.MutateLinkWeightsProb {
 		// mutate link weight
-		res, err = g.mutateLinkWeights(conf.WeightMutPower, 1.0, gaussianMutator)
+		res, err = g.mutateLinkWeights(context.WeightMutPower, 1.0, gaussianMutator)
 	}
 
-	if err == nil && rand.Float64() < conf.MutateToggleEnableProb {
+	if err == nil && rand.Float64() < context.MutateToggleEnableProb {
 		// mutate toggle enable
 		res, err = g.mutateToggleEnable(1)
 	}
 
-	if err == nil && rand.Float64() < conf.MutateGeneReenableProb {
+	if err == nil && rand.Float64() < context.MutateGeneReenableProb {
 		// mutate gene reenable
 		res, err = g.mutateGeneReenable();
 	}
@@ -1787,7 +1787,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 // PERCENT EXCESS GENES, MUTATIONAL DIFFERENCE WITHIN MATCHING GENES. So the formula for compatibility
 // is:  disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // The 3 coefficients are global system parameters */
-func (g *Genome) compatibility(og *Genome, conf *neat.NeatContext) float64 {
+func (g *Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
 	num_disjoint, num_excess, mut_diff_total, num_matching := 0.0, 0.0, 0.0, 0.0
 	size1, size2 := len(g.Genes), len(og.Genes)
 	max_genome_size := size2
@@ -1829,8 +1829,8 @@ func (g *Genome) compatibility(og *Genome, conf *neat.NeatContext) float64 {
 	// Return the compatibility number using compatibility formula
 	// Note that mut_diff_total/num_matching gives the AVERAGE difference between mutation_nums for any two matching
 	// Genes in the Genome. Look at disjointedness and excess in the absolute (ignoring size)
-	comp := conf.DisjointCoeff * num_disjoint + conf.ExcessCoeff * num_excess +
-		conf.MutdiffCoeff * (mut_diff_total / num_matching)
+	comp := context.DisjointCoeff * num_disjoint + context.ExcessCoeff * num_excess +
+		context.MutdiffCoeff * (mut_diff_total / num_matching)
 
 	return comp
 }

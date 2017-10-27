@@ -100,8 +100,8 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 
 // Can change the fitness of the organisms in the Species to be higher for very new species (to protect them).
 // Divides the fitness by the size of the Species, so that fitness is "shared" by the species.
-func (s *Species) adjustFitness(conf *neat.NeatContext) {
-	age_debt := (s.Age - s.AgeOfLastImprovement + 1) - conf.DropOffAge
+func (s *Species) adjustFitness(context *neat.NeatContext) {
+	age_debt := (s.Age - s.AgeOfLastImprovement + 1) - context.DropOffAge
 	if age_debt == 0 {
 		age_debt = 1
 	}
@@ -121,7 +121,7 @@ func (s *Species) adjustFitness(conf *neat.NeatContext) {
 		// The age_significance parameter is a system parameter
 		// if it is 1, then young species get no fitness boost
 		if s.Age <= 10 {
-			org.Fitness = org.Fitness * conf.AgeSignificance
+			org.Fitness = org.Fitness * context.AgeSignificance
 		}
 		// Do not allow negative fitness
 		if org.Fitness < 0.0 {
@@ -143,7 +143,7 @@ func (s *Species) adjustFitness(conf *neat.NeatContext) {
 
 	// Decide how many get to reproduce based on survival_thresh * pop_size
 	// Adding 1.0 ensures that at least one will survive
-	num_parents := int(math.Floor(conf.SurvivalThresh * float64(len(s.Organisms)) + 1.0))
+	num_parents := int(math.Floor(context.SurvivalThresh * float64(len(s.Organisms)) + 1.0))
 
 	// Mark for death those who are ranked too low to be parents
 	s.Organisms[0].IsChampion = true // Mark the champ as such
