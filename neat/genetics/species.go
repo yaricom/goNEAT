@@ -73,11 +73,11 @@ func (s *Species) Write(w io.Writer) {
 	// Print all the Organisms' Genomes to the outFile
 	for _, org := range sorted_organisms {
 		fmt.Fprintf(w, "/* Organism #%d Fitness: %.3f Error: %.3f */\n",
-			org.GNome.Id, org.Fitness, org.Error)
+			org.Genotype.Id, org.Fitness, org.Error)
 		if org.IsWinner {
 			fmt.Fprintf(w, "/* ## $ WINNER ORGANISM FOR SPECIES #%d $ ## */\n", s.Id)
 		}
-		org.GNome.Write(w)
+		org.Genotype.Write(w)
 	}
 }
 
@@ -150,9 +150,9 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 	num_parents := int(math.Floor(context.SurvivalThresh * float64(len(s.Organisms)) + 1.0))
 
 	// Mark for death those who are ranked too low to be parents
-	s.Organisms[0].IsChampion = true // Mark the champ as such
+	s.Organisms[0].isChampion = true // Mark the champ as such
 	for c := num_parents; c < len(s.Organisms); c++ {
-		s.Organisms[c].ToEliminate = true
+		s.Organisms[c].toEliminate = true
 	}
 }
 
@@ -269,18 +269,18 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				s.Id, s.ExpectedOffspring, context.PopSize))
 		}
 
-		if the_champ.SuperChampOffspring > 0 {
+		if the_champ.superChampOffspring > 0 {
 			neat.DebugLog("SPECIES: Reproduce super champion")
 
 			// If we have a super_champ (Population champion), finish off some special clones
 			mom := the_champ;
-			new_genome := mom.GNome.duplicate(count)
+			new_genome := mom.Genotype.duplicate(count)
 
 			// Most superchamp offspring will have their connection weights mutated only
 			// The last offspring will be an exact duplicate of this super_champ
 			// Note: Superchamp offspring only occur with stolen babies!
 			//      Settings used for published experiments did not use this
-			if the_champ.SuperChampOffspring > 1 {
+			if the_champ.superChampOffspring > 1 {
 				if rand.Float64() < 0.8 || context.MutateAddLinkProb == 0.0 {
 					// Make sure no links get added when the system has link adding disabled
 					new_genome.mutateLinkWeights(context.WeightMutPower, 1.0, gaussianMutator)
@@ -298,20 +298,20 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Create the new baby organism
 			baby = NewOrganism(0.0, new_genome, generation)
 
-			if the_champ.SuperChampOffspring == 1 {
-				if the_champ.IsPopulationChampion {
-					baby.IsPopulationChampionChild = true
+			if the_champ.superChampOffspring == 1 {
+				if the_champ.isPopulationChampion {
+					baby.isPopulationChampionChild = true
 					baby.highestFitness = mom.OriginalFitness
 				}
 			}
 
-			the_champ.SuperChampOffspring--
+			the_champ.superChampOffspring--
 		} else if !champ_clone_done && s.ExpectedOffspring > 5 {
 			neat.DebugLog("SPECIES: Clone species champion")
 
 			// If we have a Species champion, just clone it
 			mom := the_champ // Mom is the champ
-			new_genome := mom.GNome.duplicate(count)
+			new_genome := mom.Genotype.duplicate(count)
 			// Baby is just like mommy
 			champ_clone_done = true
 
@@ -324,7 +324,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Apply mutations
 			org_num := rand.Int31n(int32(pool_size)) // select random mom
 			mom := s.Organisms[org_num]
-			new_genome := mom.GNome.duplicate(count)
+			new_genome := mom.Genotype.duplicate(count)
 
 			// Do the mutation depending on probabilities of various mutations
 			if rand.Float64() < context.MutateAddNodeProb {
@@ -409,7 +409,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				neat.DebugLog("SPECIES: ------> mateMultipoint")
 
 				// mate multipoint baby
-				new_genome, err = mom.GNome.mateMultipoint(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
+				new_genome, err = mom.Genotype.mateMultipoint(dad.Genotype, count, mom.OriginalFitness, dad.OriginalFitness)
 				if err != nil {
 					return false, err
 				}
@@ -417,14 +417,14 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 				neat.DebugLog("SPECIES: ------> mateMultipointAvg")
 
 				// mate multipoint_avg baby
-				new_genome, err = mom.GNome.mateMultipointAvg(dad.GNome, count, mom.OriginalFitness, dad.OriginalFitness)
+				new_genome, err = mom.Genotype.mateMultipointAvg(dad.Genotype, count, mom.OriginalFitness, dad.OriginalFitness)
 				if err != nil {
 					return false, err
 				}
 			} else {
 				neat.DebugLog("SPECIES: ------> mateSinglepoint")
 
-				new_genome, err = mom.GNome.mateSinglepoint(dad.GNome, count)
+				new_genome, err = mom.Genotype.mateSinglepoint(dad.Genotype, count)
 				if err != nil {
 					return false, err
 				}
@@ -435,8 +435,8 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			// Determine whether to mutate the baby's Genome
 			// This is done randomly or if the mom and dad are the same organism
 			if rand.Float64() > context.MateOnlyProb ||
-				dad.GNome.Id == mom.GNome.Id ||
-				dad.GNome.compatibility(mom.GNome, context) == 0.0 {
+				dad.Genotype.Id == mom.Genotype.Id ||
+				dad.Genotype.compatibility(mom.Genotype, context) == 0.0 {
 				neat.DebugLog("SPECIES: ------> Mutatte baby genome:")
 
 				// Do the mutation depending on probabilities of  various mutations
@@ -505,7 +505,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 					// point to first organism of this _specie
 					compare_org := _specie.Organisms[0]
 					// compare baby organism with first organism in current specie
-					curr_compat := baby.GNome.compatibility(compare_org.GNome, context)
+					curr_compat := baby.Genotype.compatibility(compare_org.Genotype, context)
 
 					if curr_compat < context.CompatThreshold && curr_compat < best_compat_value {
 						best_compatible = _specie
@@ -517,11 +517,11 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 
 			if found {
 				neat.DebugLog(fmt.Sprintf("SPECIES: Compatible species [%d] found for baby organism [%d]",
-					best_compatible.Id, baby.GNome.Id))
+					best_compatible.Id, baby.Genotype.Id))
 				// Found compatible species, so add this baby to it
 				best_compatible.addOrganism(baby);
 				// update in baby pointer to its species
-				baby.SpeciesOf = best_compatible
+				baby.Species = best_compatible
 			}
 
 			// If match was not found, create a new species
@@ -535,13 +535,13 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 }
 
 func createFirstSpecies(pop *Population, baby *Organism) {
-	neat.DebugLog(fmt.Sprintf("SPECIES: Create first species for baby organism [%d]", baby.GNome.Id))
+	neat.DebugLog(fmt.Sprintf("SPECIES: Create first species for baby organism [%d]", baby.Genotype.Id))
 
 	pop.LastSpecies++
 	new_species := NewSpeciesNovel(pop.LastSpecies, true)
 	pop.Species = append(pop.Species, new_species)
 	new_species.addOrganism(baby) // Add the baby
-	baby.SpeciesOf = new_species // Point baby to its species
+	baby.Species = new_species // Point baby to its species
 
 	neat.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d, new species id: %d",
 		len(pop.Species), new_species.Id))

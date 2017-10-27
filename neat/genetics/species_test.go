@@ -43,8 +43,8 @@ func TestSpecies_adjustFitness(t *testing.T)  {
 	sp.adjustFitness(&conf)
 
 	// test results
-	if sp.Organisms[0].IsChampion != true {
-		t.Error("sp.Organisms[0].IsChampion", true, sp.Organisms[0].IsChampion)
+	if sp.Organisms[0].isChampion != true {
+		t.Error("sp.Organisms[0].IsChampion", true, sp.Organisms[0].isChampion)
 	}
 	if sp.AgeOfLastImprovement != 1 {
 		t.Error("sp.AgeOfLastImprovement", 1, sp.AgeOfLastImprovement)
@@ -52,8 +52,8 @@ func TestSpecies_adjustFitness(t *testing.T)  {
 	if sp.MaxFitnessEver != 15.0 {
 		t.Error("sp.MaxFitnessEver", 15.0, sp.MaxFitnessEver)
 	}
-	if sp.Organisms[2].ToEliminate != true {
-		t.Error("sp.Organisms[2].ToEliminate", true, sp.Organisms[2].ToEliminate)
+	if sp.Organisms[2].toEliminate != true {
+		t.Error("sp.Organisms[2].ToEliminate", true, sp.Organisms[2].toEliminate)
 	}
 }
 

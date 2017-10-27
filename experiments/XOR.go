@@ -82,9 +82,9 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 		}
 		if res {
 			success = true
-			winner_num = org.GNome.Id
-			winner_genes = org.GNome.Extrons()
-			winner_nodes = len(org.GNome.Nodes)
+			winner_num = org.Genotype.Id
+			winner_genes = org.Genotype.Extrons()
+			winner_nodes = len(org.Genotype.Nodes)
 			if (winner_nodes == 5) {
 				// You could dump out optimal genomes here if desired
 				opt_path := fmt.Sprintf("%s/%s", out_dir_path, "xor_optimal")
@@ -92,7 +92,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump optimal genome, reason: %s\n", err))
 				} else {
-					org.GNome.Write(file)
+					org.Genotype.Write(file)
 					neat.InfoLog(fmt.Sprintf("Dumped optimal genome to: %s\n", opt_path))
 				}
 			}
@@ -128,7 +128,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
 				} else {
-					org.GNome.Write(file)
+					org.Genotype.Write(file)
 					neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", generation, org_path))
 				}
 				break
@@ -153,14 +153,14 @@ func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool,
 		{1.0, 1.0, 0.0},
 		{1.0, 1.0, 1.0}}
 
-	net_depth, err := organism.Net.MaxDepth() // The max depth of the network to be activated
+	net_depth, err := organism.Phenotype.MaxDepth() // The max depth of the network to be activated
 	if err != nil {
-		neat.ErrorLog(fmt.Sprintf("Failed to estimate maximal depth of the network with genome:\n%s", organism.GNome))
+		neat.ErrorLog(fmt.Sprintf("Failed to estimate maximal depth of the network with genome:\n%s", organism.Genotype))
 		return false, err
 	}
-	neat.DebugLog(fmt.Sprintf("Network depth: %d for organism: %d\n", net_depth, organism.GNome.Id))
+	neat.DebugLog(fmt.Sprintf("Network depth: %d for organism: %d\n", net_depth, organism.Genotype.Id))
 	if net_depth == 0 {
-		neat.DebugLog(fmt.Sprintf("ALERT: Network depth is ZERO for Genome: %s", organism.GNome))
+		neat.DebugLog(fmt.Sprintf("ALERT: Network depth is ZERO for Genome: %s", organism.Genotype))
 	}
 
 	success := false  // Check for successful activation
@@ -168,10 +168,10 @@ func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool,
 
 	// Load and activate the network on each input
 	for count := 0; count < 4; count++ {
-		organism.Net.LoadSensors(in[count])
+		organism.Phenotype.LoadSensors(in[count])
 
 		// Relax net and get output
-		success, err = organism.Net.Activate()
+		success, err = organism.Phenotype.Activate()
 		if err != nil {
 			neat.ErrorLog("Failed to activate network")
 			return false, err
@@ -179,15 +179,15 @@ func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool,
 
 		// use depth to ensure relaxation
 		for relax := 0; relax <= net_depth; relax++ {
-			success, err = organism.Net.Activate()
+			success, err = organism.Phenotype.Activate()
 			if err != nil {
 				neat.ErrorLog("Failed to activate network")
 				return false, err
 			}
 		}
-		out[count] = organism.Net.Outputs[0].Activation
+		out[count] = organism.Phenotype.Outputs[0].Activation
 
-		organism.Net.Flush()
+		organism.Phenotype.Flush()
 	}
 
 	error_sum := 0.0

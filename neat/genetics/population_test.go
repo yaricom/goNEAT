@@ -39,16 +39,16 @@ func TestNewPopulationRandom(t *testing.T) {
 	}
 
 	for _, org := range pop.Organisms {
-		if len(org.GNome.Genes) == 0 {
+		if len(org.Genotype.Genes) == 0 {
 			t.Error("len(org.GNome.Genes) == 0")
 		}
-		if len(org.GNome.Nodes) == 0 {
+		if len(org.Genotype.Nodes) == 0 {
 			t.Error("len(org.GNome.Nodes) == 0")
 		}
-		if len(org.GNome.Traits) == 0 {
+		if len(org.Genotype.Traits) == 0 {
 			t.Error("len(org.GNome.Traits) == 0")
 		}
-		if org.GNome.Phenotype == nil {
+		if org.Genotype.Phenotype == nil {
 			t.Error("org.GNome.Phenotype == nil")
 		}
 	}
@@ -86,16 +86,16 @@ func TestNewPopulation(t *testing.T) {
 	}
 
 	for _, org := range pop.Organisms {
-		if len(org.GNome.Genes) == 0 {
+		if len(org.Genotype.Genes) == 0 {
 			t.Error("len(org.GNome.Genes) == 0")
 		}
-		if len(org.GNome.Nodes) == 0 {
+		if len(org.Genotype.Nodes) == 0 {
 			t.Error("len(org.GNome.Nodes) == 0")
 		}
-		if len(org.GNome.Traits) == 0 {
+		if len(org.Genotype.Traits) == 0 {
 			t.Error("len(org.GNome.Traits) == 0")
 		}
-		if org.GNome.Phenotype == nil {
+		if org.Genotype.Phenotype == nil {
 			t.Error("org.GNome.Phenotype == nil")
 		}
 	}

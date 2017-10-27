@@ -9,7 +9,7 @@ import (
 // i.e. the genotype and phenotype together.
 type Organism struct {
 	// A measure of fitness for the Organism
-	Fitness                   float64
+	Fitness              float64
 	// A fitness measure that won't change during adjustments
 	OriginalFitness           float64
 
@@ -17,11 +17,11 @@ type Organism struct {
 	IsWinner                  bool
 
 	// The Organism's phenotype
-	Net                       *network.Network
+	Phenotype                 *network.Network
 	// The Organism's genotype
-	GNome                     *Genome
+	Genotype                  *Genome
 	// The Species of the Organism
-	SpeciesOf                 *Species
+	Species                   *Species
 
 	// Number of children this Organism may have
 	ExpectedOffspring         float64
@@ -29,16 +29,16 @@ type Organism struct {
 	Generation                int
 
 	// Marker for destruction of inferior Organisms
-	ToEliminate               bool
+	toEliminate               bool
 	// Marks the species champion
-	IsChampion                bool
+	isChampion                bool
 
 	// Number of reserved offspring for a population leader
-	SuperChampOffspring       int
+	superChampOffspring       int
 	// Marks the best in population
-	IsPopulationChampion      bool
+	isPopulationChampion      bool
 	// Marks the duplicate child of a champion (for tracking purposes)
-	IsPopulationChampionChild bool
+	isPopulationChampionChild bool
 
 	// DEBUG variable - highest fitness of champ
 	highestFitness            float64
@@ -55,8 +55,8 @@ type Organism struct {
 func NewOrganism(fit float64, g *Genome, generation int) *Organism {
 	return &Organism{
 		Fitness:fit,
-		GNome:g,
-		Net:g.genesis(g.Id),
+		Genotype:g,
+		Phenotype:g.genesis(g.Id),
 		Generation:generation,
 	}
 }
@@ -64,19 +64,19 @@ func NewOrganism(fit float64, g *Genome, generation int) *Organism {
 // Regenerate the network based on a change in the genotype
 func (o *Organism) UpdatePhenotype() {
 	// First, delete the old phenotype (net)
-	o.Net = nil
+	o.Phenotype = nil
 
 	// Now, recreate the phenotype off the new genotype
-	o.Net = o.GNome.genesis(o.GNome.Id)
+	o.Phenotype = o.Genotype.genesis(o.Genotype.Id)
 }
 
 func (o *Organism) String() string {
 	champStr := ""
-	if o.IsChampion {
+	if o.isChampion {
 		champStr = " - CHAMPION - "
 	}
 	eliminStr := ""
-	if o.ToEliminate {
+	if o.toEliminate {
 		eliminStr = " - TO BE ELIMINATED - "
 	}
 	return fmt.Sprintf("[Organism generation: %d, fitness: %.3f, original fitness: %.3f%s%s]",
