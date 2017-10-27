@@ -104,6 +104,7 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 
 // Can change the fitness of the organisms in the Species to be higher for very new species (to protect them).
 // Divides the fitness by the size of the Species, so that fitness is "shared" by the species.
+// NOTE: Invocation of this method will result of species organisms sorted by fitness in descending order, i.e. most fit will be first.
 func (s *Species) adjustFitness(context *neat.NeatContext) {
 	age_debt := (s.Age - s.AgeOfLastImprovement + 1) - context.DropOffAge
 	if age_debt == 0 {
