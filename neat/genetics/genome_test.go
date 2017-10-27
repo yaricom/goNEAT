@@ -557,7 +557,7 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 		WeightMutPower:0.5,
 	}
 
-	res, err := gnome1.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
+	res, err := gnome1.mutateLinkWeights(conf.WeightMutPower, 1.0, gaussianMutator)
 	if !res || err != nil {
 		t.Error("Failed to mutate link weights")
 	}

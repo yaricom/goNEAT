@@ -653,7 +653,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 			// Check to see if this innovation already occurred in the population
 			innovation_found := false
 			for _, inn := range pop.Innovations {
-				if inn.InnovationType == NEWLINK &&
+				if inn.innovationType == newLinkInnType &&
 					inn.InNodeId == sensor.Id &&
 					inn.OutNodeId == output.Id &&
 					inn.IsRecurrent == false {
@@ -819,7 +819,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 		innovation_found := false
 		for _, inn := range pop.Innovations {
 			// match the innovation in the innovations list
-			if inn.InnovationType == NEWLINK &&
+			if inn.innovationType == newLinkInnType &&
 				inn.InNodeId == node_1.Id &&
 				inn.OutNodeId == node_2.Id &&
 				inn.IsRecurrent == do_recur {
@@ -938,7 +938,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 		 If so, we know this mutation is not a novel innovation in this generation
 		 so we make it match the original, identical mutation which occurred
 		 elsewhere in the population by coincidence */
-		if inn.InnovationType == NEWNODE &&
+		if inn.innovationType == newNodeInnType &&
 			inn.InNodeId == in_node.Id &&
 			inn.OutNodeId == out_node.Id &&
 			inn.OldInnovNum == gene.InnovationNum {
@@ -1004,7 +1004,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 
 // Adds Gaussian noise to link weights either GAUSSIAN or COLD_GAUSSIAN (from zero).
 // The COLD_GAUSSIAN means ALL connection weights will be given completely new values
-func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type int) (bool, error) {
+func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type mutatorType) (bool, error) {
 	if len(g.Genes) == 0 {
 		return false, errors.New("Genome has no genes")
 	}
@@ -1045,14 +1045,14 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type int) (bool
 		}
 
 		rand_val := float64(neat.RandPosNeg()) * rand.Float64() * power
-		if mutation_type == GAUSSIAN {
+		if mutation_type == gaussianMutator {
 			rand_choice := rand.Float64()
 			if rand_choice > gauss_point {
 				gene.Link.Weight += rand_val
 			} else if rand_choice > cold_gauss_point {
 				gene.Link.Weight = rand_val
 			}
-		} else if mutation_type == COLD_GAUSSIAN {
+		} else if mutation_type == goldGaussianMutator {
 			gene.Link.Weight = rand_val
 		}
 
@@ -1178,7 +1178,7 @@ func (g *Genome) mutateAllNonstructural(conf *neat.NeatContext) (bool, error) {
 
 	if err == nil && rand.Float64() < conf.MutateLinkWeightsProb {
 		// mutate link weight
-		res, err = g.mutateLinkWeights(conf.WeightMutPower, 1.0, GAUSSIAN)
+		res, err = g.mutateLinkWeights(conf.WeightMutPower, 1.0, gaussianMutator)
 	}
 
 	if err == nil && rand.Float64() < conf.MutateToggleEnableProb {

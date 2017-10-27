@@ -201,7 +201,7 @@ func (p *Population) spawn(g *Genome, context *neat.NeatContext) error {
 	var new_genome *Genome
 	for count := 0; count < context.PopSize; count++ {
 		new_genome = g.duplicate(count)
-		_, err := new_genome.mutateLinkWeights(1.0, 1.0, GAUSSIAN)
+		_, err := new_genome.mutateLinkWeights(1.0, 1.0, gaussianMutator)
 		if err != nil {
 			return err
 		}

@@ -7,8 +7,7 @@ package genetics
 // This class can encode innovations that represent a new link forming, or a new node being added.  In each case, two
 // nodes fully specify the innovation and where it must have occurred (between them).
 type Innovation struct {
-	// Either NEWNODE or NEWLINK
-	InnovationType int
+
 	// Two nodes specify where the innovation took place
 	InNodeId       int
 	OutNodeId      int
@@ -27,14 +26,18 @@ type Innovation struct {
 	// If a new node was created, this is the innovation number of the gene's link it is being stuck inside
 	OldInnovNum    int64
 
+	// Flag to indicate whether its innovation for recurrent link
 	IsRecurrent    bool
+
+	// Either NEWNODE or NEWLINK
+	innovationType innovationType
 }
 
 // Constructor for the new node case
 func NewInnovationForNode(node_in_id, node_out_id int, innovation_num1, innovation_num2 int64,
 				newnode_id int, old_innov_num int64) *Innovation {
 	return &Innovation {
-		InnovationType:NEWNODE,
+		innovationType:newNodeInnType,
 		InNodeId:node_in_id,
 		OutNodeId:node_out_id,
 		InnovationNum:innovation_num1,
@@ -47,7 +50,7 @@ func NewInnovationForNode(node_in_id, node_out_id int, innovation_num1, innovati
 // Constructor for new link case
 func NewInnovationForLink(node_in_id, node_out_id int, innovation_num int64, weight float64, trait_id int) *Innovation {
 	return &Innovation {
-		InnovationType:NEWLINK,
+		innovationType:newLinkInnType,
 		InNodeId:node_in_id,
 		OutNodeId:node_out_id,
 		InnovationNum:innovation_num,
@@ -60,7 +63,7 @@ func NewInnovationForLink(node_in_id, node_out_id int, innovation_num int64, wei
 func NewInnovationForRecurrentLink(node_in_id, node_out_id int, innovation_num int64, weight float64,
 					trait_id int, recur bool) *Innovation {
 	return &Innovation{
-		InnovationType:NEWLINK,
+		innovationType:newLinkInnType,
 		InNodeId:node_in_id,
 		OutNodeId:node_out_id,
 		InnovationNum:innovation_num,

@@ -279,7 +279,7 @@ func (s *Species) reproduce(generation int, pop *Population, sorted_species []*S
 			if the_champ.SuperChampOffspring > 1 {
 				if rand.Float64() < 0.8 || context.MutateAddLinkProb == 0.0 {
 					// Make sure no links get added when the system has link adding disabled
-					new_genome.mutateLinkWeights(context.WeightMutPower, 1.0, GAUSSIAN)
+					new_genome.mutateLinkWeights(context.WeightMutPower, 1.0, gaussianMutator)
 				} else {
 					// Sometimes we add a link to a superchamp
 					new_genome.genesis(generation)
