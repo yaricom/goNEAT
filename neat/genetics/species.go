@@ -572,13 +572,16 @@ func (f ByOrganismOrigFitness) Less(i, j int) bool {
 	org1 := f[i].Organisms[0]
 	org2 := f[j].Organisms[0]
 	if org1.OriginalFitness < org2.OriginalFitness {
+		// try to promote most fit species
 		return true // Lower fitness is less
 	} else if org1.OriginalFitness == org2.OriginalFitness {
+		// try to promote less complex species
 		c1 := org1.Phenotype.Complexity()
 		c2 := org2.Phenotype.Complexity()
 		if c1 > c2 {
 			return true // Higher complexity is "less"
 		} else if c1 == c2 {
+			// try to promote younger species
 			return f[i].Age > f[j].Age // Higher Age is Less
 		}
 	}
