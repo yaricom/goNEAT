@@ -27,20 +27,19 @@ func main() {
 	// Load context configuration
 	configFile, err := os.Open(*context_path)
 	if err != nil {
-		log.Fatal("Failed to open context configuration file", err)
+		log.Fatal("Failed to open context configuration file: ", err)
 	}
 	context := neat.LoadContext(configFile)
 
 	// Load Genome
-	fmt.Println("Loading start genome for XOR experiment")
+	log.Println("Loading start genome for XOR experiment")
 	genomeFile, err := os.Open(*genome_path)
 	if err != nil {
-		fmt.Println("Failed to open genome file")
-		return
+		log.Fatal("Failed to open genome file: ", err)
 	}
 	start_genome, err := genetics.ReadGenome(genomeFile, 1)
 	if err != nil {
-		log.Fatal("Failed to read start genome", err)
+		log.Fatal("Failed to read start genome: ", err)
 	}
 	fmt.Println(start_genome)
 
@@ -52,13 +51,13 @@ func main() {
 	// create output dir
 	err = os.MkdirAll(*out_dir_path, os.ModePerm)
 	if err != nil {
-		log.Fatal("Failed to create output directory", err)
+		log.Fatal("Failed to create output directory: ", err)
 	}
 
 	// The 100 generation XOR experiment
 	nodes, genes, evals, err := experiments.XOR(context, start_genome, *out_dir_path)
 	if err != nil {
-		log.Fatal("Failed to perform XOR experiment!", err)
+		log.Fatal("Failed to perform XOR experiment: ", err)
 	}
 
 	// Average and print stats
