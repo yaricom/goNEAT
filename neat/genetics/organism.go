@@ -93,5 +93,18 @@ func (f Organisms) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
 func (f Organisms) Less(i, j int) bool {
-	return (*f[i]).Fitness < (*f[j]).Fitness // lower fitness is less
+	if f[i].Fitness < f[j].Fitness {
+		// try to promote most fit organisms
+		return true  // lower fitness is less
+	} else if f[i].Fitness == f[j].Fitness {
+		// try to promote less complex organisms
+		ci := f[i].Phenotype.Complexity()
+		cj := f[j].Phenotype.Complexity()
+		if ci > cj {
+			return true // higher complexity is less
+		} else if ci == cj {
+			return f[i].Genotype.Id < f[j].Genotype.Id // least recent (older) is less
+		}
+	}
+	return false
 }
