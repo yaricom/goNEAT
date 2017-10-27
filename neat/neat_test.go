@@ -20,12 +20,6 @@ func TestLoadContext(t *testing.T) {
 	if nc.TraitMutationPower != 1.0 {
 		t.Error("nc.TraitMutationPower != 1.0")
 	}
-	if nc.LinkTraitMutSig != 1.0 {
-		t.Error("nc.LinkTraitMutSig != 1.0")
-	}
-	if nc.NodeTraitMutSig != 0.5 {
-		t.Error("nc.NodeTraitMutSig != 0.5 ")
-	}
 	if nc.WeightMutPower != 1.8 {
 		t.Error("nc.WeightMutPower != 1.8")
 	}

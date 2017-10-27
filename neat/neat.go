@@ -62,14 +62,10 @@ var (
 
 // The NEAT execution context holding common configuration parameters, etc.
 type NeatContext struct {
-				       // Prob. of mutating a single trait param
+				       // Probability of mutating a single trait param
 	TraitParamMutProb      float64
 				       // Power of mutation on a single trait param
 	TraitMutationPower     float64
-				       // Amount that mutation_num changes for a trait change inside a link
-	LinkTraitMutSig        float64
-				       // Amount a mutation_num changes on a link connecting a node that changed its trait
-	NodeTraitMutSig        float64
 				       // The power of a linkweight mutation
 	WeightMutPower         float64
 
@@ -154,10 +150,6 @@ func LoadContext(r io.Reader) *NeatContext {
 			c.TraitParamMutProb = param
 		case "trait_mutation_power":
 			c.TraitMutationPower = param
-		case "linktrait_mut_sig":
-			c.LinkTraitMutSig = param
-		case "nodetrait_mut_sig":
-			c.NodeTraitMutSig = param
 		case "weight_mut_power":
 			c.WeightMutPower = param
 		case "disjoint_coeff":
