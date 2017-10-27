@@ -5,11 +5,11 @@ import (
 	"fmt"
 )
 
-// Organisms are Genomes and Networks with fitness information,
+// Organisms are Genotypes (Genomes) and Phenotypes (Networks) with fitness information,
 // i.e. the genotype and phenotype together.
 type Organism struct {
 	// A measure of fitness for the Organism
-	Fitness              float64
+	Fitness                   float64
 	// A fitness measure that won't change during adjustments
 	OriginalFitness           float64
 
