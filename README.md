@@ -41,7 +41,7 @@ To run this experiment execute following commands:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-$go run xor_runner.go ./out ./data/xor.neat ./data/xorstartgenes
+go run xor_runner.go -out ./out -context ./data/xor.neat -genome ./data/xorstartgenes
 
 ```
 Where: ./data/xor.neat is the configuration of NEAT execution context and ./data/xorstartgenes is the start genome
@@ -64,7 +64,7 @@ To run this experiment execute following commands:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-$go run xor_runner.go ./out ./data/xor.neat ./data/xordisconnectedstartgenes
+go run xor_runner.go -out ./out -context ./data/xor.neat -genome ./data/xordisconnectedstartgenes
 
 ```
 
