@@ -1,4 +1,4 @@
-package experiments
+package xor
 
 import (
 	"testing"
@@ -8,6 +8,7 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 	"github.com/yaricom/goNEAT/neat/genetics"
 	"math/rand"
+	"github.com/yaricom/goNEAT/experiments"
 )
 
 // The integration test running over multiple iterations in order to detect if any random errors occur.
@@ -15,7 +16,7 @@ func TestXOR(t *testing.T) {
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 
-	out_dir_path, context_path, genome_path := "../out", "../data/xor.neat", "../data/xorstartgenes"
+	out_dir_path, context_path, genome_path := "../../out", "../../data/xor.neat", "../../data/xorstartgenes"
 
 	// Load context configuration
 	configFile, err := os.Open(context_path)
@@ -53,7 +54,11 @@ func TestXOR(t *testing.T) {
 
 	// The 100 runs XOR experiment
 	context.NumRuns = 100
-	nodes, genes, evals, err := XOR(context, start_genome, out_dir_path)
+	experiment := experiments.Experiment {
+		Id:0,
+		Trials:make(experiments.Trials, context.NumRuns),
+	}
+	nodes, genes, evals, err := XOR(context, start_genome, out_dir_path, &experiment)
 	if err != nil {
 		t.Error("Failed to perform XOR experiment:", err)
 		return

@@ -1,4 +1,9 @@
-package experiments
+// The XOR experiment serves to actually check that network topology actually evolves and everything works as expected.
+// Because XOR is not linearly separable, a neural network requires hidden units to solve it. The two inputs must be
+// combined at some hidden unit, as opposed to only at the out- put node, because there is no function over a linear
+// combination of the inputs that can separate the inputs into the proper classes. These structural requirements make
+// XOR suitable for testing NEAT’s ability to evolve structure.
+package xor
 
 import (
 	"github.com/yaricom/goNEAT/neat"
@@ -6,6 +11,8 @@ import (
 	"fmt"
 	"github.com/yaricom/goNEAT/neat/genetics"
 	"math"
+	"github.com/yaricom/goNEAT/experiments"
+	"time"
 )
 
 // The precision to use for XOR evaluation, i.e. one is x > 1 - precision and zero is x < precision
@@ -20,12 +27,16 @@ const precision = 0.5
 //
 // This method performs evolution on XOR for specified number of generations and output results into outDirPath
 // It also returns number of nodes, genes, and evaluations performed per each run (context.NumRuns)
-func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path string) (nodes, genes, evals []int, err error) {
+func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path string, experiment *experiments.Experiment) (nodes, genes, evals []int, err error) {
 
 	// Holders of records for each run
 	evals = make([]int, context.NumRuns)
 	genes = make([]int, context.NumRuns)
 	nodes = make([]int, context.NumRuns)
+
+	if experiment.Trials == nil {
+		experiment.Trials = make(experiments.Trials, context.NumRuns)
+	}
 
 	var pop *genetics.Population
 	for run := 0; run < context.NumRuns; run++ {
@@ -46,34 +57,43 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 			neat.InfoLog("OK <<<<<")
 		}
 
-		var success bool
+		// start new trial
+		trial := experiments.Trial{
+			Id:run,
+			Epochs:make(experiments.Epochs, context.NumGenerations),
+		}
+
 		var winner_num, winner_genes, winner_nodes int
 		for gen := 1; gen <= context.NumGenerations; gen ++ {
 			neat.InfoLog(fmt.Sprintf(">>>>> Epoch: %d\tRun: %d\n", gen, run))
-			success, winner_num, winner_genes, winner_nodes, err = xor_epoch(pop, gen, out_dir_path, context)
+			epoch := experiments.Epoch {
+				Id:gen - 1,
+			}
+			winner_num, winner_genes, winner_nodes, err = xor_epoch(pop, gen, out_dir_path, &epoch, context)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Epoch %d evaluation failed !!!!!\n", gen))
 				return nodes, genes, evals, err
 			}
-			if success {
+			epoch.Executed = time.Now()
+			trial.Epochs[gen - 1] = epoch
+			if epoch.Solved {
 				// Collect Stats on end of experiment
-				evals[run] = context.PopSize * (gen - 1) + winner_num
+				epoch.WinnerEvals = context.PopSize * (gen - 1) + winner_num
 				genes[run] = winner_genes
 				nodes[run] = winner_nodes
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in epoch %d! <<<<<\n", gen))
 				break
 			}
 		}
-
+		// store trial into experiment
+		experiment.Trials[run] = trial
 	}
 
 	return nodes, genes, evals, nil
 }
 
 // This method evaluates one epoch for given population and prints results into specified directory if any.
-func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, context *neat.NeatContext) (success bool, winner_num, winner_genes, winner_nodes int, err error) {
-	// The flag to indicate that we have winner organism
-	success = false
+func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, epoch *experiments.Epoch, context *neat.NeatContext) (winner_num, winner_genes, winner_nodes int, err error) {
 	// The best organism and it's fintess
 	//var best_organism genetics.Organism
 	//max_fitness := 0.0
@@ -81,7 +101,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 	for _, org := range pop.Organisms {
 		res, err := xor_evaluate(org, context)
 		if err != nil {
-			return false, -1, -1, -1, err
+			return  -1, -1, -1, err
 		}
 		//if org.Fitness > max_fitness {
 		//	// store for epoch statistics
@@ -90,7 +110,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 		//}
 
 		if res {
-			success = true
+			epoch.Solved = true
 			winner_num = org.Genotype.Id
 			winner_genes = org.Genotype.Extrons()
 			winner_nodes = len(org.Genotype.Nodes)
@@ -117,7 +137,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 	}
 
 	// Only print to file every print_every generations
-	if success || generation % context.PrintEvery == 0 {
+	if epoch.Solved || generation % context.PrintEvery == 0 {
 		pop_path := fmt.Sprintf("%s/gen_%d", out_dir_path, generation)
 		file, err := os.Create(pop_path)
 		if err != nil {
@@ -127,7 +147,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 		}
 	}
 
-	if success {
+	if epoch.Solved {
 		// print winner organism
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
@@ -149,7 +169,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, co
 		_, err = pop.Epoch(generation, context)
 	}
 
-	return success, winner_num, winner_genes, winner_nodes, err
+	return winner_num, winner_genes, winner_nodes, err
 }
 
 // This methods evalueates provided organism
