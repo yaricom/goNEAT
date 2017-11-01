@@ -53,53 +53,48 @@ func TestXOR(t *testing.T) {
 	}
 
 	// The 100 runs XOR experiment
-	context.NumRuns = 100
+	context.NumRuns = 1//100
 	experiment := experiments.Experiment {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
 	}
-	nodes, genes, evals, err := XOR(context, start_genome, out_dir_path, &experiment)
+	err = XOR(context, start_genome, out_dir_path, &experiment)
 	if err != nil {
 		t.Error("Failed to perform XOR experiment:", err)
 		return
 	}
 
 	// Find statistics
-	total_nodes := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		total_nodes += nodes[exp_count]
-	}
-
-	total_genes := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		total_genes += genes[exp_count]
-	}
-
-	total_evals := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		total_evals += evals[exp_count]
-	}
+	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
 
 	// check results
-	avg_nodes := float64(total_nodes) / float64(context.NumRuns)
 	if avg_nodes < 5 {
 		t.Error("avg_nodes < 5", avg_nodes)
 	} else if avg_nodes > 15 {
 		t.Error("avg_nodes > 15", avg_nodes)
 	}
 
-	avg_genes := float64(total_genes) / float64(context.NumRuns)
 	if avg_genes < 7 {
 		t.Error("avg_genes < 7", avg_genes)
 	} else if avg_genes > 20 {
 		t.Error("avg_genes > 20", avg_genes)
 	}
 
-	avg_evals := total_evals / context.NumRuns
-	max_evals := context.NumRuns * context.NumGenerations
+	max_evals := float64(context.PopSize * context.NumGenerations)
 	if avg_evals > max_evals {
 		t.Error("avg_evals > max_evals", avg_evals, max_evals)
 	}
 
-	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %d", avg_nodes, avg_genes, avg_evals)
+	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
+	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
+	for _, t := range experiment.Trials {
+		mean_complexity += t.Complexity().Mean()
+		mean_diversity += t.Diversity().Mean()
+		mean_age += t.Age().Mean()
+	}
+	count := float64(len(experiment.Trials))
+	mean_complexity /= count
+	mean_diversity /= count
+	mean_age /= count
+	t.Logf("mean: complexity=%.1f, diversity=%.1f, age=%.1f", mean_complexity, mean_diversity, mean_age)
 }

@@ -27,12 +27,7 @@ const precision = 0.5
 //
 // This method performs evolution on XOR for specified number of generations and output results into outDirPath
 // It also returns number of nodes, genes, and evaluations performed per each run (context.NumRuns)
-func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path string, experiment *experiments.Experiment) (nodes, genes, evals []int, err error) {
-
-	// Holders of records for each run
-	evals = make([]int, context.NumRuns)
-	genes = make([]int, context.NumRuns)
-	nodes = make([]int, context.NumRuns)
+func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path string, experiment *experiments.Experiment) (err error) {
 
 	if experiment.Trials == nil {
 		experiment.Trials = make(experiments.Trials, context.NumRuns)
@@ -44,7 +39,7 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 		pop, err = genetics.NewPopulation(start_genome, context)
 		if err != nil {
 			neat.InfoLog("Failed to spawn new population from start genome")
-			return nodes, genes, evals, err
+			return err
 		} else {
 			neat.InfoLog("OK <<<<<")
 		}
@@ -52,7 +47,7 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 		_, err = pop.Verify()
 		if err != nil {
 			neat.ErrorLog("\n!!!!! Population verification failed !!!!!")
-			return nodes, genes, evals, err
+			return err
 		} else {
 			neat.InfoLog("OK <<<<<")
 		}
@@ -60,27 +55,21 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 		// start new trial
 		trial := experiments.Trial{
 			Id:run,
-			Epochs:make(experiments.Epochs, context.NumGenerations),
 		}
 
-		var winner_num, winner_genes, winner_nodes int
-		for gen := 1; gen <= context.NumGenerations; gen ++ {
+		for gen := 0; gen < context.NumGenerations; gen++ {
 			neat.InfoLog(fmt.Sprintf(">>>>> Epoch: %d\tRun: %d\n", gen, run))
 			epoch := experiments.Epoch {
-				Id:gen - 1,
+				Id:gen,
 			}
-			winner_num, winner_genes, winner_nodes, err = xor_epoch(pop, gen, out_dir_path, &epoch, context)
+			err = xor_epoch(pop, gen, out_dir_path, &epoch, context)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Epoch %d evaluation failed !!!!!\n", gen))
-				return nodes, genes, evals, err
+				return err
 			}
 			epoch.Executed = time.Now()
-			trial.Epochs[gen - 1] = epoch
+			trial.Epochs = append(trial.Epochs, epoch)
 			if epoch.Solved {
-				// Collect Stats on end of experiment
-				epoch.WinnerEvals = context.PopSize * (gen - 1) + winner_num
-				genes[run] = winner_genes
-				nodes[run] = winner_nodes
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in epoch %d! <<<<<\n", gen))
 				break
 			}
@@ -89,32 +78,25 @@ func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path 
 		experiment.Trials[run] = trial
 	}
 
-	return nodes, genes, evals, nil
+	return nil
 }
 
 // This method evaluates one epoch for given population and prints results into specified directory if any.
-func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, epoch *experiments.Epoch, context *neat.NeatContext) (winner_num, winner_genes, winner_nodes int, err error) {
-	// The best organism and it's fintess
-	//var best_organism genetics.Organism
-	//max_fitness := 0.0
+func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
 		res, err := xor_evaluate(org, context)
 		if err != nil {
-			return  -1, -1, -1, err
+			return  err
 		}
-		//if org.Fitness > max_fitness {
-		//	// store for epoch statistics
-		//	max_fitness = org.Fitness
-		//	best_organism = org
-		//}
 
 		if res {
 			epoch.Solved = true
-			winner_num = org.Genotype.Id
-			winner_genes = org.Genotype.Extrons()
-			winner_nodes = len(org.Genotype.Nodes)
-			if (winner_nodes == 5) {
+			epoch.WinnerNodes = len(org.Genotype.Nodes)
+			epoch.WinnerGenes = org.Genotype.Extrons()
+			epoch.WinnerEvals = context.PopSize * epoch.Id + org.Genotype.Id
+			epoch.Best = org
+			if (epoch.WinnerNodes == 5) {
 				// You could dump out optimal genomes here if desired
 				opt_path := fmt.Sprintf("%s/%s", out_dir_path, "xor_optimal")
 				file, err := os.Create(opt_path)
@@ -128,12 +110,23 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, ep
 			break // we have winner
 		}
 	}
-	// Average and max their fitnesses for dumping to file and snapshot
-	for _, curr_species := range pop.Species {
-		// This experiment control routine issues commands to collect ave and max fitness, as opposed to having
-		// the snapshot do it, because this allows flexibility in terms of what time to observe fitnesses at
-		curr_species.ComputeAvgFitness()
-		curr_species.ComputeMaxFitness()
+
+	// Fill statistics about current epoch
+	max_fitness := 0.0
+	epoch.Diversity = len(pop.Species)
+	epoch.Age = make(experiments.Floats, epoch.Diversity)
+	epoch.Compexity = make(experiments.Floats, epoch.Diversity)
+	epoch.Fitness = make(experiments.Floats, epoch.Diversity)
+	for i, curr_species := range pop.Species {
+		epoch.Age[i] = float64(curr_species.Age)
+		epoch.Compexity[i] = float64(curr_species.Organisms[0].Phenotype.Complexity())
+		epoch.Fitness[i] = curr_species.Organisms[0].Fitness
+
+		// find best organism in epoch if not solved
+		if !epoch.Solved && curr_species.Organisms[0].Fitness > max_fitness {
+			max_fitness = curr_species.Organisms[0].Fitness
+			epoch.Best = curr_species.Organisms[0]
+		}
 	}
 
 	// Only print to file every print_every generations
@@ -166,10 +159,10 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, ep
 	} else {
 		// Move to the next epoch if failed to find winner
 		neat.DebugLog(">>>>> start next generation")
-		_, err = pop.Epoch(generation, context)
+		_, err = pop.Epoch(generation + 1, context)
 	}
 
-	return winner_num, winner_genes, winner_nodes, err
+	return err
 }
 
 // This methods evalueates provided organism
