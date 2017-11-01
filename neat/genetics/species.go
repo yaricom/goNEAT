@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"errors"
 	"math/rand"
-	//"github.com/yaricom/goNEAT/neat/network"
 	"io"
 )
 
@@ -18,10 +17,6 @@ type Species struct {
 	Id                   int;
 	// The age of the Species
 	Age                  int
-	// The average fitness of the Species
-	AvgFitness           float64
-	// The maximal fitness of the Species
-	MaxFitness           float64
 	// The maximal fitness it ever had
 	MaxFitnessEver       float64
 	// How many child expected
@@ -61,9 +56,10 @@ func newSpecies(id int) *Species {
 
 // Writes species to the specified writer
 func (s *Species) Write(w io.Writer) {
+	_, avg := s.ComputeMaxAndAvgFitness()
 	// Print a comment on the Species info
 	fmt.Fprintf(w, "/* Species #%d : (Size %d) (AF %.3f) (Age %d)  */\n",
-		s.Id, len(s.Organisms), s.AvgFitness, s.Age)
+		s.Id, len(s.Organisms), avg, s.Age)
 
 	// Sort organisms - best fitness first
 	sorted_organisms := make(Organisms, len(s.Organisms))
@@ -157,26 +153,19 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 	}
 }
 
-// Computes average species fitness
-func (s *Species) ComputeAvgFitness() float64 {
+// Computes maximal and average fitness of species
+func (s *Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 	total := 0.0
 	for _, o := range s.Organisms {
 		total += o.Fitness
-	}
-	s.AvgFitness = total / float64(len(s.Organisms))
-	return s.AvgFitness
-}
-
-// Computes maximal fitness of species
-func (s *Species) ComputeMaxFitness() float64 {
-	max := 0.0
-	for _, o := range s.Organisms {
 		if o.Fitness > max {
 			max = o.Fitness
 		}
 	}
-	s.MaxFitness = max
-	return s.MaxFitness
+	if len(s.Organisms) > 0 {
+		avg = total / float64(len(s.Organisms))
+	}
+	return max, avg
 }
 
 // Returns first organism or nil
@@ -228,15 +217,8 @@ func (s *Species) size() int {
 
 // Returns Organism - champion among others (best fitness)
 func (s *Species) findChampion() *Organism {
-	best_fitness := 0.0
-	var champion *Organism
-	for _, o := range s.Organisms {
-		if o.Fitness > best_fitness {
-			best_fitness = o.Fitness
-			champion = o
-		}
-	}
-	return champion
+	sort.Sort(sort.Reverse(s.Organisms))
+	return s.Organisms[0]
 }
 
 // Perform mating and mutation to form next generation. The sorted_species is ordered to have best species in the beginning.
@@ -549,8 +531,9 @@ func createFirstSpecies(pop *Population, baby *Organism) {
 }
 
 func (s *Species) String() string {
+	max, avg := s.ComputeMaxAndAvgFitness()
 	str := fmt.Sprintf("Species #%d, age=%d, avg_fitness=%.3f, max_fitness=%.3f, max_fitness_ever=%.3f, expected_offspring=%d, age_of_last_improvement=%d\n",
-		s.Id, s.Age, s.AvgFitness, s.MaxFitness, s.MaxFitnessEver, s.ExpectedOffspring, s.AgeOfLastImprovement)
+		s.Id, s.Age, avg, max, s.MaxFitnessEver, s.ExpectedOffspring, s.AgeOfLastImprovement)
 	str += fmt.Sprintf("Has %d Organisms:\n", len(s.Organisms))
 	for _, o := range s.Organisms {
 		str += fmt.Sprintf("\t%s\n", o)

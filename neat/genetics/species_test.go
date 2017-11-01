@@ -86,28 +86,20 @@ func TestSpecies_countOffspring(t *testing.T) {
 	}
 }
 
-// Tests Species computeAvgFitness
-func TestSpecies_computeAvgFitness(t *testing.T) {
+func TestSpecies_computeMaxFitness(t *testing.T) {
 	sp := buildSpeciesWithOrganisms(1)
-
 	avg_check := 0.0
 	for _, o := range sp.Organisms{
 		avg_check += o.Fitness
 	}
 	avg_check /= float64(len(sp.Organisms))
 
-	sp.ComputeAvgFitness()
-	if sp.AvgFitness != avg_check {
-		t.Error("sp.AvgFitness != avg_check", sp.AvgFitness, avg_check)
+	max, avg := sp.ComputeMaxAndAvgFitness()
+	if max != 15.0 {
+		t.Error("sp.MaxFitness != 15.0", 15.0, max)
 	}
-}
-
-func TestSpecies_computeMaxFitness(t *testing.T) {
-	sp := buildSpeciesWithOrganisms(1)
-
-	sp.ComputeMaxFitness()
-	if sp.MaxFitness != 15.0 {
-		t.Error("sp.MaxFitness != 15.0", 15.0, sp.MaxFitness)
+	if avg != avg_check {
+		t.Error("sp.AvgFitness != avg_check", avg, avg_check)
 	}
 }
 
