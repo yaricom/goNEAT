@@ -27,7 +27,7 @@ func (t Trial) LastExecuted() time.Time {
 func (t Trial) Best() *genetics.Organism {
 	var orgs = make(genetics.Organisms, 0, len(t.Epochs))
 	for _, e := range t.Epochs {
-		orgs = append(orgs, &e.Best)
+		orgs = append(orgs, e.Best)
 	}
 	sort.Sort(sort.Reverse(orgs))
 	return orgs[0]
@@ -79,28 +79,17 @@ func (t Trial) Diversity() Floats {
 	return x
 }
 
-// Returns average number of nodes in winner genomes among all epochs
-func (t Trial) WinnerNodes() float64 {
-	if len(t.Epochs) == 0 {
-		return 0
-	}
-	total_nodes := 0
+// Returns number of nodes, genes and organism evaluations in the winner genome
+func (t Trial) WinnerNGE() (nodes, genes, evals int) {
 	for _, e := range t.Epochs {
-		total_nodes += e.WinnerNodes
+		if e.Solved {
+			nodes = e.WinnerNodes
+			genes = e.WinnerGenes
+			evals = e.WinnerEvals
+			break
+		}
 	}
-	return float64(total_nodes) / float64(len(t.Epochs))
-}
-
-// Returns average number of genes in winner genomes among all epochs
-func (t Trial) WinnerGenes() float64 {
-	if len(t.Epochs) == 0 {
-		return 0
-	}
-	total_genes := 0
-	for _, e := range t.Epochs {
-		total_genes += e.WinnerGenes
-	}
-	return float64(total_genes) / float64(len(t.Epochs))
+	return nodes, genes, evals
 }
 
 // Trials is a sortable collection of experiment runs (trials) by execution time and id

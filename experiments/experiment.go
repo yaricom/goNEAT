@@ -88,6 +88,22 @@ func (e Experiment) Epochs() Floats {
 	return x
 }
 
+// Returns average number of nodes, genes and organisms evaluations of winner genomes among all trials
+func (e Experiment) AvgWinnerNGE() (avg_nodes, avg_genes, avg_evals float64) {
+	total_nodes, total_genes, total_evals := 0, 0, 0
+	for _, t := range e.Trials {
+		nodes, genes, evals := t.WinnerNGE()
+		total_nodes += nodes
+		total_genes += genes
+		total_evals += evals
+	}
+	count := float64(len(e.Trials))
+	avg_nodes = float64(total_nodes) / count
+	avg_genes = float64(total_genes) / count
+	avg_evals = float64(total_evals) / count
+	return avg_nodes, avg_genes, avg_evals
+}
+
 // Experiments is a sortable list of experiments by execution time and Id
 type Experiments []Experiment
 
