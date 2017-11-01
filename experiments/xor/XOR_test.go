@@ -53,7 +53,7 @@ func TestXOR(t *testing.T) {
 	}
 
 	// The 100 runs XOR experiment
-	context.NumRuns = 1//100
+	context.NumRuns = 100
 	experiment := experiments.Experiment {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
@@ -64,7 +64,7 @@ func TestXOR(t *testing.T) {
 		return
 	}
 
-	// Find statistics
+	// Find winner statistics
 	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
 
 	// check results
