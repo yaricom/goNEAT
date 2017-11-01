@@ -12,7 +12,7 @@ type Epoch struct {
 	// The time when epoch was evaluated
 	Executed    time.Time
 	// The best organism of best species
-	Best        genetics.Organism
+	Best        *genetics.Organism
 	// The flag to indicate whether experiment was solved in this epoch
 	Solved      bool
 	// The list of organisms fitness values per species in population
