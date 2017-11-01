@@ -10,6 +10,7 @@ import (
 	"github.com/yaricom/goNEAT/neat/genetics"
 	"log"
 	"flag"
+	"github.com/yaricom/goNEAT/experiments/xor"
 )
 
 // The XOR experiment runner
@@ -55,35 +56,32 @@ func main() {
 	}
 
 	// The 100 generation XOR experiment
-	nodes, genes, evals, err := experiments.XOR(context, start_genome, *out_dir_path)
+	experiment := experiments.Experiment {
+		Id:0,
+		Trials:make(experiments.Trials, context.NumRuns),
+	}
+	err = xor.XOR(context, start_genome, *out_dir_path, &experiment)
 	if err != nil {
 		log.Fatal("Failed to perform XOR experiment: ", err)
 	}
 
-	// Average and print stats
-	fmt.Print("\nNodes: ")
-	total_nodes := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Printf("\t%d", nodes[exp_count])
-		total_nodes += nodes[exp_count]
-	}
+	// Find winner statistics
+	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
 
-	fmt.Print("\nGenes: ")
-	total_genes := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Printf("\t%d", genes[exp_count])
-		total_genes += genes[exp_count]
-	}
 
-	fmt.Print("\nEvals: ")
-	total_evals := 0
-	for exp_count := 0; exp_count < context.NumRuns; exp_count++ {
-		fmt.Printf("\t%d", evals[exp_count])
-		total_evals += evals[exp_count]
+	fmt.Printf("\nAverage\n\tWinner Nodes:\t%.1f\n\tWinner Genes:\t%.1f\n\tWinner Evals:\t%.1f\n",
+		avg_nodes, avg_genes, avg_evals)
+	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
+	for _, t := range experiment.Trials {
+		mean_complexity += t.Complexity().Mean()
+		mean_diversity += t.Diversity().Mean()
+		mean_age += t.Age().Mean()
 	}
-
-	fmt.Printf("\n>>>>>\nAverage Nodes:\t%d\nAverage Genes:\t%d\nAverage Evals:\t%d\n",
-		total_nodes / context.NumRuns, total_genes / context.NumRuns, total_evals / context.NumRuns)
+	count := float64(len(experiment.Trials))
+	mean_complexity /= count
+	mean_diversity /= count
+	mean_age /= count
+	fmt.Printf("Mean\n\tComplexity:\t%.1f\n\tDiversity:\t%.1f\n\tAge:\t\t%.1f\n", mean_complexity, mean_diversity, mean_age)
 
 	fmt.Printf(">>> Start genome file:  %s\n", *genome_path)
 	fmt.Printf(">>> Configuration file: %s\n", *context_path)
