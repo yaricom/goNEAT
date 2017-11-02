@@ -56,6 +56,26 @@ to solve XOR problem which is proof that it works as expected.
 
 The XOR experiment for start genes with inputs connected will not fail almost always (at least 100 simulations)
 
+The experiment results will be similar to the following:
+
+```
+Average
+	Winner Nodes:	5.0
+	Winner Genes:	6.0
+	Winner Evals:	7753.0
+Mean
+	Complexity:	10.6
+	Diversity:	19.8
+	Age:		34.6
+```
+
+Where 'winner nodes/genes' is number of units and links between in produced Neural Network which was able to solve XOR problem, 
+and evals is the number of evaluations of intermediate organisms/genomes before winner was found.
+
+Mean Complexity is an average compexity (number of nodes + number of links) of best organisms per epoch for all epochs.
+Mean Diversity is an average diversity (number of species) per epoch for all epochs
+Mean Age is an average age of surviving species per epoch for all epochs
+
 #### >>> The XOR experiment with disconnected inputs in start genome
 This experiment will use start genome with disconnected inputs in order to check ability of algorithm to not only grow
 need hidden nodes, but also to build missed connections between input nodes and rest of the network.
@@ -72,6 +92,20 @@ The results of experiment execution will be saved into the ./out directory as in
 
 The experiment will fail sometimes to produce XOR solution over 100 epochs, but most of times solution will be found. This
 confirms that algorithm is able not only grow needed hidden units, but also to restore input connections as needed.
+
+The example output of the command as following:
+```
+
+Average
+	Winner Nodes:	7.0
+	Winner Genes:	14.0
+	Winner Evals:	6967.0
+Mean
+	Complexity:	9.2
+	Diversity:	11.4
+	Age:		29.8
+
+```
 
 
 
