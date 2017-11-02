@@ -619,7 +619,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 
 		// iterate over all genes and count number of output connections from given sensor
 		for _, gene := range g.Genes {
-			if gene.Link.InNode == sensor {
+			if gene.Link.InNode.Id == sensor.Id {
 				connected = true
 				break
 			}
@@ -1230,7 +1230,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 			new_onode := network.NewNNodeCopy(curr_node, new_traits[node_trait_num])
 
 			// Add the new node
-			nodeInsert(new_nodes, new_onode)
+			new_nodes = nodeInsert(new_nodes, new_onode)
 		}
 	}
 
@@ -1406,7 +1406,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 			new_onode := network.NewNNodeCopy(curr_node, new_traits[node_trait_num])
 
 			// Add the new node
-			nodeInsert(new_nodes, new_onode)
+			new_nodes = nodeInsert(new_nodes, new_onode)
 		}
 	}
 
@@ -1605,7 +1605,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 			new_onode := network.NewNNodeCopy(curr_node, new_traits[node_trait_num])
 
 			// Add the new node
-			nodeInsert(new_nodes, new_onode)
+			new_nodes = nodeInsert(new_nodes, new_onode)
 		}
 	}
 
