@@ -69,12 +69,11 @@ Mean
 	Age:		34.6
 ```
 
-Where 'winner nodes/genes' is number of units and links between in produced Neural Network which was able to solve XOR problem, 
-and evals is the number of evaluations of intermediate organisms/genomes before winner was found.
-
-Mean Complexity is an average compexity (number of nodes + number of links) of best organisms per epoch for all epochs.
-Mean Diversity is an average diversity (number of species) per epoch for all epochs
-Mean Age is an average age of surviving species per epoch for all epochs
+Where:
+- **winner nodes/genes** is number of units and links between in produced Neural Network which was able to solve XOR problem, - **winner evals** is the number of evaluations of intermediate organisms/genomes before winner was found.
+- **Mean Complexity** is an average compexity (number of nodes + number of links) of best organisms per epoch for all epochs.
+- **Mean Diversity** is an average diversity (number of species) per epoch for all epochs
+- **Mean Age** is an average age of surviving species per epoch for all epochs
 
 #### >>> The XOR experiment with disconnected inputs in start genome
 This experiment will use start genome with disconnected inputs in order to check ability of algorithm to not only grow
