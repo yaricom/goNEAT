@@ -107,6 +107,8 @@ Mean
 
 ```
 
+## Authors
 
+This source code maintained and managed by Iaroslav Omelianenko
 
 [1]:http://www.cs.ucf.edu/~kstanley/neat.html
