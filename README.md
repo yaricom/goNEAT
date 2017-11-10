@@ -110,6 +110,7 @@ Mean
 ## Credits
 
 The original C++ NEAT implementation created by Kenneth Stanley, see: [NEAT][1]
+
 This source code maintained and managed by Iaroslav Omelianenko
 
 Other NEAT implementations may be found at [NEAT Software Catalog][2]
