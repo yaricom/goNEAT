@@ -62,22 +62,7 @@ func (ex XOREpochExecutor) EpochEvaluate(pop *genetics.Population, epoch *experi
 	}
 
 	// Fill statistics about current epoch
-	max_fitness := 0.0
-	epoch.Diversity = len(pop.Species)
-	epoch.Age = make(experiments.Floats, epoch.Diversity)
-	epoch.Compexity = make(experiments.Floats, epoch.Diversity)
-	epoch.Fitness = make(experiments.Floats, epoch.Diversity)
-	for i, curr_species := range pop.Species {
-		epoch.Age[i] = float64(curr_species.Age)
-		epoch.Compexity[i] = float64(curr_species.Organisms[0].Phenotype.Complexity())
-		epoch.Fitness[i] = curr_species.Organisms[0].Fitness
-
-		// find best organism in epoch if not solved
-		if !epoch.Solved && curr_species.Organisms[0].Fitness > max_fitness {
-			max_fitness = curr_species.Organisms[0].Fitness
-			epoch.Best = curr_species.Organisms[0]
-		}
-	}
+	epoch.FillPopulationStatistics(pop)
 
 	// Only print to file every print_every generations
 	if epoch.Solved || epoch.Id % context.PrintEvery == 0 {
