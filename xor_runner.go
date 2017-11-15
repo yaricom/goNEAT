@@ -60,7 +60,7 @@ func main() {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
 	}
-	err = xor.XOR(context, start_genome, *out_dir_path, &experiment)
+	err = experiment.Execute(context, start_genome, xor.XOREpochExecutor{OutputPath:*out_dir_path})
 	if err != nil {
 		log.Fatal("Failed to perform XOR experiment: ", err)
 	}

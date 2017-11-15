@@ -12,7 +12,6 @@ import (
 	"github.com/yaricom/goNEAT/neat/genetics"
 	"math"
 	"github.com/yaricom/goNEAT/experiments"
-	"time"
 )
 
 // The precision to use for XOR evaluation, i.e. one is x > 1 - precision and zero is x < precision
@@ -27,67 +26,18 @@ const precision = 0.5
 //
 // This method performs evolution on XOR for specified number of generations and output results into outDirPath
 // It also returns number of nodes, genes, and evaluations performed per each run (context.NumRuns)
-func XOR(context *neat.NeatContext, start_genome *genetics.Genome, out_dir_path string, experiment *experiments.Experiment) (err error) {
-
-	if experiment.Trials == nil {
-		experiment.Trials = make(experiments.Trials, context.NumRuns)
-	}
-
-	var pop *genetics.Population
-	for run := 0; run < context.NumRuns; run++ {
-		neat.InfoLog("\n>>>>> Spawning new population ")
-		pop, err = genetics.NewPopulation(start_genome, context)
-		if err != nil {
-			neat.InfoLog("Failed to spawn new population from start genome")
-			return err
-		} else {
-			neat.InfoLog("OK <<<<<")
-		}
-		neat.InfoLog(">>>>> Verifying spawned population ")
-		_, err = pop.Verify()
-		if err != nil {
-			neat.ErrorLog("\n!!!!! Population verification failed !!!!!")
-			return err
-		} else {
-			neat.InfoLog("OK <<<<<")
-		}
-
-		// start new trial
-		trial := experiments.Trial{
-			Id:run,
-		}
-
-		for gen := 0; gen < context.NumGenerations; gen++ {
-			neat.InfoLog(fmt.Sprintf(">>>>> Epoch: %d\tRun: %d\n", gen, run))
-			epoch := experiments.Epoch {
-				Id:gen,
-			}
-			err = xor_epoch(pop, gen, out_dir_path, &epoch, context)
-			if err != nil {
-				neat.InfoLog(fmt.Sprintf("!!!!! Epoch %d evaluation failed !!!!!\n", gen))
-				return err
-			}
-			epoch.Executed = time.Now()
-			trial.Epochs = append(trial.Epochs, epoch)
-			if epoch.Solved {
-				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in epoch %d! <<<<<\n", gen))
-				break
-			}
-		}
-		// store trial into experiment
-		experiment.Trials[run] = trial
-	}
-
-	return nil
+type XOREpochExecutor struct {
+	// The output path to store execution results
+	OutputPath string
 }
 
-// This method evaluates one epoch for given population and prints results into specified directory if any.
-func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
+// This method evaluates one epoch for given population and prints results into output directory if any.
+func (ex XOREpochExecutor) EpochEvaluate(pop *genetics.Population, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
-		res, err := xor_evaluate(org, context)
+		res, err := ex.org_evaluate(org, context)
 		if err != nil {
-			return  err
+			return err
 		}
 
 		if res {
@@ -98,7 +48,7 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, ep
 			epoch.Best = org
 			if (epoch.WinnerNodes == 5) {
 				// You could dump out optimal genomes here if desired
-				opt_path := fmt.Sprintf("%s/%s", out_dir_path, "xor_optimal")
+				opt_path := fmt.Sprintf("%s/%s", ex.OutputPath, "xor_optimal")
 				file, err := os.Create(opt_path)
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump optimal genome, reason: %s\n", err))
@@ -130,8 +80,8 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, ep
 	}
 
 	// Only print to file every print_every generations
-	if epoch.Solved || generation % context.PrintEvery == 0 {
-		pop_path := fmt.Sprintf("%s/gen_%d", out_dir_path, generation)
+	if epoch.Solved || epoch.Id % context.PrintEvery == 0 {
+		pop_path := fmt.Sprintf("%s/gen_%d", ex.OutputPath, epoch.Id)
 		file, err := os.Create(pop_path)
 		if err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump population, reason: %s\n", err))
@@ -145,13 +95,13 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, ep
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				org_path := fmt.Sprintf("%s/%s", out_dir_path, "xor_winner")
+				org_path := fmt.Sprintf("%s/%s", ex.OutputPath, "xor_winner")
 				file, err := os.Create(org_path)
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
 				} else {
 					org.Genotype.Write(file)
-					neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", generation, org_path))
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", epoch.Id, org_path))
 				}
 				break
 			}
@@ -159,14 +109,14 @@ func xor_epoch(pop *genetics.Population, generation int, out_dir_path string, ep
 	} else {
 		// Move to the next epoch if failed to find winner
 		neat.DebugLog(">>>>> start next generation")
-		_, err = pop.Epoch(generation + 1, context)
+		_, err = pop.Epoch(epoch.Id + 1, context)
 	}
 
 	return err
 }
 
-// This methods evalueates provided organism
-func xor_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool, error) {
+// This methods evaluates provided organism
+func (ex *XOREpochExecutor) org_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool, error) {
 	// The four possible input combinations to xor
 	// The first number is for biasing
 	in := [][]float64{
