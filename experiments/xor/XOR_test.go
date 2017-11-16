@@ -58,7 +58,7 @@ func TestXOR(t *testing.T) {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
 	}
-	err = XOR(context, start_genome, out_dir_path, &experiment)
+	err = experiment.Execute(context, start_genome, XOREpochEvaluator{OutputPath:out_dir_path})
 	if err != nil {
 		t.Error("Failed to perform XOR experiment:", err)
 		return
@@ -147,7 +147,7 @@ func TestXOR_disconnected(t *testing.T) {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
 	}
-	err = XOR(context, start_genome, out_dir_path, &experiment)
+	err = experiment.Execute(context, start_genome, XOREpochEvaluator{OutputPath:out_dir_path})
 	if err != nil {
 		t.Error("Failed to perform XOR experiment:", err)
 		return
