@@ -4,20 +4,24 @@ import (
 	"os"
 	"time"
 	"fmt"
+	"log"
+	"flag"
 	"math/rand"
 	"github.com/yaricom/goNEAT/experiments"
 	"github.com/yaricom/goNEAT/neat"
 	"github.com/yaricom/goNEAT/neat/genetics"
-	"log"
-	"flag"
 	"github.com/yaricom/goNEAT/experiments/xor"
+	"github.com/yaricom/goNEAT/experiments/pole"
 )
 
-// The XOR experiment runner
+// The experiment runner boilerplate code
 func main() {
-	var out_dir_path = flag.String("out", "./out", "The output directory to store results")
-	var context_path = flag.String("context", "./data/xor.neat", "The execution context configuration file")
-	var genome_path = flag.String("genome", "./data/xorstartgenes", "The seed genome to start with")
+	var out_dir_path = flag.String("out", "./out", "The output directory to store results.")
+	var context_path = flag.String("context", "./data/xor.neat", "The execution context configuration file.")
+	var genome_path = flag.String("genome", "./data/xorstartgenes", "The seed genome to start with.")
+	var experiment_name = flag.String("experiment", "XOR", "The name of experiment to run.")
+	var trials_count = flag.Int("trials", 0, "The numbar of trials for experiment. Overrides the one set in configuration.")
+	var log_level = flag.Int("log_level", -1, "The logger level to be used. Overrides the one set in configuration.")
 
 	flag.Parse()
 
@@ -33,7 +37,7 @@ func main() {
 	context := neat.LoadContext(configFile)
 
 	// Load Genome
-	log.Println("Loading start genome for XOR experiment")
+	log.Printf("Loading start genome for %s experiment\n", *experiment_name)
 	genomeFile, err := os.Open(*genome_path)
 	if err != nil {
 		log.Fatal("Failed to open genome file: ", err)
@@ -55,19 +59,37 @@ func main() {
 		log.Fatal("Failed to create output directory: ", err)
 	}
 
+	// Override context configuration parameters with ones set from command line
+	if *trials_count > 0 {
+		context.NumRuns = *trials_count
+	}
+	if *log_level >= 0 {
+		neat.LogLevel = neat.LoggerLevel(*log_level)
+	}
+
 	// The 100 generation XOR experiment
-	experiment := experiments.Experiment {
+	experiment := experiments.Experiment{
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
 	}
-	err = experiment.Execute(context, start_genome, xor.XOREpochExecutor{OutputPath:*out_dir_path})
+	var epochEvaluator experiments.EpochEvaluator
+	if *experiment_name == "XOR" {
+		epochEvaluator = xor.XOREpochEvaluator{OutputPath:*out_dir_path}
+	} else if *experiment_name == "cart_pole" {
+		epochEvaluator = pole.CartPoleEpochEvaluator{
+			OutputPath:*out_dir_path,
+			WinBalancingSteps:500000,
+			RandomStart:true,
+		}
+	}
+
+	err = experiment.Execute(context, start_genome, epochEvaluator)
 	if err != nil {
 		log.Fatal("Failed to perform XOR experiment: ", err)
 	}
 
 	// Find winner statistics
 	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
-
 
 	fmt.Printf("\nAverage\n\tWinner Nodes:\t%.1f\n\tWinner Genes:\t%.1f\n\tWinner Evals:\t%.1f\n",
 		avg_nodes, avg_genes, avg_evals)
