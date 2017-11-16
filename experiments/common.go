@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-// The interface describing executor for particular epoch.
-type EpochExecutor interface {
+// The interface describing evaluator for one epoch of evolution.
+type EpochEvaluator interface {
 	EpochEvaluate(pop *genetics.Population, epoch *Epoch, context *neat.NeatContext) (err error)
 }
 
 
 // The Experiment execution entry point
-func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.Genome, epoch_executor EpochExecutor) (err error) {
+func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.Genome, epoch_executor EpochEvaluator) (err error) {
 	if ex.Trials == nil {
 		ex.Trials = make(Trials, context.NumRuns)
 	}
