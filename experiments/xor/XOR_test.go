@@ -16,7 +16,7 @@ func TestXOR(t *testing.T) {
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 
-	out_dir_path, context_path, genome_path := "../../out", "../../data/xor.neat", "../../data/xorstartgenes"
+	out_dir_path, context_path, genome_path := "../../out/XOR_test", "../../data/xor.neat", "../../data/xorstartgenes"
 
 	// Load context configuration
 	configFile, err := os.Open(context_path)
@@ -105,7 +105,7 @@ func TestXOR_disconnected(t *testing.T) {
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 
-	out_dir_path, context_path, genome_path := "../../out", "../../data/xor.neat", "../../data/xorstartgenes"
+	out_dir_path, context_path, genome_path := "../../out/XOR_disconnected_test", "../../data/xor.neat", "../../data/xorstartgenes"
 
 	// Load context configuration
 	configFile, err := os.Open(context_path)
