@@ -10,12 +10,20 @@ import (
 
 // The interface describing evaluator for one epoch of evolution.
 type EpochEvaluator interface {
+	// Invoked to evaluate one epoch of evolution over provided population of organisms within given
+	// execution context.
 	EpochEvaluate(pop *genetics.Population, epoch *Epoch, context *neat.NeatContext) (err error)
+}
+
+// The interface to describe trial lifecycle observer interested to receive lifecycle notifications
+type TrialRunObserver interface {
+	// Invoked to notify that new trial run just started before any epoch evaluation in that trial run
+	TrialRunStarted(trial *Trial)
 }
 
 
 // The Experiment execution entry point
-func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.Genome, epoch_executor EpochEvaluator) (err error) {
+func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.Genome, executor interface{}) (err error) {
 	if ex.Trials == nil {
 		ex.Trials = make(Trials, context.NumRuns)
 	}
@@ -44,12 +52,18 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 			Id:run,
 		}
 
+		if trialObserver, ok := executor.(TrialRunObserver); ok {
+			trialObserver.TrialRunStarted(&trial) // optional
+		}
+
+		epoch_evaluator := executor.(EpochEvaluator) // mandatory
+
 		for gen := 0; gen < context.NumGenerations; gen++ {
 			neat.InfoLog(fmt.Sprintf(">>>>> Epoch:%3d\tRun: %d\n", gen, run))
 			epoch := Epoch{
 				Id:gen,
 			}
-			err = epoch_executor.EpochEvaluate(pop, &epoch, context)
+			err = epoch_evaluator.EpochEvaluate(pop, &epoch, context)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Epoch %d evaluation failed !!!!!\n", gen))
 				return err
