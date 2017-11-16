@@ -3,6 +3,7 @@ package experiments
 import (
 	"time"
 	"github.com/yaricom/goNEAT/neat/genetics"
+	"math"
 )
 
 // The structure to represent one epoch execution results
@@ -34,7 +35,7 @@ type Epoch struct {
 
 // Collects statistics about given population
 func (epoch *Epoch) FillPopulationStatistics(pop *genetics.Population) {
-	max_fitness := 0.0
+	max_fitness := float64(math.MinInt64)
 	epoch.Diversity = len(pop.Species)
 	epoch.Age = make(Floats, epoch.Diversity)
 	epoch.Compexity = make(Floats, epoch.Diversity)
