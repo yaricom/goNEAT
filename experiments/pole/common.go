@@ -5,7 +5,7 @@ package pole
 // The cart pole configuration values
 const GRAVITY = 9.8
 const MASSCART = 1.0
-const MASSPOLE = 0.1
+const MASSPOLE = 0.5
 const TOTAL_MASS = (MASSPOLE + MASSCART)
 const LENGTH = 0.5      /* actually half the pole's length */
 const POLEMASS_LENGTH = (MASSPOLE * LENGTH)

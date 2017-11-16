@@ -85,7 +85,7 @@ func (ex *CartPoleEpochEvaluator) org_evaluate(organism *genetics.Organism) bool
 	organism.Fitness = float64(ex.go_cart(organism.Phenotype))
 
 	if neat.LogLevel == neat.LogLevelDebug {
-		neat.DebugLog(fmt.Sprintf("Organism #%000d\tfitness: %f", organism.Genotype.Id, organism.Fitness))
+		neat.DebugLog(fmt.Sprintf("Organism #%3d\tfitness: %f", organism.Genotype.Id, organism.Fitness))
 	}
 
 	// Decide if its a winner
@@ -113,7 +113,7 @@ func (ex *CartPoleEpochEvaluator) go_cart(net *network.Network) (steps int) {
 	}
 
 	in := make([]float64, 5)
-	for steps = 0; steps <= ex.WinBalancingSteps; steps++ {
+	for steps = 0; steps < ex.WinBalancingSteps; steps++ {
 		/*-- setup the input layer based on the four inputs --*/
 		in[0] = 1.0  // Bias
 		in[1] = (x + 2.4) / 4.8
