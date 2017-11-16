@@ -45,7 +45,7 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 		}
 
 		for gen := 0; gen < context.NumGenerations; gen++ {
-			neat.InfoLog(fmt.Sprintf(">>>>> Epoch: %d\tRun: %d\n", gen, run))
+			neat.InfoLog(fmt.Sprintf(">>>>> Epoch:%3d\tRun: %d\n", gen, run))
 			epoch := Epoch{
 				Id:gen,
 			}
