@@ -52,8 +52,8 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 			Id:run,
 		}
 
-		if trialObserver, ok := executor.(TrialRunObserver); ok {
-			trialObserver.TrialRunStarted(&trial) // optional
+		if trial_observer, ok := executor.(TrialRunObserver); ok {
+			trial_observer.TrialRunStarted(&trial) // optional
 		}
 
 		epoch_evaluator := executor.(EpochEvaluator) // mandatory
