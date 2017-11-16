@@ -41,7 +41,7 @@ To run this experiment execute following commands:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-go run xor_runner.go -out ./out -context ./data/xor.neat -genome ./data/xorstartgenes
+go run experiment_runner.go -out ./out/xor -context ./data/xor.neat -genome ./data/xorstartgenes -experiment XOR
 
 ```
 Where: ./data/xor.neat is the configuration of NEAT execution context and ./data/xorstartgenes is the start genome
@@ -84,7 +84,7 @@ To run this experiment execute following commands:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-go run xor_runner.go -out ./out -context ./data/xor.neat -genome ./data/xordisconnectedstartgenes
+go run experiment_runner.go -out ./out/xor_disconnected -context ./data/xor.neat -genome ./data/xordisconnectedstartgenes -experiment XOR
 
 ```
 
@@ -106,6 +106,48 @@ Mean
 	Age:		29.8
 
 ```
+
+### 2. The single pole-balancing experiment
+The single pole-balancing is one of the best early examples of a reinforcement learning task under conditions of
+incomplete knowledge.
+
+To run this experiment execute following commands:
+```bash
+
+cd $GOPATH/src/github.com/yaricom/goNEAT
+go run experiment_runner.go -out ./out/pole1 -context ./data/p2nv.neat -genome ./data/pole1startgenes -experiment cart_pole
+
+```
+
+In this experiment the Genome considered as a winner if it's able to simulate single pole balancing at least 5000 simulated seconds.
+
+The results of experiment execution will be saved in ./out directory under specified folder.
+
+The example output of the command as following:
+```
+
+Average
+	Winner Nodes:	7.0
+	Winner Genes:	10.2
+	Winner Evals:	1880.0
+Mean
+	Complexity:	17.1
+	Diversity:	25.3
+	Age:		2.2
+
+```
+The results demonstrate that winning Genome can be found in average during 2 epochs among population of 1000 organisms, which
+belongs to 17 species in average. It's interesting to mention that average winner organism has optimal number of nodes - 7 and genes - 10.
+The seven network nodes has following meaning:
+* the first one is a bias
+* the second through fifth is a sensors receiving system state: X position, acceleration among X, pole angle, and pole
+angular acceleration
+* the six and seven are output nodes signaling in what direction force should be applied to balance pole at
+each simulation step. The applied force direction depends on relative strength of activations of both output neurons. If
+activation of first output neuron (6-th node) greater than activation of second neuron (7-th node) the positive force direction applied. Otherwise the negative
+force direction applied.
+
+The 10 genes is exactly number of links needed to connect 5 input sensor nodes with 2 output neuron nodes (5x2).
 
 ## Credits
 
