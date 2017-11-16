@@ -28,6 +28,6 @@ dropoff_age  50
 newlink_tries  50
 print_every  10
 babies_stolen  0
-num_runs  1
+num_runs  100
 num_generations 100
-log_level 0
+log_level 1
