@@ -15,7 +15,7 @@ const twelve_degrees = 12.0 * math.Pi / 180.0
 
 // The single pole balancing experiment entry point.
 // This experiment performs evolution on single pole balancing task in order to produce appropriate genome.
-type CartPoleEpochExecutor struct {
+type CartPoleEpochEvaluator struct {
 	// The output path to store execution results
 	OutputPath        string
 	// The flag to indicate if cart emulator should be started from random position
@@ -25,13 +25,10 @@ type CartPoleEpochExecutor struct {
 }
 
 // This method evaluates one epoch for given population and prints results into output directory if any.
-func (ex CartPoleEpochExecutor) EpochEvaluate(pop *genetics.Population, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
+func (ex CartPoleEpochEvaluator) EpochEvaluate(pop *genetics.Population, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
-		res, err := ex.org_evaluate(org)
-		if err != nil {
-			return err
-		}
+		res := ex.org_evaluate(org)
 
 		if res {
 			epoch.Solved = true
@@ -83,16 +80,16 @@ func (ex CartPoleEpochExecutor) EpochEvaluate(pop *genetics.Population, epoch *e
 }
 
 // This methods evaluates provided organism for cart pole balancing task
-func (ex *CartPoleEpochExecutor) org_evaluate(organism *genetics.Organism) (bool, error) {
+func (ex *CartPoleEpochEvaluator) org_evaluate(organism *genetics.Organism) bool {
 	// Try to balance a pole now
-	organism.Fitness = ex.go_cart(organism.Phenotype)
+	organism.Fitness = float64(ex.go_cart(organism.Phenotype))
 
 	if neat.LogLevel == neat.LogLevelDebug {
 		neat.DebugLog(fmt.Sprintf("Organism #%000d\tfitness: %f", organism.Genotype.Id, organism.Fitness))
 	}
 
 	// Decide if its a winner
-	if organism.Fitness >= ex.WinBalancingSteps {
+	if organism.Fitness >= float64(ex.WinBalancingSteps) {
 		organism.IsWinner = true
 		return true
 	} else {
@@ -102,7 +99,7 @@ func (ex *CartPoleEpochExecutor) org_evaluate(organism *genetics.Organism) (bool
 }
 
 // run cart emulation and return number of emulation steps pole was balanced
-func (ex *CartPoleEpochExecutor) go_cart(net *network.Network) (steps int) {
+func (ex *CartPoleEpochEvaluator) go_cart(net *network.Network) (steps int) {
 	var x float64           /* cart position, meters */
 	var x_dot float64       /* cart velocity */
 	var theta float64       /* pole angle, radians */
@@ -154,7 +151,7 @@ func (ex *CartPoleEpochExecutor) go_cart(net *network.Network) (steps int) {
  four state variables and updates their values by estimating the state
  TAU seconds later.
  ----------------------------------------------------------------------*/
-func (ex *CartPoleEpochExecutor) cart_pole(action int, x, x_dot, theta, theta_dot float64) (x_ret, x_dot_ret, theta_ret, theta_dot_ret float64) {
+func (ex *CartPoleEpochEvaluator) cart_pole(action int, x, x_dot, theta, theta_dot float64) (x_ret, x_dot_ret, theta_ret, theta_dot_ret float64) {
 	force := -FORCE_MAG
 	if action > 0 {
 		force = FORCE_MAG
