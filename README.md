@@ -137,17 +137,18 @@ Mean
 
 ```
 The results demonstrate that winning Genome can be found in average during 2 epochs among population of 1000 organisms, which
-belongs to 17 species in average. It's interesting to mention that average winner organism has optimal number of nodes - 7 and genes - 10.
+belongs to 17 species in average. It's interesting to mention that average winner organism has optimal number of nodes and genes - 7 and 10 correspondingly.
+
 The seven network nodes has following meaning:
-* the first one is a bias
-* the second through fifth is a sensors receiving system state: X position, acceleration among X, pole angle, and pole
+* \[1\] is a bias
+* \[2-5\] are sensors receiving system state: X position, acceleration among X, pole angle, and pole
 angular acceleration
-* the six and seven are output nodes signaling in what direction force should be applied to balance pole at
+* \[6, 7\] are output nodes signaling in what direction force should be applied to balance pole at
 each simulation step. The applied force direction depends on relative strength of activations of both output neurons. If
 activation of first output neuron (6-th node) greater than activation of second neuron (7-th node) the positive force direction applied. Otherwise the negative
 force direction applied.
 
-The 10 genes is exactly number of links needed to connect 5 input sensor nodes with 2 output neuron nodes (5x2).
+The 10 genes is exactly number of links required to connect 5 input sensor nodes with 2 output neuron nodes (5x2).
 
 ## Credits
 
