@@ -383,7 +383,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	copy(sorted_species, p.Species)
 
 	// Sort the Species by max original fitness of its first organism
-	sort.Sort(sort.Reverse(ByOrganismOrigFitness(sorted_species)))
+	sort.Sort(sort.Reverse(byOrganismOrigFitness(sorted_species)))
 
 	// Used in debugging to see why (if) best species dies
 	best_species_id := sorted_species[0].Id

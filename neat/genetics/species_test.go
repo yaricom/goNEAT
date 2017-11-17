@@ -193,7 +193,7 @@ func TestSpecies_reproduce(t *testing.T) {
 	copy(sorted_species, pop.Species)
 
 	// Sort the Species by max original fitness of its first organism
-	sort.Sort(ByOrganismOrigFitness(sorted_species))
+	sort.Sort(byOrganismOrigFitness(sorted_species))
 
 	pop.Species[0].ExpectedOffspring = 11
 
