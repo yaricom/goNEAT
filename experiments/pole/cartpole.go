@@ -152,6 +152,17 @@ func (ex *CartPoleEpochEvaluator) runCart(net *network.Network) (steps int) {
  TAU seconds later.
  ----------------------------------------------------------------------*/
 func (ex *CartPoleEpochEvaluator) doAction(action int, x, x_dot, theta, theta_dot float64) (x_ret, x_dot_ret, theta_ret, theta_dot_ret float64) {
+	// The cart pole configuration values
+	const GRAVITY = 9.8
+	const MASSCART = 1.0
+	const MASSPOLE = 0.5
+	const TOTAL_MASS = (MASSPOLE + MASSCART)
+	const LENGTH = 0.5      /* actually half the pole's length */
+	const POLEMASS_LENGTH = (MASSPOLE * LENGTH)
+	const FORCE_MAG = 10.0
+	const TAU = 0.02      /* seconds between state updates */
+	const FOURTHIRDS = 1.3333333333333
+
 	force := -FORCE_MAG
 	if action > 0 {
 		force = FORCE_MAG
