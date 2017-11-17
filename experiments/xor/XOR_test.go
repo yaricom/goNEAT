@@ -105,7 +105,7 @@ func TestXOR_disconnected(t *testing.T) {
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 
-	out_dir_path, context_path, genome_path := "../../out/XOR_disconnected_test", "../../data/xor.neat", "../../data/xorstartgenes"
+	out_dir_path, context_path, genome_path := "../../out/XOR_disconnected_test", "../../data/xor.neat", "../../data/xordisconnectedstartgenes"
 
 	// Load context configuration
 	configFile, err := os.Open(context_path)
@@ -117,7 +117,7 @@ func TestXOR_disconnected(t *testing.T) {
 	neat.LogLevel = neat.LogLevelInfo
 
 	// Load Genome
-	fmt.Println("Loading start genome for XOR experiment")
+	fmt.Println("Loading start genome for XOR disconnected experiment")
 	genomeFile, err := os.Open(genome_path)
 	if err != nil {
 		t.Error("Failed to open genome file")
