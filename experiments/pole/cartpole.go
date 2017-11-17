@@ -28,7 +28,7 @@ type CartPoleEpochEvaluator struct {
 func (ex CartPoleEpochEvaluator) EpochEvaluate(pop *genetics.Population, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
-		res := ex.org_evaluate(org)
+		res := ex.orgEvaluate(org)
 
 		if res {
 			epoch.Solved = true
@@ -80,9 +80,9 @@ func (ex CartPoleEpochEvaluator) EpochEvaluate(pop *genetics.Population, epoch *
 }
 
 // This methods evaluates provided organism for cart pole balancing task
-func (ex *CartPoleEpochEvaluator) org_evaluate(organism *genetics.Organism) bool {
+func (ex *CartPoleEpochEvaluator) orgEvaluate(organism *genetics.Organism) bool {
 	// Try to balance a pole now
-	organism.Fitness = float64(ex.go_cart(organism.Phenotype))
+	organism.Fitness = float64(ex.runCart(organism.Phenotype))
 
 	if neat.LogLevel == neat.LogLevelDebug {
 		neat.DebugLog(fmt.Sprintf("Organism #%3d\tfitness: %f", organism.Genotype.Id, organism.Fitness))
@@ -99,7 +99,7 @@ func (ex *CartPoleEpochEvaluator) org_evaluate(organism *genetics.Organism) bool
 }
 
 // run cart emulation and return number of emulation steps pole was balanced
-func (ex *CartPoleEpochEvaluator) go_cart(net *network.Network) (steps int) {
+func (ex *CartPoleEpochEvaluator) runCart(net *network.Network) (steps int) {
 	var x float64           /* cart position, meters */
 	var x_dot float64       /* cart velocity */
 	var theta float64       /* pole angle, radians */
@@ -134,7 +134,7 @@ func (ex *CartPoleEpochEvaluator) go_cart(net *network.Network) (steps int) {
 			action = 0
 		}
 		/*--- Apply action to the simulated cart-pole ---*/
-		x, x_dot, theta, theta_dot = ex.cart_pole(action, x, x_dot, theta, theta_dot)
+		x, x_dot, theta, theta_dot = ex.doAction(action, x, x_dot, theta, theta_dot)
 
 		/*--- Check for failure.  If so, return steps ---*/
 		if (x < -2.4 || x > 2.4 || theta < -twelve_degrees || theta > twelve_degrees) {
@@ -151,7 +151,7 @@ func (ex *CartPoleEpochEvaluator) go_cart(net *network.Network) (steps int) {
  four state variables and updates their values by estimating the state
  TAU seconds later.
  ----------------------------------------------------------------------*/
-func (ex *CartPoleEpochEvaluator) cart_pole(action int, x, x_dot, theta, theta_dot float64) (x_ret, x_dot_ret, theta_ret, theta_dot_ret float64) {
+func (ex *CartPoleEpochEvaluator) doAction(action int, x, x_dot, theta, theta_dot float64) (x_ret, x_dot_ret, theta_ret, theta_dot_ret float64) {
 	force := -FORCE_MAG
 	if action > 0 {
 		force = FORCE_MAG
