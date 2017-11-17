@@ -97,13 +97,13 @@ The example output of the command as following:
 ```
 
 Average
-	Winner Nodes:	7.0
-	Winner Genes:	14.0
-	Winner Evals:	6967.0
+	Winner Nodes:	5.7
+	Winner Genes:	9.2
+	Winner Evals:	9347.7
 Mean
-	Complexity:	9.2
-	Diversity:	11.4
-	Age:		29.8
+	Complexity:	7.8
+	Diversity:	20.0
+	Age:		46.7
 
 ```
 
@@ -143,12 +143,12 @@ The seven network nodes has following meaning:
 * \[1\] is a bias
 * \[2-5\] are sensors receiving system state: X position, acceleration among X, pole angle, and pole
 angular acceleration
-* \[6, 7\] are output nodes signaling in what direction force should be applied to balance pole at
-each simulation step. The applied force direction depends on relative strength of activations of both output neurons. If
-activation of first output neuron (6-th node) greater than activation of second neuron (7-th node) the positive force direction applied. Otherwise the negative
-force direction applied.
+* \[6, 7\] are output nodes signaling what action should be applied to the system to balance pole at
+each simulation step, i.e. force direction to be applied. The applied force direction depends on relative strength of
+activations of both output neurons. If activation of first output neuron (6-th node) greater than activation of second
+neuron (7-th node) the positive force direction applied. Otherwise the negative force direction applied.
 
-The 10 genes is exactly number of links required to connect 5 input sensor nodes with 2 output neuron nodes (5x2).
+The TEN genes is exactly number of links required to connect FIVE input sensor nodes with TWO output neuron nodes (5x2).
 
 ## Credits
 
