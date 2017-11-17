@@ -177,6 +177,7 @@ func TestSpecies_reproduce(t *testing.T) {
 		PopSize:30,
 		CompatThreshold:0.6,
 	}
+	neat.LogLevel = neat.LogLevelInfo
 
 	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
 	pop, err := NewPopulation(gen, &conf)
