@@ -104,7 +104,7 @@ func TestLoadContext(t *testing.T) {
 	if nc.BabiesStolen != 0 {
 		t.Error("BabiesStolen")
 	}
-	if nc.NumRuns != 1 {
+	if nc.NumRuns != 100 {
 		t.Error("NumRuns")
 	}
 }
