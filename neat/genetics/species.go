@@ -541,18 +541,18 @@ func (s *Species) String() string {
 	return str
 }
 
-// This is used for list sorting of Species by fitness of best organism highest fitness first
+// This is used for list sorting of Species by original fitness of best organism highest fitness first
 // It implements sort.Interface for []Species based on the OriginalFitness of first Organism field in descending order,
 // i.e. the max fitness goes first
-type ByOrganismOrigFitness []*Species
+type byOrganismOrigFitness []*Species
 
-func (f ByOrganismOrigFitness) Len() int {
+func (f byOrganismOrigFitness) Len() int {
 	return len(f)
 }
-func (f ByOrganismOrigFitness) Swap(i, j int) {
+func (f byOrganismOrigFitness) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
-func (f ByOrganismOrigFitness) Less(i, j int) bool {
+func (f byOrganismOrigFitness) Less(i, j int) bool {
 	org1 := f[i].Organisms[0]
 	org2 := f[j].Organisms[0]
 	if org1.OriginalFitness < org2.OriginalFitness {
@@ -570,4 +570,21 @@ func (f ByOrganismOrigFitness) Less(i, j int) bool {
 		}
 	}
 	return false
+}
+
+// This is used for list sorting of species by maximal fitness
+type ByOrganismFitness []*Species
+
+func (f ByOrganismFitness) Len() int {
+	return len(f)
+}
+
+func (f ByOrganismFitness) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
+}
+
+func (f ByOrganismFitness) Less(i, j int) bool {
+	i_max, _ := f[i].ComputeMaxAndAvgFitness()
+	j_max, _ := f[j].ComputeMaxAndAvgFitness()
+	return i_max < j_max
 }
