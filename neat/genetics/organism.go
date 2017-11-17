@@ -70,6 +70,14 @@ func (o *Organism) UpdatePhenotype() {
 	o.Phenotype = o.Genotype.genesis(o.Genotype.Id)
 }
 
+// Method to check if this algorithm is champion child and if so than if it's damaged
+func (o *Organism) CheckChampionChildDamaged() bool {
+	if o.isPopulationChampionChild && o.highestFitness > o.Fitness {
+		return true
+	}
+	return false
+}
+
 func (o *Organism) String() string {
 	champStr := ""
 	if o.isChampion {
