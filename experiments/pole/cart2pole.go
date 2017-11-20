@@ -35,7 +35,7 @@ type CartPole struct {
 	nonMarkovLong      bool
 	// Flag we are testing champ's generalization
 	generalizationTest bool
-	// The state of the system
+	// The state of the system (x, x acceleration, thetha 1, thetha 1 acceleration, thetha 2, thetha 2 acceleration)
 	state              [6]float64
 
 	jiggleStep         [1000]float64
@@ -185,13 +185,13 @@ func (ex *CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Po
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				org_path := fmt.Sprintf("%s/%s", ex.OutputPath, "xor_winner")
+				org_path := fmt.Sprintf("%s/%s", ex.OutputPath, "pole2_winner")
 				file, err := os.Create(org_path)
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
 				} else {
 					org.Genotype.Write(file)
-					neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", generation.Id, org_path))
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner %d dumped to: %s\n", generation.Id, org.Genotype.Id, org_path))
 				}
 				break
 			}
@@ -209,6 +209,10 @@ func (ex *CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Po
 func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) bool {
 	// Try to balance a pole now
 	organism.Fitness = ex.cartPole.evalNet(organism.Phenotype)
+
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog(fmt.Sprintf("Organism #%3d\tfitness: %f", organism.Genotype.Id, organism.Fitness))
+	}
 
 	// DEBUG CHECK if organism is damaged
 	if !(ex.cartPole.nonMarkovLong && ex.cartPole.generalizationTest) && organism.CheckChampionChildDamaged() {
@@ -259,14 +263,16 @@ func (cp *CartPole)evalNet(net *network.Network) (steps float64) {
 
 	cp.resetState()
 
+	steps = 1
+
 	if cp.isMarkov {
 		for ; steps < cp.maxFitness; steps++ {
-			input[0] = cp.state[0] / 4.8
-			input[1] = cp.state[1] / 2
-			input[2] = cp.state[2] / 0.52
-			input[3] = cp.state[3] / 2
-			input[4] = cp.state[4] / 0.52
-			input[5] = cp.state[5] / 2
+			input[0] = (cp.state[0] + 2.4) / 4.8
+			input[1] = (cp.state[1] + 1.0) / 2.0
+			input[2] = (cp.state[2] + thirty_six_degrees) / (thirty_six_degrees * 2.0)//0.52
+			input[3] = (cp.state[3] + 1.0) / 2.0
+			input[4] = (cp.state[4] + thirty_six_degrees) / (thirty_six_degrees * 2.0)//0.52
+			input[5] = (cp.state[5] + 1.0) / 2.0
 			input[6] = 0.5
 
 			net.LoadSensors(input)
@@ -277,21 +283,28 @@ func (cp *CartPole)evalNet(net *network.Network) (steps float64) {
 				neat.DebugLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
 				return 1.0
 			}
-			output := net.Outputs[0].Activation
-			cp.performAction(output, steps)
+			action := net.Outputs[0].Activation
+			//if action < 0.5 {
+			//	action = 0
+			//} else {
+			//	action = 1.0
+			//}
+			cp.performAction(action, steps)
 
 			if cp.outsideBounds() {
 				// if failure stop it now
 				break;
 			}
+
+			//fmt.Printf("x: %f, xv: %f, t1: %f, t2: %f, angle: %f\n", cp.state[0], cp.state[1], cp.state[2], cp.state[4], thirty_six_degrees)
 		}
 		return steps
 	} else {
 		// The non Markov case
 		for ; steps < non_markov_max; steps++ {
-			input[0] = cp.state[0] / 4.8
-			input[1] = cp.state[2] / 0.52
-			input[2] = cp.state[4] / 0.52
+			input[0] = (cp.state[0] + 2.4) / 4.8
+			input[1] = (cp.state[2] + thirty_six_degrees) / (thirty_six_degrees * 2.0)//0.52
+			input[2] = (cp.state[4] + thirty_six_degrees) / (thirty_six_degrees * 2.0)//0.52
 			input[3] = 0.5
 
 			net.LoadSensors(input)
@@ -303,8 +316,8 @@ func (cp *CartPole)evalNet(net *network.Network) (steps float64) {
 				return 0.0001
 			}
 
-			output := net.Outputs[0].Activation
-			cp.performAction(output, steps)
+			action := net.Outputs[0].Activation
+			cp.performAction(action, steps)
 
 			if cp.outsideBounds() {
 				// if failure stop it now
@@ -341,75 +354,76 @@ func (cp *CartPole)evalNet(net *network.Network) (steps float64) {
 	}
 }
 
-func (cp *CartPole) performAction(output, step_num float64) {
+func (cp *CartPole) performAction(action, step_num float64) {
 	const TAU = 0.01
 
-	var dydx [6]float64
 	/*--- Apply action to the simulated cart-pole ---*/
 	// Runge-Kutta 4th order integration method
 	for i := 0; i < 2; i++ {
+		dydx := cp.step(action);
+
 		dydx[0] = cp.state[1];
 		dydx[2] = cp.state[3];
 		dydx[4] = cp.state[5];
-		cp.step(output, dydx);
-		cp.rk4(output, dydx, TAU);
+		cp.rk4(action, dydx, TAU);
 	}
+
 	// Record this state
 	cp.cartpos_sum += math.Abs(cp.state[0])
 	cp.cartv_sum += math.Abs(cp.state[1]);
 	cp.polepos_sum += math.Abs(cp.state[2]);
 	cp.polev_sum += math.Abs(cp.state[3]);
 
-	if step_num <= 1000 {
-		cp.jiggleStep[int(step_num) - 1] = math.Abs(cp.state[0]) + math.Abs(cp.state[1]) + math.Abs(cp.state[2]) + math.Abs(cp.state[3])
+	if step_num < 1000 {
+		cp.jiggleStep[int(step_num)-1] = math.Abs(cp.state[0]) + math.Abs(cp.state[1]) + math.Abs(cp.state[2]) + math.Abs(cp.state[3])
 	}
 	if !cp.outsideBounds() {
 		cp.balanced_sum++
 	}
 }
 
-func (cp *CartPole) step(action float64, derivs [6]float64) {
+func (cp *CartPole) step(action float64) (derivs [6]float64) {
 	const MUP = 0.000002
 	const GRAVITY = -9.8
 	const MASSCART = 1.0
-	const MASSPOLE_1 = 0.1
+	const MASSPOLE_1 = 0.5
 	const LENGTH_1 = 0.5 // actually half the pole's length
 	const FORCE_MAG = 10.0
 
-	var force, cos_theta_1, cos_theta_2, sin_theta_1, sin_theta_2,
-	g_sin_theta_1, g_sin_theta_2, temp_1, temp_2, ml_1, ml_2, fi_1, fi_2, mi_1, mi_2 float64
+	force := (action - 0.5) * FORCE_MAG * 2.0
+	cos_theta_1 := math.Cos(cp.state[2])
+	sin_theta_1 := math.Sin(cp.state[2])
+	g_sin_theta_1 := GRAVITY * sin_theta_1
+	cos_theta_2 := math.Cos(cp.state[4])
+	sin_theta_2 := math.Sin(cp.state[4])
+	g_sin_theta_2 := GRAVITY * sin_theta_2
 
-	force = (action - 0.5) * FORCE_MAG * 2
-	cos_theta_1 = math.Cos(cp.state[2])
-	sin_theta_1 = math.Sin(cp.state[2])
-	g_sin_theta_1 = GRAVITY * sin_theta_1
-	cos_theta_2 = math.Cos(cp.state[4])
-	sin_theta_2 = math.Sin(cp.state[4])
-	g_sin_theta_2 = GRAVITY * sin_theta_2
+	ml_1 := LENGTH_1 * MASSPOLE_1
+	ml_2 := cp.length2 * cp.massPole2
+	temp_1 := MUP * cp.state[3] / ml_1
+	temp_2 := MUP * cp.state[5] / ml_2
+	fi_1 := (ml_1 * cp.state[3] * cp.state[3] * sin_theta_1) + (0.75 * MASSPOLE_1 * cos_theta_1 * (temp_1 + g_sin_theta_1))
+	fi_2 := (ml_2 * cp.state[5] * cp.state[5] * sin_theta_2) + (0.75 * cp.massPole2 * cos_theta_2 * (temp_2 + g_sin_theta_2))
+	mi_1 := MASSPOLE_1 * (1 - (0.75 * cos_theta_1 * cos_theta_1))
+	mi_2 := cp.massPole2 * (1 - (0.75 * cos_theta_2 * cos_theta_2))
 
-	ml_1 = LENGTH_1 * MASSPOLE_1
-	ml_2 = cp.length2 * cp.massPole2
-	temp_1 = MUP * cp.state[3] / ml_1
-	temp_2 = MUP * cp.state[5] / ml_2
-	fi_1 = (ml_1 * cp.state[3] * cp.state[3] * sin_theta_1) + (0.75 * MASSPOLE_1 * cos_theta_1 * (temp_1 + g_sin_theta_1))
-	fi_2 = (ml_2 * cp.state[5] * cp.state[5] * sin_theta_2) + (0.75 * cp.massPole2 * cos_theta_2 * (temp_2 + g_sin_theta_2))
-	mi_1 = MASSPOLE_1 * (1 - (0.75 * cos_theta_1 * cos_theta_1))
-	mi_2 = cp.massPole2 * (1 - (0.75 * cos_theta_2 * cos_theta_2))
+	//fmt.Printf("%f -> %f\n", action, force)
 
 	derivs[1] = (force + fi_1 + fi_2) / (mi_1 + mi_2 + MASSCART)
-
 	derivs[3] = -0.75 * (derivs[1] * cos_theta_1 + g_sin_theta_1 + temp_1) / LENGTH_1
 	derivs[5] = -0.75 * (derivs[1] * cos_theta_2 + g_sin_theta_2 + temp_2) / cp.length2
+
+	return derivs
 }
 
 func (cp *CartPole) rk4(f float64, dydx [6]float64, tau float64) {
-	var dym, dyt, yt [6]float64
+	var yt [6]float64
 	hh := tau * 0.5
 	h6 := tau / 6.0
 	for i := 0; i <= 5; i++ {
 		yt[i] = cp.state[i] + hh * dydx[i]
 	}
-	cp.step(f, dyt)
+	dyt := cp.step(f)
 
 	dyt[0] = yt[1]
 	dyt[2] = yt[3]
@@ -417,7 +431,7 @@ func (cp *CartPole) rk4(f float64, dydx [6]float64, tau float64) {
 	for i := 0; i <= 5; i++ {
 		yt[i] = cp.state[i] + hh * dyt[i]
 	}
-	cp.step(f, dym)
+	dym := cp.step(f)
 
 	dym[0] = yt[1]
 	dym[2] = yt[3]
@@ -426,7 +440,7 @@ func (cp *CartPole) rk4(f float64, dydx [6]float64, tau float64) {
 		yt[i] = cp.state[i] + tau * dym[i]
 		dym[i] += dyt[i]
 	}
-	cp.step(f, dyt)
+	dyt = cp.step(f)
 
 	dyt[0] = yt[1]
 	dyt[2] = yt[3]
@@ -456,7 +470,7 @@ func (cp *CartPole)resetState() {
 		cp.polepos_sum = 0.0
 		cp.polev_sum = 0.0
 	}
-	cp.balanced_sum = 0 //Always count # balanced
+	cp.balanced_sum = 0 // Always count # balanced
 	if cp.generalizationTest {
 		cp.state[0], cp.state[1], cp.state[3], cp.state[4], cp.state[5] = 0, 0, 0, 0, 0
 		cp.state[2] = math.Pi / 180.0 // one_degree
