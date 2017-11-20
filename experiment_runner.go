@@ -19,7 +19,7 @@ func main() {
 	var out_dir_path = flag.String("out", "./out", "The output directory to store results.")
 	var context_path = flag.String("context", "./data/xor.neat", "The execution context configuration file.")
 	var genome_path = flag.String("genome", "./data/xorstartgenes", "The seed genome to start with.")
-	var experiment_name = flag.String("experiment", "XOR", "The name of experiment to run.")
+	var experiment_name = flag.String("experiment", "XOR", "The name of experiment to run. [XOR, cart_pole, cart_2pole_markov]")
 	var trials_count = flag.Int("trials", 0, "The numbar of trials for experiment. Overrides the one set in configuration.")
 	var log_level = flag.Int("log_level", -1, "The logger level to be used. Overrides the one set in configuration.")
 
@@ -72,18 +72,23 @@ func main() {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
 	}
-	var epochEvaluator experiments.GenerationEvaluator
+	var generationEvaluator experiments.GenerationEvaluator
 	if *experiment_name == "XOR" {
-		epochEvaluator = xor.XORGenerationEvaluator{OutputPath:*out_dir_path}
+		generationEvaluator = xor.XORGenerationEvaluator{OutputPath:*out_dir_path}
 	} else if *experiment_name == "cart_pole" {
-		epochEvaluator = pole.CartPoleGenerationEvaluator{
+		generationEvaluator = pole.CartPoleGenerationEvaluator{
 			OutputPath:*out_dir_path,
 			WinBalancingSteps:500000,
 			RandomStart:true,
 		}
+	} else if *experiment_name == "cart_2pole_markov" {
+		generationEvaluator = &pole.CartDoublePoleGenerationEvaluator{
+			OutputPath:*out_dir_path,
+			Markov:true,
+		}
 	}
 
-	err = experiment.Execute(context, start_genome, epochEvaluator)
+	err = experiment.Execute(context, start_genome, generationEvaluator)
 	if err != nil {
 		log.Fatal("Failed to perform XOR experiment: ", err)
 	}
