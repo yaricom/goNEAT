@@ -29,6 +29,9 @@ type Species struct {
 	Organisms            Organisms
 	// If this is too long ago, the Species will goes extinct
 	AgeOfLastImprovement int
+
+	// Flag used for search optimization
+	IsChecked            bool
 }
 
 // Construct new species with specified ID
@@ -166,6 +169,19 @@ func (s *Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 		avg = total / float64(len(s.Organisms))
 	}
 	return max, avg
+}
+
+// Returns most fit organism for this species
+func (s *Species) FindChampion() *Organism {
+	champ_fitness := -1.0
+	var champion Organism
+	for _, org := range s.Organisms {
+		if org.Fitness > champ_fitness {
+			champ_fitness = org.Fitness
+			champion = org
+		}
+	}
+	return champion
 }
 
 // Returns first organism or nil
