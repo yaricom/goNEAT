@@ -72,11 +72,11 @@ func main() {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
 	}
-	var epochEvaluator experiments.EpochEvaluator
+	var epochEvaluator experiments.GenerationEvaluator
 	if *experiment_name == "XOR" {
-		epochEvaluator = xor.XOREpochEvaluator{OutputPath:*out_dir_path}
+		epochEvaluator = xor.XORGenerationEvaluator{OutputPath:*out_dir_path}
 	} else if *experiment_name == "cart_pole" {
-		epochEvaluator = pole.CartPoleEpochEvaluator{
+		epochEvaluator = pole.CartPoleGenerationEvaluator{
 			OutputPath:*out_dir_path,
 			WinBalancingSteps:500000,
 			RandomStart:true,

@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-// The interface describing evaluator for one epoch of evolution.
-type EpochEvaluator interface {
-	// Invoked to evaluate one epoch of evolution over provided population of organisms within given
+// The interface describing evaluator for one generation of evolution.
+type GenerationEvaluator interface {
+	// Invoked to evaluate one generation of population of organisms within given
 	// execution context.
-	EpochEvaluate(pop *genetics.Population, epoch *Epoch, context *neat.NeatContext) (err error)
+	GenerationEvaluate(pop *genetics.Population, epoch *Generation, context *neat.NeatContext) (err error)
 }
 
 // The interface to describe trial lifecycle observer interested to receive lifecycle notifications
@@ -56,14 +56,14 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 			trial_observer.TrialRunStarted(&trial) // optional
 		}
 
-		epoch_evaluator := executor.(EpochEvaluator) // mandatory
+		epoch_evaluator := executor.(GenerationEvaluator) // mandatory
 
 		for gen := 0; gen < context.NumGenerations; gen++ {
 			neat.InfoLog(fmt.Sprintf(">>>>> Epoch:%3d\tRun: %d\n", gen, run))
-			epoch := Epoch{
+			epoch := Generation{
 				Id:gen,
 			}
-			err = epoch_evaluator.EpochEvaluate(pop, &epoch, context)
+			err = epoch_evaluator.GenerationEvaluate(pop, &epoch, context)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Epoch %d evaluation failed !!!!!\n", gen))
 				return err

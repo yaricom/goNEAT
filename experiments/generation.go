@@ -6,8 +6,8 @@ import (
 	"math"
 )
 
-// The structure to represent one epoch execution results
-type Epoch struct {
+// The structure to represent execution results of one generation
+type Generation struct {
 	// The generation ID for this epoch
 	Id          int
 	// The time when epoch was evaluated
@@ -34,7 +34,7 @@ type Epoch struct {
 }
 
 // Collects statistics about given population
-func (epoch *Epoch) FillPopulationStatistics(pop *genetics.Population) {
+func (epoch *Generation) FillPopulationStatistics(pop *genetics.Population) {
 	max_fitness := float64(math.MinInt64)
 	epoch.Diversity = len(pop.Species)
 	epoch.Age = make(Floats, epoch.Diversity)
@@ -53,8 +53,8 @@ func (epoch *Epoch) FillPopulationStatistics(pop *genetics.Population) {
 	}
 }
 
-// Epochs is a sortable collection of epochs by execution time and Id
-type Epochs []Epoch
+// Epochs is a sortable collection of generations by execution time and Id
+type Epochs []Generation
 
 func (is Epochs) Len() int {
 	return len(is)

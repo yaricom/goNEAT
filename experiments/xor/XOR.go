@@ -26,13 +26,13 @@ const precision = 0.5
 //
 // This method performs evolution on XOR for specified number of generations and output results into outDirPath
 // It also returns number of nodes, genes, and evaluations performed per each run (context.NumRuns)
-type XOREpochEvaluator struct {
+type XORGenerationEvaluator struct {
 	// The output path to store execution results
 	OutputPath string
 }
 
 // This method evaluates one epoch for given population and prints results into output directory if any.
-func (ex XOREpochEvaluator) EpochEvaluate(pop *genetics.Population, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
+func (ex XORGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiments.Generation, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
 		res, err := ex.org_evaluate(org, context)
@@ -101,7 +101,7 @@ func (ex XOREpochEvaluator) EpochEvaluate(pop *genetics.Population, epoch *exper
 }
 
 // This methods evaluates provided organism
-func (ex *XOREpochEvaluator) org_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool, error) {
+func (ex *XORGenerationEvaluator) org_evaluate(organism *genetics.Organism, context *neat.NeatContext) (bool, error) {
 	// The four possible input combinations to xor
 	// The first number is for biasing
 	in := [][]float64{

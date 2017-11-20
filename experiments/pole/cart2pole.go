@@ -14,7 +14,7 @@ const thirty_six_degrees = 36 * math.Pi / 180.0
 
 
 // The double pole-balancing experiment both Markov and non-Markov versions
-type CartDoublePoleEpochEvaluator struct {
+type CartDoublePoleGenerationEvaluator struct {
 	// The output path to store execution results
 	OutputPath string
 	// The flag to indicate whether to apply Markov evaluation variant
@@ -53,12 +53,12 @@ type CartPole struct {
 	polev_sum          float64
 }
 
-func (ev *CartDoublePoleEpochEvaluator) TrialRunStarted(trial *experiments.Trial) {
+func (ev *CartDoublePoleGenerationEvaluator) TrialRunStarted(trial *experiments.Trial) {
 	ev.cartPole = newCartPole(ev.Markov)
 }
 
 // Perform evaluation of one epoch on double pole balancing
-func (ex *CartDoublePoleEpochEvaluator) EpochEvaluate(pop *genetics.Population, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
+func (ex *CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiments.Generation, context *neat.NeatContext) (err error) {
 	ex.cartPole.nonMarkovLong = false
 	ex.cartPole.generalizationTest = false
 
@@ -123,7 +123,7 @@ func (ex *CartDoublePoleEpochEvaluator) EpochEvaluate(pop *genetics.Population, 
 }
 
 // This methods evaluates provided organism for cart double pole-balancing task
-func (ex *CartDoublePoleEpochEvaluator) orgEvaluate(organism *genetics.Organism) bool {
+func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) bool {
 	// Try to balance a pole now
 	organism.Fitness = ex.cartPole.evalNet(organism.Phenotype)
 

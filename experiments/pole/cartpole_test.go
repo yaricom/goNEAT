@@ -58,7 +58,7 @@ func TestCartPoleEpochEvaluator_EpochEvaluate(t *testing.T) {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
 	}
-	err = experiment.Execute(context, start_genome, CartPoleEpochEvaluator{
+	err = experiment.Execute(context, start_genome, CartPoleGenerationEvaluator{
 		OutputPath:out_dir_path,
 		WinBalancingSteps:500000,
 		RandomStart:true,

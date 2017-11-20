@@ -15,7 +15,7 @@ const twelve_degrees = 12.0 * math.Pi / 180.0
 
 // The single pole balancing experiment entry point.
 // This experiment performs evolution on single pole balancing task in order to produce appropriate genome.
-type CartPoleEpochEvaluator struct {
+type CartPoleGenerationEvaluator struct {
 	// The output path to store execution results
 	OutputPath        string
 	// The flag to indicate if cart emulator should be started from random position
@@ -25,7 +25,7 @@ type CartPoleEpochEvaluator struct {
 }
 
 // This method evaluates one epoch for given population and prints results into output directory if any.
-func (ex CartPoleEpochEvaluator) EpochEvaluate(pop *genetics.Population, epoch *experiments.Epoch, context *neat.NeatContext) (err error) {
+func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiments.Generation, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
 		res := ex.orgEvaluate(org)
@@ -80,7 +80,7 @@ func (ex CartPoleEpochEvaluator) EpochEvaluate(pop *genetics.Population, epoch *
 }
 
 // This methods evaluates provided organism for cart pole balancing task
-func (ex *CartPoleEpochEvaluator) orgEvaluate(organism *genetics.Organism) bool {
+func (ex *CartPoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) bool {
 	// Try to balance a pole now
 	organism.Fitness = float64(ex.runCart(organism.Phenotype))
 
@@ -99,7 +99,7 @@ func (ex *CartPoleEpochEvaluator) orgEvaluate(organism *genetics.Organism) bool 
 }
 
 // run cart emulation and return number of emulation steps pole was balanced
-func (ex *CartPoleEpochEvaluator) runCart(net *network.Network) (steps int) {
+func (ex *CartPoleGenerationEvaluator) runCart(net *network.Network) (steps int) {
 	var x float64           /* cart position, meters */
 	var x_dot float64       /* cart velocity */
 	var theta float64       /* pole angle, radians */
@@ -151,7 +151,7 @@ func (ex *CartPoleEpochEvaluator) runCart(net *network.Network) (steps int) {
  four state variables and updates their values by estimating the state
  TAU seconds later.
  ----------------------------------------------------------------------*/
-func (ex *CartPoleEpochEvaluator) doAction(action int, x, x_dot, theta, theta_dot float64) (x_ret, x_dot_ret, theta_ret, theta_dot_ret float64) {
+func (ex *CartPoleGenerationEvaluator) doAction(action int, x, x_dot, theta, theta_dot float64) (x_ret, x_dot_ret, theta_ret, theta_dot_ret float64) {
 	// The cart pole configuration values
 	const GRAVITY = 9.8
 	const MASSCART = 1.0
