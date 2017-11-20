@@ -174,7 +174,7 @@ func (s *Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 // Returns most fit organism for this species
 func (s *Species) FindChampion() *Organism {
 	champ_fitness := -1.0
-	var champion Organism
+	var champion *Organism
 	for _, org := range s.Organisms {
 		if org.Fitness > champ_fitness {
 			champ_fitness = org.Fitness
