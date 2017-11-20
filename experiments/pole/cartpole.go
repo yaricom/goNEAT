@@ -59,7 +59,7 @@ func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				org_path := fmt.Sprintf("%s/%s", ex.OutputPath, "xor_winner")
+				org_path := fmt.Sprintf("%s/%s", ex.OutputPath, "pole_winner")
 				file, err := os.Create(org_path)
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
