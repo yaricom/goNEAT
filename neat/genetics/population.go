@@ -603,17 +603,20 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	// N.B. the mutated offspring of best species may be added to other more compatible species and as result
 	// the best species from previous generation will be removed, but their offspring still be alive
 	best_ok := false
+	var best_sp_max_fitness float64
 	for _, curr_species := range p.Species {
 		neat.DebugLog(fmt.Sprintf("POPULATION: %d <> %d\n", curr_species.Id, best_species_id))
 		if curr_species.Id == best_species_id {
 			best_ok = true
+			best_sp_max_fitness = curr_species.MaxFitnessEver
 			break
 		}
 	}
 	if !best_ok && !best_species_reproduced{
 		return false, errors.New("POPULATION: The best species died without offspring!")
 	} else {
-		neat.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d", best_species_id))
+		neat.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d, max fitness ever: %f",
+			best_species_id, best_sp_max_fitness))
 	}
 
 	// DEBUG: Checking the top organism's duplicate in the next gen
