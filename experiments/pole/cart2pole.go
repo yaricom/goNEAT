@@ -28,30 +28,28 @@ type CartDoublePoleGenerationEvaluator struct {
 // The structure to describe cart pole emulation
 type CartPole struct {
 	// The maximal fitness
-	maxFitness         float64
-	// The flag to indicate whether to apply Markovian evaluation variant
-	isMarkov           bool
-	// Flag that we are looking at the champ
-	nonMarkovLong      bool
-	// Flag we are testing champ's generalization
-	generalizationTest bool
-	// The state of the system (x, x acceleration, thetha 1, thetha 1 acceleration, thetha 2, thetha 2 acceleration)
-	state              [6]float64
+	maxFitness          float64
+	// The flag to indicate that we are executing Markov experiment setup (known velocities information)
+	isMarkov            bool
+	// Flag that we are looking at the champion in Non-Markov experiment
+	nonMarkovLong       bool
+	// Flag that we are testing champion's generalization
+	generalizationTest  bool
 
-	jiggleStep         [1000]float64
+	// The state of the system (x, ∆x/∆t, θ1, ∆θ1/∆t, θ2, ∆θ2/∆t)
+	state               [6]float64
 
-	length2            float64
-	massPole2          float64
-	minInc             float64
-	poleInc            float64
-	massInc            float64
+	// The number of balanced time steps passed for current organism evaluation
+	balanced_time_steps int
+
+	jiggleStep          [1000]float64
 
 	// Queues used for Gruau's fitness which damps oscillations
-	balanced_sum       int
-	cartpos_sum        float64
-	cartv_sum          float64
-	polepos_sum        float64
-	polev_sum          float64
+
+	cartpos_sum         float64
+	cartv_sum           float64
+	polepos_sum         float64
+	polev_sum           float64
 }
 
 // Perform evaluation of one epoch on double pole balancing
@@ -78,6 +76,18 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 
 	// Check for winner in Non-Markov case
 	if !ex.Markov {
+		// The best individual (i.e. the one with the highest fitness value) of every generation is tested for
+		// its ability to balance the system for a longer time period. If a potential solution passes this test
+		// by keeping the system balanced for 100’000 time steps, the so called generalization score(GS) of this
+		// particular individual is calculated. This score measures the potential of a controller to balance the
+		// system starting from different initial conditions. It's calculated with a series of experiments, running
+		// over 1000 time steps, starting from 625 different initial conditions.
+		// The initial conditions are chosen by assign-ing each value of the set Ω = [0.05 0.25 0.75 0.95] to
+		// each of the states x, ∆x/∆t, θ1 and ∆θ1/∆t, scaled to the range of the variables (as specified in the
+		// following section).The short pole angle θ2 and its angular velocity ∆θ2/∆t are set to zero. The GS is
+		// then defined as the number of successful runs from the 625 initial conditions and an individual
+		// is defined as a solution if it reaches a generalization score of 200 or more.
+
 		// Sort the species by max organism fitness in descending order - the highest fitness first
 		sorted_species := make([]*genetics.Species, len(pop.Species))
 		copy(sorted_species, pop.Species)
@@ -86,7 +96,8 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		// First update what is checked and unchecked
 		var curr_species *genetics.Species
 		for _, curr_species = range sorted_species {
-			if max, _ := curr_species.ComputeMaxAndAvgFitness(); max > curr_species.MaxFitnessEver {
+			max, _ := curr_species.ComputeMaxAndAvgFitness()
+			if max > curr_species.MaxFitnessEver {
 				curr_species.IsChecked = false
 			}
 		}
@@ -109,57 +120,73 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		champion := curr_species.FindChampion()
 		champion_fitness := champion.Fitness
 
-		// Now check to make sure the champion can do 100000 evaluations
+		// Now check to make sure the champion can do 100'000 evaluations
 		cartPole.nonMarkovLong = true
 		cartPole.generalizationTest = false
 
 		if ex.orgEvaluate(champion, cartPole) {
-			// the champion passed non-Markov long test
+
+			// the champion passed non-Markov long test, start generalization
 			cartPole.nonMarkovLong = false
-			// Given that the champ passed, now run it on generalization tests
+			cartPole.generalizationTest = true
+
+			// Given that the champion passed long run test, now run it on generalization tests running
+			// over 1'000 time steps, starting from 625 different initial conditions
 			state_vals := [5]float64{0.05, 0.25, 0.5, 0.75, 0.95}
-			score := 0
-			for s0c := 0; s0c <= 4; s0c++ {
-				for s1c := 0; s1c <= 4; s1c++ {
-					for s2c := 0; s2c <= 4; s2c++ {
-						for s3c := 0; s3c <= 4; s3c++ {
+			generalization_score := 0
+			for s0c := 0; s0c < 5; s0c++ {
+				for s1c := 0; s1c < 5; s1c++ {
+					for s2c := 0; s2c < 5; s2c++ {
+						for s3c := 0; s3c < 5; s3c++ {
 							cartPole.state[0] = state_vals[s0c] * 4.32 - 2.16
 							cartPole.state[1] = state_vals[s1c] * 2.70 - 1.35
 							cartPole.state[2] = state_vals[s2c] * 0.12566304 - 0.06283152 // 0.06283152 = 3.6 degrees
 							cartPole.state[3] = state_vals[s3c] * 0.30019504 - 0.15009752 // 0.15009752 = 8.6 degrees
+							// The short pole angle and its angular velocity are set to zero.
 							cartPole.state[4] = 0.0
 							cartPole.state[5] = 0.0
-
-							cartPole.generalizationTest = true
 
 							// The champion needs to be flushed here because it may have
 							// leftover activation from its last test run that could affect
 							// its recurrent memory
-							generation.Best.Phenotype.Flush()
+							champion.Phenotype.Flush()
 
 							if ex.orgEvaluate(champion, cartPole) {
-								score++
+								generalization_score++
+
+								if neat.LogLevel == neat.LogLevelDebug {
+									neat.DebugLog(
+										fmt.Sprintf("x: % f, xv: % f, t1: % f, t2: % f, angle: % f\n",
+										cartPole.state[0], cartPole.state[1],
+										cartPole.state[2], cartPole.state[4], thirty_six_degrees))
+								}
 							}
 						}
 					}
 				}
 			}
 
-			if score >= 200 {
+			if generalization_score >= 200 {
 				// The generalization test winner
-				neat.DebugLog(fmt.Sprintf("The non-Markov champion found! (generalization = %d)", score))
+				neat.InfoLog(
+					fmt.Sprintf("The non-Markov champion found! (Generalization Score = %d)",
+						generalization_score))
+				champion.Fitness = float64(generalization_score)
+				champion.IsWinner = true
 				generation.Solved = true
 				generation.WinnerNodes = len(champion.Genotype.Nodes)
 				generation.WinnerGenes = champion.Genotype.Extrons()
 				generation.WinnerEvals = context.PopSize * generation.Id + champion.Genotype.Id
 				generation.Best = champion
 			} else {
-				neat.DebugLog("The non-Markov champion failed to generalize in non-Markov test")
-				generation.Best.Fitness = champion_fitness; // Restore the champ's fitness
+				neat.DebugLog("The non-Markov champion failed to generalize")
+				champion.Fitness = champion_fitness // Restore the champ's fitness
+				champion.IsWinner = false
 			}
 		} else {
-			neat.DebugLog("The non-Markov champion failed the 100,000 run in non-Markov test")
-			champion.Fitness = champion_fitness; // Restore the champ's fitness
+			neat.DebugLog("The non-Markov champion failed the 100'000 run test")
+			champion.Fitness = champion_fitness // Restore the champ's fitness
+			champion.IsWinner = false
 		}
 	}
 
@@ -217,6 +244,9 @@ func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Orga
 		neat.WarnLog(fmt.Sprintf("ORGANISM DAMAGED:\n%s", organism.Genotype))
 	}
 
+	// reset organism winner flag
+	organism.IsWinner = false
+
 	// Decide if its a winner, in Markov Case
 	if cartPole.isMarkov {
 		if organism.Fitness >= cartPole.maxFitness {
@@ -243,11 +273,6 @@ func newCartPole(markov bool) *CartPole {
 	return &CartPole{
 		maxFitness: 100000,
 		isMarkov: markov,
-		minInc: 0.001,
-		poleInc: 0.05,
-		massInc: 0.01,
-		length2: 0.05,
-		massPole2: 0.01,
 	}
 }
 
@@ -303,27 +328,21 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 	} else {
 		// The non Markov case
 		for ; steps < non_markov_max; steps++ {
-			input[0] = (cp.state[0] + 2.4) / 4.8
-			input[1] = (cp.state[2] + thirty_six_degrees) / (thirty_six_degrees * 2.0)//0.52
-			input[2] = (cp.state[4] + thirty_six_degrees) / (thirty_six_degrees * 2.0)//0.52
-			input[3] = 0.5
+			input[0] = cp.state[0] / 4.8
+			input[1] = cp.state[2] / 0.52
+			input[2] = cp.state[4] / 0.52
+			input[3] = 1.0
 
 			net.LoadSensors(input)
 
 			/*-- activate the network based on the input --*/
 			if res, err := net.Activate(); !res {
 				//If it loops, exit returning only fitness of 1 step
-				neat.DebugLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
+				neat.WarnLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
 				return 0.0001
 			}
 
 			action := net.Outputs[0].Activation
-			if action < 0.5 {
-				action = 0
-			} else {
-				action = 1
-			}
-			cp.performAction(action, steps)
 			if actionType == experiments.DiscreteAction {
 				// make action values discrete
 				if action < 0.5 {
@@ -332,14 +351,17 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 					action = 1
 				}
 			}
+			cp.performAction(action, steps)
 			if cp.outsideBounds() {
 				// if failure stop it now
 				break;
 			}
+
+			//fmt.Printf("x: % f, xv: % f, t1: % f, t2: % f, angle: % f\n", cp.state[0], cp.state[1], cp.state[2], cp.state[4], thirty_six_degrees)
 		}
-		/*-- If we are generalizing we just need to balance it a while --*/
+		/*-- If we are generalizing we just need to balance it for a while --*/
 		if cp.generalizationTest {
-			return float64(cp.balanced_sum)
+			return float64(cp.balanced_time_steps)
 		}
 
 		// Sum last 100
@@ -352,13 +374,16 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 		}
 		if !cp.nonMarkovLong {
 			var non_markov_fitness float64
-			if cp.balanced_sum > 100 {
-				non_markov_fitness = 0.1 * float64(cp.balanced_sum) / 1000.0 + 0.9 * 0.75 / float64(jiggle_total)
+			if cp.balanced_time_steps > 100 {
+				// F = 0.1f1+ 0.9f2
+				non_markov_fitness = 0.1 * float64(cp.balanced_time_steps) / 1000.0 + 0.9 * 0.75 / float64(jiggle_total)
 			} else {
-				non_markov_fitness = 0.1 * float64(cp.balanced_sum) / 1000.0
+				// F = t / 1000
+				non_markov_fitness = 0.1 * float64(cp.balanced_time_steps) / 1000.0
 			}
 			if neat.LogLevel == neat.LogLevelDebug {
-				neat.DebugLog(fmt.Sprintf("Balanced: %d jiggle: %d ***\n", cp.balanced_sum, jiggle_total))
+				neat.DebugLog(fmt.Sprintf("Balanced time steps: %d, jiggle: %f ***\n",
+					cp.balanced_time_steps, jiggle_total))
 			}
 			return non_markov_fitness
 		} else {
@@ -368,7 +393,7 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 }
 
 func (cp *CartPole) performAction(action, step_num float64) {
-	const TAU = 0.001
+	const TAU = 0.01 // ∆t = 0.01s
 
 	/*--- Apply action to the simulated cart-pole ---*/
 	// Runge-Kutta 4th order integration method
@@ -391,17 +416,21 @@ func (cp *CartPole) performAction(action, step_num float64) {
 		cp.jiggleStep[int(step_num) - 1] = math.Abs(cp.state[0]) + math.Abs(cp.state[1]) + math.Abs(cp.state[2]) + math.Abs(cp.state[3])
 	}
 	if !cp.outsideBounds() {
-		cp.balanced_sum++
+		cp.balanced_time_steps++
 	}
 }
 
 func (cp *CartPole) step(action float64, st[6]float64, derivs *[6]float64) {
 	const MUP = 0.000002
 	const GRAVITY = -9.8
-	const MASSCART = 1.0
-	const MASSPOLE_1 = 0.5
-	const LENGTH_1 = 0.5 // actually half the pole's length
-	const FORCE_MAG = 10.0
+	const FORCE_MAG = 10.0        // [N]
+	const MASS_CART = 1.0        // [kg]
+
+	const MASS_POLE_1 = 1.0        // [kg]
+	const LENGTH_1 = 0.5        // [m] - actually half the first pole's length
+
+	const LENGTH_2 = 0.05        // [m] - actually half the second pole's length
+	const MASS_POLE_2 = 0.1        // [kg]
 
 	force := (action - 0.5) * FORCE_MAG * 2.0
 	cos_theta_1 := math.Cos(st[2])
@@ -411,20 +440,20 @@ func (cp *CartPole) step(action float64, st[6]float64, derivs *[6]float64) {
 	sin_theta_2 := math.Sin(st[4])
 	g_sin_theta_2 := GRAVITY * sin_theta_2
 
-	ml_1 := LENGTH_1 * MASSPOLE_1
-	ml_2 := cp.length2 * cp.massPole2
+	ml_1 := LENGTH_1 * MASS_POLE_1
+	ml_2 := LENGTH_2 * MASS_POLE_2
 	temp_1 := MUP * st[3] / ml_1
 	temp_2 := MUP * st[5] / ml_2
-	fi_1 := (ml_1 * st[3] * st[3] * sin_theta_1) + (0.75 * MASSPOLE_1 * cos_theta_1 * (temp_1 + g_sin_theta_1))
-	fi_2 := (ml_2 * st[5] * st[5] * sin_theta_2) + (0.75 * cp.massPole2 * cos_theta_2 * (temp_2 + g_sin_theta_2))
-	mi_1 := MASSPOLE_1 * (1 - (0.75 * cos_theta_1 * cos_theta_1))
-	mi_2 := cp.massPole2 * (1 - (0.75 * cos_theta_2 * cos_theta_2))
+	fi_1 := (ml_1 * st[3] * st[3] * sin_theta_1) + (0.75 * MASS_POLE_1 * cos_theta_1 * (temp_1 + g_sin_theta_1))
+	fi_2 := (ml_2 * st[5] * st[5] * sin_theta_2) + (0.75 * MASS_POLE_2 * cos_theta_2 * (temp_2 + g_sin_theta_2))
+	mi_1 := MASS_POLE_1 * (1 - (0.75 * cos_theta_1 * cos_theta_1))
+	mi_2 := MASS_POLE_2 * (1 - (0.75 * cos_theta_2 * cos_theta_2))
 
 	//fmt.Printf("%f -> %f\n", action, force)
 
-	derivs[1] = (force + fi_1 + fi_2) / (mi_1 + mi_2 + MASSCART)
+	derivs[1] = (force + fi_1 + fi_2) / (mi_1 + mi_2 + MASS_CART)
 	derivs[3] = -0.75 * (derivs[1] * cos_theta_1 + g_sin_theta_1 + temp_1) / LENGTH_1
-	derivs[5] = -0.75 * (derivs[1] * cos_theta_2 + g_sin_theta_2 + temp_2) / cp.length2
+	derivs[5] = -0.75 * (derivs[1] * cos_theta_2 + g_sin_theta_2 + temp_2) / LENGTH_2
 }
 
 func (cp *CartPole) rk4(f float64, y, dydx [6]float64, yout *[6]float64, tau float64) {
@@ -482,14 +511,12 @@ func (cp *CartPole)resetState() {
 		cp.polev_sum = 0.0
 
 		cp.state[0], cp.state[1], cp.state[2], cp.state[3], cp.state[4], cp.state[5] = 0, 0, 0, 0, 0, 0
-	}
-	cp.balanced_sum = 0 // Always count # balanced
-	if cp.generalizationTest {
+	} else if !cp.generalizationTest {
+		// The long run non-markov test
 		cp.state[0], cp.state[1], cp.state[3], cp.state[4], cp.state[5] = 0, 0, 0, 0, 0
 		cp.state[2] = math.Pi / 180.0 // one_degree
-	} else {
-		cp.state[4], cp.state[5] = 0, 0
 	}
+	cp.balanced_time_steps = 0 // Always count # of balanced time steps
 }
 
 
