@@ -22,7 +22,7 @@ go get github.com/yaricom/goNEAT
 The basic system's performance is evaluated by two kind of experiments:
 1. The XOR experiment which test whether topology augmenting actually happens by NEAT algorithm evaluation. To build XOR
 solving network the NEAT algorithm should grow new hidden unit in the provided start genome.
-2. The pool balancing experiment which is classic Reinforcement Learning experiment allowing us to estimate performance
+2. The pole balancing experiments which is classic Reinforcement Learning experiment allowing us to estimate performance
 of NEAT algorithm against proven results by many of other algorithms. I.e. we can benchmark NEAT performance against
 other algorithms and find out if it performs better or worse.
 
@@ -120,9 +120,9 @@ Figure 1.
 ##### System Constraints
 1. The pole must remain upright within ±r the pole failure angle.
 2. The cart must remain within ±h of origin.
-3. The controller must always exert a non-zero force F,
+3. The controller must always exert a non-zero force F.
 
-where r is a pole failure angle (±12 ̊ from 0) and h is a track limit (±2.4 meters from the track centre).
+Where r is a pole failure angle (±12 ̊ from 0) and h is a track limit (±2.4 meters from the track centre).
 
 The simulation of the cart ends when either the pole exceeds the failure angle or the cart exceeds the limit of the track.
 The objective is to devise a controller that can keep the pole balanced for a defined length of simulation time.
@@ -177,10 +177,9 @@ for performance testing.
 In both single pole-balancing configurations described above the optimal winner organism has number of nodes and genes - 7 and 10 correspondingly.
 
 The seven network nodes has following meaning:
-* \[1\] is a bias
-* \[2-5\] are sensors receiving system state: X position, acceleration among X, pole angle, and pole
-angular acceleration
-* \[6, 7\] are output nodes signaling what action should be applied to the system to balance pole at
+* node #1 is a bias
+* nodes #2-5 are sensors receiving system state: X position, acceleration among X, pole angle, and pole angular velocity
+* nodes #6, 7 are output nodes signaling what action should be applied to the system to balance pole at
 each simulation step, i.e. force direction to be applied. The applied force direction depends on relative strength of
 activations of both output neurons. If activation of first output neuron (6-th node) greater than activation of second
 neuron (7-th node) the positive force direction applied. Otherwise the negative force direction applied.
@@ -196,17 +195,17 @@ This is advanced version of pole-balancing which assumes that cart has two poles
 Figure 2.
 
 We will consider for benchmarking the two types of this problem:
-a. the Markovian with full system state known (including velocities)
-b. Non-Markovian without velocity information
+* the Markovian with full system state known (including velocities);
+* the Non-Markovian without velocity information.
 
 The former one is fairly simple and last one is a quite challenging.
 
 ##### System Constraints
 1. The both poles must remain upright within ±r the pole failure angle.
 2. The cart must remain within ±h of origin.
-3. The controller must always exert a non-zero force F,
+3. The controller must always exert a non-zero force F.
 
-where r is a pole failure angle (±36 ̊ from 0) and h is a track limit (±2.4 meters from the track centre).
+Where r is a pole failure angle (±36 ̊ from 0) and h is a track limit (±2.4 meters from the track centre).
 
 #### 3.1. The double pole-balancing Markovian experiment (with known velocity)
 
@@ -241,8 +240,8 @@ Mean
 ```
 
 The winner solution can be found approximately within 13 generation with nearly doubled complexity of resulting genome
-compared to the seed genome. The seed genome has eight nodes where node [1-6] is sensors for x, x', θ1, θ1', θ2, and θ2'
-correspondingly, node [7] is a bias, and node [8] is an output signaling what action should be applied at each time step.
+compared to the seed genome. The seed genome has eight nodes where nodes #1-6 is sensors for x, x', θ1, θ1', θ2, and θ2'
+correspondingly, node #7 is a bias, and node #8 is an output signaling what action should be applied at each time step.
 
 
 #### 3.2. The double pole-balancing Non-Markovian experiment (without velocity information)
@@ -257,7 +256,7 @@ particular individual is calculated. This score measures the potential of a cont
 system starting from different initial conditions. It's calculated with a series of experiments, running
 over 1000 time steps, starting from 625 different initial conditions.
 
-The initial conditions are chosen by assigning each value of the set Ω = [0.05, 0.25, 0.5, 0.75, 0.95] to
+The initial conditions are chosen by assigning each value of the set Ω = \[0.05, 0.25, 0.5, 0.75, 0.95\] to
 each of the states x, ∆x/∆t, θ1 and ∆θ1/∆t, scaled to the range of the variables (as specified in the
 following section).The short pole angle θ2 and its angular velocity ∆θ2/∆t are set to zero. The GS is
 then defined as the number of successful runs from the 625 initial conditions and an individual
