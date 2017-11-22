@@ -36,6 +36,17 @@ func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 			epoch.WinnerGenes = org.Genotype.Extrons()
 			epoch.WinnerEvals = context.PopSize * epoch.Id + org.Genotype.Id
 			epoch.Best = org
+			if (epoch.WinnerNodes == 7) {
+				// You could dump out optimal genomes here if desired
+				opt_path := fmt.Sprintf("%s/%s", ex.OutputPath, "pole1_optimal")
+				file, err := os.Create(opt_path)
+				if err != nil {
+					neat.ErrorLog(fmt.Sprintf("Failed to dump optimal genome, reason: %s\n", err))
+				} else {
+					org.Genotype.Write(file)
+					neat.InfoLog(fmt.Sprintf("Dumped optimal genome to: %s\n", opt_path))
+				}
+			}
 			break // we have winner
 		}
 	}
