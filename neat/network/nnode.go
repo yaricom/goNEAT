@@ -209,13 +209,13 @@ func (n *NNode) Write(w io.Writer) {
 	if n.Trait != nil {
 		trait_id = n.Trait.Id
 	}
-	fmt.Fprintf(w, "%d %d %d %d", n.Id, trait_id, n.nodeType(), n.NeuronType)
+	fmt.Fprintf(w, "%d %d %d %d", n.Id, trait_id, n.NodeType(), n.NeuronType)
 }
 
 // Find the greatest depth starting from this neuron at depth d
 func (n *NNode) Depth(d int) (int, error) {
 	if d > 100 {
-		return 10, nil//errors.New("NNODE: DEPTH NOT DETERMINED FOR NETWORK WITH LOOP");
+		return 10, errors.New("NNode: Depth can not be determined for network with loop");
 	}
 	// Base Case
 	if n.IsSensor() {
@@ -237,7 +237,8 @@ func (n *NNode) Depth(d int) (int, error) {
 
 }
 
-func (n *NNode) nodeType() NodeType {
+// Convenient method to check network's node type (SENSOR, NEURON)
+func (n *NNode) NodeType() NodeType {
 	if n.IsSensor() {
 		return SensorNode
 	}
@@ -246,7 +247,7 @@ func (n *NNode) nodeType() NodeType {
 
 func (n *NNode) String() string {
 	return fmt.Sprintf("(%s %3d, layer: %s, step: %d = %.3f %.3f)",
-		NodeTypeName(n.nodeType()), n.Id, NeuronTypeName(n.NeuronType), n.ActivationsCount, n.Activation, n.Params)
+		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), n.ActivationsCount, n.Activation, n.Params)
 }
 
 

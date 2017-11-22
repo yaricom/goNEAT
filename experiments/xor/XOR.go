@@ -112,8 +112,9 @@ func (ex *XORGenerationEvaluator) org_evaluate(organism *genetics.Organism, cont
 
 	net_depth, err := organism.Phenotype.MaxDepth() // The max depth of the network to be activated
 	if err != nil {
-		neat.ErrorLog(fmt.Sprintf("Failed to estimate maximal depth of the network with genome:\n%s", organism.Genotype))
-		return false, err
+		neat.WarnLog(
+			fmt.Sprintf("Failed to estimate maximal depth of the network with loop:\n%s\nUsing default dpeth: %d",
+				organism.Genotype, net_depth))
 	}
 	neat.DebugLog(fmt.Sprintf("Network depth: %d for organism: %d\n", net_depth, organism.Genotype.Id))
 	if net_depth == 0 {

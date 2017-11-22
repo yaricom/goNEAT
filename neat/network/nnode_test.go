@@ -25,8 +25,8 @@ func TestReadNNode(t *testing.T) {
 	if node.Trait != trait {
 		t.Error("The wrong Trait found in the node")
 	}
-	if node.nodeType() != ntype {
-		t.Errorf("Wrong node type found, %d != %d", ntype, node.nodeType())
+	if node.NodeType() != ntype {
+		t.Errorf("Wrong node type found, %d != %d", ntype, node.NodeType())
 	}
 	if node.NeuronType != gen_node_label {
 		t.Errorf("The wrong node placement label found, %d != %d", gen_node_label, node.NeuronType)
@@ -162,6 +162,24 @@ func TestNNode_Depth(t *testing.T) {
 		t.Error("node3.Depth", 2, depth)
 	}
 }
+
+func TestNNode_DepthWithLoop(t *testing.T) {
+	node := NewNNode(1, InputNeuron)
+	node2 := NewNNode(2, HiddenNeuron)
+	node3 := NewNNode(3, OutputNeuron)
+
+	node2.AddIncoming(node, 15.0)
+	node3.AddIncoming(node2, 20.0)
+	node2.AddIncoming(node3, 10.0)
+	depth, err := node3.Depth(0)
+	if err == nil {
+		t.Error("Alert expected")
+	}
+	if depth != 10 {
+		t.Error("node3.Depth", 10, depth)
+	}
+}
+
 
 // Tests NNode Flushback
 func TestNNode_Flushback(t *testing.T) {
