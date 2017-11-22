@@ -82,11 +82,11 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		// particular individual is calculated. This score measures the potential of a controller to balance the
 		// system starting from different initial conditions. It's calculated with a series of experiments, running
 		// over 1000 time steps, starting from 625 different initial conditions.
-		// The initial conditions are chosen by assign-ing each value of the set Ω = [0.05 0.25 0.75 0.95] to
-		// each of the states x, ∆x/∆t, θ1 and ∆θ1/∆t, scaled to the range of the variables (as specified in the
-		// following section).The short pole angle θ2 and its angular velocity ∆θ2/∆t are set to zero. The GS is
-		// then defined as the number of successful runs from the 625 initial conditions and an individual
-		// is defined as a solution if it reaches a generalization score of 200 or more.
+		// The initial conditions are chosen by assign-ing each value of the set Ω = [0.05 0.25 0.5 0.75 0.95] to
+		// each of the states x, ∆x/∆t, θ1 and ∆θ1/∆t, scaled to the range of the variables.The short pole angle θ2 
+		// and its angular velocity ∆θ2/∆t are set to zero. The GS is then defined as the number of successful runs 
+		// from the 625 initial conditions and an individual is defined as a solution if it reaches a generalization 
+		// score of 200 or more.
 
 		// Sort the species by max organism fitness in descending order - the highest fitness first
 		sorted_species := make([]*genetics.Species, len(pop.Species))
