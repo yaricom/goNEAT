@@ -33,7 +33,7 @@ combined at some hidden unit, as opposed to only at the output node, because the
 combination of the inputs that can separate the inputs into the proper classes. These structural requirements make XOR
 suitable for testing NEAT’s ability to evolve structure.
 
-#### >>> The XOR Experiment with connected inputs in start genome
+#### 1.1. The XOR Experiment with connected inputs in start genome
 In this experiment we will use start (seed) genome with inputs connected to the output. Thus it will check mostly the
 ability of NEAT to grow new hidden unit necessary for solving XOR problem.
 
@@ -77,7 +77,7 @@ Where:
 - **Mean Diversity** is an average diversity (number of species) per epoch for all epochs
 - **Mean Age** is an average age of surviving species per epoch for all epochs
 
-#### >>> The XOR experiment with disconnected inputs in start genome
+#### 1.2. The XOR experiment with disconnected inputs in start genome
 This experiment will use start genome with disconnected inputs in order to check ability of algorithm to not only grow
 need hidden nodes, but also to build missed connections between input nodes and rest of the network.
 
@@ -114,6 +114,8 @@ The pole-balancing or inverted pendulum problem has long been established as a s
 systems. It is one of the best early examples of a reinforcement learning task under conditions of incomplete knowledge.
 
 ![alt text][single_pole-balancing_scheme]
+
+Figure 1.
 
 ##### System Constraints
 1. The pole must remain upright within ±r the pole failure angle.
@@ -191,6 +193,8 @@ This is advanced version of pole-balancing which assumes that cart has two poles
 
 ![alt text][double_pole-balancing_scheme]
 
+Figure 2.
+
 We will consider for benchmarking the two types of this problem:
 a. the Markovian with full system state known (including velocities)
 b. Non-Markovian without velocity information
@@ -204,7 +208,7 @@ The former one is fairly simple and last one is a quite challenging.
 
 where r is a pole failure angle (±36 ̊ from 0) and h is a track limit (±2.4 meters from the track centre).
 
-#### >>> The double pole-balancing Markovian experiment (with known velocity)
+#### 3.1. The double pole-balancing Markovian experiment (with known velocity)
 
 In this experiment agent will receive at each time step full system state including velocity of cart and both poles. The
 winner solution will be determined as the one which is able to perform double pole-balancing at least 100’000 time steps or
@@ -241,7 +245,7 @@ compared to the seed genome. The seed genome has eight nodes where node [1-6] is
 correspondingly, node [7] is a bias, and node [8] is an output signaling what action should be applied at each time step.
 
 
-#### >>> The double pole-balancing Non-Markovian experiment (without velocity information)
+#### 3.2. The double pole-balancing Non-Markovian experiment (without velocity information)
 
 In this experiment agent will receive at each time step partial system state excluding velocity information about cart and both poles.
 Only horizontal cart position X, and angles of both poles θ1 and θ2 will be provided to the agent.
@@ -253,7 +257,7 @@ particular individual is calculated. This score measures the potential of a cont
 system starting from different initial conditions. It's calculated with a series of experiments, running
 over 1000 time steps, starting from 625 different initial conditions.
 
-The initial conditions are chosen by assign-ing each value of the set Ω = [0.05 0.25 0.75 0.95] to
+The initial conditions are chosen by assigning each value of the set Ω = [0.05, 0.25, 0.5, 0.75, 0.95] to
 each of the states x, ∆x/∆t, θ1 and ∆θ1/∆t, scaled to the range of the variables (as specified in the
 following section).The short pole angle θ2 and its angular velocity ∆θ2/∆t are set to zero. The GS is
 then defined as the number of successful runs from the 625 initial conditions and an individual
@@ -293,6 +297,8 @@ The original C++ NEAT implementation created by Kenneth Stanley, see: [NEAT][1]
 This source code maintained and managed by Iaroslav Omelianenko
 
 Other NEAT implementations may be found at [NEAT Software Catalog][2]
+
+Images taken from: http://lis2.epfl.ch/CompletedResearchProjects/EvolutionOfAnalogNetworks/ArtificialNeuralNetworks/index.php
 
 [1]:http://www.cs.ucf.edu/~kstanley/neat.html
 [2]:http://eplex.cs.ucf.edu/neat_software/
