@@ -69,20 +69,20 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 
 		epoch_evaluator := executor.(GenerationEvaluator) // mandatory
 
-		for gen := 0; gen < context.NumGenerations; gen++ {
-			neat.InfoLog(fmt.Sprintf(">>>>> Epoch:%3d\tRun: %d\n", gen, run))
-			epoch := Generation{
-				Id:gen,
+		for generation_id := 0; generation_id < context.NumGenerations; generation_id++ {
+			neat.InfoLog(fmt.Sprintf(">>>>> Generation:%3d\tRun: %d\n", generation_id, run))
+			generation := Generation{
+				Id:generation_id,
 			}
-			err = epoch_evaluator.GenerationEvaluate(pop, &epoch, context)
+			err = epoch_evaluator.GenerationEvaluate(pop, &generation, context)
 			if err != nil {
-				neat.InfoLog(fmt.Sprintf("!!!!! Epoch %d evaluation failed !!!!!\n", gen))
+				neat.InfoLog(fmt.Sprintf("!!!!! Generation [%d] evaluation failed !!!!!\n", generation_id))
 				return err
 			}
-			epoch.Executed = time.Now()
-			trial.Epochs = append(trial.Epochs, epoch)
-			if epoch.Solved {
-				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in epoch %d! <<<<<\n", gen))
+			generation.Executed = time.Now()
+			trial.Epochs = append(trial.Epochs, generation)
+			if generation.Solved {
+				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation! <<<<<\n", generation_id))
 				break
 			}
 		}
