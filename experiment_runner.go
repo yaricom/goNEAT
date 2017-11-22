@@ -87,6 +87,12 @@ func main() {
 			Markov:true,
 			ActionType:experiments.ContinuousAction,
 		}
+	} else if *experiment_name == "cart_2pole_non-markov" {
+		generationEvaluator = pole.CartDoublePoleGenerationEvaluator{
+			OutputPath:*out_dir_path,
+			Markov:false,
+			ActionType:experiments.ContinuousAction,
+		}
 	}
 
 	err = experiment.Execute(context, start_genome, generationEvaluator)
