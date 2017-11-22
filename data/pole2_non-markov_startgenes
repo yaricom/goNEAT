@@ -1,4 +1,4 @@
-/* The double pole-balancing Non-Markov experiment start genome */
+/* The double pole-balancing start genome for Non-Markov experiment */
 genomestart 1
 trait 1 0.1 0 0 0 0 0 0 0
 node 1 0 1 1
