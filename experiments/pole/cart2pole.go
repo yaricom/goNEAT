@@ -21,8 +21,8 @@ type CartDoublePoleGenerationEvaluator struct {
 	// The flag to indicate whether to apply Markov evaluation variant
 	Markov     bool
 
-	// The currently evaluating cart pole
-	cartPole   *CartPole
+	// The flag to indicate whether to use continuous activation or discrete
+	ActionType experiments.ActionType
 }
 
 // The structure to describe cart pole emulation
@@ -54,18 +54,16 @@ type CartPole struct {
 	polev_sum          float64
 }
 
-func (ev *CartDoublePoleGenerationEvaluator) TrialRunStarted(trial *experiments.Trial) {
-	ev.cartPole = newCartPole(ev.Markov)
-}
-
 // Perform evaluation of one epoch on double pole balancing
-func (ex *CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, generation *experiments.Generation, context *neat.NeatContext) (err error) {
-	ex.cartPole.nonMarkovLong = false
-	ex.cartPole.generalizationTest = false
+func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, generation *experiments.Generation, context *neat.NeatContext) (err error) {
+	cartPole := newCartPole(ex.Markov)
+
+	cartPole.nonMarkovLong = false
+	cartPole.generalizationTest = false
 
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
-		res := ex.orgEvaluate(org)
+		res := ex.orgEvaluate(org, cartPole)
 
 		if res {
 			// This will be winner in Markov case
@@ -112,12 +110,12 @@ func (ex *CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Po
 		champion_fitness := champion.Fitness
 
 		// Now check to make sure the champion can do 100000 evaluations
-		ex.cartPole.nonMarkovLong = true
-		ex.cartPole.generalizationTest = false
+		cartPole.nonMarkovLong = true
+		cartPole.generalizationTest = false
 
-		if ex.orgEvaluate(generation.Best) {
+		if ex.orgEvaluate(champion, cartPole) {
 			// the champion passed non-Markov long test
-			ex.cartPole.nonMarkovLong = false
+			cartPole.nonMarkovLong = false
 			// Given that the champ passed, now run it on generalization tests
 			state_vals := [5]float64{0.05, 0.25, 0.5, 0.75, 0.95}
 			score := 0
@@ -125,21 +123,21 @@ func (ex *CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Po
 				for s1c := 0; s1c <= 4; s1c++ {
 					for s2c := 0; s2c <= 4; s2c++ {
 						for s3c := 0; s3c <= 4; s3c++ {
-							ex.cartPole.state[0] = state_vals[s0c] * 4.32 - 2.16
-							ex.cartPole.state[1] = state_vals[s1c] * 2.70 - 1.35
-							ex.cartPole.state[2] = state_vals[s2c] * 0.12566304 - 0.06283152 // 0.06283152 = 3.6 degrees
-							ex.cartPole.state[3] = state_vals[s3c] * 0.30019504 - 0.15009752 // 0.15009752 = 8.6 degrees
-							ex.cartPole.state[4] = 0.0
-							ex.cartPole.state[5] = 0.0
+							cartPole.state[0] = state_vals[s0c] * 4.32 - 2.16
+							cartPole.state[1] = state_vals[s1c] * 2.70 - 1.35
+							cartPole.state[2] = state_vals[s2c] * 0.12566304 - 0.06283152 // 0.06283152 = 3.6 degrees
+							cartPole.state[3] = state_vals[s3c] * 0.30019504 - 0.15009752 // 0.15009752 = 8.6 degrees
+							cartPole.state[4] = 0.0
+							cartPole.state[5] = 0.0
 
-							ex.cartPole.generalizationTest = true
+							cartPole.generalizationTest = true
 
 							// The champion needs to be flushed here because it may have
 							// leftover activation from its last test run that could affect
 							// its recurrent memory
 							generation.Best.Phenotype.Flush()
 
-							if ex.orgEvaluate(generation.Best) {
+							if ex.orgEvaluate(champion, cartPole) {
 								score++
 							}
 						}
@@ -206,30 +204,30 @@ func (ex *CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Po
 }
 
 // This methods evaluates provided organism for cart double pole-balancing task
-func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) bool {
+func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism, cartPole *CartPole) bool {
 	// Try to balance a pole now
-	organism.Fitness = ex.cartPole.evalNet(organism.Phenotype)
+	organism.Fitness = cartPole.evalNet(organism.Phenotype, ex.ActionType)
 
 	if neat.LogLevel == neat.LogLevelDebug {
 		neat.DebugLog(fmt.Sprintf("Organism #%3d\tfitness: %f", organism.Genotype.Id, organism.Fitness))
 	}
 
 	// DEBUG CHECK if organism is damaged
-	if !(ex.cartPole.nonMarkovLong && ex.cartPole.generalizationTest) && organism.CheckChampionChildDamaged() {
+	if !(cartPole.nonMarkovLong && cartPole.generalizationTest) && organism.CheckChampionChildDamaged() {
 		neat.WarnLog(fmt.Sprintf("ORGANISM DAMAGED:\n%s", organism.Genotype))
 	}
 
 	// Decide if its a winner, in Markov Case
-	if ex.cartPole.isMarkov {
-		if organism.Fitness >= ex.cartPole.maxFitness {
+	if cartPole.isMarkov {
+		if organism.Fitness >= cartPole.maxFitness {
 			organism.IsWinner = true
 		}
-	} else if ex.cartPole.nonMarkovLong {
+	} else if cartPole.nonMarkovLong {
 		// if doing the long test non-markov
 		if organism.Fitness >= 99999 {
 			organism.IsWinner = true
 		}
-	} else if ex.cartPole.generalizationTest {
+	} else if cartPole.generalizationTest {
 		if organism.Fitness >= 999 {
 			organism.IsWinner = true
 		}
@@ -253,7 +251,7 @@ func newCartPole(markov bool) *CartPole {
 	}
 }
 
-func (cp *CartPole)evalNet(net *network.Network) (steps float64) {
+func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionType) (steps float64) {
 	non_markov_max := 1000.0
 	if cp.nonMarkovLong {
 		non_markov_max = 100000.0
@@ -284,10 +282,13 @@ func (cp *CartPole)evalNet(net *network.Network) (steps float64) {
 				return 1.0
 			}
 			action := net.Outputs[0].Activation
-			if action < 0.5 {
-				action = 0
-			} else {
-				action = 1
+			if actionType == experiments.DiscreteAction {
+				// make action values discrete
+				if action < 0.5 {
+					action = 0
+				} else {
+					action = 1
+				}
 			}
 			cp.performAction(action, steps)
 
@@ -323,7 +324,14 @@ func (cp *CartPole)evalNet(net *network.Network) (steps float64) {
 				action = 1
 			}
 			cp.performAction(action, steps)
-
+			if actionType == experiments.DiscreteAction {
+				// make action values discrete
+				if action < 0.5 {
+					action = 0
+				} else {
+					action = 1
+				}
+			}
 			if cp.outsideBounds() {
 				// if failure stop it now
 				break;
@@ -380,7 +388,7 @@ func (cp *CartPole) performAction(action, step_num float64) {
 	cp.polev_sum += math.Abs(cp.state[3]);
 
 	if step_num < 1000 {
-		cp.jiggleStep[int(step_num)-1] = math.Abs(cp.state[0]) + math.Abs(cp.state[1]) + math.Abs(cp.state[2]) + math.Abs(cp.state[3])
+		cp.jiggleStep[int(step_num) - 1] = math.Abs(cp.state[0]) + math.Abs(cp.state[1]) + math.Abs(cp.state[2]) + math.Abs(cp.state[3])
 	}
 	if !cp.outsideBounds() {
 		cp.balanced_sum++

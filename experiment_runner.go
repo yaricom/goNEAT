@@ -82,9 +82,10 @@ func main() {
 			RandomStart:true,
 		}
 	} else if *experiment_name == "cart_2pole_markov" {
-		generationEvaluator = &pole.CartDoublePoleGenerationEvaluator{
+		generationEvaluator = pole.CartDoublePoleGenerationEvaluator{
 			OutputPath:*out_dir_path,
 			Markov:true,
+			ActionType:experiments.ContinuousAction,
 		}
 	}
 

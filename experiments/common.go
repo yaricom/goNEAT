@@ -8,6 +8,17 @@ import (
 	"time"
 )
 
+// The type of action to be applied to environment
+type ActionType byte
+
+// The supported action types
+const (
+	// The continuous action type meaning continuous values to be applied to environment
+	ContinuousAction ActionType = iota
+	// The discrete action assumes that there are only discrete values of action (e.g. 0, 1)
+	DiscreteAction
+)
+
 // The interface describing evaluator for one generation of evolution.
 type GenerationEvaluator interface {
 	// Invoked to evaluate one generation of population of organisms within given
