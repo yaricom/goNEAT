@@ -102,9 +102,9 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 	// Build the input nodes
 	for ncount := 1; ncount <= in; ncount++ {
 		if ncount < in {
-			new_node = network.NewNNodeInPlace(network.SensorNode, ncount, network.InputNeuron)
+			new_node = network.NewNNode(ncount, network.InputNeuron)
 		} else {
-			new_node = network.NewNNodeInPlace(network.SensorNode, ncount, network.BiasNeuron)
+			new_node = network.NewNNode(ncount, network.BiasNeuron)
 		}
 		new_node.Trait = new_trait
 		gnome.Nodes = append(gnome.Nodes, new_node)
@@ -112,14 +112,14 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 
 	// Build the hidden nodes
 	for ncount := in + 1; ncount <= in + n; ncount++ {
-		new_node = network.NewNNodeInPlace(network.NeuronNode, ncount, network.HiddenNeuron)
+		new_node = network.NewNNode(ncount, network.HiddenNeuron)
 		new_node.Trait = new_trait
 		gnome.Nodes = append(gnome.Nodes, new_node)
 	}
 
 	// Build the output nodes
 	for ncount := first_output; ncount <= total_nodes; ncount++ {
-		new_node = network.NewNNodeInPlace(network.NeuronNode, ncount, network.OutputNeuron)
+		new_node = network.NewNNode(ncount, network.OutputNeuron)
 		new_node.Trait = new_trait
 		gnome.Nodes = append(gnome.Nodes, new_node)
 	}
@@ -605,7 +605,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 	sensors := make([]*network.NNode, 0)
 	outputs := make([]*network.NNode, 0)
 	for _, n := range g.Nodes {
-		if n.NodeType == network.SensorNode {
+		if n.IsSensor() {
 			sensors = append(sensors, n)
 		} else {
 			outputs = append(outputs, n)
@@ -725,7 +725,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 	// Find the first non-sensor so that the to-node won't look at sensors as possible destinations
 	first_non_sensor := 0
 	for _, n := range g.Nodes {
-		if n.NodeType == network.SensorNode {
+		if n.IsSensor() {
 			first_non_sensor++
 		} else {
 			break
@@ -769,7 +769,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 
 		// See if a link already exists  ALSO STOP AT END OF GENES!!!!
 		link_exists := false
-		if node_2.NodeType == network.SensorNode {
+		if node_2.IsSensor() {
 			// Don't allow SENSORS to get input
 			link_exists = true
 		} else {
@@ -945,7 +945,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 			inn.OldInnovNum == gene.InnovationNum {
 
 			// Create the new NNode
-			new_node = network.NewNNodeInPlace(network.NeuronNode, inn.NewNodeId, network.HiddenNeuron)
+			new_node = network.NewNNode(inn.NewNodeId, network.HiddenNeuron)
 			// By convention, it will point to the first trait
 			// Note: In future may want to change this
 			new_node.Trait = g.Traits[0]
@@ -964,7 +964,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 		curr_node_id := pop.getCurrentNodeIdAndIncrement()
 
 		// Create the new NNode
-		new_node = network.NewNNodeInPlace(network.NeuronNode, curr_node_id, network.HiddenNeuron)
+		new_node = network.NewNNode(curr_node_id, network.HiddenNeuron)
 		// By convention, it will point to the first trait
 		new_node.Trait = g.Traits[0]
 

@@ -18,8 +18,6 @@ type NNode struct {
 	// If true the node is active
 	IsActive         bool
 
-	// The the type of the node (NEURON or SENSOR)
-	NodeType         NodeType
 	// The type of node activation function (SIGMOID, ...)
 	ActivationType   ActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
@@ -61,17 +59,9 @@ type NNode struct {
 	lastActivation2  float64
 }
 
-// Creates new node with specified type (NEURON or SENSOR) and ID
-func NewNNode(ntype NodeType, nodeid int) *NNode {
-	n := newNode(ntype)
-	n.Id = nodeid
-	return n
-}
-
-// Creates new node with specified type (NEURON or SENSOR), ID and in the specified
-// layer (INPUT, HIDDEN, OUTPUT)
-func NewNNodeInPlace(ntype NodeType, nodeid int, neuronType NeuronType) *NNode {
-	n := newNode(ntype)
+// Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
+func NewNNode(nodeid int, neuronType NeuronType) *NNode {
+	n := newNode()
 	n.Id = nodeid
 	n.NeuronType = neuronType
 	return n
@@ -79,7 +69,7 @@ func NewNNodeInPlace(ntype NodeType, nodeid int, neuronType NeuronType) *NNode {
 
 // Construct a NNode off another NNode with given trait for genome purposes
 func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
-	node := newNode(n.NodeType)
+	node := newNode()
 	node.Id = n.Id
 	node.NeuronType = n.NeuronType
 	node.Trait = t
@@ -89,9 +79,9 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 
 // Read a NNode from specified Reader and applies corresponding trait to it from a list of traits provided
 func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
-	n := newNode(NeuronNode)
-	var trait_id int
-	fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &n.NodeType, &n.NeuronType)
+	n := newNode()
+	var trait_id, node_type int
+	fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &node_type, &n.NeuronType)
 	if trait_id != 0 && traits != nil {
 		// find corresponding node trait from list
 		for _, t := range traits {
@@ -109,9 +99,8 @@ func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
 }
 
 // The private default constructor
-func newNode(ntype NodeType) *NNode {
+func newNode() *NNode {
 	return &NNode{
-		NodeType:ntype,
 		NeuronType:HiddenNeuron,
 		ActivationType:SigmoidSteepened,
 		Incoming:make([]*Link, 0),
@@ -155,12 +144,12 @@ func (n *NNode) GetActiveOutTd() float64 {
 
 // Returns true if this node is SENSOR
 func (n *NNode) IsSensor() bool {
-	return n.NodeType == SensorNode
+	return n.NeuronType == InputNeuron || n.NeuronType == BiasNeuron
 }
 
 // returns true if this node is NEURON
 func (n *NNode) IsNeuron() bool {
-	return n.NodeType == NeuronNode
+	return n.NeuronType == HiddenNeuron || n.NeuronType == OutputNeuron
 }
 
 // If the node is a SENSOR, returns TRUE and loads the value
@@ -220,7 +209,7 @@ func (n *NNode) Write(w io.Writer) {
 	if n.Trait != nil {
 		trait_id = n.Trait.Id
 	}
-	fmt.Fprintf(w, "%d %d %d %d", n.Id, trait_id, n.NodeType, n.NeuronType)
+	fmt.Fprintf(w, "%d %d %d %d", n.Id, trait_id, n.nodeType(), n.NeuronType)
 }
 
 // Find the greatest depth starting from this neuron at depth d
@@ -248,9 +237,16 @@ func (n *NNode) Depth(d int) (int, error) {
 
 }
 
+func (n *NNode) nodeType() NodeType {
+	if n.IsSensor() {
+		return SensorNode
+	}
+	return NeuronNode
+}
+
 func (n *NNode) String() string {
 	return fmt.Sprintf("(%s %3d, layer: %s, step: %d = %.3f %.3f)",
-		NodeTypeName(n.NodeType), n.Id, NeuronTypeName(n.NeuronType), n.ActivationsCount, n.Activation, n.Params)
+		NodeTypeName(n.nodeType()), n.Id, NeuronTypeName(n.NeuronType), n.ActivationsCount, n.Activation, n.Params)
 }
 
 

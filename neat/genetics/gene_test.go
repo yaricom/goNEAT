@@ -21,8 +21,8 @@ func TestGene_ReadGene(t *testing.T)  {
 	trait := neat.NewTrait()
 	trait.Id = 1
 	nodes := []*network.NNode{
-		network.NewNNodeInPlace(network.SensorNode, 1, network.InputNeuron),
-		network.NewNNodeInPlace(network.NeuronNode, 4, network.HiddenNeuron),
+		network.NewNNode(1, network.InputNeuron),
+		network.NewNNode(4, network.HiddenNeuron),
 	}
 
 	gene := ReadGene(strings.NewReader(gene_str), []*neat.Trait{trait}, nodes)
@@ -65,8 +65,8 @@ func TestGene_WriteGene(t *testing.T)  {
 
 	trait := neat.NewTrait()
 	trait.Id = traitId
-	gene := NewGeneWithTrait(trait, weight, network.NewNNodeInPlace(network.SensorNode, 1, network.InputNeuron),
-		network.NewNNodeInPlace(network.NeuronNode, 4, network.HiddenNeuron), recurrent, innov_num, mut_num)
+	gene := NewGeneWithTrait(trait, weight, network.NewNNode(1, network.InputNeuron),
+		network.NewNNode(4, network.HiddenNeuron), recurrent, innov_num, mut_num)
 	gene.IsEnabled = enabled
 
 	out_buf := bytes.NewBufferString("")
