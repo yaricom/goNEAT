@@ -12,11 +12,11 @@ import (
 )
 
 // The integration test running running over multiple iterations
-func TestCartPoleEpochEvaluator_EpochEvaluate(t *testing.T) {
+func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 
-	out_dir_path, context_path, genome_path := "../../out/pole1_test", "../../data/p2nv.neat", "../../data/pole1startgenes"
+	out_dir_path, context_path, genome_path := "../../out/pole1_test", "../../data/pole1_1000.neat", "../../data/pole1startgenes"
 
 	// Load context configuration
 	configFile, err := os.Open(context_path)
@@ -52,7 +52,7 @@ func TestCartPoleEpochEvaluator_EpochEvaluate(t *testing.T) {
 		return
 	}
 
-	// The 100 runs XOR experiment
+	// The 100 runs POLE1 experiment
 	context.NumRuns = 100
 	experiment := experiments.Experiment {
 		Id:0,
@@ -64,7 +64,7 @@ func TestCartPoleEpochEvaluator_EpochEvaluate(t *testing.T) {
 		RandomStart:true,
 	})
 	if err != nil {
-		t.Error("Failed to perform XOR experiment:", err)
+		t.Error("Failed to perform POLE1 experiment:", err)
 		return
 	}
 
@@ -89,7 +89,7 @@ func TestCartPoleEpochEvaluator_EpochEvaluate(t *testing.T) {
 		t.Error("avg_evals > max_evals", avg_evals, max_evals)
 	}
 
-	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
+	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
 	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
 		mean_complexity += t.Complexity().Mean()
@@ -100,5 +100,14 @@ func TestCartPoleEpochEvaluator_EpochEvaluate(t *testing.T) {
 	mean_complexity /= count
 	mean_diversity /= count
 	mean_age /= count
-	t.Logf("mean: complexity=%.1f, diversity=%.1f, age=%.1f", mean_complexity, mean_diversity, mean_age)
+	t.Logf("Mean: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
+
+	solved_trials := 0
+	for _, tr := range experiment.Trials {
+		if tr.Solved() {
+			solved_trials++
+		}
+	}
+
+	t.Logf("Trials solved/run: %d/%d", solved_trials, len(experiment.Trials))
 }
