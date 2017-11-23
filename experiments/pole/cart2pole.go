@@ -13,6 +13,13 @@ import (
 
 const thirty_six_degrees = 36 * math.Pi / 180.0
 
+// The maximal number of time steps for Markov experiment
+const markov_max_steps = 100000
+// The maximal number of time steps for Non-Markov long run
+const non_markov_long_max_steps = 100000
+// The maximal number of time steps for Non-Markov generalization run
+const non_markov_generalization_max_steps = 1000
+
 
 // The double pole-balancing experiment both Markov and non-Markov versions
 type CartDoublePoleGenerationEvaluator struct {
@@ -27,8 +34,6 @@ type CartDoublePoleGenerationEvaluator struct {
 
 // The structure to describe cart pole emulation
 type CartPole struct {
-	// The maximal fitness
-	maxFitness          float64
 	// The flag to indicate that we are executing Markov experiment setup (known velocities information)
 	isMarkov            bool
 	// Flag that we are looking at the champion in Non-Markov experiment
@@ -247,16 +252,16 @@ func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Orga
 
 	// Decide if its a winner, in Markov Case
 	if cartPole.isMarkov {
-		if organism.Fitness >= cartPole.maxFitness {
+		if organism.Fitness >= markov_max_steps {
 			winner = true
 		}
 	} else if cartPole.nonMarkovLong {
 		// if doing the long test non-markov
-		if organism.Fitness >= 99999 {
+		if organism.Fitness >= non_markov_long_max_steps {
 			winner = true
 		}
 	} else if cartPole.generalizationTest {
-		if organism.Fitness >= 999 {
+		if organism.Fitness >= non_markov_generalization_max_steps {
 			winner = true
 		}
 	} else {
@@ -268,26 +273,23 @@ func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Orga
 
 // If markov is false, then velocity information will be withheld from the network population (non-Markov)
 func newCartPole(markov bool) *CartPole {
-	return &CartPole{
-		maxFitness: 100000,
+	return &CartPole {
 		isMarkov: markov,
 	}
 }
 
 func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionType) (steps float64) {
-	non_markov_max := 1000.0
+	non_markov_max := non_markov_generalization_max_steps
 	if cp.nonMarkovLong {
-		non_markov_max = 100000.0
+		non_markov_max = non_markov_long_max_steps
 	}
 
 	input := make([]float64, 7)
 
 	cp.resetState()
 
-	steps = 1
-
 	if cp.isMarkov {
-		for ; steps < cp.maxFitness; steps++ {
+		for steps = 0; steps < markov_max_steps; steps++ {
 			input[0] = (cp.state[0] + 2.4) / 4.8
 			input[1] = (cp.state[1] + 1.0) / 2.0
 			input[2] = (cp.state[2] + thirty_six_degrees) / (thirty_six_degrees * 2.0)//0.52
@@ -325,7 +327,7 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 		return steps
 	} else {
 		// The non Markov case
-		for ; steps < non_markov_max; steps++ {
+		for steps = 0; steps < float64(non_markov_max); steps++ {
 			input[0] = cp.state[0] / 4.8
 			input[1] = cp.state[2] / 0.52
 			input[2] = cp.state[4] / 0.52
@@ -335,7 +337,7 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 
 			/*-- activate the network based on the input --*/
 			if res, err := net.Activate(); !res {
-				//If it loops, exit returning only fitness of 1 step
+				// If it loops, exit returning only fitness of 1 step
 				neat.WarnLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
 				return 0.0001
 			}
@@ -364,16 +366,16 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 
 		// Sum last 100
 		jiggle_total := 0.0
-		if steps > 100.0 && !cp.nonMarkovLong {
+		if steps >= 100.0 && !cp.nonMarkovLong {
 			// Adjust for array bounds and count
-			for count := int(steps - 99.0 - 2.0); count <= int(steps - 2.0); count++ {
+			for count := int(steps - 100.0); count < int(steps); count++ {
 				jiggle_total += cp.jiggleStep[count]
 			}
 		}
 		if !cp.nonMarkovLong {
 			var non_markov_fitness float64
-			if cp.balanced_time_steps > 100 {
-				// F = 0.1f1+ 0.9f2
+			if cp.balanced_time_steps >= 100 {
+				// F = 0.1f1 + 0.9f2
 				non_markov_fitness = 0.1 * float64(cp.balanced_time_steps) / 1000.0 + 0.9 * 0.75 / float64(jiggle_total)
 			} else {
 				// F = t / 1000
@@ -411,7 +413,7 @@ func (cp *CartPole) performAction(action, step_num float64) {
 	cp.polev_sum += math.Abs(cp.state[3]);
 
 	if step_num < 1000 {
-		cp.jiggleStep[int(step_num) - 1] = math.Abs(cp.state[0]) + math.Abs(cp.state[1]) + math.Abs(cp.state[2]) + math.Abs(cp.state[3])
+		cp.jiggleStep[int(step_num)] = math.Abs(cp.state[0]) + math.Abs(cp.state[1]) + math.Abs(cp.state[2]) + math.Abs(cp.state[3])
 	}
 	if !cp.outsideBounds() {
 		cp.balanced_time_steps++
@@ -421,14 +423,14 @@ func (cp *CartPole) performAction(action, step_num float64) {
 func (cp *CartPole) step(action float64, st[6]float64, derivs *[6]float64) {
 	const MUP = 0.000002
 	const GRAVITY = -9.8
-	const FORCE_MAG = 10.0        // [N]
+	const FORCE_MAG = 10.0       // [N]
 	const MASS_CART = 1.0        // [kg]
 
-	const MASS_POLE_1 = 1.0        // [kg]
-	const LENGTH_1 = 0.5        // [m] - actually half the first pole's length
+	const MASS_POLE_1 = 1.0      // [kg]
+	const LENGTH_1 = 0.5         // [m] - actually half the first pole's length
 
 	const LENGTH_2 = 0.05        // [m] - actually half the second pole's length
-	const MASS_POLE_2 = 0.1        // [kg]
+	const MASS_POLE_2 = 0.1      // [kg]
 
 	force := (action - 0.5) * FORCE_MAG * 2.0
 	cos_theta_1 := math.Cos(st[2])
