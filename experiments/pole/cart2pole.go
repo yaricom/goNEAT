@@ -61,15 +61,16 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
-		res := ex.orgEvaluate(org, cartPole)
+		winner := ex.orgEvaluate(org, cartPole)
 
-		if res {
+		if winner {
 			// This will be winner in Markov case
 			generation.Solved = true
 			generation.WinnerNodes = len(org.Genotype.Nodes)
 			generation.WinnerGenes = org.Genotype.Extrons()
 			generation.WinnerEvals = context.PopSize * generation.Id + org.Genotype.Id
 			generation.Best = org
+			org.IsWinner = true
 			break // we have winner
 		}
 	}
@@ -82,7 +83,7 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		// particular individual is calculated. This score measures the potential of a controller to balance the
 		// system starting from different initial conditions. It's calculated with a series of experiments, running
 		// over 1000 time steps, starting from 625 different initial conditions.
-		// The initial conditions are chosen by assign-ing each value of the set Ω = [0.05 0.25 0.5 0.75 0.95] to
+		// The initial conditions are chosen by assigning each value of the set Ω = [0.05 0.25 0.5 0.75 0.95] to
 		// each of the states x, ∆x/∆t, θ1 and ∆θ1/∆t, scaled to the range of the variables.The short pole angle θ2 
 		// and its angular velocity ∆θ2/∆t are set to zero. The GS is then defined as the number of successful runs 
 		// from the 625 initial conditions and an individual is defined as a solution if it reaches a generalization 
@@ -210,7 +211,7 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				org_path := fmt.Sprintf("%s/%s", ex.OutputPath, "pole2_winner")
+				org_path := fmt.Sprintf("%s/%s_%.0f", ex.OutputPath, "pole2_winner", org.Fitness)
 				file, err := os.Create(org_path)
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
@@ -231,7 +232,7 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 }
 
 // This methods evaluates provided organism for cart double pole-balancing task
-func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism, cartPole *CartPole) bool {
+func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism, cartPole *CartPole) (winner bool) {
 	// Try to balance a pole now
 	organism.Fitness = cartPole.evalNet(organism.Phenotype, ex.ActionType)
 
@@ -244,27 +245,24 @@ func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Orga
 		neat.WarnLog(fmt.Sprintf("ORGANISM DAMAGED:\n%s", organism.Genotype))
 	}
 
-	// reset organism winner flag
-	organism.IsWinner = false
-
 	// Decide if its a winner, in Markov Case
 	if cartPole.isMarkov {
 		if organism.Fitness >= cartPole.maxFitness {
-			organism.IsWinner = true
+			winner = true
 		}
 	} else if cartPole.nonMarkovLong {
 		// if doing the long test non-markov
 		if organism.Fitness >= 99999 {
-			organism.IsWinner = true
+			winner = true
 		}
 	} else if cartPole.generalizationTest {
 		if organism.Fitness >= 999 {
-			organism.IsWinner = true
+			winner = true
 		}
 	} else {
-		organism.IsWinner = false
+		winner = false
 	}
-	return organism.IsWinner
+	return winner
 }
 
 
