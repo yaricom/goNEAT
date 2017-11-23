@@ -277,17 +277,43 @@ The example output of the command:
 
 ```
 Average
-	Winner Nodes:	5.3
-	Winner Genes:	9.6
-	Winner Evals:	52448.6
+	Winner Nodes:	5.5
+	Winner Genes:	11.5
+	Winner Evals:	44049.3
 Mean
-	Complexity:	12.8
-	Diversity:	630.9
-	Age:		19.8
+	Complexity:	13.9
+	Diversity:	611.1
+	Age:		18.9
 
 ```
 
-The maximal generalization score achieved is about 301
+The maximal generalization score achieved in this test run is about 347 for very simple genome which comprise of five nodes
+and five genes (links). It has the same number of nodes as seed genome and only grew one extra recurrent gene connecting
+output node to itself. And it happen to be the most useful configuration among other.
+
+The most fit organism's genome based on test non-markov run with maximal generalization score of 347:
+
+```
+genomestart 46
+trait 1 0.2138946217467174 0.06002354203083418 0.0028906105813590443 0.2713154623271218 0.35856547551861573 0.15170654613596346 0.14290235997205494 0.28328098202348406
+node 1 1 1 1
+node 2 1 1 1
+node 3 1 1 1
+node 4 1 1 3
+node 5 1 0 2
+gene 1 1 5 -0.8193796421450023 false 1 -0.8193796421450023 true
+gene 1 2 5 -6.591284446514077 false 2 -6.591284446514077 true
+gene 1 3 5 5.783520492164443 false 3 5.783520492164443 true
+gene 1 4 5 0.6165420336465628 false 4 0.6165420336465628 true
+gene 1 5 5 -1.240555929293543 true 50 -1.240555929293543 true
+genomeend 46
+
+```
+
+## Conclusion
+
+The experiments described in this work confirm that implemented NEAT method is able to evolve new structures in ANNs (XOR
+experiment) and is able to solve reinforcement learning tasks under conditions of incomplete knowledge (pole-balancing).
 
 ## Credits
 
