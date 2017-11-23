@@ -52,7 +52,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	}
 
 	// The 10 runs POLE2 Markov experiment
-	context.NumRuns = 10
+	context.NumRuns = 5
 	experiment := experiments.Experiment{
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
@@ -153,7 +153,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	}
 
 	// The 10 runs POLE2 Non-Markov experiment
-	context.NumRuns = 10
+	context.NumRuns = 5
 	experiment := experiments.Experiment{
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),
