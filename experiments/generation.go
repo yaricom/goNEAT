@@ -53,16 +53,16 @@ func (epoch *Generation) FillPopulationStatistics(pop *genetics.Population) {
 	}
 }
 
-// Epochs is a sortable collection of generations by execution time and Id
-type Epochs []Generation
+// Generations is a sortable collection of generations by execution time and Id
+type Generations []Generation
 
-func (is Epochs) Len() int {
+func (is Generations) Len() int {
 	return len(is)
 }
-func (is Epochs) Swap(i, j int) {
+func (is Generations) Swap(i, j int) {
 	is[i], is[j] = is[j], is[i]
 }
-func (is Epochs) Less(i, j int) bool {
+func (is Generations) Less(i, j int) bool {
 	if is[i].Executed.Equal(is[j].Executed) {
 		return is[i].Id < is[j].Id // less is from earlier epochs
 	}

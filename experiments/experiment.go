@@ -83,24 +83,29 @@ func (e Experiment) Diversity() Floats {
 func (e Experiment) Epochs() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
-		x[i] = float64(len(t.Epochs))
+		x[i] = float64(len(t.Generations))
 	}
 	return x
 }
 
-// Returns average number of nodes, genes and organisms evaluations of winner genomes among all trials
+// Returns average number of nodes, genes and organisms evaluations of winner genomes among all trials, i.e. for all trials
+// where winning solution was found
 func (e Experiment) AvgWinnerNGE() (avg_nodes, avg_genes, avg_evals float64) {
 	total_nodes, total_genes, total_evals := 0, 0, 0
+	count := 0
 	for _, t := range e.Trials {
-		nodes, genes, evals := t.WinnerNGE()
-		total_nodes += nodes
-		total_genes += genes
-		total_evals += evals
+		if t.Solved() {
+			nodes, genes, evals := t.WinnerNGE()
+			total_nodes += nodes
+			total_genes += genes
+			total_evals += evals
+
+			count++
+		}
 	}
-	count := float64(len(e.Trials))
-	avg_nodes = float64(total_nodes) / count
-	avg_genes = float64(total_genes) / count
-	avg_evals = float64(total_evals) / count
+	avg_nodes = float64(total_nodes) / float64(count)
+	avg_genes = float64(total_genes) / float64(count)
+	avg_evals = float64(total_evals) / float64(count)
 	return avg_nodes, avg_genes, avg_evals
 }
 

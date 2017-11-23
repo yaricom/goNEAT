@@ -9,14 +9,14 @@ import (
 // The structure to hold statistics about one experiment run (trial)
 type Trial struct {
 	// The trial number
-	Id     int
-	// The trial epochs results
-	Epochs Epochs
+	Id          int
+	// The results per generation in this trial
+	Generations Generations
 }
 
 func (t Trial) LastExecuted() time.Time {
 	var u time.Time
-	for _, i := range t.Epochs {
+	for _, i := range t.Generations {
 		if u.Before(i.Executed) {
 			u = i.Executed
 		}
@@ -25,8 +25,8 @@ func (t Trial) LastExecuted() time.Time {
 }
 
 func (t Trial) Best() *genetics.Organism {
-	var orgs = make(genetics.Organisms, 0, len(t.Epochs))
-	for _, e := range t.Epochs {
+	var orgs = make(genetics.Organisms, 0, len(t.Generations))
+	for _, e := range t.Generations {
 		orgs = append(orgs, e.Best)
 	}
 	sort.Sort(sort.Reverse(orgs))
@@ -34,7 +34,7 @@ func (t Trial) Best() *genetics.Organism {
 }
 
 func (t Trial) Solved() bool {
-	for _, e := range t.Epochs {
+	for _, e := range t.Generations {
 		if e.Solved {
 			return true
 		}
@@ -44,8 +44,8 @@ func (t Trial) Solved() bool {
 
 // Fitness returns the fitnesses of the best organism of each epoch in this trial
 func (t Trial) Fitness() Floats {
-	var x Floats = make([]float64, len(t.Epochs))
-	for i, e := range t.Epochs {
+	var x Floats = make([]float64, len(t.Generations))
+	for i, e := range t.Generations {
 		x[i] = e.Best.Fitness
 
 	}
@@ -54,8 +54,8 @@ func (t Trial) Fitness() Floats {
 
 // Novelty returns the novelty values of the best species of each epoch
 func (t Trial) Age() Floats {
-	var x Floats = make([]float64, len(t.Epochs))
-	for i, e := range t.Epochs {
+	var x Floats = make([]float64, len(t.Generations))
+	for i, e := range t.Generations {
 		x[i] = float64(e.Best.Species.Age)
 	}
 	return x
@@ -63,8 +63,8 @@ func (t Trial) Age() Floats {
 
 // Complexity returns the complexity of the population
 func (t Trial) Complexity() Floats {
-	var x Floats = make([]float64, len(t.Epochs))
-	for i, e := range t.Epochs {
+	var x Floats = make([]float64, len(t.Generations))
+	for i, e := range t.Generations {
 		x[i] = float64(e.Best.Phenotype.Complexity())
 	}
 	return x
@@ -72,8 +72,8 @@ func (t Trial) Complexity() Floats {
 
 // Diversity returns number of species in each epoch
 func (t Trial) Diversity() Floats {
-	var x Floats = make([]float64, len(t.Epochs))
-	for i, e := range t.Epochs {
+	var x Floats = make([]float64, len(t.Generations))
+	for i, e := range t.Generations {
 		x[i] = float64(e.Diversity)
 	}
 	return x
@@ -81,7 +81,7 @@ func (t Trial) Diversity() Floats {
 
 // Returns number of nodes, genes and organism evaluations in the winner genome
 func (t Trial) WinnerNGE() (nodes, genes, evals int) {
-	for _, e := range t.Epochs {
+	for _, e := range t.Generations {
 		if e.Solved {
 			nodes = e.WinnerNodes
 			genes = e.WinnerGenes

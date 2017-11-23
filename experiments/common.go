@@ -80,7 +80,7 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 				return err
 			}
 			generation.Executed = time.Now()
-			trial.Epochs = append(trial.Epochs, generation)
+			trial.Generations = append(trial.Generations, generation)
 			if generation.Solved {
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation! <<<<<\n", generation_id))
 				break
