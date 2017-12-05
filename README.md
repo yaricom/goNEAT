@@ -323,7 +323,6 @@ This source code maintained and managed by Iaroslav Omelianenko
 
 Other NEAT implementations may be found at [NEAT Software Catalog][2]
 
-Images taken from: http://lis2.epfl.ch/CompletedResearchProjects/EvolutionOfAnalogNetworks/ArtificialNeuralNetworks/index.php
 
 [1]:http://www.cs.ucf.edu/~kstanley/neat.html
 [2]:http://eplex.cs.ucf.edu/neat_software/
