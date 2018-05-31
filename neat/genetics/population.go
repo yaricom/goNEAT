@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"strconv"
 	"math"
+	"sync"
 )
 
 // A Population is a group of Organisms including their species
@@ -45,6 +46,9 @@ type Population struct {
 	currInnovNum       int64
 	// The current ID for new node in population
 	currNodeId         int
+
+	// Used for synchronization
+	sync.Mutex
 }
 
 // Construct off of a single spawning Genome
@@ -292,6 +296,11 @@ func (p *Population) Verify() (bool, error) {
 	return res, nil
 }
 
+type reproductionResult struct {
+	reproduced bool
+	err        error
+}
+
 // Turnover the population to a new generation using fitness
 // The generation argument is the next generation
 func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, error) {
@@ -393,7 +402,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 			// Print out for Debugging/viewing what's going on
 			neat.DebugLog(
 				fmt.Sprintf("POPULATION: >> Orig. fitness of Species %d (Size %d): %f, current fitness: %f, expected offspring: %d, last improved %d \n",
-				sp.Id, len(sp.Organisms), sp.Organisms[0].OriginalFitness, sp.Organisms[0].Fitness, sp.ExpectedOffspring, (sp.Age - sp.AgeOfLastImprovement)))
+					sp.Id, len(sp.Organisms), sp.Organisms[0].OriginalFitness, sp.Organisms[0].Fitness, sp.ExpectedOffspring, (sp.Age - sp.AgeOfLastImprovement)))
 		}
 		neat.DebugLog("POPULATION: >> Sorted Species END <<\n")
 
@@ -535,16 +544,39 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 
 	// Perform reproduction. Reproduction is done on a per-Species basis
 	best_species_reproduced := false
-	// TODO (So this could be parallelised potentially)
+	sp_num := len(p.Species)
+	res_chan := make(chan reproductionResult)
+
 	for _, curr_species := range p.Species {
-		reproduced, err := curr_species.reproduce(generation, p, sorted_species, context)
-		if err != nil {
-			return false, err
+		// run in separate thread
+		go func(sp *Species, best_species_id, generation int, p *Population, sorted_species []*Species, context *neat.NeatContext, res_chan chan reproductionResult) {
+			reproduced, err := sp.reproduce(generation, p, sorted_species, context)
+			res := reproductionResult {err:err}
+			if err != nil {
+				return
+			}
+			if sp.Id == best_species_id {
+				// store flag if best species reproduced - it will be used to determine if best species
+				// produced offspring before died
+				res.reproduced = reproduced
+			}
+
+			// write result to channel
+			res_chan <- res
+
+		}(curr_species, best_species_id, generation, p, sorted_species, context, res_chan)
+	}
+
+	// read results
+	for i := 0; i < sp_num; i++ {
+		res := <- res_chan
+		if res.err != nil {
+			return false, res.err
 		}
-		if curr_species.Id == best_species_id {
+		if res.reproduced {
 			// store flag if best species reproduced - it will be used to determine if best species
 			// produced offspring before died
-			best_species_reproduced = reproduced
+			best_species_reproduced = res.reproduced
 		}
 	}
 
@@ -560,7 +592,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 
 		if neat.LogLevel == neat.LogLevelDebug && curr_org.Species.Id == best_species_id {
 			neat.DebugLog(fmt.Sprintf("POPULATION: Removed organism [%d] from best species [%d] - %d organisms remained",
-			curr_org.Genotype.Id, best_species_id, len(curr_org.Species.Organisms)))
+				curr_org.Genotype.Id, best_species_id, len(curr_org.Species.Organisms)))
 		}
 	}
 	p.Organisms = make([]*Organism, 0)
@@ -612,7 +644,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 			break
 		}
 	}
-	if !best_ok && !best_species_reproduced{
+	if !best_ok && !best_species_reproduced {
 		return false, errors.New("POPULATION: The best species died without offspring!")
 	} else {
 		neat.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d, max fitness ever: %f",
