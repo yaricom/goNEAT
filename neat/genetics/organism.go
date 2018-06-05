@@ -5,6 +5,12 @@ import (
 	"fmt"
 )
 
+// The object to associate implementation specific data with particular organism for various algorithm implementations
+type OrganismData struct {
+	// The implementation specific data object to be associated with organism
+	Value interface{}
+}
+
 // Organisms are Genotypes (Genomes) and Phenotypes (Networks) with fitness information,
 // i.e. the genotype and phenotype together.
 type Organism struct {
@@ -27,6 +33,10 @@ type Organism struct {
 	ExpectedOffspring         float64
 	// Tells which generation this Organism is from
 	Generation                int
+
+	// The utility data transfer object to be used by different GA implementations to hold additional data.
+	// Implemented as ANY to allow implementation specific objects.
+	Data                      *OrganismData
 
 	// Marker for destruction of inferior Organisms
 	toEliminate               bool
