@@ -213,7 +213,7 @@ func LoadContext(r io.Reader) *NeatContext {
 		case "log_level":
 			LogLevel = LoggerLevel(param)
 		default:
-			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %.f\n", name, param)
+			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %f\n", name, param)
 		}
 	}
 
