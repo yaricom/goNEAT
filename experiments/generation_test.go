@@ -38,61 +38,65 @@ func TestGeneration_Encode_Decode(t *testing.T) {
 	}
 
 	//  and test fields
-	if gen.Id != dgen.Id {
-		t.Error("gen.Id != dgen.Id")
+	deepCompareGenerations(gen, dgen, t)
+}
+
+func deepCompareGenerations(first, second *Generation, t *testing.T) {
+	if first.Id != second.Id {
+		t.Error("first.Id != second.Id")
 	}
-	if gen.Executed != dgen.Executed {
-		t.Errorf("gen.Executed != dgen.Executed, %s != %s\n", gen.Executed, dgen.Executed)
+	if first.Executed != second.Executed {
+		t.Errorf("first.Executed != second.Executed, %s != %s\n", first.Executed, second.Executed)
 	}
-	if gen.Solved != dgen.Solved {
-		t.Error("gen.Solved != dgen.Solved")
+	if first.Solved != second.Solved {
+		t.Error("first.Solved != second.Solved")
 	}
 
-	if !reflect.DeepEqual(gen.Fitness, dgen.Fitness) {
+	if !reflect.DeepEqual(first.Fitness, second.Fitness) {
 		t.Error("Fitness values mismatch")
 	}
-	if !reflect.DeepEqual(gen.Age, dgen.Age) {
+	if !reflect.DeepEqual(first.Age, second.Age) {
 		t.Error("Age values mismatch")
 	}
-	if !reflect.DeepEqual(gen.Compexity, dgen.Compexity) {
+	if !reflect.DeepEqual(first.Compexity, second.Compexity) {
 		t.Error("Compexity values mismatch")
 	}
 
-	if gen.Diversity != dgen.Diversity {
-		t.Error("gen.Diversity != dgen.Diversity")
+	if first.Diversity != second.Diversity {
+		t.Error("first.Diversity != second.Diversity")
 	}
-	if gen.WinnerEvals != dgen.WinnerEvals {
-		t.Error("gen.WinnerEvals != dgen.WinnerEvals")
+	if first.WinnerEvals != second.WinnerEvals {
+		t.Error("first.WinnerEvals != second.WinnerEvals")
 	}
-	if gen.WinnerNodes != dgen.WinnerNodes {
-		t.Error("gen.WinnerNodes != dgen.WinnerNodes")
+	if first.WinnerNodes != second.WinnerNodes {
+		t.Error("first.WinnerNodes != second.WinnerNodes ")
 	}
-	if gen.WinnerGenes != dgen.WinnerGenes {
-		t.Error("gen.WinnerGenes != dgen.WinnerGenes")
-	}
-
-	if dgen.Best.Fitness != fitness {
-		t.Error("dgen.Best.Fitness != fitness")
-	}
-	if dgen.Best.Genotype.Id != genome_id {
-		t.Error("dgen.Best.Genotype.Id != genome_id")
+	if first.WinnerGenes != second.WinnerGenes {
+		t.Error("first.WinnerGenes != second.WinnerGenes")
 	}
 
-	for i, tr := range dgen.Best.Genotype.Traits {
-		if !reflect.DeepEqual(tr, gen.Best.Genotype.Traits[i]) {
+	if first.Best.Fitness != second.Best.Fitness {
+		t.Error("first.Best.Fitness != second.Best.Fitness")
+	}
+	if first.Best.Genotype.Id != second.Best.Genotype.Id {
+		t.Error("first.Best.Genotype.Id != second.Best.Genotype.Id")
+	}
+
+	for i, tr := range second.Best.Genotype.Traits {
+		if !reflect.DeepEqual(tr, first.Best.Genotype.Traits[i]) {
 			t.Error("Wrong trait found in new genome")
 		}
 	}
-	for i, nd := range dgen.Best.Genotype.Nodes {
+	for i, nd := range second.Best.Genotype.Nodes {
 		nd.Duplicate = nil
-		if !reflect.DeepEqual(nd, gen.Best.Genotype.Nodes[i]) {
-			t.Error("Wrong node found", nd, gen.Best.Genotype.Nodes[i])
+		if !reflect.DeepEqual(nd, first.Best.Genotype.Nodes[i]) {
+			t.Error("Wrong node found", nd, first.Best.Genotype.Nodes[i])
 		}
 	}
 
-	for i, g := range dgen.Best.Genotype.Genes {
-		if !reflect.DeepEqual(g, gen.Best.Genotype.Genes[i]) {
-			t.Error("Wrong gene found", g, gen.Best.Genotype.Genes[i])
+	for i, g := range second.Best.Genotype.Genes {
+		if !reflect.DeepEqual(g, first.Best.Genotype.Genes[i]) {
+			t.Error("Wrong gene found", g, first.Best.Genotype.Genes[i])
 		}
 	}
 }
