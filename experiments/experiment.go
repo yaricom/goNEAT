@@ -4,6 +4,8 @@ import (
 	"time"
 	"sort"
 	"github.com/yaricom/goNEAT/neat/genetics"
+	"io"
+	"encoding/gob"
 )
 
 // An Experiment is a collection of trials for one experiment. It's useful for statistical analysis of a series of
@@ -107,6 +109,55 @@ func (e Experiment) AvgWinnerNGE() (avg_nodes, avg_genes, avg_evals float64) {
 	avg_genes = float64(total_genes) / float64(count)
 	avg_evals = float64(total_evals) / float64(count)
 	return avg_nodes, avg_genes, avg_evals
+}
+
+// Encodes experiment and writes to provided writer
+func (ex *Experiment) Write(w io.Writer) error {
+	enc := gob.NewEncoder(w)
+	return ex.Encode(enc)
+}
+
+// Encodes experiment with GOB encoding
+func (ex *Experiment) Encode(enc *gob.Encoder) error {
+	err := enc.Encode(ex.Id)
+	err = enc.Encode(ex.Name)
+
+	// encode trials
+	err = enc.Encode(len(ex.Trials))
+	for _, t := range ex.Trials {
+		err = t.Encode(enc)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+// Reads experiment data from provided reader and decodes it
+func (ex *Experiment) Read(r io.Reader) error {
+	dec := gob.NewDecoder(r)
+	return ex.Decode(dec)
+}
+
+// Decodes experiment data
+func (ex *Experiment) Decode(dec *gob.Decoder) error {
+	err := dec.Decode(&ex.Id)
+	err = dec.Decode(&ex.Name)
+
+	// decode Trials
+	var t_num int
+	err = dec.Decode(&t_num)
+	if err != nil {
+		return err
+	}
+
+	ex.Trials = make([]Trial, t_num)
+	for i := 0; i< t_num; i++ {
+		trial := Trial{}
+		err = trial.Decode(dec)
+		ex.Trials[i] = trial
+	}
+	return err
 }
 
 // Experiments is a sortable list of experiments by execution time and Id
