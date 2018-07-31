@@ -4,6 +4,7 @@ import (
 	"time"
 	"github.com/yaricom/goNEAT/neat/genetics"
 	"sort"
+	"encoding/gob"
 )
 
 // The structure to hold statistics about one experiment run (trial)
@@ -90,6 +91,39 @@ func (t Trial) WinnerNGE() (nodes, genes, evals int) {
 		}
 	}
 	return nodes, genes, evals
+}
+
+// Encodes this trial
+func (t *Trial) Encode(enc *gob.Encoder) error {
+	err := enc.Encode(t.Id)
+	err = enc.Encode(len(t.Generations))
+	for _, e := range t.Generations {
+		err = e.Encode(enc)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+// Decodes trial data
+func (t *Trial) Decode(dec *gob.Decoder) error {
+	err := dec.Decode(&t.Id)
+	var ngen int
+	err = dec.Decode(&ngen)
+	if err != nil {
+		return err
+	}
+	t.Generations = make([]Generation, ngen)
+	for i := 0; i < ngen; i++ {
+		gen := Generation{}
+		err = gen.Decode(dec)
+		if err != nil {
+			return err
+		}
+		t.Generations[i] = gen
+	}
+	return err
 }
 
 // Trials is a sortable collection of experiment runs (trials) by execution time and id
