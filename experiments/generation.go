@@ -19,13 +19,15 @@ type Generation struct {
 	Best        *genetics.Organism
 	// The flag to indicate whether experiment was solved in this epoch
 	Solved      bool
+
 	// The list of organisms fitness values per species in population
 	Fitness     Floats
 	// The age of organisms per species in population
 	Age         Floats
 	// The list of organisms complexities per species in population
 	Compexity   Floats
-	// The number of species in population
+
+	// The number of species in population at the end of this epoch
 	Diversity   int
 
 	// The number of evaluations done before winner found
@@ -56,8 +58,16 @@ func (epoch *Generation) FillPopulationStatistics(pop *genetics.Population) {
 	}
 }
 
+// Returns average fitness, age, and complexity among all organisms from population at the end of this epoch
+func (epoch Generation) Average() (fitness, age, complexity float64) {
+	fitness = epoch.Fitness.Mean()
+	age = epoch.Age.Mean()
+	complexity = epoch.Compexity.Mean()
+	return  fitness, age, complexity
+}
+
 // Encodes generation with provided GOB encoder
-func (epoch *Generation) Encode(enc *gob.Encoder) error {
+func (epoch Generation) Encode(enc *gob.Encoder) error {
 	err := enc.EncodeValue(reflect.ValueOf(epoch.Id))
 	err = enc.EncodeValue(reflect.ValueOf(epoch.Executed))
 	err = enc.EncodeValue(reflect.ValueOf(epoch.Solved))
