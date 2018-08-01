@@ -100,22 +100,8 @@ func main() {
 		log.Fatal("Failed to perform XOR experiment: ", err)
 	}
 
-	// Find winner statistics
-	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
-
-	fmt.Printf("\nAverage\n\tWinner Nodes:\t%.1f\n\tWinner Genes:\t%.1f\n\tWinner Evals:\t%.1f\n",
-		avg_nodes, avg_genes, avg_evals)
-	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
-	for _, t := range experiment.Trials {
-		mean_complexity += t.Complexity().Mean()
-		mean_diversity += t.Diversity().Mean()
-		mean_age += t.Age().Mean()
-	}
-	count := float64(len(experiment.Trials))
-	mean_complexity /= count
-	mean_diversity /= count
-	mean_age /= count
-	fmt.Printf("Mean\n\tComplexity:\t%.1f\n\tDiversity:\t%.1f\n\tAge:\t\t%.1f\n", mean_complexity, mean_diversity, mean_age)
+	// Print statistics
+	experiment.PrintStatistics()
 
 	fmt.Printf(">>> Start genome file:  %s\n", *genome_path)
 	fmt.Printf(">>> Configuration file: %s\n", *context_path)
