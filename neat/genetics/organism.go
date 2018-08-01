@@ -59,6 +59,9 @@ type Organism struct {
 
 	// Used just for reporting purposes
 	Error                     float64
+
+	// The flag to be used as utility value
+	Flag                      int
 }
 
 // Creates new organism with specified genome, fitness and given generation number
