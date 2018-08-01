@@ -69,7 +69,7 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	}
 
 	// Find winner statistics
-	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
+	avg_nodes, avg_genes, avg_evals, _ := experiment.AvgWinner()
 
 	// check results
 	if avg_nodes < 7 {
@@ -92,15 +92,15 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
 	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		mean_complexity += t.Complexity().Mean()
+		mean_complexity += t.BestComplexity().Mean()
 		mean_diversity += t.Diversity().Mean()
-		mean_age += t.Age().Mean()
+		mean_age += t.BestAge().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	mean_complexity /= count
 	mean_diversity /= count
 	mean_age /= count
-	t.Logf("Mean: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
+	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
 
 	solved_trials := 0
 	for _, tr := range experiment.Trials {

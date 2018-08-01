@@ -68,7 +68,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	}
 
 	// Find winner statistics
-	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
+	avg_nodes, avg_genes, avg_evals, _ := experiment.AvgWinner()
 
 	// check results
 	if avg_nodes < 8 {
@@ -91,15 +91,15 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
 	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		mean_complexity += t.Complexity().Mean()
+		mean_complexity += t.BestComplexity().Mean()
 		mean_diversity += t.Diversity().Mean()
-		mean_age += t.Age().Mean()
+		mean_age += t.BestAge().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	mean_complexity /= count
 	mean_diversity /= count
 	mean_age /= count
-	t.Logf("Mean: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
+	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
 
 	solved_trials := 0
 	for _, tr := range experiment.Trials {
@@ -169,7 +169,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	}
 
 	// Find winner statistics
-	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
+	avg_nodes, avg_genes, avg_evals, _ := experiment.AvgWinner()
 
 	// check results
 	if avg_nodes < 5 {
@@ -192,15 +192,15 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
 	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		mean_complexity += t.Complexity().Mean()
+		mean_complexity += t.BestComplexity().Mean()
 		mean_diversity += t.Diversity().Mean()
-		mean_age += t.Age().Mean()
+		mean_age += t.BestAge().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	mean_complexity /= count
 	mean_diversity /= count
 	mean_age /= count
-	t.Logf("Mean: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
+	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
 
 	solved_trials := 0
 	for _, tr := range experiment.Trials {
@@ -212,8 +212,8 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 
 	best_g_score := 0.0
 	for _, tr := range experiment.Trials {
-		if tr.Solved() {
-			best_org_score := tr.Best().Fitness
+		if org, found := tr.BestOrganism(true); found {
+			best_org_score := org.Fitness
 			if best_org_score > best_g_score {
 				best_g_score = best_org_score
 			}
