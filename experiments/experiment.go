@@ -138,7 +138,7 @@ func (ex Experiment) PrintStatistics() {
 	// Print absolute champion statistics
 	if org, trid, found := ex.BestOrganism(true); found {
 		nodes, genes, evals, divers := ex.Trials[trid].Winner()
-		fmt.Printf("\nChampion found in %d trial\n\tWinner Nodes:\t%d\n\tWinner Genes:\t%d\n\tWinner Evals:\t%d\n\n\tDiversity:\t%d",
+		fmt.Printf("\nChampion found in %d trial run\n\tWinner Nodes:\t%d\n\tWinner Genes:\t%d\n\tWinner Evals:\t%d\n\tDiversity:\t%d\n",
 			trid, nodes, genes, evals, divers)
 		fmt.Printf("\n\tComplexity:\t%d\n\tAge:\t\t%d\n\tFitness:\t%.1f\n",
 			org.Phenotype.Complexity(), org.Species.Age, org.Fitness)
@@ -167,8 +167,8 @@ func (ex Experiment) PrintStatistics() {
 	mean_diversity /= count
 	mean_age /= count
 	mean_fitness /=count
-	fmt.Printf("\nMean for the most fit/best organisms found\n\tComplexity:\t%.1f\n\tDiversity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n",
-		mean_complexity, mean_diversity, mean_age, mean_fitness)
+	fmt.Printf("\nnAverages of the most fit/best organisms found\n\tDiversity:\t%.1f\n\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n",
+		mean_diversity, mean_complexity, mean_age, mean_fitness)
 
 	// Print the average values for each population of organisms evaluated
 	for _, t := range ex.Trials {
@@ -183,8 +183,8 @@ func (ex Experiment) PrintStatistics() {
 	mean_diversity /= count
 	mean_age /= count
 	mean_fitness /=count
-	fmt.Printf("\nAverages for each population of organisms evaluated\n\tComplexity:\t%.1f\n\tDiversity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n\n",
-		mean_complexity, mean_diversity, mean_age, mean_fitness)
+	fmt.Printf("\nAverages for each population of organisms evaluated\n\tDiversity:\t%.1f\n\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n\n",
+		mean_diversity, mean_complexity, mean_age, mean_fitness)
 
 }
 
