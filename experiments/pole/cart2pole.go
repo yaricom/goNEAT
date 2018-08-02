@@ -58,7 +58,7 @@ type CartPole struct {
 }
 
 // Perform evaluation of one epoch on double pole balancing
-func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, generation *experiments.Generation, context *neat.NeatContext) (err error) {
+func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiments.Generation, context *neat.NeatContext) (err error) {
 	cartPole := newCartPole(ex.Markov)
 
 	cartPole.nonMarkovLong = false
@@ -70,11 +70,11 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 
 		if winner {
 			// This will be winner in Markov case
-			generation.Solved = true
-			generation.WinnerNodes = len(org.Genotype.Nodes)
-			generation.WinnerGenes = org.Genotype.Extrons()
-			generation.WinnerEvals = context.PopSize * generation.Id + org.Genotype.Id
-			generation.Best = org
+			epoch.Solved = true
+			epoch.WinnerNodes = len(org.Genotype.Nodes)
+			epoch.WinnerGenes = org.Genotype.Extrons()
+			epoch.WinnerEvals = context.PopSize * epoch.Id + org.Genotype.Id
+			epoch.Best = org
 			org.IsWinner = true
 			break // we have winner
 		}
@@ -179,11 +179,11 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 						generalization_score))
 				champion.Fitness = float64(generalization_score)
 				champion.IsWinner = true
-				generation.Solved = true
-				generation.WinnerNodes = len(champion.Genotype.Nodes)
-				generation.WinnerGenes = champion.Genotype.Extrons()
-				generation.WinnerEvals = context.PopSize * generation.Id + champion.Genotype.Id
-				generation.Best = champion
+				epoch.Solved = true
+				epoch.WinnerNodes = len(champion.Genotype.Nodes)
+				epoch.WinnerGenes = champion.Genotype.Extrons()
+				epoch.WinnerEvals = context.PopSize * epoch.Id + champion.Genotype.Id
+				epoch.Best = champion
 			} else {
 				neat.DebugLog("The non-Markov champion failed to generalize")
 				champion.Fitness = champion_fitness // Restore the champ's fitness
@@ -198,11 +198,11 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 
 
 	// Fill statistics about current epoch
-	generation.FillPopulationStatistics(pop)
+	epoch.FillPopulationStatistics(pop)
 
 	// Only print to file every print_every generations
-	if generation.Solved || generation.Id % context.PrintEvery == 0 {
-		pop_path := fmt.Sprintf("%s/gen_%d", ex.OutputPath, generation.Id)
+	if epoch.Solved || epoch.Id % context.PrintEvery == 0 {
+		pop_path := fmt.Sprintf("%s/gen_%d", experiments.OutDirForTrial(ex.OutputPath, epoch.TrialId), epoch.Id)
 		file, err := os.Create(pop_path)
 		if err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump population, reason: %s\n", err))
@@ -211,18 +211,19 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		}
 	}
 
-	if generation.Solved {
+	if epoch.Solved {
 		// print winner organism
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				org_path := fmt.Sprintf("%s/%s_%.0f", ex.OutputPath, "pole2_winner", org.Fitness)
+				org_path := fmt.Sprintf("%s/%s_%.1f_%d-%d", experiments.OutDirForTrial(ex.OutputPath, epoch.TrialId),
+					"pole2_winner", org.Fitness, org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				file, err := os.Create(org_path)
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
 				} else {
 					org.Genotype.Write(file)
-					neat.InfoLog(fmt.Sprintf("Generation #%d winner %d dumped to: %s\n", generation.Id, org.Genotype.Id, org_path))
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner %d dumped to: %s\n", epoch.Id, org.Genotype.Id, org_path))
 				}
 				break
 			}
@@ -230,7 +231,7 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 	} else {
 		// Move to the next epoch if failed to find winner
 		neat.DebugLog(">>>>> start next generation")
-		_, err = pop.Epoch(generation.Id + 1, context)
+		_, err = pop.Epoch(epoch.Id + 1, context)
 	}
 
 	return err

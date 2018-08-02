@@ -38,7 +38,8 @@ func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 			epoch.Best = org
 			if (epoch.WinnerNodes == 7) {
 				// You could dump out optimal genomes here if desired
-				opt_path := fmt.Sprintf("%s/%s", ex.OutputPath, "pole1_optimal")
+				opt_path := fmt.Sprintf("%s/%s_%d-%d", experiments.OutDirForTrial(ex.OutputPath, epoch.TrialId),
+					"pole1_optimal", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				file, err := os.Create(opt_path)
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump optimal genome, reason: %s\n", err))
@@ -56,7 +57,7 @@ func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 
 	// Only print to file every print_every generations
 	if epoch.Solved || epoch.Id % context.PrintEvery == 0 {
-		pop_path := fmt.Sprintf("%s/gen_%d", ex.OutputPath, epoch.Id)
+		pop_path := fmt.Sprintf("%s/gen_%d", experiments.OutDirForTrial(ex.OutputPath, epoch.TrialId), epoch.Id)
 		file, err := os.Create(pop_path)
 		if err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump population, reason: %s\n", err))
@@ -70,7 +71,8 @@ func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				org_path := fmt.Sprintf("%s/%s", ex.OutputPath, "pole_winner")
+				org_path := fmt.Sprintf("%s/%s_%d-%d", experiments.OutDirForTrial(ex.OutputPath, epoch.TrialId),
+					"pole1_winner", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				file, err := os.Create(org_path)
 				if err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
