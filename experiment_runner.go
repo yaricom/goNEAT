@@ -19,7 +19,7 @@ func main() {
 	var out_dir_path = flag.String("out", "./out", "The output directory to store results.")
 	var context_path = flag.String("context", "./data/xor.neat", "The execution context configuration file.")
 	var genome_path = flag.String("genome", "./data/xorstartgenes", "The seed genome to start with.")
-	var experiment_name = flag.String("experiment", "XOR", "The name of experiment to run. [XOR, cart_pole, cart_2pole_markov]")
+	var experiment_name = flag.String("experiment", "XOR", "The name of experiment to run. [XOR, cart_pole, cart_2pole_markov, cart_2pole_non-markov]")
 	var trials_count = flag.Int("trials", 0, "The numbar of trials for experiment. Overrides the one set in configuration.")
 	var log_level = flag.Int("log_level", -1, "The logger level to be used. Overrides the one set in configuration.")
 
@@ -49,12 +49,18 @@ func main() {
 	fmt.Println(start_genome)
 
 	// Check if output dir exists
-	if _, err := os.Stat(*out_dir_path); err == nil {
+	out_dir := *out_dir_path
+	if _, err := os.Stat(out_dir); err == nil {
+		// backup it
+		back_up_dir := fmt.Sprintf("%s-%s", out_dir, time.Now().Format("2006-01-02T15_04_05"))
 		// clear it
-		os.RemoveAll(*out_dir_path)
+		err = os.Rename(out_dir, back_up_dir)
+		if err != nil {
+			log.Fatal("Failed to do previous results backup: ", err)
+		}
 	}
 	// create output dir
-	err = os.MkdirAll(*out_dir_path, os.ModePerm)
+	err = os.MkdirAll(out_dir, os.ModePerm)
 	if err != nil {
 		log.Fatal("Failed to create output directory: ", err)
 	}
@@ -74,22 +80,22 @@ func main() {
 	}
 	var generationEvaluator experiments.GenerationEvaluator
 	if *experiment_name == "XOR" {
-		generationEvaluator = xor.XORGenerationEvaluator{OutputPath:*out_dir_path}
+		generationEvaluator = xor.XORGenerationEvaluator{OutputPath:out_dir}
 	} else if *experiment_name == "cart_pole" {
 		generationEvaluator = pole.CartPoleGenerationEvaluator{
-			OutputPath:*out_dir_path,
+			OutputPath:out_dir,
 			WinBalancingSteps:500000,
 			RandomStart:true,
 		}
 	} else if *experiment_name == "cart_2pole_markov" {
 		generationEvaluator = pole.CartDoublePoleGenerationEvaluator{
-			OutputPath:*out_dir_path,
+			OutputPath:out_dir,
 			Markov:true,
 			ActionType:experiments.ContinuousAction,
 		}
 	} else if *experiment_name == "cart_2pole_non-markov" {
 		generationEvaluator = pole.CartDoublePoleGenerationEvaluator{
-			OutputPath:*out_dir_path,
+			OutputPath:out_dir,
 			Markov:false,
 			ActionType:experiments.ContinuousAction,
 		}
