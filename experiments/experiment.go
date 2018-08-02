@@ -110,12 +110,24 @@ func (e Experiment) Epochs() Floats {
 	return x
 }
 
-// Returns average number of nodes, genes, organisms evaluations, and species diversity of winner genomes among all
-// trials, i.e. for all trials where winning solution was found
-func (e Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity float64) {
-	total_nodes, total_genes, total_evals, total_diversity := 0, 0, 0, 0
+// The number of trials solved
+func (e Experiment) TrialsSolved() int {
 	count := 0
 	for _, t := range e.Trials {
+		if t.Solved() {
+			count++
+		}
+	}
+	return count
+}
+
+// Returns average number of nodes, genes, organisms evaluations, and species diversity of winner genomes among all
+// trials, i.e. for all trials where winning solution was found
+func (e *Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity float64) {
+	total_nodes, total_genes, total_evals, total_diversity := 0, 0, 0, 0
+	count := 0
+	for i := 0; i < len(e.Trials); i++ {
+		t := e.Trials[i]
 		if t.Solved() {
 			nodes, genes, evals, diversity := t.Winner()
 			total_nodes += nodes
@@ -135,10 +147,11 @@ func (e Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity 
 
 // Prints experiment statistics
 func (ex Experiment) PrintStatistics() {
+	fmt.Printf("\n+++ Solved %d trials from %d +++\n", ex.TrialsSolved(), len(ex.Trials))
 	// Print absolute champion statistics
 	if org, trid, found := ex.BestOrganism(true); found {
 		nodes, genes, evals, divers := ex.Trials[trid].Winner()
-		fmt.Printf("\nChampion found in %d trial run\n\tWinner Nodes:\t%d\n\tWinner Genes:\t%d\n\tWinner Evals:\t%d\n\tDiversity:\t%d\n",
+		fmt.Printf("\nChampion found in %d trial run\n\tWinner Nodes:\t%d\n\tWinner Genes:\t%d\n\tWinner Evals:\t%d\n\n\tDiversity:\t%d",
 			trid, nodes, genes, evals, divers)
 		fmt.Printf("\n\tComplexity:\t%d\n\tAge:\t\t%d\n\tFitness:\t%.1f\n",
 			org.Phenotype.Complexity(), org.Species.Age, org.Fitness)
@@ -147,15 +160,41 @@ func (ex Experiment) PrintStatistics() {
 	}
 
 	// Print average winner statistics
+	mean_complexity, mean_diversity, mean_age, mean_fitness := 0.0, 0.0, 0.0, 0.0
 	if len(ex.Trials) > 1 {
-		avg_nodes, avg_genes, avg_evals, avg_divers := ex.AvgWinner()
+		avg_nodes, avg_genes, avg_evals, avg_divers := 0.0, 0.0, 0.0, 0.0
+		count := 0.0
+		for i := 0; i < len(ex.Trials); i++ {
+			t := ex.Trials[i]
+			if t.Solved() {
+				nodes, genes, evals, diversity := t.Winner()
+				avg_nodes += float64(nodes)
+				avg_genes += float64(genes)
+				avg_evals += float64(evals)
+				avg_divers += float64(diversity)
 
-		fmt.Printf("\nAverage among winners\n\tWinner Nodes:\t%.1f\n\tWinner Genes:\t%.1f\n\tWinner Evals:\t%.1f\n\tDiversity:\t%.1f\n",
+				mean_complexity += float64(t.WinnerGeneration.Best.Phenotype.Complexity())
+				mean_age += float64(t.WinnerGeneration.Best.Species.Age)
+				mean_fitness += t.WinnerGeneration.Best.Fitness
+
+				count++
+			}
+		}
+		avg_nodes /= count
+		avg_genes /= count
+		avg_evals /= count
+		avg_divers /= count
+		fmt.Printf("\nAverage among winners\n\tWinner Nodes:\t%.1f\n\tWinner Genes:\t%.1f\n\tWinner Evals:\t%.1f\n\n\tDiversity:\t%.1f\n",
 			avg_nodes, avg_genes, avg_evals, avg_divers)
+
+		mean_complexity /= count
+		mean_age /= count
+		mean_fitness /=count
+		fmt.Printf("\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n",
+			mean_complexity, mean_age, mean_fitness)
 	}
 
 	// Print best organisms statistics per epoch per trial, i.e. every the best found
-	mean_complexity, mean_diversity, mean_age, mean_fitness := 0.0, 0.0, 0.0, 0.0
 	for _, t := range ex.Trials {
 		mean_complexity += t.BestComplexity().Mean()
 		mean_diversity += t.Diversity().Mean()
@@ -167,7 +206,7 @@ func (ex Experiment) PrintStatistics() {
 	mean_diversity /= count
 	mean_age /= count
 	mean_fitness /=count
-	fmt.Printf("\nnAverages of the most fit/best organisms found\n\tDiversity:\t%.1f\n\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n",
+	fmt.Printf("\nAverages of the most fit/best organisms found\n\tDiversity:\t%.1f\n\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n",
 		mean_diversity, mean_complexity, mean_age, mean_fitness)
 
 	// Print the average values for each population of organisms evaluated
