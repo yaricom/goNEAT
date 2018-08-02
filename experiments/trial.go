@@ -10,9 +10,11 @@ import (
 // The structure to hold statistics about one experiment run (trial)
 type Trial struct {
 	// The trial number
-	Id          int
+	Id               int
 	// The results per generation in this trial
-	Generations Generations
+	Generations      Generations
+	// The winner generation
+	WinnerGeneration *Generation
 }
 
 func (t Trial) LastExecuted() time.Time {
@@ -105,14 +107,23 @@ func (t Trial) Average() (fitness, age, complexity Floats) {
 }
 
 // Returns number of nodes, genes,  organism evaluations and species diversity in the winner genome
-func (t Trial) Winner() (nodes, genes, evals, diversity int) {
-	for _, e := range t.Generations {
-		if e.Solved {
-			nodes = e.WinnerNodes
-			genes = e.WinnerGenes
-			evals = e.WinnerEvals
-			diversity = e.Diversity
-			break
+func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
+	if t.WinnerGeneration != nil {
+		nodes = t.WinnerGeneration.WinnerNodes
+		genes = t.WinnerGeneration.WinnerGenes
+		evals = t.WinnerGeneration.WinnerEvals
+		diversity = t.WinnerGeneration.Diversity
+	} else {
+		for _, e := range t.Generations {
+			if e.Solved {
+				nodes = e.WinnerNodes
+				genes = e.WinnerGenes
+				evals = e.WinnerEvals
+				diversity = e.Diversity
+				// Store winner
+				t.WinnerGeneration = &e
+				break
+			}
 		}
 	}
 	return nodes, genes, evals, diversity
