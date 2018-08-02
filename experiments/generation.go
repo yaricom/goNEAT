@@ -36,6 +36,9 @@ type Generation struct {
 	WinnerNodes int
 	// The numbers of genes (links) in winner genome or zero if not solved
 	WinnerGenes int
+
+	// The ID of Trial this Generation was evaluated in
+	TrialId     int
 }
 
 // Collects statistics about given population
@@ -63,7 +66,7 @@ func (epoch Generation) Average() (fitness, age, complexity float64) {
 	fitness = epoch.Fitness.Mean()
 	age = epoch.Age.Mean()
 	complexity = epoch.Compexity.Mean()
-	return  fitness, age, complexity
+	return fitness, age, complexity
 }
 
 // Encodes generation with provided GOB encoder
