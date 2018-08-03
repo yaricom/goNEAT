@@ -68,7 +68,7 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 	for _, org := range pop.Organisms {
 		winner := ex.orgEvaluate(org, cartPole)
 
-		if winner {
+		if winner && (epoch.Best == nil || org.Fitness > epoch.Best.Fitness){
 			// This will be winner in Markov case
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
@@ -76,7 +76,6 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 			epoch.WinnerEvals = context.PopSize * epoch.Id + org.Genotype.Id
 			epoch.Best = org
 			org.IsWinner = true
-			break // we have winner
 		}
 	}
 
@@ -255,6 +254,12 @@ func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Orga
 	if cartPole.isMarkov {
 		if organism.Fitness >= markov_max_steps {
 			winner = true
+			organism.Fitness = 1.0
+			organism.Error = 0.0
+		} else {
+			// we use linear scale
+			organism.Error = (markov_max_steps - organism.Fitness) / markov_max_steps
+			organism.Fitness = 1.0 - organism.Error
 		}
 	} else if cartPole.nonMarkovLong {
 		// if doing the long test non-markov
