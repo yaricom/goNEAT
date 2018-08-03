@@ -30,7 +30,7 @@ func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 	for _, org := range pop.Organisms {
 		res := ex.orgEvaluate(org)
 
-		if res {
+		if res && (epoch.Best == nil || org.Fitness > epoch.Best.Fitness){
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
 			epoch.WinnerGenes = org.Genotype.Extrons()
@@ -48,7 +48,6 @@ func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 					neat.InfoLog(fmt.Sprintf("Dumped optimal genome to: %s\n", opt_path))
 				}
 			}
-			break // we have winner
 		}
 	}
 
@@ -104,11 +103,23 @@ func (ex *CartPoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) 
 	// Decide if its a winner
 	if organism.Fitness >= float64(ex.WinBalancingSteps) {
 		organism.IsWinner = true
-		return true
-	} else {
-		organism.IsWinner = false
-		return false
 	}
+
+	// adjust fitness to be in range [0;1]
+	if organism.IsWinner {
+		organism.Fitness = 1.0
+		organism.Error = 0.0
+	} else if organism.Fitness == 0 {
+		organism.Error = 1.0
+	} else {
+		// we use logarithmic scale because most cart runs fail to early within ~100 steps, but
+		// we test against 500'000 balancing steps
+		logSteps := math.Log(float64(ex.WinBalancingSteps))
+		organism.Error = (logSteps - math.Log(organism.Fitness)) / logSteps
+		organism.Fitness = 1.0 - organism.Error
+	}
+
+	return organism.IsWinner
 }
 
 // run cart emulation and return number of emulation steps pole was balanced
