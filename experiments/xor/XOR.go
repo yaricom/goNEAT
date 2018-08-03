@@ -40,7 +40,7 @@ func (ex XORGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 			return err
 		}
 
-		if res {
+		if res && (epoch.Best == nil || org.Fitness > epoch.Best.Fitness){
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
 			epoch.WinnerGenes = org.Genotype.Extrons()
@@ -58,7 +58,6 @@ func (ex XORGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 					neat.InfoLog(fmt.Sprintf("Dumped optimal genome to: %s\n", opt_path))
 				}
 			}
-			break // we have winner
 		}
 	}
 
@@ -150,16 +149,16 @@ func (ex *XORGenerationEvaluator) org_evaluate(organism *genetics.Organism, cont
 		organism.Phenotype.Flush()
 	}
 
-	error_sum := 0.0
 	if (success) {
 		// Mean Squared Error
-		error_sum = math.Abs(out[0]) + math.Abs(1.0 - out[1]) + math.Abs(1.0 - out[2]) + math.Abs(out[3])
-		organism.Fitness = math.Pow(4.0 - error_sum, 2.0)
-		organism.Error = error_sum
+		error_sum := math.Abs(out[0]) + math.Abs(1.0 - out[1]) + math.Abs(1.0 - out[2]) + math.Abs(out[3]) // ideal == 0
+		target := math.Abs(1.0 - out[0]) + math.Abs(out[1]) + math.Abs(out[2]) + math.Abs(1.0 - out[3]) // ideal == 4.0
+		organism.Fitness = math.Sqrt(math.Pow(4.0 - error_sum, 2.0)) / 4.0
+		organism.Error = math.Sqrt(math.Pow(4.0 - target, 2.0)) / 4.0
 	} else {
-		// The network is flawed (shouldn't happen)
-		error_sum = 999.0
-		organism.Fitness = 0.001
+		// The network is flawed (shouldn't happen) - flag as anomaly
+		organism.Error = 1.0
+		organism.Fitness = 0.0
 	}
 
 	if out[0] < precision && out[1] >= 1 - precision && out[2] >= 1 - precision && out[3] < precision {
