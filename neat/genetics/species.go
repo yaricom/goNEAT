@@ -95,8 +95,7 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 	}
 	if len(orgs) != len(s.Organisms) - 1 {
 		return false, errors.New(
-			fmt.Sprintf("SPECIES: Attempt to remove nonexistent Organism from Species with #of organisms: %d",
-				len(s.Organisms)))
+			fmt.Sprintf("SPECIES: Attempt to remove nonexistent Organism from Species with #of organisms: %d", len(s.Organisms)))
 	} else {
 		s.Organisms = orgs
 		return true, nil
