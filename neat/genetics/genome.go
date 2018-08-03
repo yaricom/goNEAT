@@ -910,6 +910,10 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 
 	// Extract the nodes
 	in_node, out_node := link.InNode, link.OutNode
+	if in_node == nil || out_node == nil {
+		return false, errors.New(
+			fmt.Sprintf("Genome:mutateAddNode: Anomalous link found with either IN or OUT node not set. %s", link))
+	}
 
 	var new_gene_1, new_gene_2 *Gene
 	var new_node *network.NNode
