@@ -194,22 +194,8 @@ func (ex Experiment) PrintStatistics() {
 			mean_complexity, mean_age, mean_fitness)
 	}
 
-	// Print best organisms statistics per epoch per trial, i.e. every the best found
-	for _, t := range ex.Trials {
-		mean_complexity += t.BestComplexity().Mean()
-		mean_diversity += t.Diversity().Mean()
-		mean_age += t.BestAge().Mean()
-		mean_fitness += t.BestFitness().Mean()
-	}
-	count := float64(len(ex.Trials))
-	mean_complexity /= count
-	mean_diversity /= count
-	mean_age /= count
-	mean_fitness /=count
-	fmt.Printf("\nAverages of the most fit/best organisms found\n\tDiversity:\t%.1f\n\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n",
-		mean_diversity, mean_complexity, mean_age, mean_fitness)
-
 	// Print the average values for each population of organisms evaluated
+	count := float64(len(ex.Trials))
 	for _, t := range ex.Trials {
 		fitness, age, complexity := t.Average()
 
@@ -222,7 +208,7 @@ func (ex Experiment) PrintStatistics() {
 	mean_diversity /= count
 	mean_age /= count
 	mean_fitness /=count
-	fmt.Printf("\nAverages for each population of organisms evaluated\n\tDiversity:\t%.1f\n\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n\n",
+	fmt.Printf("\nAverages for all organisms evaluated during experiment\n\tDiversity:\t%.1f\n\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n\n",
 		mean_diversity, mean_complexity, mean_age, mean_fitness)
 
 }
