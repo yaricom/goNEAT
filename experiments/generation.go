@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"bytes"
 	"reflect"
+	"sort"
 )
 
 // The structure to represent execution results of one generation
@@ -54,9 +55,13 @@ func (epoch *Generation) FillPopulationStatistics(pop *genetics.Population) {
 		epoch.Fitness[i] = curr_species.Organisms[0].Fitness
 
 		// find best organism in epoch if not solved
-		if !epoch.Solved && curr_species.Organisms[0].Fitness > max_fitness {
-			max_fitness = curr_species.Organisms[0].Fitness
-			epoch.Best = curr_species.Organisms[0]
+		if !epoch.Solved {
+			// sort organisms from current species by fitness to have most fit first
+			sort.Sort(sort.Reverse(curr_species.Organisms))
+			if curr_species.Organisms[0].Fitness > max_fitness {
+				max_fitness = curr_species.Organisms[0].Fitness
+				epoch.Best = curr_species.Organisms[0]
+			}
 		}
 	}
 }
