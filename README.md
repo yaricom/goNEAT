@@ -41,7 +41,7 @@ To run this experiment execute following commands:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-go run experiment_runner.go -out ./out/xor -context ./data/xor.neat -genome ./data/xorstartgenes -experiment XOR
+go run executor.go -out ./out/xor -context ./data/xor.neat -genome ./data/xorstartgenes -experiment XOR
 
 ```
 Where: ./data/xor.neat is the configuration of NEAT execution context and ./data/xorstartgenes is the start genome
@@ -85,7 +85,7 @@ To run this experiment execute following commands:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-go run experiment_runner.go -out ./out/xor_disconnected -context ./data/xor.neat -genome ./data/xordisconnectedstartgenes -experiment XOR
+go run executor.go -out ./out/xor_disconnected -context ./data/xor.neat -genome ./data/xordisconnectedstartgenes -experiment XOR
 
 ```
 
@@ -135,7 +135,7 @@ To run this experiment with 150 population size execute following commands:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-go run experiment_runner.go -out ./out/pole1 -context ./data/pole1_150.neat -genome ./data/pole1startgenes -experiment cart_pole
+go run executor.go -out ./out/pole1 -context ./data/pole1_150.neat -genome ./data/pole1startgenes -experiment cart_pole
 
 ```
 
@@ -146,7 +146,7 @@ To run this experiment with 1’000 population size execute following commands:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-go run experiment_runner.go -out ./out/pole1 -context ./data/pole1_1000.neat -genome ./data/pole1startgenes -experiment cart_pole
+go run executor.go -out ./out/pole1 -context ./data/pole1_1000.neat -genome ./data/pole1startgenes -experiment cart_pole
 
 ```
 
@@ -217,7 +217,7 @@ To run experiment execute following command:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-go run experiment_runner.go -out ./out/pole2_markov -context ./data/pole2_markov.neat -genome ./data/pole2_markov_startgenes -experiment cart_2pole_markov
+go run executor.go -out ./out/pole2_markov -context ./data/pole2_markov.neat -genome ./data/pole2_markov_startgenes -experiment cart_2pole_markov
 
 ```
 
@@ -266,7 +266,7 @@ To run experiment execute following command:
 ```bash
 
 cd $GOPATH/src/github.com/yaricom/goNEAT
-go run experiment_runner.go -out ./out/pole2_non-markov -context ./data/pole2_non-markov.neat -genome ./data/pole2_non-markov_startgenes -experiment cart_2pole_non-markov
+go run executor.go -out ./out/pole2_non-markov -context ./data/pole2_non-markov.neat -genome ./data/pole2_non-markov_startgenes -experiment cart_2pole_non-markov
 
 ```
 

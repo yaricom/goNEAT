@@ -6,6 +6,8 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 	"fmt"
 	"time"
+	"os"
+	"log"
 )
 
 // The type of action to be applied to environment
@@ -73,6 +75,7 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 			neat.InfoLog(fmt.Sprintf(">>>>> Generation:%3d\tRun: %d\n", generation_id, run))
 			generation := Generation{
 				Id:generation_id,
+				TrialId:run,
 			}
 			err = epoch_evaluator.GenerationEvaluate(pop, &generation, context)
 			if err != nil {
@@ -91,4 +94,18 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 	}
 
 	return nil
+}
+
+// To provide standard output directory syntax based on current trial
+// Method checks if directory should be created
+func OutDirForTrial(outDir string, trialID int) string {
+	dir := fmt.Sprintf("%s/%d", outDir, trialID)
+	if _, err := os.Stat(dir); err != nil {
+		// create output dir
+		err := os.MkdirAll(dir, os.ModePerm)
+		if err != nil {
+			log.Fatal("Failed to create output directory: ", err)
+		}
+	}
+	return dir
 }

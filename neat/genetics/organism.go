@@ -18,6 +18,8 @@ type Organism struct {
 	Fitness                   float64
 	// A fitness measure that won't change during adjustments
 	OriginalFitness           float64
+	// The error value indicating how far organism's performance is from ideal task goal, e.g. MSE
+	Error                     float64
 
 	// Win marker (if needed for a particular task)
 	IsWinner                  bool
@@ -57,8 +59,8 @@ type Organism struct {
 	mutationStructBaby        bool
 	mateBaby                  bool
 
-	// Used just for reporting purposes
-	Error                     float64
+	// The flag to be used as utility value
+	Flag                      int
 }
 
 // Creates new organism with specified genome, fitness and given generation number

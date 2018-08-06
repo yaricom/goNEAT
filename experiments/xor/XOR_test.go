@@ -65,7 +65,7 @@ func TestXOR(t *testing.T) {
 	}
 
 	// Find winner statistics
-	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
+	avg_nodes, avg_genes, avg_evals, _ := experiment.AvgWinner()
 
 	// check results
 	if avg_nodes < 5 {
@@ -88,15 +88,15 @@ func TestXOR(t *testing.T) {
 	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
 	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		mean_complexity += t.Complexity().Mean()
+		mean_complexity += t.BestComplexity().Mean()
 		mean_diversity += t.Diversity().Mean()
-		mean_age += t.Age().Mean()
+		mean_age += t.BestAge().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	mean_complexity /= count
 	mean_diversity /= count
 	mean_age /= count
-	t.Logf("mean: complexity=%.1f, diversity=%.1f, age=%.1f", mean_complexity, mean_diversity, mean_age)
+	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f", mean_complexity, mean_diversity, mean_age)
 }
 
 
@@ -154,7 +154,7 @@ func TestXOR_disconnected(t *testing.T) {
 	}
 
 	// Find winner statistics
-	avg_nodes, avg_genes, avg_evals := experiment.AvgWinnerNGE()
+	avg_nodes, avg_genes, avg_evals, _ := experiment.AvgWinner()
 
 	// check results
 	if avg_nodes < 5 {
@@ -177,13 +177,13 @@ func TestXOR_disconnected(t *testing.T) {
 	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
 	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		mean_complexity += t.Complexity().Mean()
+		mean_complexity += t.BestComplexity().Mean()
 		mean_diversity += t.Diversity().Mean()
-		mean_age += t.Age().Mean()
+		mean_age += t.BestAge().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	mean_complexity /= count
 	mean_diversity /= count
 	mean_age /= count
-	t.Logf("mean: complexity=%.1f, diversity=%.1f, age=%.1f", mean_complexity, mean_diversity, mean_age)
+	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f", mean_complexity, mean_diversity, mean_age)
 }

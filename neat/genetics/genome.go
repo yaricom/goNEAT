@@ -48,21 +48,6 @@ func NewGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene) *Genome {
 	}
 }
 
-// Constructor which takes in links (not genes) and creates a Genome
-func NewGenomeFromLinks(id int, t []*neat.Trait, n []*network.NNode, links []*network.Link) *Genome {
-	gnome := Genome{
-		Id:id,
-		Traits:t,
-		Nodes:n,
-		Genes:make([]*Gene, len(links)),
-	}
-	// Iterate over links and turn them into genes
-	for i, l := range links {
-		gnome.Genes[i] = NewGeneWithTrait(l.Trait, l.Weight, l.InNode, l.OutNode, l.IsRecurrent, 1.0, 0.0)
-	}
-	return &gnome
-}
-
 // This special constructor creates a Genome with in inputs, out outputs, n out of nmax hidden units, and random
 // connectivity.  If rec is true then recurrent connections will be included. The last input is a bias
 // link_prob is the probability of a link  */
@@ -925,6 +910,10 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 
 	// Extract the nodes
 	in_node, out_node := link.InNode, link.OutNode
+	if in_node == nil || out_node == nil {
+		return false, errors.New(
+			fmt.Sprintf("Genome:mutateAddNode: Anomalous link found with either IN or OUT node not set. %s", link))
+	}
 
 	var new_gene_1, new_gene_2 *Gene
 	var new_node *network.NNode
