@@ -317,15 +317,15 @@ experiment) and is able to solve reinforcement learning tasks under conditions o
 
 ## Credits
 
-The original C++ NEAT implementation created by Kenneth Stanley, see: [NEAT][1]
+* The original C++ NEAT implementation created by Kenneth Stanley, see: [NEAT][1]
+* Other NEAT implementations may be found at [NEAT Software Catalog][2]
 
-This source code maintained and managed by Iaroslav Omelianenko
-
-Other NEAT implementations may be found at [NEAT Software Catalog][2]
+This source code maintained and managed by [Iaroslav Omelianenko][3]
 
 
 [1]:http://www.cs.ucf.edu/~kstanley/neat.html
 [2]:http://eplex.cs.ucf.edu/neat_software/
+[3]:https://io42.space
 
 [single_pole-balancing_scheme]: https://github.com/yaricom/goNEAT/blob/master/contents/single_pole-balancing.jpg "The single pole-balancing experimental setup"
 [double_pole-balancing_scheme]: https://github.com/yaricom/goNEAT/blob/master/contents/double_pole-balancing.png "The double pole-balancing experimental setup"
