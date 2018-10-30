@@ -4,7 +4,6 @@ import (
 	"github.com/yaricom/goNEAT/neat/network"
 	"fmt"
 	"bytes"
-	"encoding/gob"
 )
 
 // The object to associate implementation specific data with particular organism for various algorithm implementations
