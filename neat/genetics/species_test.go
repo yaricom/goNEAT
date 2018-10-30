@@ -153,9 +153,9 @@ func TestSpecies_reproduce_fail(t *testing.T) {
 
 	sp.ExpectedOffspring = 1
 
-	res, err := sp.reproduce(1, nil, nil, nil)
-	if res != false {
-		t.Error("res != false")
+	babies, err := sp.reproduce(1, nil, nil, nil)
+	if babies != nil {
+		t.Error("babies != nil")
 	}
 	if err == nil {
 		t.Error("err == nil")
@@ -197,19 +197,15 @@ func TestSpecies_reproduce(t *testing.T) {
 
 	pop.Species[0].ExpectedOffspring = 11
 
-	res, err := pop.Species[0].reproduce(1, pop, sorted_species, &conf)
-	if !res {
+	babies, err := pop.Species[0].reproduce(1, pop, sorted_species, &conf)
+	if babies == nil {
 		t.Error("No reproduction", err)
 	}
 	if err != nil {
 		t.Error("err != nil", err)
 	}
-	after := 0
-	for _, sp := range pop.Species {
-		after += len(sp.Organisms)
-	}
 
-	if after != conf.PopSize + pop.Species[0].ExpectedOffspring {
-		t.Error("No new baby was created", after)
+	if len(babies) != pop.Species[0].ExpectedOffspring {
+		t.Error("Wrong number of babies was created", len(babies))
 	}
 }
