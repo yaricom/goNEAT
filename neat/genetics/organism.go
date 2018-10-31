@@ -108,7 +108,10 @@ func (o *Organism) UnmarshalBinary(data []byte) error {
 	b := bytes.NewBuffer(data)
 	var genotype_id int
 	_, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &genotype_id)
-	o.Genotype, err = ReadGenome(&b, genotype_id)
+	o.Genotype, err = ReadGenome(b, genotype_id)
+	if err == nil {
+		o.Phenotype = o.Genotype.genesis(genotype_id)
+	}
 
 	return err
 }
