@@ -293,9 +293,9 @@ func (g *Genome) Extrons() int {
 	return total
 }
 
-// Tests if given genome is equal to this one. This method will check that both genomes has the same traits, nodes and genes.
+// Tests if given genome is equal to this one genetically and phenotypically. This method will check that both genomes has the same traits, nodes and genes.
 // If mismatch detected the error will be returned with mismatch details.
-func (g *Genome) Equals(og *Genome) (bool, error) {
+func (g *Genome) IsEqual(og *Genome) (bool, error) {
 	for i, tr := range og.Traits {
 		if !reflect.DeepEqual(tr, g.Traits[i]) {
 			return false, errors.New("Traits mismatch")

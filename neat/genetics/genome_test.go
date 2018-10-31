@@ -296,7 +296,7 @@ func TestGenome_Duplicate(t *testing.T)  {
 		nd.Duplicate = nil
 	}
 
-	equal, err := gnome.Equals(new_gnome)
+	equal, err := gnome.IsEqual(new_gnome)
 	if !equal {
 		t.Error(err)
 	}
