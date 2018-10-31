@@ -64,25 +64,31 @@ func TestSpecies_countOffspring(t *testing.T) {
 		o.ExpectedOffspring = float64(i) * 1.5
 	}
 
-	skim := sp.countOffspring(0.5)
+	expectedOffspring, skim := sp.countOffspring(0.5)
+	sp.ExpectedOffspring = expectedOffspring
 
 	if sp.ExpectedOffspring != 5 {
 		t.Error("sp.ExpectedOffspring", 5, sp.ExpectedOffspring)
+		return
 	}
 	if skim != 0 {
 		t.Error("skim", 0, skim)
+		return
 	}
 
 	sp = buildSpeciesWithOrganisms(2)
 	for i, o := range sp.Organisms {
 		o.ExpectedOffspring = float64(i) * 1.5
 	}
-	skim = sp.countOffspring(0.4)
+	expectedOffspring, skim = sp.countOffspring(0.4)
+	sp.ExpectedOffspring = expectedOffspring
 	if sp.ExpectedOffspring != 4 {
 		t.Error("sp.ExpectedOffspring", 5, sp.ExpectedOffspring)
+		return
 	}
 	if skim != 0.9 {
 		t.Error("skim", 0.9, skim)
+		return
 	}
 }
 
