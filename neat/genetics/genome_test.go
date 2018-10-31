@@ -289,6 +289,10 @@ func TestGenome_Duplicate(t *testing.T)  {
 	}
 
 	for _, nd := range gnome.Nodes {
+		if nd.Duplicate == nil {
+			t.Error("The duplicated node must be remembered")
+			return
+		}
 		nd.Duplicate = nil
 	}
 
