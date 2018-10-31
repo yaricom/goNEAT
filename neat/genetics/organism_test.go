@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"sort"
 	"math"
+	"bytes"
+	"encoding/gob"
 )
 
 // tests organisms sorting
@@ -37,5 +39,44 @@ func TestOrganisms(t *testing.T) {
 			t.Error("Wrong ascending sort order")
 		}
 		fit = o.Fitness
+	}
+}
+
+func TestOrganism_MarshalBinary(t *testing.T) {
+	gnome := buildTestGenome(1)
+	org := NewOrganism(rand.Float64(), gnome, 1)
+
+	// Marshal to binary
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(org)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// Unmarshal and check if the same
+	dec := gob.NewDecoder(&buf)
+	dec_org := Organism{}
+	err = dec.Decode(&dec_org)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// check results
+	if org.Fitness != dec_org.Fitness {
+		t.Error("org.Fitness != dec_org.Fitness")
+	}
+
+	dec_gnome := dec_org.Genotype
+	if gnome.Id != dec_gnome.Id {
+		t.Error("gnome.Id != dec_gnome.Id")
+	}
+
+
+	equals, err := gnome.IsEqual(dec_gnome)
+	if !equals {
+		t.Error(err)
 	}
 }
