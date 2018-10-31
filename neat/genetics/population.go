@@ -53,6 +53,14 @@ type Population struct {
 	sync.Mutex
 }
 
+// The auxiliary data type to hold results of parallel reproduction sent over the wires
+type reproductionResult struct {
+	babies_stored		int
+	babies                  []byte
+	best_species_reproduced bool
+	err                     error
+}
+
 // Construct off of a single spawning Genome
 func NewPopulation(g *Genome, context *neat.NeatContext) (*Population, error) {
 	if context.PopSize <= 0 {
@@ -249,7 +257,10 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	}
 
 	// Kill off all Organisms marked for death. The remainder will be allowed to reproduce.
-	p.purgeOrganisms()
+	err := p.purgeOrganisms()
+	if err != nil {
+		return false, err
+	}
 
 	neat.DebugLog("POPULATION: Start Reproduction >>>>>")
 
@@ -278,7 +289,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 				// fill babies into result
 				var buf bytes.Buffer
 				enc := gob.NewEncoder(&buf)
-				for baby := range babies {
+				for _, baby := range babies {
 					err = enc.Encode(baby)
 					if err != nil {
 						break
@@ -315,12 +326,13 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 		}
 
 		// read baby genome
-		dec := gob.NewDecoder(&result.babies)
+		dec := gob.NewDecoder(bytes.NewBuffer(result.babies))
 		for i := 0; i < result.babies_stored; i++ {
 			org := Organism{}
 			err := dec.Decode(&org)
 			if err != nil {
-				return false, errors.New("POPULATION: Failed to decode baby organism, reason: " + err)
+				return false, errors.New(
+					fmt.Sprintf("POPULATION: Failed to decode baby organism, reason: %s", err))
 			}
 			babies = append(babies, &org)
 		}
@@ -341,7 +353,10 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	neat.DebugLog("POPULATION: >>>>> Reproduction Complete")
 
 	// Destroy and remove the old generation from the organisms and species
-	p.purgeOldGeneration(best_species_id)
+	err = p.purgeOldGeneration(best_species_id)
+	if err != nil {
+		return false, err
+	}
 
 	// Removes all empty Species and age ones that survive.
 	// As this happens, create master organism list for the new generation.
@@ -489,14 +504,6 @@ func (p *Population) speciate(organisms []*Organism, context *neat.NeatContext) 
 	return nil
 }
 
-// The auxiliary data type to hold results of parallel reproduction sent over the wires
-type reproductionResult struct {
-	babies_stored		int
-	babies                  []byte
-	best_species_reproduced bool
-	err                     error
-}
-
 // Removes zero offspring species from this population, i.e. species which will not have any offspring organism belonging to it
 // after reproduction cycle due to its fitness stagnation
 func (p *Population) purgeZeroOffspringSpecies(generation int) {
@@ -529,9 +536,10 @@ func (p *Population) purgeZeroOffspringSpecies(generation int) {
 
 	// Now add those offspring up within each Species to get the number of offspring per Species
 	for _, sp := range p.Species {
-		skim = sp.countOffspring(skim)
+		sp.ExpectedOffspring, skim = sp.countOffspring(skim)
 		total_expected += sp.ExpectedOffspring
 	}
+	neat.DebugLog(fmt.Sprintf("POPULATION: Total expected offspring count: %d", total_expected))
 
 	// Need to make up for lost floating point precision in offspring assignment.
 	// If we lost precision, give an extra baby to the best Species
@@ -577,7 +585,7 @@ func (p *Population) purgeZeroOffspringSpecies(generation int) {
 }
 
 // When population stagnation detected the delta coding will be performed in attempt to fix this
-func (p *Population) deltaCoding(sorted_species *[]Species, context *neat.NeatContext) {
+func (p *Population) deltaCoding(sorted_species []*Species, context *neat.NeatContext) {
 	neat.DebugLog("POPULATION: PERFORMING DELTA CODING TO FIX STAGNATION")
 	p.EpochsHighestLastChanged = 0
 	half_pop := context.PopSize / 2
@@ -682,14 +690,14 @@ func (p *Population) giveBabiesToTheBest(sorted_species []*Species, context *nea
 }
 
 // Purge from population all organisms marked to be eliminated
-func (p *Population) purgeOrganisms() {
+func (p *Population) purgeOrganisms() error {
 	org_to_keep := make([]*Organism, 0)
 	for _, curr_org := range p.Organisms {
 		if curr_org.toEliminate {
 			// Remove the organism from its Species
 			_, err := curr_org.Species.removeOrganism(curr_org)
 			if err != nil {
-				return false, err
+				return err
 			}
 		} else {
 			// Keep organism in population
@@ -698,15 +706,17 @@ func (p *Population) purgeOrganisms() {
 	}
 	// Keep only remained organisms in the population
 	p.Organisms = org_to_keep
+
+	return nil
 }
 
 // Destroy and remove the old generation of the organisms and of the species
-func (p *Population) purgeOldGeneration(best_species_id int) {
+func (p *Population) purgeOldGeneration(best_species_id int) error {
 	for _, curr_org := range p.Organisms {
 		// Remove the organism from its Species
 		_, err := curr_org.Species.removeOrganism(curr_org)
 		if err != nil {
-			return false, err
+			return err
 		}
 
 		if neat.LogLevel == neat.LogLevelDebug && curr_org.Species.Id == best_species_id {
@@ -716,6 +726,7 @@ func (p *Population) purgeOldGeneration(best_species_id int) {
 	}
 	p.Organisms = make([]*Organism, 0)
 
+	return nil
 }
 
 // Removes all empty Species and age ones that survive.
