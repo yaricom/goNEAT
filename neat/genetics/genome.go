@@ -230,7 +230,7 @@ func ReadGenome(ir io.Reader, id int) (*Genome, error) {
 }
 
 // Writes this genome into provided writer
-func (g Genome) Write(w io.Writer) {
+func (g *Genome) Write(w io.Writer) {
 	fmt.Fprintf(w, "genomestart %d\n", g.Id)
 
 	for _, tr := range g.Traits {
@@ -254,7 +254,7 @@ func (g Genome) Write(w io.Writer) {
 }
 
 // Stringer
-func (g Genome) String() string {
+func (g *Genome) String() string {
 	str := "GENOME START\nNodes:\n"
 	for _, n := range g.Nodes {
 		n_type := ""
@@ -283,7 +283,7 @@ func (g Genome) String() string {
 }
 
 // Return # of non-disabled genes
-func (g Genome) Extrons() int {
+func (g *Genome) Extrons() int {
 	total := 0
 	for _, gene := range g.Genes {
 		if gene.IsEnabled {
@@ -295,7 +295,7 @@ func (g Genome) Extrons() int {
 
 // Tests if given genome is equal to this one. This method will check that both genomes has the same traits, nodes and genes.
 // If mismatch detected the error will be returned with mismatch details.
-func (g Genome) Equals(og *Genome) (bool, error) {
+func (g *Genome) Equals(og *Genome) (bool, error) {
 	for i, tr := range og.Traits {
 		if !reflect.DeepEqual(tr, g.Traits[i]) {
 			return false, errors.New("Traits mismatch")
@@ -319,7 +319,7 @@ func (g Genome) Equals(og *Genome) (bool, error) {
 }
 
 // Return id of final NNode in Genome + 1
-func (g Genome) getLastNodeId() (int, error) {
+func (g *Genome) getLastNodeId() (int, error) {
 	if len(g.Nodes) > 0 {
 		return g.Nodes[len(g.Nodes) - 1].Id + 1, nil
 	} else {
@@ -328,7 +328,7 @@ func (g Genome) getLastNodeId() (int, error) {
 }
 
 // Return innovation number of last gene in Genome + 1
-func (g Genome) getLastGeneInnovNum() (int64, error) {
+func (g *Genome) getLastGeneInnovNum() (int64, error) {
 	if len(g.Genes) > 0 {
 		return g.Genes[len(g.Genes) - 1].InnovationNum + int64(1), nil
 	} else {
@@ -337,7 +337,7 @@ func (g Genome) getLastGeneInnovNum() (int64, error) {
 }
 
 // Returns true if this Genome already includes provided node
-func (g Genome) hasNode(node *network.NNode) bool {
+func (g *Genome) hasNode(node *network.NNode) bool {
 	if id, _ := g.getLastNodeId(); node.Id >= id {
 		return false
 	}
@@ -350,15 +350,14 @@ func (g Genome) hasNode(node *network.NNode) bool {
 }
 
 // Returns true if this Genome already includes provided gene
-func (g Genome) hasGene(gene *Gene) bool {
+func (g *Genome) hasGene(gene *Gene) bool {
 	if inn, _ := g.getLastGeneInnovNum(); gene.InnovationNum >= inn {
 		return false
 	}
 
+	// Find genetically equal link in this genome to the provided gene
 	for _, g := range g.Genes {
-		if g.Link.InNode.Id == gene.Link.InNode.Id &&
-			g.Link.OutNode.Id == gene.Link.OutNode.Id &&
-			g.Link.IsRecurrent == gene.Link.IsRecurrent {
+		if g.Link.IsEqualGenetically(gene.Link) {
 			return true
 		}
 	}
@@ -434,7 +433,7 @@ func (g *Genome) genesis(net_id int) *network.Network {
 }
 
 // Duplicate this Genome to create a new one with the specified id
-func (g Genome) duplicate(new_id int) *Genome {
+func (g *Genome) duplicate(new_id int) *Genome {
 
 	// Duplicate the traits
 	traits_dup := make([]*neat.Trait, 0)
@@ -491,7 +490,7 @@ func (g Genome) duplicate(new_id int) *Genome {
 
 // For debugging: A number of tests can be run on a genome to check its integrity.
 // Note: Some of these tests do not indicate a bug, but rather are meant to be used to detect specific system states.
-func (g Genome) verify() (bool, error) {
+func (g *Genome) verify() (bool, error) {
 	if len(g.Genes) == 0 {
 		return false, errors.New("Genome has no Genes")
 	}
@@ -538,10 +537,7 @@ func (g Genome) verify() (bool, error) {
 	// Make sure there are no duplicate genes
 	for _, gn := range g.Genes {
 		for _, gn2 := range g.Genes {
-			if gn != gn2 &&
-				gn.Link.IsRecurrent == gn2.Link.IsRecurrent &&
-				gn.Link.InNode.Id == gn2.Link.InNode.Id &&
-				gn.Link.OutNode.Id == gn2.Link.OutNode.Id {
+			if gn != gn2 && gn.Link.IsEqualGenetically(gn2.Link) {
 				return false, errors.New(fmt.Sprintf("Duplicate genes found. %s == %s", gn, gn2))
 			}
 		}
@@ -1215,7 +1211,7 @@ func (g *Genome) mutateAllNonstructural(context *neat.NeatContext) (bool, error)
 // the innovation number, the Gene is chosen randomly from either parent.  If one parent has an innovation absent in
 // the other, the baby may inherit the innovation if it is from the more fit parent.
 // The new Genome is given the id in the genomeid argument.
-func (gen Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 float64) (*Genome, error) {
+func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 float64) (*Genome, error) {
 	// Check if genomes has equal number of traits
 	if len(gen.Traits) != len(og.Traits) {
 		return nil, errors.New(fmt.Sprintf("Genomes has different traits count, %d != %d", len(gen.Traits), len(og.Traits)))
@@ -1317,9 +1313,7 @@ func (gen Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 fl
 
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
 		for _, new_gene := range new_genes {
-			if new_gene.Link.InNode.Id == chosen_gene.Link.InNode.Id &&
-				new_gene.Link.OutNode.Id == chosen_gene.Link.OutNode.Id &&
-				new_gene.Link.IsRecurrent == chosen_gene.Link.IsRecurrent {
+			if new_gene.Link.IsEqualGenetically(chosen_gene.Link) {
 				skip = true;
 				break;
 			}
@@ -1391,7 +1385,7 @@ func (gen Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 fl
 
 // This method mates like multipoint but instead of selecting one or the other when the innovation numbers match,
 // it averages their weights.
-func (gen Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness2 float64) (*Genome, error) {
+func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness2 float64) (*Genome, error) {
 	// Check if genomes has equal number of traits
 	if len(gen.Traits) != len(og.Traits) {
 		return nil, errors.New(fmt.Sprintf("Genomes has different traits count, %d != %d", len(gen.Traits), len(og.Traits)))
@@ -1518,9 +1512,7 @@ func (gen Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness2
 
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
 		for _, new_gene := range new_genes {
-			if new_gene.Link.InNode.Id == chosen_gene.Link.InNode.Id &&
-				new_gene.Link.OutNode.Id == chosen_gene.Link.OutNode.Id &&
-				new_gene.Link.IsRecurrent == chosen_gene.Link.IsRecurrent {
+			if new_gene.Link.IsEqualGenetically(chosen_gene.Link) {
 				skip = true;
 				break;
 			}
@@ -1590,7 +1582,7 @@ func (gen Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness2
 // This method is similar to a standard single point CROSSOVER operator. Traits are averaged as in the previous two
 // mating methods. A Gene is chosen in the smaller Genome for splitting. When the Gene is reached, it is averaged with
 // the matching Gene from the larger Genome, if one exists. Then every other Gene is taken from the larger Genome.
-func (gen Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
+func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 	// Check if genomes has equal number of traits
 	if len(gen.Traits) != len(og.Traits) {
 		return nil, errors.New(fmt.Sprintf("Genomes has different traits count, %d != %d", len(gen.Traits), len(og.Traits)))
@@ -1727,9 +1719,7 @@ func (gen Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 		}
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
 		for _, new_gene := range new_genes {
-			if new_gene.Link.InNode.Id == chosen_gene.Link.InNode.Id &&
-				new_gene.Link.OutNode.Id == chosen_gene.Link.OutNode.Id &&
-				new_gene.Link.IsRecurrent == chosen_gene.Link.IsRecurrent {
+			if new_gene.Link.IsEqualGenetically(chosen_gene.Link) {
 				skip = true;
 				break;
 			}
@@ -1802,7 +1792,7 @@ func (gen Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 // PERCENT EXCESS GENES, MUTATIONAL DIFFERENCE WITHIN MATCHING GENES. So the formula for compatibility
 // is:  disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // The 3 coefficients are global system parameters */
-func (g Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
+func (g *Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
 	num_disjoint, num_excess, mut_diff_total, num_matching := 0.0, 0.0, 0.0, 0.0
 	size1, size2 := len(g.Genes), len(og.Genes)
 	max_genome_size := size2
