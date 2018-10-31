@@ -389,7 +389,7 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		all_list = append(all_list, new_node)
 
 		// Have the node specifier point to the node it generated
-		n.Analogue = new_node
+		n.PhenotypeAnalogue = new_node
 	}
 
 	if len(g.Genes) == 0 {
@@ -407,8 +407,8 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		// Only create the link if the gene is enabled
 		if gn.IsEnabled {
 			cur_link = gn.Link
-			in_node = cur_link.InNode.Analogue
-			out_node = cur_link.OutNode.Analogue
+			in_node = cur_link.InNode.PhenotypeAnalogue
+			out_node = cur_link.OutNode.PhenotypeAnalogue
 
 			// NOTE: This line could be run through a recurrency check if desired
 			// (no need to in the current implementation of NEAT)
@@ -443,6 +443,7 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	}
 
 	// Duplicate NNodes
+	dup_nodes := make(map[int]*network.NNode)
 	var assoc_trait *neat.Trait
 	nodes_dup := make([]*network.NNode, 0)
 	for _, nd := range g.Nodes {
@@ -459,7 +460,7 @@ func (g *Genome) duplicate(new_id int) *Genome {
 
 		new_node := network.NewNNodeCopy(nd, assoc_trait)
 		// Remember this node's old copy
-		nd.Duplicate = new_node
+		dup_nodes[nd.Id] = new_node
 
 		nodes_dup = append(nodes_dup, new_node)
 	}
@@ -468,8 +469,8 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	genes_dup := make([]*Gene, 0)
 	for _, gn := range g.Genes {
 		// First find the nodes connected by the gene's link
-		in_node := gn.Link.InNode.Duplicate
-		out_node := gn.Link.OutNode.Duplicate
+		in_node := dup_nodes[gn.Link.InNode.Id]
+		out_node := dup_nodes[gn.Link.OutNode.Id]
 
 		// Find the trait associated with this gene
 		assoc_trait = nil
@@ -798,13 +799,13 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			// than to prevent any particular kind of error
 			thresh := nodes_len * nodes_len
 			count := 0
-			recur_flag := g.Phenotype.IsRecurrent(node_1.Analogue, node_2.Analogue, &count, thresh)
+			recur_flag := g.Phenotype.IsRecurrent(node_1.PhenotypeAnalogue, node_2.PhenotypeAnalogue, &count, thresh)
 
 			// NOTE: A loop doesn't really matter - just debug output it
 			if count > thresh {
 				neat.DebugLog(
 					fmt.Sprintf("GENOME: LOOP DETECTED DURING A RECURRENCY CHECK -> " +
-						"node in: %s <-> node out: %s", node_1.Analogue, node_2.Analogue))
+						"node in: %s <-> node out: %s", node_1.PhenotypeAnalogue, node_2.PhenotypeAnalogue))
 			}
 
 			// Make sure it finds the right kind of link (recurrent or not)

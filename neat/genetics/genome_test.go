@@ -288,14 +288,6 @@ func TestGenome_Duplicate(t *testing.T)  {
 		t.Error("len(new_gnome.Genes) != len(gnome.Genes)", len(new_gnome.Genes), len(gnome.Genes))
 	}
 
-	for _, nd := range gnome.Nodes {
-		if nd.Duplicate == nil {
-			t.Error("The duplicated node must be remembered")
-			return
-		}
-		nd.Duplicate = nil
-	}
-
 	equal, err := gnome.IsEqual(new_gnome)
 	if !equal {
 		t.Error(err)
