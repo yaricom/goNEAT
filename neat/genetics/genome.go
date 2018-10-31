@@ -10,6 +10,7 @@ import (
 	"math"
 	"bufio"
 	"strings"
+	"reflect"
 )
 
 // A Genome is the primary source of genotype information used to create  a phenotype.
@@ -290,6 +291,31 @@ func (g *Genome) Extrons() int {
 		}
 	}
 	return total
+}
+
+// Tests if given genome is equal to this one. This method will check that both genomes has the same traits, nodes and genes.
+// If mismatch detected the error will be returned with mismatch details.
+func (g Genome) Equals(og *Genome) (bool, error) {
+	for i, tr := range og.Traits {
+		if !reflect.DeepEqual(tr, g.Traits[i]) {
+			return false, errors.New("Traits mismatch")
+		}
+	}
+	for i, nd := range og.Nodes {
+		if !reflect.DeepEqual(nd, g.Nodes[i]) {
+			return false, errors.New(
+				fmt.Sprintf("Node mismatch, expected: %s, but found: %s", nd, g.Nodes[i]))
+		}
+	}
+
+	for i, gen := range og.Genes {
+		if !reflect.DeepEqual(gen, g.Genes[i]) {
+			return false, errors.New(
+				fmt.Sprintf("Gene mismatch, expected: %s, but found: %s", gen, g.Genes[i]))
+		}
+	}
+
+	return true, nil
 }
 
 // Return id of final NNode in Genome + 1
