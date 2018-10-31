@@ -3,6 +3,7 @@ package genetics
 import (
 	"github.com/yaricom/goNEAT/neat/network"
 	"fmt"
+	"bytes"
 )
 
 // The object to associate implementation specific data with particular organism for various algorithm implementations
@@ -88,6 +89,31 @@ func (o *Organism) CheckChampionChildDamaged() bool {
 		return true
 	}
 	return false
+}
+
+// Encodes this organism for wired transmission during parallel reproduction cycle
+func (o Organism) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	_, err := fmt.Fprintln(&buf, o.Fitness, o.Generation, o.Genotype.Id)
+	o.Genotype.Write(&buf)
+	if err != nil {
+		return nil, err
+	} else {
+		return buf.Bytes(), nil
+	}
+}
+// Decodes organism received over the wire during parallel reproduction cycle
+func (o *Organism) UnmarshalBinary(data []byte) error {
+	// A simple encoding: plain text.
+	b := bytes.NewBuffer(data)
+	var genotype_id int
+	_, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &genotype_id)
+	o.Genotype, err = ReadGenome(b, genotype_id)
+	if err == nil {
+		o.Phenotype = o.Genotype.genesis(genotype_id)
+	}
+
+	return err
 }
 
 func (o *Organism) String() string {

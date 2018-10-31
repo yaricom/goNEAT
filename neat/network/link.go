@@ -57,6 +57,16 @@ func newLink(weight float64) *Link {
 	}
 }
 
+// Checks if this link is genetically equal to provided one, i.e. connects nodes with the same IDs and has equal
+// recurrent flag. I.e. if both links represent the same Gene.
+func (l *Link) IsEqualGenetically(ol *Link) bool {
+	same_in_node := (l.InNode.Id == ol.InNode.Id)
+	same_out_node := (l.OutNode.Id == ol.OutNode.Id)
+	same_recurrent := (l.IsRecurrent == ol.IsRecurrent)
+
+	return same_in_node && same_out_node && same_recurrent
+}
+
 // The Link methods implementation
 func (l *Link) String() string {
 	return fmt.Sprintf("[Link: (%s <-> %s), weight: %.3f, recurrent: %t, time delayed: %t]",
