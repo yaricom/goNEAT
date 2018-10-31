@@ -7,7 +7,6 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 	"bytes"
 	"bufio"
-	"reflect"
 	"math/rand"
 	"os"
 )
@@ -289,23 +288,11 @@ func TestGenome_Duplicate(t *testing.T)  {
 		t.Error("len(new_gnome.Genes) != len(gnome.Genes)", len(new_gnome.Genes), len(gnome.Genes))
 	}
 
-	for i, tr := range new_gnome.Traits {
-		if !reflect.DeepEqual(tr, gnome.Traits[i]) {
-			t.Error("Wrong trait found in new genome")
-		}
-	}
-	for i, nd := range new_gnome.Nodes {
-		gnome.Nodes[i].Duplicate = nil
-		if !reflect.DeepEqual(nd, gnome.Nodes[i]) {
-			t.Error("Wrong node found in new genome", nd, gnome.Nodes[i])
-		}
+	equal, err := gnome.IsEqual(new_gnome)
+	if !equal {
+		t.Error(err)
 	}
 
-	for i, g := range new_gnome.Genes {
-		if !reflect.DeepEqual(g, gnome.Genes[i]) {
-			t.Error("Wrong gene found", g, gnome.Genes[i])
-		}
-	}
 }
 
 func TestGene_Verify(t *testing.T) {

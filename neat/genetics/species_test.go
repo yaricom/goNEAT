@@ -64,25 +64,31 @@ func TestSpecies_countOffspring(t *testing.T) {
 		o.ExpectedOffspring = float64(i) * 1.5
 	}
 
-	skim := sp.countOffspring(0.5)
+	expectedOffspring, skim := sp.countOffspring(0.5)
+	sp.ExpectedOffspring = expectedOffspring
 
 	if sp.ExpectedOffspring != 5 {
 		t.Error("sp.ExpectedOffspring", 5, sp.ExpectedOffspring)
+		return
 	}
 	if skim != 0 {
 		t.Error("skim", 0, skim)
+		return
 	}
 
 	sp = buildSpeciesWithOrganisms(2)
 	for i, o := range sp.Organisms {
 		o.ExpectedOffspring = float64(i) * 1.5
 	}
-	skim = sp.countOffspring(0.4)
+	expectedOffspring, skim = sp.countOffspring(0.4)
+	sp.ExpectedOffspring = expectedOffspring
 	if sp.ExpectedOffspring != 4 {
 		t.Error("sp.ExpectedOffspring", 5, sp.ExpectedOffspring)
+		return
 	}
 	if skim != 0.9 {
 		t.Error("skim", 0.9, skim)
+		return
 	}
 }
 
@@ -153,9 +159,9 @@ func TestSpecies_reproduce_fail(t *testing.T) {
 
 	sp.ExpectedOffspring = 1
 
-	res, err := sp.reproduce(1, nil, nil, nil)
-	if res != false {
-		t.Error("res != false")
+	babies, err := sp.reproduce(1, nil, nil, nil)
+	if babies != nil {
+		t.Error("babies != nil")
 	}
 	if err == nil {
 		t.Error("err == nil")
@@ -197,19 +203,15 @@ func TestSpecies_reproduce(t *testing.T) {
 
 	pop.Species[0].ExpectedOffspring = 11
 
-	res, err := pop.Species[0].reproduce(1, pop, sorted_species, &conf)
-	if !res {
+	babies, err := pop.Species[0].reproduce(1, pop, sorted_species, &conf)
+	if babies == nil {
 		t.Error("No reproduction", err)
 	}
 	if err != nil {
 		t.Error("err != nil", err)
 	}
-	after := 0
-	for _, sp := range pop.Species {
-		after += len(sp.Organisms)
-	}
 
-	if after != conf.PopSize + pop.Species[0].ExpectedOffspring {
-		t.Error("No new baby was created", after)
+	if len(babies) != pop.Species[0].ExpectedOffspring {
+		t.Error("Wrong number of babies was created", len(babies))
 	}
 }

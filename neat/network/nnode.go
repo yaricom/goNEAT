@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"errors"
 	"github.com/yaricom/goNEAT/neat"
+	"bytes"
 )
 
 // A NODE is either a NEURON or a SENSOR.
@@ -13,50 +14,48 @@ import (
 // Use an activation count to avoid flushing
 type NNode struct {
 	// The ID of the node
-	Id               int
+	Id                int
 
 	// If true the node is active
-	IsActive         bool
+	IsActive          bool
 
 	// The type of node activation function (SIGMOID, ...)
-	ActivationType   ActivationType
+	ActivationType    ActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
-	NeuronType       NeuronType
+	NeuronType        NeuronType
 
 	// The activation for current step
-	ActiveOut        float64
+	ActiveOut         float64
 	// The activation from PREVIOUS (time-delayed) time step, if there is one
-	ActiveOutTd      float64
+	ActiveOutTd       float64
 	// The node's activation value
-	Activation       float64
+	Activation        float64
 	// The number of activations for current node
-	ActivationsCount int32
+	ActivationsCount  int32
 	// The activation sum
-	ActivationSum    float64
+	ActivationSum     float64
 
 	// The list of all incoming connections
-	Incoming         []*Link
+	Incoming          []*Link
 	// The list of all outgoing connections
-	Outgoing         []*Link
+	Outgoing          []*Link
 	// The trait linked to the node
-	Trait            *neat.Trait
+	Trait             *neat.Trait
 
-	// Used for Gene decoding
-	Analogue         *NNode
-	// Used for Genome duplication
-	Duplicate        *NNode
+	// Used for Gene decoding by referencing analogue to this node in organism phenotype
+	PhenotypeAnalogue *NNode
 
 	/* ************ LEARNING PARAMETERS *********** */
 	// The following parameters are for use in neurons that learn through habituation,
 	// sensitization, or Hebbian-type processes  */
-	Params           []float64
+	Params            []float64
 
 	// Activation value of node at time t-1; Holds the previous step's activation for recurrency
-	lastActivation   float64
+	lastActivation    float64
 	// Activation value of node at time t-2 Holds the activation before  the previous step's
 	// This is necessary for a special recurrent case when the innode of a recurrent link is one time step ahead of the outnode.
 	// The innode then needs to send from TWO time steps ago
-	lastActivation2  float64
+	lastActivation2   float64
 }
 
 // Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
@@ -186,7 +185,7 @@ func (n *NNode) Flushback() {
 	n.lastActivation2 = 0
 }
 
-// Verify flushing for debuginh
+// Verify flushing for debuging
 func (n *NNode) FlushbackCheck() error {
 	if n.ActivationsCount > 0 {
 		return errors.New(fmt.Sprintf("NNODE: %s has activation count %d", n, n.ActivationsCount))
@@ -250,6 +249,27 @@ func (n *NNode) String() string {
 		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), n.ActivationsCount, n.Activation, n.Params)
 }
 
+// Prints all node's fields to the string
+func (n *NNode) Print() string {
+	str := "NNode fields\n"
+	b := bytes.NewBufferString(str)
+	fmt.Fprintf(b, "\tId: %d\n", n.Id)
+	fmt.Fprintf(b, "\tIsActive: %t\n", n.IsActive)
+	fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
+	fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
+	fmt.Fprintf(b, "\tActiveOut: %f\n", n.ActiveOut)
+	fmt.Fprintf(b, "\tActiveOutTd: %f\n", n.ActiveOutTd)
+	fmt.Fprintf(b, "\tActivationsCount: %d\n", n.ActivationsCount)
+	fmt.Fprintf(b, "\tActivationSum: %f\n", n.ActivationSum)
+	fmt.Fprintf(b, "\tIncoming: %s\n", n.Incoming)
+	fmt.Fprintf(b, "\tOutgoing: %s\n", n.Outgoing)
+	fmt.Fprintf(b, "\tTrait: %s\n", n.Trait)
+	fmt.Fprintf(b, "\tPhenotypeAnalogue: %s\n", n.PhenotypeAnalogue)
+	fmt.Fprintf(b, "\tParams: %f\n", n.Params)
+	fmt.Fprintf(b, "\tlastActivation: %f\n", n.lastActivation)
+	fmt.Fprintf(b, "\tlastActivation2: %f\n", n.lastActivation2)
 
+	return b.String()
+}
 
 

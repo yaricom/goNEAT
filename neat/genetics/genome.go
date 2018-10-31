@@ -10,6 +10,7 @@ import (
 	"math"
 	"bufio"
 	"strings"
+	"reflect"
 )
 
 // A Genome is the primary source of genotype information used to create  a phenotype.
@@ -292,6 +293,31 @@ func (g *Genome) Extrons() int {
 	return total
 }
 
+// Tests if given genome is equal to this one genetically and phenotypically. This method will check that both genomes has the same traits, nodes and genes.
+// If mismatch detected the error will be returned with mismatch details.
+func (g *Genome) IsEqual(og *Genome) (bool, error) {
+	for i, tr := range og.Traits {
+		if !reflect.DeepEqual(tr, g.Traits[i]) {
+			return false, errors.New("Traits mismatch")
+		}
+	}
+	for i, nd := range og.Nodes {
+		if !reflect.DeepEqual(nd, g.Nodes[i]) {
+			return false, errors.New(
+				fmt.Sprintf("Node mismatch, expected: %s, but found: %s", nd, g.Nodes[i]))
+		}
+	}
+
+	for i, gen := range og.Genes {
+		if !reflect.DeepEqual(gen, g.Genes[i]) {
+			return false, errors.New(
+				fmt.Sprintf("Gene mismatch, expected: %s, but found: %s", gen, g.Genes[i]))
+		}
+	}
+
+	return true, nil
+}
+
 // Return id of final NNode in Genome + 1
 func (g *Genome) getLastNodeId() (int, error) {
 	if len(g.Nodes) > 0 {
@@ -329,10 +355,9 @@ func (g *Genome) hasGene(gene *Gene) bool {
 		return false
 	}
 
+	// Find genetically equal link in this genome to the provided gene
 	for _, g := range g.Genes {
-		if g.Link.InNode.Id == gene.Link.InNode.Id &&
-			g.Link.OutNode.Id == gene.Link.OutNode.Id &&
-			g.Link.IsRecurrent == gene.Link.IsRecurrent {
+		if g.Link.IsEqualGenetically(gene.Link) {
 			return true
 		}
 	}
@@ -364,7 +389,7 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		all_list = append(all_list, new_node)
 
 		// Have the node specifier point to the node it generated
-		n.Analogue = new_node
+		n.PhenotypeAnalogue = new_node
 	}
 
 	if len(g.Genes) == 0 {
@@ -382,8 +407,8 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		// Only create the link if the gene is enabled
 		if gn.IsEnabled {
 			cur_link = gn.Link
-			in_node = cur_link.InNode.Analogue
-			out_node = cur_link.OutNode.Analogue
+			in_node = cur_link.InNode.PhenotypeAnalogue
+			out_node = cur_link.OutNode.PhenotypeAnalogue
 
 			// NOTE: This line could be run through a recurrency check if desired
 			// (no need to in the current implementation of NEAT)
@@ -418,6 +443,7 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	}
 
 	// Duplicate NNodes
+	dup_nodes := make(map[int]*network.NNode)
 	var assoc_trait *neat.Trait
 	nodes_dup := make([]*network.NNode, 0)
 	for _, nd := range g.Nodes {
@@ -434,7 +460,7 @@ func (g *Genome) duplicate(new_id int) *Genome {
 
 		new_node := network.NewNNodeCopy(nd, assoc_trait)
 		// Remember this node's old copy
-		nd.Duplicate = new_node
+		dup_nodes[nd.Id] = new_node
 
 		nodes_dup = append(nodes_dup, new_node)
 	}
@@ -443,8 +469,8 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	genes_dup := make([]*Gene, 0)
 	for _, gn := range g.Genes {
 		// First find the nodes connected by the gene's link
-		in_node := gn.Link.InNode.Duplicate
-		out_node := gn.Link.OutNode.Duplicate
+		in_node := dup_nodes[gn.Link.InNode.Id]
+		out_node := dup_nodes[gn.Link.OutNode.Id]
 
 		// Find the trait associated with this gene
 		assoc_trait = nil
@@ -512,10 +538,7 @@ func (g *Genome) verify() (bool, error) {
 	// Make sure there are no duplicate genes
 	for _, gn := range g.Genes {
 		for _, gn2 := range g.Genes {
-			if gn != gn2 &&
-				gn.Link.IsRecurrent == gn2.Link.IsRecurrent &&
-				gn.Link.InNode.Id == gn2.Link.InNode.Id &&
-				gn.Link.OutNode.Id == gn2.Link.OutNode.Id {
+			if gn != gn2 && gn.Link.IsEqualGenetically(gn2.Link) {
 				return false, errors.New(fmt.Sprintf("Duplicate genes found. %s == %s", gn, gn2))
 			}
 		}
@@ -776,13 +799,13 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			// than to prevent any particular kind of error
 			thresh := nodes_len * nodes_len
 			count := 0
-			recur_flag := g.Phenotype.IsRecurrent(node_1.Analogue, node_2.Analogue, &count, thresh)
+			recur_flag := g.Phenotype.IsRecurrent(node_1.PhenotypeAnalogue, node_2.PhenotypeAnalogue, &count, thresh)
 
 			// NOTE: A loop doesn't really matter - just debug output it
 			if count > thresh {
 				neat.DebugLog(
 					fmt.Sprintf("GENOME: LOOP DETECTED DURING A RECURRENCY CHECK -> " +
-						"node in: %s <-> node out: %s", node_1.Analogue, node_2.Analogue))
+						"node in: %s <-> node out: %s", node_1.PhenotypeAnalogue, node_2.PhenotypeAnalogue))
 			}
 
 			// Make sure it finds the right kind of link (recurrent or not)
@@ -1291,9 +1314,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
 		for _, new_gene := range new_genes {
-			if new_gene.Link.InNode.Id == chosen_gene.Link.InNode.Id &&
-				new_gene.Link.OutNode.Id == chosen_gene.Link.OutNode.Id &&
-				new_gene.Link.IsRecurrent == chosen_gene.Link.IsRecurrent {
+			if new_gene.Link.IsEqualGenetically(chosen_gene.Link) {
 				skip = true;
 				break;
 			}
@@ -1492,9 +1513,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
 		for _, new_gene := range new_genes {
-			if new_gene.Link.InNode.Id == chosen_gene.Link.InNode.Id &&
-				new_gene.Link.OutNode.Id == chosen_gene.Link.OutNode.Id &&
-				new_gene.Link.IsRecurrent == chosen_gene.Link.IsRecurrent {
+			if new_gene.Link.IsEqualGenetically(chosen_gene.Link) {
 				skip = true;
 				break;
 			}
@@ -1701,9 +1720,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 		}
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
 		for _, new_gene := range new_genes {
-			if new_gene.Link.InNode.Id == chosen_gene.Link.InNode.Id &&
-				new_gene.Link.OutNode.Id == chosen_gene.Link.OutNode.Id &&
-				new_gene.Link.IsRecurrent == chosen_gene.Link.IsRecurrent {
+			if new_gene.Link.IsEqualGenetically(chosen_gene.Link) {
 				skip = true;
 				break;
 			}
