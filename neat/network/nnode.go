@@ -186,7 +186,7 @@ func (n *NNode) Flushback() {
 	n.lastActivation2 = 0
 }
 
-// Verify flushing for debuginh
+// Verify flushing for debuging
 func (n *NNode) FlushbackCheck() error {
 	if n.ActivationsCount > 0 {
 		return errors.New(fmt.Sprintf("NNODE: %s has activation count %d", n, n.ActivationsCount))
