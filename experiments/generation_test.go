@@ -88,7 +88,6 @@ func deepCompareGenerations(first, second *Generation, t *testing.T) {
 		}
 	}
 	for i, nd := range second.Best.Genotype.Nodes {
-		nd.Duplicate = nil
 		if !reflect.DeepEqual(nd, first.Best.Genotype.Nodes[i]) {
 			t.Error("Wrong node found", nd, first.Best.Genotype.Nodes[i])
 		}
