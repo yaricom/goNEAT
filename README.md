@@ -9,7 +9,7 @@ NN nodes as well as search for optimal topology of resulting NN. The NEAT method
 both: optimal connections weights and topology for given task (number of NN nodes per layer and their interconnections).
 
 #### System Requirements
-The source code written and compiled against GO 1.8.x.
+The source code written and compiled against GO 1.9.x.
 
 ## Installation
 Make sure that you have at least GO 1.8.x. environment installed onto your system and execute following command:
