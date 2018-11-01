@@ -352,6 +352,7 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 
 	neat.DebugLog("POPULATION: >>>>> Reproduction Complete")
 
+
 	// Destroy and remove the old generation from the organisms and species
 	err = p.purgeOldGeneration(best_species_id)
 	if err != nil {
@@ -366,23 +367,9 @@ func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, err
 	p.Innovations = make([]*Innovation, 0)
 
 	// Check to see if the best species died somehow. We don't want this to happen!!!
-	// N.B. the mutated offspring of best species may be added to other more compatible species and as result
-	// the best species from previous generation will be removed, but their offspring still be alive
-	best_ok := false
-	var best_sp_max_fitness float64
-	for _, curr_species := range p.Species {
-		neat.DebugLog(fmt.Sprintf("POPULATION: %d <> %d\n", curr_species.Id, best_species_id))
-		if curr_species.Id == best_species_id {
-			best_ok = true
-			best_sp_max_fitness = curr_species.MaxFitnessEver
-			break
-		}
-	}
-	if !best_ok && !best_species_reproduced {
-		return false, errors.New("POPULATION: The best species died without offspring!")
-	} else {
-		neat.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d, max fitness ever: %f",
-			best_species_id, best_sp_max_fitness))
+	err = p.checkBestSpeciesAlive(best_species_id, best_species_reproduced)
+	if err != nil {
+		return false, err
 	}
 
 	// DEBUG: Checking the top organism's duplicate in the next gen
@@ -452,6 +439,30 @@ func (p *Population) spawn(g *Genome, context *neat.NeatContext) error {
 	err = p.speciate(p.Organisms, context)
 
 	return err
+}
+
+// Check to see if the best species died somehow. We don't want this to happen!!!
+// N.B. the mutated offspring of best species may be added to other more compatible species and as result
+// the best species from previous generation will be removed, but their offspring still be alive.
+// Returns error if best species died.
+func (p *Population) checkBestSpeciesAlive(best_species_id int, best_species_reproduced bool) error {
+	best_ok := false
+	var best_sp_max_fitness float64
+	for _, curr_species := range p.Species {
+		neat.DebugLog(fmt.Sprintf("POPULATION: %d <> %d\n", curr_species.Id, best_species_id))
+		if curr_species.Id == best_species_id {
+			best_ok = true
+			best_sp_max_fitness = curr_species.MaxFitnessEver
+			break
+		}
+	}
+	if !best_ok && !best_species_reproduced {
+		return errors.New("POPULATION: The best species died without offspring!")
+	} else {
+		neat.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d, max fitness ever: %f",
+			best_species_id, best_sp_max_fitness))
+	}
+	return nil
 }
 
 // Speciate separates given organisms into species of this population by checking compatibilities against a threshold.
