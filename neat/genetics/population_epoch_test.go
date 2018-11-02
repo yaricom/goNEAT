@@ -20,7 +20,7 @@ func runSequentialPopulationEpochExecutor_NextEpoch(pop *Population, conf *neat.
 }
 
 func runParallelPopulationEpochExecutor_NextEpoch(pop *Population, conf *neat.NeatContext) error {
-	ex := SequentialPopulationEpochExecutor{}
+	ex := ParallelPopulationEpochExecutor{}
 
 	for i := 0; i < 100; i++ {
 		err := ex.NextEpoch(i + 1, pop, conf)

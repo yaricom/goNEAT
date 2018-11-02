@@ -16,7 +16,7 @@ const (
 	// The sequential executor
 	SequentialExecutorType EpochExecutorType = 0
 	// The parallel executor to perform reproduction cycle in parallel threads
-	ParallelExecutorType
+	ParallelExecutorType = 1
 )
 
 // Executes epoch's turnover for population of organisms
@@ -188,8 +188,8 @@ type ParallelPopulationEpochExecutor struct {
 }
 
 func (ex *ParallelPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.NeatContext) error {
-	seq_ex := SequentialPopulationEpochExecutor{}
-	err := seq_ex.prepare(generation, population, context)
+	ex.sequential = &SequentialPopulationEpochExecutor{}
+	err := ex.sequential.prepare(generation, population, context)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (ex *ParallelPopulationEpochExecutor) NextEpoch(generation int, population 
 		return err
 	}
 
-	err = seq_ex.finalize(generation, population, context)
+	err = ex.sequential.finalize(generation, population, context)
 
 	neat.DebugLog(fmt.Sprintf("POPULATION: >>>>> Epoch %d complete\n", generation))
 
