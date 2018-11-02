@@ -102,7 +102,6 @@ func (epoch *Generation) Encode(enc *gob.Encoder) error {
 
 func encodeOrganism(enc *gob.Encoder, org *genetics.Organism) error {
 	err := enc.Encode(org.Fitness)
-	err = enc.Encode(org.OriginalFitness)
 	err = enc.Encode(org.IsWinner)
 	err = enc.Encode(org.Generation)
 	err = enc.Encode(org.ExpectedOffspring)
@@ -150,7 +149,6 @@ func (epoch *Generation) Decode(dec *gob.Decoder) error {
 func decodeOrganism(dec *gob.Decoder) (*genetics.Organism, error) {
 	org := genetics.Organism{}
 	err := dec.Decode(&org.Fitness)
-	err = dec.Decode(&org.OriginalFitness)
 	err = dec.Decode(&org.IsWinner)
 	err = dec.Decode(&org.Generation)
 	err = dec.Decode(&org.ExpectedOffspring)

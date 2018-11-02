@@ -16,30 +16,30 @@ type OrganismData struct {
 // i.e. the genotype and phenotype together.
 type Organism struct {
 	// A measure of fitness for the Organism
-	Fitness                   float64
-	// A fitness measure that won't change during adjustments
-	OriginalFitness           float64
+	Fitness           float64
 	// The error value indicating how far organism's performance is from ideal task goal, e.g. MSE
-	Error                     float64
-
+	Error             float64
 	// Win marker (if needed for a particular task)
-	IsWinner                  bool
+	IsWinner          bool
 
 	// The Organism's phenotype
-	Phenotype                 *network.Network
+	Phenotype         *network.Network
 	// The Organism's genotype
-	Genotype                  *Genome
+	Genotype          *Genome
 	// The Species of the Organism
-	Species                   *Species
+	Species           *Species
 
 	// Number of children this Organism may have
-	ExpectedOffspring         float64
+	ExpectedOffspring float64
 	// Tells which generation this Organism is from
 	Generation                int
 
 	// The utility data transfer object to be used by different GA implementations to hold additional data.
 	// Implemented as ANY to allow implementation specific objects.
 	Data                      *OrganismData
+
+	// A fitness measure that won't change during adjustments
+	originalFitness   float64
 
 	// Marker for destruction of inferior Organisms
 	toEliminate               bool
@@ -126,7 +126,7 @@ func (o *Organism) String() string {
 		eliminStr = " - TO BE ELIMINATED - "
 	}
 	return fmt.Sprintf("[Organism generation: %d, fitness: %.3f, original fitness: %.3f%s%s]",
-		o.Generation, o.Fitness, o.OriginalFitness, champStr, eliminStr)
+		o.Generation, o.Fitness, o.originalFitness, champStr, eliminStr)
 }
 
 // Organisms is sortable list of organisms by fitness
