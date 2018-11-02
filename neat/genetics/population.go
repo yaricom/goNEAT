@@ -7,14 +7,11 @@ import (
 
 	"io"
 	"fmt"
-	"sort"
 	"bufio"
 	"strings"
 	"bytes"
 	"strconv"
 	"math"
-	"sync"
-	"encoding/gob"
 )
 
 // A Population is a group of Organisms including their species
@@ -43,14 +40,10 @@ type Population struct {
 	Variance                 float64
 	StandardDev              float64
 
-
 	// The current innovation number for population
 	currInnovNum             int64
 	// The current ID for new node in population
 	currNodeId               int
-
-	// Used for synchronization
-	sync.Mutex
 }
 
 // The auxiliary data type to hold results of parallel reproduction sent over the wires
@@ -196,199 +189,6 @@ func (p *Population) Verify() (bool, error) {
 		}
 	}
 	return res, nil
-}
-
-// Turnover the population to a new generation using fitness
-// The generation argument is the next generation
-func (p *Population) Epoch(generation int, context *neat.NeatContext) (bool, error) {
-	// Use Species' ages to modify the objective fitness of organisms in other words, make it more fair for younger
-	// species so they have a chance to take hold and also penalize stagnant species. Then adjust the fitness using
-	// the species size to "share" fitness within a species. Then, within each Species, mark for death those below
-	// survival_thresh * average
-	for _, sp := range p.Species {
-		sp.adjustFitness(context)
-	}
-
-	// find and remove species unable to produce offspring due to fitness stagnation
-	p.purgeZeroOffspringSpecies(generation)
-
-	// Stick the Species pointers into a new Species list for sorting
-	sorted_species := make([]*Species, len(p.Species))
-	copy(sorted_species, p.Species)
-
-	// Sort the Species by max original fitness of its first organism
-	sort.Sort(sort.Reverse(byOrganismOrigFitness(sorted_species)))
-
-	// Used in debugging to see why (if) best species dies
-	best_species_id := sorted_species[0].Id
-	if neat.LogLevel == neat.LogLevelDebug {
-		neat.DebugLog("POPULATION: >> Sorted Species START <<")
-		for _, sp := range sorted_species {
-			// Print out for Debugging/viewing what's going on
-			neat.DebugLog(
-				fmt.Sprintf("POPULATION: >> Orig. fitness of Species %d (Size %d): %f, current fitness: %f, expected offspring: %d, last improved %d \n",
-					sp.Id, len(sp.Organisms), sp.Organisms[0].originalFitness, sp.Organisms[0].Fitness, sp.ExpectedOffspring, (sp.Age - sp.AgeOfLastImprovement)))
-		}
-		neat.DebugLog("POPULATION: >> Sorted Species END <<\n")
-
-	}
-
-	// Check for Population-level stagnation
-	curr_species := sorted_species[0]
-	curr_species.Organisms[0].isPopulationChampion = true // DEBUG marker of the best of pop
-	if curr_species.Organisms[0].originalFitness > p.HighestFitness {
-		p.HighestFitness = curr_species.Organisms[0].originalFitness
-		p.EpochsHighestLastChanged = 0
-		neat.DebugLog(fmt.Sprintf("POPULATION: NEW POPULATION RECORD FITNESS: %f of SPECIES with ID: %d\n", p.HighestFitness, best_species_id))
-
-	} else {
-		p.EpochsHighestLastChanged += 1
-		neat.DebugLog(fmt.Sprintf(" generations since last population fitness record: %f\n", p.HighestFitness))
-	}
-
-	// Check for stagnation - if there is stagnation, perform delta-coding
-	if p.EpochsHighestLastChanged >= context.DropOffAge + 5 {
-		// Population stagnated - trying to fix it by delta coding
-		p.deltaCoding(sorted_species, context)
-	} else if context.BabiesStolen > 0 {
-		// STOLEN BABIES: The system can take expected offspring away from worse species and give them
-		// to superior species depending on the system parameter BabiesStolen (when BabiesStolen > 0)
-		p.giveBabiesToTheBest(sorted_species, context)
-	}
-
-	// Kill off all Organisms marked for death. The remainder will be allowed to reproduce.
-	err := p.purgeOrganisms()
-	if err != nil {
-		return false, err
-	}
-
-	best_species_reproduced := false
-
-	//
-	//
-	//
-
-	neat.DebugLog("POPULATION: Start Parallel Reproduction Cycle >>>>>")
-
-	// Perform reproduction. Reproduction is done on a per-Species basis
-	sp_num := len(p.Species)
-	res_chan := make(chan reproductionResult, sp_num)
-	// The wait group to wait for all GO routines
-	var wg sync.WaitGroup
-
-	for _, curr_species := range p.Species {
-		wg.Add(1)
-		// run in separate GO thread
-		go func(sp *Species, generation int, p *Population, sorted_species []*Species,
-		context *neat.NeatContext, res_chan chan <- reproductionResult, wg *sync.WaitGroup) {
-
-			babies, err := sp.reproduce(generation, p, sorted_species, context)
-			res := reproductionResult{}
-			if err == nil {
-				res.species_id = sp.Id
-
-				// fill babies into result
-				var buf bytes.Buffer
-				enc := gob.NewEncoder(&buf)
-				for _, baby := range babies {
-					err = enc.Encode(baby)
-					if err != nil {
-						break
-					}
-				}
-				if err == nil {
-					res.babies = buf.Bytes()
-					res.babies_stored = len(babies)
-				}
-			}
-			res.err = err
-
-			// write result to channel and signal to wait group
-			res_chan <- res
-			wg.Done()
-
-		}(curr_species, generation, p, sorted_species, context, res_chan, &wg)
-	}
-
-	// wait for reproduction results
-	wg.Wait()
-	close(res_chan)
-
-	// read reproduction results, instantiate progeny and speciate over population
-	babies := make([]*Organism, 0)
-	for result := range res_chan {
-		if result.err != nil {
-			return false, result.err
-		}
-		// read baby genome
-		dec := gob.NewDecoder(bytes.NewBuffer(result.babies))
-		for i := 0; i < result.babies_stored; i++ {
-			org := Organism{}
-			err := dec.Decode(&org)
-			if err != nil {
-				return false, errors.New(
-					fmt.Sprintf("POPULATION: Failed to decode baby organism, reason: %s", err))
-			}
-			babies = append(babies, &org)
-		}
-		if result.species_id == best_species_id {
-			// store flag if best species reproduced - it will be used to determine if best species
-			// produced offspring before died
-			best_species_reproduced = (babies != nil)
-		}
-	}
-
-	// sanity check - make sure that population size keep the same
-	if len(babies) != context.PopSize {
-		return false, errors.New(
-			fmt.Sprintf("POPULATION: Progeny size after reproduction cycle dimished.\nExpected: [%d], but got: [%d]",
-				context.PopSize, len(babies)))
-	}
-
-
-	// speciate fresh progeny
-	p.speciate(babies, context)
-
-	neat.DebugLog("POPULATION: >>>>> Reproduction Complete")
-
-	//
-	//
-	//
-
-
-	// Destroy and remove the old generation from the organisms and species
-	err = p.purgeOldGeneration(best_species_id)
-	if err != nil {
-		return false, err
-	}
-
-	// Removes all empty Species and age ones that survive.
-	// As this happens, create master organism list for the new generation.
-	p.purgeOrAgeSpecies()
-
-	// Remove the innovations of the current generation
-	p.Innovations = make([]*Innovation, 0)
-
-	// Check to see if the best species died somehow. We don't want this to happen!!!
-	err = p.checkBestSpeciesAlive(best_species_id, best_species_reproduced)
-	if err != nil {
-		return false, err
-	}
-
-	// DEBUG: Checking the top organism's duplicate in the next gen
-	// This prints the champ's child to the screen
-	if neat.LogLevel == neat.LogLevelDebug {
-		for _, curr_org := range p.Organisms {
-			if curr_org.isPopulationChampionChild {
-				neat.DebugLog(
-					fmt.Sprintf("POPULATION: At end of reproduction cycle, the child of the pop champ is: %s",
-						curr_org.Genotype))
-			}
-		}
-	}
-	neat.DebugLog(fmt.Sprintf("POPULATION: >>>>> Epoch %d complete\n", generation))
-
-	return true, nil
 }
 
 // Default private constructor

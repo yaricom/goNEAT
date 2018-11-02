@@ -248,37 +248,3 @@ func TestPopulation_Write(t *testing.T) {
 		}
 	}
 }
-
-func TestPopulation_epoch(t *testing.T) {
-	rand.Seed(42)
-	in, out, nmax, n := 3, 2, 15, 3
-	recurrent := false
-	link_prob := 0.8
-	conf := neat.NeatContext{
-		CompatThreshold:0.5,
-		DropOffAge:1,
-		PopSize: 30,
-		BabiesStolen:10,
-		RecurOnlyProb:0.2,
-	}
-	neat.LogLevel = neat.LogLevelInfo
-	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
-	pop, err := NewPopulation(gen, &conf)
-	if err != nil {
-		t.Error(err)
-	}
-	if pop == nil {
-		t.Error("pop == nil")
-	}
-
-	for i := 0; i < 100; i++ {
-		res, err := pop.Epoch(i + 1, &conf)
-		if err != nil {
-			t.Error(err)
-		}
-		if !res {
-			t.Error("Failed to proceed with next epoch")
-		}
-	}
-
-}
