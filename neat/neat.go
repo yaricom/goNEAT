@@ -132,6 +132,8 @@ type NeatContext struct {
 
 				       // The number of epochs (generations) to execute training
 	NumGenerations         int
+				       // The epoch's executor type to apply
+	EpochExecutorType      int
 }
 
 // Loads context configuration from provided reader
@@ -210,6 +212,8 @@ func LoadContext(r io.Reader) *NeatContext {
 			c.NumRuns = int(param)
 		case "num_generations":
 			c.NumGenerations = int(param)
+		case "epoch_executor":
+			c.EpochExecutorType = int(param)
 		case "log_level":
 			LogLevel = LoggerLevel(param)
 		default:
