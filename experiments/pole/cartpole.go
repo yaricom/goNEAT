@@ -82,10 +82,6 @@ func (ex CartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 				break
 			}
 		}
-	} else {
-		// Move to the next epoch if failed to find winner
-		neat.DebugLog(">>>>> start next generation")
-		_, err = pop.Epoch(epoch.Id + 1, context)
 	}
 
 	return err
