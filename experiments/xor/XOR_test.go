@@ -142,7 +142,7 @@ func TestXOR_disconnected(t *testing.T) {
 	}
 
 	// The 100 runs XOR experiment
-	context.NumRuns = 100
+	context.NumRuns = 40//100 reduce to shorten test time
 	experiment := experiments.Experiment {
 		Id:0,
 		Trials:make(experiments.Trials, context.NumRuns),

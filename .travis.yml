@@ -1,6 +1,6 @@
 language: go
 
 go:
-  - 1.8.x
+  - 1.9.x
 
-script: travis_wait go test -v ./...
+script: travis_wait 20 go test -timeout 20m -v ./...

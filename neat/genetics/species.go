@@ -113,7 +113,7 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 
 	for _, org := range s.Organisms {
 		// Remember the original fitness before it gets modified
-		org.OriginalFitness = org.Fitness
+		org.originalFitness = org.Fitness
 
 		// Make fitness decrease after a stagnation point dropoff_age
 		// Added as if to keep species pristine until the dropoff point
@@ -141,9 +141,9 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 	sort.Sort(sort.Reverse(s.Organisms))
 
 	// Update age_of_last_improvement here
-	if s.Organisms[0].OriginalFitness > s.MaxFitnessEver {
+	if s.Organisms[0].originalFitness > s.MaxFitnessEver {
 		s.AgeOfLastImprovement = s.Age
-		s.MaxFitnessEver = s.Organisms[0].OriginalFitness
+		s.MaxFitnessEver = s.Organisms[0].originalFitness
 	}
 
 	// Decide how many get to reproduce based on survival_thresh * pop_size
@@ -304,7 +304,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 			if the_champ.superChampOffspring == 1 {
 				if the_champ.isPopulationChampion {
 					baby.isPopulationChampionChild = true
-					baby.highestFitness = mom.OriginalFitness
+					baby.highestFitness = mom.originalFitness
 				}
 			}
 
@@ -412,7 +412,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 				neat.DebugLog("SPECIES: ------> mateMultipoint")
 
 				// mate multipoint baby
-				new_genome, err = mom.Genotype.mateMultipoint(dad.Genotype, count, mom.OriginalFitness, dad.OriginalFitness)
+				new_genome, err = mom.Genotype.mateMultipoint(dad.Genotype, count, mom.originalFitness, dad.originalFitness)
 				if err != nil {
 					return nil, err
 				}
@@ -420,7 +420,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 				neat.DebugLog("SPECIES: ------> mateMultipointAvg")
 
 				// mate multipoint_avg baby
-				new_genome, err = mom.Genotype.mateMultipointAvg(dad.Genotype, count, mom.OriginalFitness, dad.OriginalFitness)
+				new_genome, err = mom.Genotype.mateMultipointAvg(dad.Genotype, count, mom.originalFitness, dad.originalFitness)
 				if err != nil {
 					return nil, err
 				}
@@ -532,10 +532,10 @@ func (f byOrganismOrigFitness) Swap(i, j int) {
 func (f byOrganismOrigFitness) Less(i, j int) bool {
 	org1 := f[i].Organisms[0]
 	org2 := f[j].Organisms[0]
-	if org1.OriginalFitness < org2.OriginalFitness {
+	if org1.originalFitness < org2.originalFitness {
 		// try to promote most fit species
 		return true // Lower fitness is less
-	} else if org1.OriginalFitness == org2.OriginalFitness {
+	} else if org1.originalFitness == org2.originalFitness {
 		// try to promote less complex species
 		c1 := org1.Phenotype.Complexity()
 		c2 := org2.Phenotype.Complexity()

@@ -8,6 +8,7 @@ import (
 	"time"
 	"os"
 	"log"
+	"errors"
 )
 
 // The type of action to be applied to environment
@@ -34,6 +35,17 @@ type TrialRunObserver interface {
 	TrialRunStarted(trial *Trial)
 }
 
+// Returns appropriate executor type from given context
+func epochExecutorForContext(context *neat.NeatContext) (genetics.PopulationEpochExecutor, error) {
+	switch genetics.EpochExecutorType(context.EpochExecutorType) {
+	case genetics.SequentialExecutorType:
+		return &genetics.SequentialPopulationEpochExecutor{}, nil
+	case genetics.ParallelExecutorType:
+		return &genetics.ParallelPopulationEpochExecutor{}, nil
+	default:
+		return nil, errors.New("Unsupported epoch executor type requested")
+	}
+}
 
 // The Experiment execution entry point
 func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.Genome, executor interface{}) (err error) {
@@ -43,6 +55,8 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 
 	var pop *genetics.Population
 	for run := 0; run < context.NumRuns; run++ {
+		trial_start_time := time.Now()
+
 		neat.InfoLog("\n>>>>> Spawning new population ")
 		pop, err = genetics.NewPopulation(start_genome, context)
 		if err != nil {
@@ -60,6 +74,12 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 			neat.InfoLog("OK <<<<<")
 		}
 
+		// create appropriate population's epoch executor
+		epoch_executor, err := epochExecutorForContext(context)
+		if err != nil {
+			return err
+		}
+
 		// start new trial
 		trial := Trial {
 			Id:run,
@@ -69,7 +89,7 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 			trial_observer.TrialRunStarted(&trial) // optional
 		}
 
-		epoch_evaluator := executor.(GenerationEvaluator) // mandatory
+		generation_evaluator := executor.(GenerationEvaluator) // mandatory
 
 		for generation_id := 0; generation_id < context.NumGenerations; generation_id++ {
 			neat.InfoLog(fmt.Sprintf(">>>>> Generation:%3d\tRun: %d\n", generation_id, run))
@@ -77,18 +97,32 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 				Id:generation_id,
 				TrialId:run,
 			}
-			err = epoch_evaluator.GenerationEvaluate(pop, &generation, context)
+			gen_start_time := time.Now()
+			err = generation_evaluator.GenerationEvaluate(pop, &generation, context)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Generation [%d] evaluation failed !!!!!\n", generation_id))
 				return err
 			}
 			generation.Executed = time.Now()
+			generation.Duration = generation.Executed.Sub(gen_start_time)
 			trial.Generations = append(trial.Generations, generation)
 			if generation.Solved {
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation! <<<<<\n", generation_id))
 				break
 			}
+
+			// Turnover population of organisms to the next epoch
+			neat.DebugLog(">>>>> start next generation")
+			err = epoch_executor.NextEpoch(generation_id, pop, context)
+			if err != nil {
+				neat.InfoLog(fmt.Sprintf("!!!!! Epoch execution failed in generation [%d] !!!!!\n", generation_id))
+				return err
+			}
+
 		}
+		// holds trial duration
+		trial.Duration = time.Now().Sub(trial_start_time)
+
 		// store trial into experiment
 		ex.Trials[run] = trial
 	}

@@ -92,10 +92,6 @@ func (ex XORGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 				break
 			}
 		}
-	} else {
-		// Move to the next epoch if failed to find winner
-		neat.DebugLog(">>>>> start next generation")
-		_, err = pop.Epoch(epoch.Id + 1, context)
 	}
 
 	return err

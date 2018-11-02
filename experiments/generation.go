@@ -16,6 +16,8 @@ type Generation struct {
 	Id          int
 	// The time when epoch was evaluated
 	Executed    time.Time
+	// The elapsed time between generation execution start and finish
+	Duration    time.Duration
 	// The best organism of best species
 	Best        *genetics.Organism
 	// The flag to indicate whether experiment was solved in this epoch
@@ -67,7 +69,7 @@ func (epoch *Generation) FillPopulationStatistics(pop *genetics.Population) {
 }
 
 // Returns average fitness, age, and complexity among all organisms from population at the end of this epoch
-func (epoch Generation) Average() (fitness, age, complexity float64) {
+func (epoch *Generation) Average() (fitness, age, complexity float64) {
 	fitness = epoch.Fitness.Mean()
 	age = epoch.Age.Mean()
 	complexity = epoch.Compexity.Mean()
@@ -75,7 +77,7 @@ func (epoch Generation) Average() (fitness, age, complexity float64) {
 }
 
 // Encodes generation with provided GOB encoder
-func (epoch Generation) Encode(enc *gob.Encoder) error {
+func (epoch *Generation) Encode(enc *gob.Encoder) error {
 	err := enc.EncodeValue(reflect.ValueOf(epoch.Id))
 	err = enc.EncodeValue(reflect.ValueOf(epoch.Executed))
 	err = enc.EncodeValue(reflect.ValueOf(epoch.Solved))
@@ -100,7 +102,6 @@ func (epoch Generation) Encode(enc *gob.Encoder) error {
 
 func encodeOrganism(enc *gob.Encoder, org *genetics.Organism) error {
 	err := enc.Encode(org.Fitness)
-	err = enc.Encode(org.OriginalFitness)
 	err = enc.Encode(org.IsWinner)
 	err = enc.Encode(org.Generation)
 	err = enc.Encode(org.ExpectedOffspring)
@@ -148,7 +149,6 @@ func (epoch *Generation) Decode(dec *gob.Decoder) error {
 func decodeOrganism(dec *gob.Decoder) (*genetics.Organism, error) {
 	org := genetics.Organism{}
 	err := dec.Decode(&org.Fitness)
-	err = dec.Decode(&org.OriginalFitness)
 	err = dec.Decode(&org.IsWinner)
 	err = dec.Decode(&org.Generation)
 	err = dec.Decode(&org.ExpectedOffspring)

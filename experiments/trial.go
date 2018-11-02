@@ -15,9 +15,21 @@ type Trial struct {
 	Generations      Generations
 	// The winner generation
 	WinnerGeneration *Generation
+
+	// The elapsed time between trial start and finish
+	Duration         time.Duration
 }
 
-func (t Trial) LastExecuted() time.Time {
+// Calculates average duration of evaluations among all generations of organism populations in this trial
+func (t *Trial) AvgEpochDuration() time.Duration {
+	total := time.Duration(0)
+	for _, i := range t.Generations {
+		total += i.Duration
+	}
+	return total / time.Duration(len(t.Generations))
+}
+
+func (t *Trial) LastExecuted() time.Time {
 	var u time.Time
 	for _, i := range t.Generations {
 		if u.Before(i.Executed) {
@@ -29,7 +41,7 @@ func (t Trial) LastExecuted() time.Time {
 
 // Finds the most fit organism among all epochs in this trial. It's also possible to get the best organism only among the ones
 // which was able to solve the experiment's problem.
-func (t Trial) BestOrganism(onlySolvers bool) (*genetics.Organism, bool) {
+func (t *Trial) BestOrganism(onlySolvers bool) (*genetics.Organism, bool) {
 	var orgs = make(genetics.Organisms, 0, len(t.Generations))
 	for _, e := range t.Generations {
 		if !onlySolvers {
@@ -48,7 +60,7 @@ func (t Trial) BestOrganism(onlySolvers bool) (*genetics.Organism, bool) {
 	}
 }
 
-func (t Trial) Solved() bool {
+func (t *Trial) Solved() bool {
 	for _, e := range t.Generations {
 		if e.Solved {
 			return true
@@ -58,7 +70,7 @@ func (t Trial) Solved() bool {
 }
 
 // Fitness returns the fitnesses of the best organisms for each epoch in this trial
-func (t Trial) BestFitness() Floats {
+func (t *Trial) BestFitness() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
 		x[i] = e.Best.Fitness
@@ -68,7 +80,7 @@ func (t Trial) BestFitness() Floats {
 }
 
 // Age returns the age of the best species for each epoch in this trial
-func (t Trial) BestAge() Floats {
+func (t *Trial) BestAge() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
 		x[i] = float64(e.Best.Species.Age)
@@ -77,7 +89,7 @@ func (t Trial) BestAge() Floats {
 }
 
 // Complexity returns the complexity of the best species for each epoch in this trial
-func (t Trial) BestComplexity() Floats {
+func (t *Trial) BestComplexity() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
 		x[i] = float64(e.Best.Phenotype.Complexity())
@@ -87,7 +99,7 @@ func (t Trial) BestComplexity() Floats {
 
 
 // Diversity returns number of species for each epoch
-func (t Trial) Diversity() Floats {
+func (t *Trial) Diversity() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
 		x[i] = float64(e.Diversity)
@@ -96,7 +108,7 @@ func (t Trial) Diversity() Floats {
 }
 
 // Returns average fitness, age, and complexity of population of organisms for each epoch in this trial
-func (t Trial) Average() (fitness, age, complexity Floats) {
+func (t *Trial) Average() (fitness, age, complexity Floats) {
 	fitness = make(Floats, len(t.Generations))
 	age = make(Floats, len(t.Generations))
 	complexity = make(Floats, len(t.Generations))
