@@ -17,7 +17,28 @@ type Experiment struct {
 	Trials
 }
 
-func (e Experiment) LastExecuted() time.Time {
+// Calculates average duration of experiment's trial
+// Note, that most trials finish after solution solved, so this metric can be used to represent how efficient the solvers
+// was generated
+func (e *Experiment) AvgTrialDuration() time.Duration {
+	total := time.Duration(0)
+	for _, t := range e.Trials {
+		total += t.Duration
+	}
+	return total / time.Duration(len(e.Trials))
+}
+
+// Calculates average duration of evaluations among all generations of organism populations in this experiment
+func (e *Experiment) AvgEpochDuration() time.Duration {
+	total := time.Duration(0)
+	for _, t := range e.Trials {
+		total += t.AvgEpochDuration()
+	}
+	return total / time.Duration(len(e.Trials))
+}
+
+// Returns time of last trial's execution
+func (e *Experiment) LastExecuted() time.Time {
 	var u time.Time
 	for _, e := range e.Trials {
 		ut := e.LastExecuted()
@@ -31,7 +52,7 @@ func (e Experiment) LastExecuted() time.Time {
 // Finds the most fit organism among all epochs in this trial. It's also possible to get the best organism only among the ones
 // which was able to solve the experiment's problem. Returns the best fit organism in this experiment among with ID of trial
 // where it was found and boolean value to indicate if search was successful.
-func (e Experiment) BestOrganism(onlySolvers bool) (*genetics.Organism, int, bool) {
+func (e *Experiment) BestOrganism(onlySolvers bool) (*genetics.Organism, int, bool) {
 	var orgs = make(genetics.Organisms, 0, len(e.Trials))
 	for i, t := range e.Trials {
 		org, found := t.BestOrganism(onlySolvers)
@@ -50,7 +71,7 @@ func (e Experiment) BestOrganism(onlySolvers bool) (*genetics.Organism, int, boo
 
 }
 
-func (e Experiment) Solved() bool {
+func (e *Experiment) Solved() bool {
 	for _, t := range e.Trials {
 		if t.Solved() {
 			return true
@@ -60,7 +81,7 @@ func (e Experiment) Solved() bool {
 }
 
 // The fitness values of the best organisms for each trial
-func (e Experiment) BestFitness() Floats {
+func (e *Experiment) BestFitness() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
 		if org, ok := t.BestOrganism(false); ok {
@@ -71,7 +92,7 @@ func (e Experiment) BestFitness() Floats {
 }
 
 // The age values of the organisms for each trial
-func (e Experiment) BestAge() Floats {
+func (e *Experiment) BestAge() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
 		if org, ok := t.BestOrganism(false); ok {
@@ -82,7 +103,7 @@ func (e Experiment) BestAge() Floats {
 }
 
 // The complexity values of the best organisms for each trial
-func (e Experiment) BestComplexity() Floats {
+func (e *Experiment) BestComplexity() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
 		if org, ok := t.BestOrganism(false); ok {
@@ -93,7 +114,7 @@ func (e Experiment) BestComplexity() Floats {
 }
 
 // Diversity returns the average number of species in each trial
-func (e Experiment) Diversity() Floats {
+func (e *Experiment) Diversity() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
 		x[i] = t.Diversity().Mean()
@@ -102,7 +123,7 @@ func (e Experiment) Diversity() Floats {
 }
 
 // Trials returns the number of epochs in each trial
-func (e Experiment) Epochs() Floats {
+func (e *Experiment) Epochs() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
 		x[i] = float64(len(t.Generations))
@@ -111,7 +132,7 @@ func (e Experiment) Epochs() Floats {
 }
 
 // The number of trials solved
-func (e Experiment) TrialsSolved() int {
+func (e *Experiment) TrialsSolved() int {
 	count := 0
 	for _, t := range e.Trials {
 		if t.Solved() {
@@ -146,8 +167,9 @@ func (e *Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity
 }
 
 // Prints experiment statistics
-func (ex Experiment) PrintStatistics() {
+func (ex *Experiment) PrintStatistics() {
 	fmt.Printf("\n+++ Solved %d trials from %d +++\n", ex.TrialsSolved(), len(ex.Trials))
+	fmt.Printf("Average duration\n\ttrial:\t%s\n\tepoch:\t%s\n", ex.AvgTrialDuration(), ex.AvgEpochDuration())
 	// Print absolute champion statistics
 	if org, trid, found := ex.BestOrganism(true); found {
 		nodes, genes, evals, divers := ex.Trials[trid].Winner()
@@ -214,13 +236,13 @@ func (ex Experiment) PrintStatistics() {
 }
 
 // Encodes experiment and writes to provided writer
-func (ex Experiment) Write(w io.Writer) error {
+func (ex *Experiment) Write(w io.Writer) error {
 	enc := gob.NewEncoder(w)
 	return ex.Encode(enc)
 }
 
 // Encodes experiment with GOB encoding
-func (ex Experiment) Encode(enc *gob.Encoder) error {
+func (ex *Experiment) Encode(enc *gob.Encoder) error {
 	err := enc.Encode(ex.Id)
 	err = enc.Encode(ex.Name)
 
