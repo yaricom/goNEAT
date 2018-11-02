@@ -38,7 +38,7 @@ type Organism struct {
 	// Implemented as ANY to allow implementation specific objects.
 	Data                      *OrganismData
 
-	// A fitness measure that won't change during adjustments
+	// A fitness measure that won't change during fitness adjustments of population's epoch evaluation
 	originalFitness   float64
 
 	// Marker for destruction of inferior Organisms
@@ -92,7 +92,7 @@ func (o *Organism) CheckChampionChildDamaged() bool {
 }
 
 // Encodes this organism for wired transmission during parallel reproduction cycle
-func (o Organism) MarshalBinary() ([]byte, error) {
+func (o *Organism) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 	_, err := fmt.Fprintln(&buf, o.Fitness, o.Generation, o.Genotype.Id)
 	o.Genotype.Write(&buf)
