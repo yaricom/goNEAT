@@ -37,6 +37,17 @@ func (e *Experiment) AvgEpochDuration() time.Duration {
 	return total / time.Duration(len(e.Trials))
 }
 
+// Calculates average number of generations evaluated per trial during this experiment. This can be helpful when estimating
+// algorithm efficiency, because when winner organism is found the trial is terminated, i.e. less evaluations - more fast
+// convergence.
+func (e *Experiment) AvgGenerationsPerTrial() int {
+	total := 0
+	for _, t := range e.Trials {
+		total += len(t.Generations)
+	}
+	return total / len(e.Trials)
+}
+
 // Returns time of last trial's execution
 func (e *Experiment) LastExecuted() time.Time {
 	var u time.Time
@@ -169,7 +180,8 @@ func (e *Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity
 // Prints experiment statistics
 func (ex *Experiment) PrintStatistics() {
 	fmt.Printf("\n+++ Solved %d trials from %d +++\n", ex.TrialsSolved(), len(ex.Trials))
-	fmt.Printf("Average duration\n\ttrial:\t%s\n\tepoch:\t%s\n", ex.AvgTrialDuration(), ex.AvgEpochDuration())
+	fmt.Printf("Average\n\ttrial duration:\t\t%s\n\tepoch duration:\t\t%s\n\tgenerations/trial:\t%d\n",
+		ex.AvgTrialDuration(), ex.AvgEpochDuration(), ex.AvgGenerationsPerTrial())
 	// Print absolute champion statistics
 	if org, trid, found := ex.BestOrganism(true); found {
 		nodes, genes, evals, divers := ex.Trials[trid].Winner()
