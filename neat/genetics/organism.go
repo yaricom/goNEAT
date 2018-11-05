@@ -94,7 +94,7 @@ func (o *Organism) CheckChampionChildDamaged() bool {
 // Encodes this organism for wired transmission during parallel reproduction cycle
 func (o *Organism) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
-	_, err := fmt.Fprintln(&buf, o.Fitness, o.Generation, o.Genotype.Id)
+	_, err := fmt.Fprintln(&buf, o.Fitness, o.Generation, o.highestFitness, o.isPopulationChampionChild, o.Genotype.Id)
 	o.Genotype.Write(&buf)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (o *Organism) UnmarshalBinary(data []byte) error {
 	// A simple encoding: plain text.
 	b := bytes.NewBuffer(data)
 	var genotype_id int
-	_, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &genotype_id)
+	_, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &o.highestFitness, &o.isPopulationChampionChild, &genotype_id)
 	o.Genotype, err = ReadGenome(b, genotype_id)
 	if err == nil {
 		o.Phenotype = o.Genotype.genesis(genotype_id)
@@ -127,6 +127,32 @@ func (o *Organism) String() string {
 	}
 	return fmt.Sprintf("[Organism generation: %d, fitness: %.3f, original fitness: %.3f%s%s]",
 		o.Generation, o.Fitness, o.originalFitness, champStr, eliminStr)
+}
+
+// Dumps all organism's fields into string
+func (o *Organism) Dump() string {
+	b := bytes.NewBufferString("Organism:")
+	fmt.Fprintln(b, "Fitness: ", o.Fitness)
+	fmt.Fprintln(b, "Error: ", o.Error)
+	fmt.Fprintln(b, "IsWinner: ", o.IsWinner)
+	fmt.Fprintln(b, "Phenotype: ", o.Phenotype)
+	fmt.Fprintln(b, "Genotype: ", o.Genotype)
+	fmt.Fprintln(b, "Species: ", o.Species)
+	fmt.Fprintln(b, "ExpectedOffspring: ", o.ExpectedOffspring)
+	fmt.Fprintln(b, "Data: ", o.Data)
+	fmt.Fprintln(b, "Phenotype: ", o.Phenotype)
+	fmt.Fprintln(b, "originalFitness: ", o.originalFitness)
+	fmt.Fprintln(b, "toEliminate: ", o.toEliminate)
+	fmt.Fprintln(b, "isChampion: ", o.isChampion)
+	fmt.Fprintln(b, "superChampOffspring: ", o.superChampOffspring)
+	fmt.Fprintln(b, "isPopulationChampion: ", o.isPopulationChampion)
+	fmt.Fprintln(b, "isPopulationChampionChild: ", o.isPopulationChampionChild)
+	fmt.Fprintln(b, "highestFitness: ", o.highestFitness)
+	fmt.Fprintln(b, "mutationStructBaby: ", o.mutationStructBaby)
+	fmt.Fprintln(b, "mateBaby: ", o.mateBaby)
+	fmt.Fprintln(b, "Flag: ", o.Flag)
+
+	return b.String()
 }
 
 // Organisms is sortable list of organisms by fitness
