@@ -245,8 +245,9 @@ func (n *NNode) NodeType() NodeType {
 }
 
 func (n *NNode) String() string {
-	return fmt.Sprintf("(%s %3d, layer: %s, step: %d = %.3f %.3f)",
-		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), n.ActivationsCount, n.Activation, n.Params)
+	return fmt.Sprintf("(%s %3d, layer: %s, activation: %s -> step: %d = %.3f %.3f)",
+		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), ActivationNameFromType(n.ActivationType),
+		n.ActivationsCount, n.Activation, n.Params)
 }
 
 // Prints all node's fields to the string
@@ -256,6 +257,7 @@ func (n *NNode) Print() string {
 	fmt.Fprintf(b, "\tId: %d\n", n.Id)
 	fmt.Fprintf(b, "\tIsActive: %t\n", n.IsActive)
 	fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
+	fmt.Fprintf(b, "\tActivation Type: %s\n", ActivationNameFromType(n.ActivationType))
 	fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
 	fmt.Fprintf(b, "\tActiveOut: %f\n", n.ActiveOut)
 	fmt.Fprintf(b, "\tActiveOutTd: %f\n", n.ActiveOutTd)

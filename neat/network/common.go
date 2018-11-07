@@ -3,6 +3,7 @@ package network
 
 import (
 	"math"
+	"fmt"
 )
 
 // NNodeType defines the type of NNode to create
@@ -129,6 +130,90 @@ func (a *NodeActivatorsFactory) Activate(node *NNode) float64 {
 		return fn(node)
 	} else {
 		panic("Unknown activation type")
+	}
+}
+
+// Parse node activation type name and return corresponding activation type
+func ActivationTypeFromName(name string) NodeActivationType {
+	switch name {
+	case "SigmoidPlainActivation":
+		return SigmoidPlainActivation
+	case "SigmoidReducedActivation":
+		return SigmoidReducedActivation
+	case "SigmoidBipolarActivation":
+		return SigmoidBipolarActivation
+	case "SigmoidSteepenedActivation":
+		return SigmoidSteepenedActivation
+	case "SigmoidApproximationActivation":
+		return SigmoidApproximationActivation
+	case "SigmoidSteepenedApproximationActivation":
+		return SigmoidSteepenedApproximationActivation
+	case "SigmoidInverseAbsoluteActivation":
+		return SigmoidInverseAbsoluteActivation
+	case "SigmoidLeftShiftedActivation":
+		return SigmoidLeftShiftedActivation
+	case "SigmoidLeftShiftedSteepenedActivation":
+		return SigmoidLeftShiftedSteepenedActivation
+	case "SigmoidRightShiftedSteepenedActivation":
+		return SigmoidRightShiftedSteepenedActivation
+	case "TanhActivation":
+		return TanhActivation
+	case "GaussianActivation":
+		return GaussianActivation
+	case "LinearActivation":
+		return LinearActivation
+	case "NullFnActivation":
+		return NullFnActivation
+	case "SignActivation":
+		return SignActivation
+	case "SineActivation":
+		return SineActivation
+	case "StepActivation":
+		return StepActivation
+	default:
+		panic("Unsupported activation type name: " + name)
+	}
+}
+
+// Returns activation function name from given type
+func ActivationNameFromType(atype NodeActivationType) string {
+	switch atype {
+	case SigmoidPlainActivation:
+		return "SigmoidPlainActivation"
+	case SigmoidReducedActivation:
+		return "SigmoidReducedActivation"
+	case SigmoidBipolarActivation:
+		return "SigmoidBipolarActivation"
+	case SigmoidSteepenedActivation:
+		return "SigmoidSteepenedActivation"
+	case SigmoidApproximationActivation:
+		return "SigmoidApproximationActivation"
+	case SigmoidSteepenedApproximationActivation:
+		return "SigmoidSteepenedApproximationActivation"
+	case SigmoidInverseAbsoluteActivation:
+		return "SigmoidInverseAbsoluteActivation"
+	case SigmoidLeftShiftedActivation:
+		return "SigmoidLeftShiftedActivation"
+	case SigmoidLeftShiftedSteepenedActivation:
+		return "SigmoidLeftShiftedSteepenedActivation"
+	case SigmoidRightShiftedSteepenedActivation:
+		return "SigmoidRightShiftedSteepenedActivation"
+	case TanhActivation:
+		return "TanhActivation"
+	case GaussianActivation:
+		return "GaussianActivation"
+	case LinearActivation:
+		return "LinearActivation"
+	case NullFnActivation:
+		return "NullFnActivation"
+	case SignActivation:
+		return "SignActivation"
+	case SineActivation:
+		return "SineActivation"
+	case StepActivation:
+		return "StepActivation"
+	default:
+		panic(fmt.Sprintf("Unsupported activation type: %d", atype))
 	}
 }
 
