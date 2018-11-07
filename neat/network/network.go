@@ -136,7 +136,7 @@ func (n *Network) Activate() (bool, error) {
 					np.saveActivations()
 
 					// Now run the net activation through an activation function
-					np.Activation = activate(np)
+					np.Activation = defaultNodeActivators.Activate(np)
 
 					// Increment the activation_count
 					// First activation cannot be from nothing!!
