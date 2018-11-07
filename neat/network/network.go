@@ -220,6 +220,11 @@ func (n *Network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) 
 
 // Find the maximum number of neurons between an output and an input
 func (n *Network) MaxDepth() (int, error) {
+	// The quick case when there are no hidden nodes
+	if len(n.all_nodes) == len(n.Inputs) + len(n.Outputs) {
+		return 1, nil // just one layer depth
+	}
+
 	max := 0 // The max depth
 	for _, node := range n.Outputs {
 		curr_depth, err := node.Depth(0)
