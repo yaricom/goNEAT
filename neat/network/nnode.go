@@ -20,9 +20,9 @@ type NNode struct {
 	IsActive          bool
 
 	// The type of node activation function (SIGMOID, ...)
-	ActivationType    ActivationType
+	ActivationType    NodeActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
-	NeuronType        NeuronType
+	NeuronType        NodeNeuronType
 
 	// The activation for current step
 	ActiveOut         float64
@@ -59,7 +59,7 @@ type NNode struct {
 }
 
 // Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
-func NewNNode(nodeid int, neuronType NeuronType) *NNode {
+func NewNNode(nodeid int, neuronType NodeNeuronType) *NNode {
 	n := newNode()
 	n.Id = nodeid
 	n.NeuronType = neuronType
@@ -101,7 +101,7 @@ func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
 func newNode() *NNode {
 	return &NNode{
 		NeuronType:HiddenNeuron,
-		ActivationType:SigmoidSteepened,
+		ActivationType:SigmoidSteepenedActivation,
 		Incoming:make([]*Link, 0),
 		Outgoing:make([]*Link, 0),
 	}
