@@ -6,105 +6,130 @@ import (
 )
 
 func TestLoadContext(t *testing.T) {
-	config, err := os.Open("../data/p2nv.neat")
+	config, err := os.Open("../data/xor_test.neat")
 	if err != nil {
 		t.Error("Failed to open config file", err)
 	}
 
 	// Load Neat Context
 	nc := LoadContext(config)
-	//t.Log(nc)
+	checkNeatContext(nc, t)
+}
+
+func TestNeatContext_LoadContext(t *testing.T) {
+	config, err := os.Open("../data/xor_test.neat.yml")
+	if err != nil {
+		t.Error("Failed to open config file", err)
+	}
+
+	// Load YAML context
+	nc := &NeatContext{}
+	err = nc.LoadContext(config)
+	if err != nil {
+		t.Error(err)
+	}
+
+	checkNeatContext(nc, t)
+}
+
+func checkNeatContext(nc *NeatContext, t *testing.T) {
 	if nc.TraitParamMutProb != 0.5 {
-		t.Error("nc.TraitParamMutProb != 0.5")
+		t.Error("nc.TraitParamMutProb != 0.5", nc.TraitParamMutProb)
 	}
 	if nc.TraitMutationPower != 1.0 {
-		t.Error("nc.TraitMutationPower != 1.0")
+		t.Error("nc.TraitMutationPower != 1.0", nc.TraitMutationPower)
 	}
-	if nc.WeightMutPower != 1.8 {
-		t.Error("nc.WeightMutPower != 1.8")
+	if nc.WeightMutPower != 2.5 {
+		t.Error("nc.WeightMutPower != 2.5", nc.WeightMutPower != 2.5)
 	}
 	if nc.DisjointCoeff != 1.0 {
-		t.Error("nc.DisjointCoeff != 1.0")
+		t.Error("nc.DisjointCoeff != 1.0", nc.DisjointCoeff)
 	}
 	if nc.ExcessCoeff != 1.0 {
-		t.Error("nc.ExcessCoeff != 1.0")
+		t.Error("nc.ExcessCoeff != 1.0", nc.ExcessCoeff)
 	}
-	if nc.MutdiffCoeff != 3.0 {
-		t.Error("nc.MutdiffCoeff != 3.0")
+	if nc.MutdiffCoeff != 0.4 {
+		t.Error("nc.MutdiffCoeff", nc.MutdiffCoeff)
 	}
-	if nc.CompatThreshold != 4.0 {
-		t.Error("CompatThreshold")
+	if nc.CompatThreshold != 3.0 {
+		t.Error("CompatThreshold", nc.CompatThreshold)
 	}
 	if nc.AgeSignificance != 1.0 {
-		t.Error("AgeSignificance")
+		t.Error("AgeSignificance", nc.AgeSignificance)
 	}
-	if nc.SurvivalThresh != 0.4 {
-		t.Error("SurvivalThresh")
+	if nc.SurvivalThresh != 0.2 {
+		t.Error("SurvivalThresh", nc.SurvivalThresh )
 	}
 	if nc.MutateOnlyProb != 0.25 {
-		t.Error("MutateOnlyProb")
+		t.Error("MutateOnlyProb", nc.MutateOnlyProb)
 	}
 	if nc.MutateRandomTraitProb != 0.1 {
-		t.Error("MutateRandomTraitProb")
+		t.Error("MutateRandomTraitProb", nc.MutateRandomTraitProb)
 	}
 	if nc.MutateLinkTraitProb != 0.1 {
-		t.Error("MutateLinkTraitProb")
+		t.Error("MutateLinkTraitProb", nc.MutateLinkTraitProb)
 	}
 	if nc.MutateNodeTraitProb != 0.1 {
-		t.Error("MutateNodeTraitProb")
+		t.Error("MutateNodeTraitProb", nc.MutateNodeTraitProb )
 	}
-	if nc.MutateLinkWeightsProb != 0.8 {
-		t.Error("MutateLinkWeightsProb")
+	if nc.MutateLinkWeightsProb != 0.9 {
+		t.Error("MutateLinkWeightsProb", nc.MutateLinkWeightsProb)
 	}
-	if nc.MutateToggleEnableProb != 0.1 {
-		t.Error("MutateToggleEnableProb")
+	if nc.MutateToggleEnableProb != 0.0 {
+		t.Error("MutateToggleEnableProb", nc.MutateToggleEnableProb)
 	}
-	if nc.MutateGeneReenableProb != 0.05 {
-		t.Error("MutateGeneReenableProb")
+	if nc.MutateGeneReenableProb != 0.0 {
+		t.Error("MutateGeneReenableProb", nc.MutateGeneReenableProb)
 	}
-	if nc.MutateAddNodeProb != 0.01 {
-		t.Error("MutateAddNodeProb")
+	if nc.MutateAddNodeProb != 0.03 {
+		t.Error("MutateAddNodeProb", nc.MutateAddNodeProb)
 	}
-	if nc.MutateAddLinkProb != 0.3 {
-		t.Error("MutateAddLinkProb")
+	if nc.MutateAddLinkProb != 0.08 {
+		t.Error("MutateAddLinkProb", nc.MutateAddLinkProb)
 	}
 	if nc.MutateConnectSensors != 0.5 {
-		t.Error("MutateConnectInputs")
+		t.Error("MutateConnectSensors", nc.MutateConnectSensors)
 	}
 	if nc.InterspeciesMateRate != 0.001 {
-		t.Error("InterspeciesMateRate")
+		t.Error("InterspeciesMateRate", nc.InterspeciesMateRate)
 	}
-	if nc.MateMultipointProb != 0.6 {
-		t.Error("MateMultipointProb")
+	if nc.MateMultipointProb != 0.3 {
+		t.Error("MateMultipointProb", nc.MateMultipointProb)
 	}
-	if nc.MateMultipointAvgProb != 0.4 {
-		t.Error("MateMultipointAvgProb")
+	if nc.MateMultipointAvgProb != 0.3 {
+		t.Error("MateMultipointAvgProb", nc.MateMultipointAvgProb )
 	}
-	if nc.MateSinglepointProb != 0.0 {
-		t.Error("MateSinglepointProb")
+	if nc.MateSinglepointProb != 0.3 {
+		t.Error("MateSinglepointProb", nc.MateSinglepointProb)
 	}
 	if nc.MateOnlyProb != 0.2 {
-		t.Error("MateOnlyProb")
+		t.Error("MateOnlyProb", nc.MateOnlyProb)
 	}
-	if nc.RecurOnlyProb != 0.2 {
-		t.Error("RecurOnlyProb")
+	if nc.RecurOnlyProb != 0.0 {
+		t.Error("RecurOnlyProb", nc.RecurOnlyProb)
 	}
-	if nc.PopSize != 1000 {
-		t.Error("PopSize")
+	if nc.PopSize != 200 {
+		t.Error("PopSize", nc.PopSize)
 	}
-	if nc.DropOffAge != 15 {
-		t.Error("DropOffAge")
+	if nc.DropOffAge != 50 {
+		t.Error("DropOffAge", nc.DropOffAge)
 	}
-	if nc.NewLinkTries != 20 {
-		t.Error("NewLinkTries")
+	if nc.NewLinkTries != 50 {
+		t.Error("NewLinkTries", nc.NewLinkTries)
 	}
-	if nc.PrintEvery != 60 {
-		t.Error("PrintEvery")
+	if nc.PrintEvery != 10 {
+		t.Error("PrintEvery", nc.PrintEvery)
 	}
 	if nc.BabiesStolen != 0 {
-		t.Error("BabiesStolen")
+		t.Error("BabiesStolen", nc.BabiesStolen)
 	}
 	if nc.NumRuns != 100 {
-		t.Error("NumRuns")
+		t.Error("NumRuns", nc.NumRuns)
+	}
+	if nc.NumGenerations != 100 {
+		t.Error("NumGenerations", nc.NumGenerations)
+	}
+	if nc.EpochExecutorType != 0 {
+		t.Error("EpochExecutorType", nc.EpochExecutorType)
 	}
 }

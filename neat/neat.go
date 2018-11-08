@@ -8,6 +8,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"github.com/spf13/viper"
+	"errors"
 )
 
 // LoggerLevel type to specify logger output level
@@ -66,7 +68,7 @@ type NeatContext struct {
 	TraitParamMutProb      float64
 				       // Power of mutation on a single trait param
 	TraitMutationPower     float64
-				       // The power of a linkweight mutation
+				       // The power of a link weight mutation
 	WeightMutPower         float64
 
 				       // These 3 global coefficients are used to determine the formula for
@@ -81,14 +83,15 @@ type NeatContext struct {
 	MutdiffCoeff           float64
 
 				       // This global tells compatibility threshold under which
-				       // two Genomes are considered the same species */
+				       // two Genomes are considered the same species
 	CompatThreshold        float64
 
 				       /* Globals involved in the epoch cycle - mating, reproduction, etc.. */
 
-				       // How much does age matter?
+				       // How much does age matter? Gives a fitness boost up to some young age (niching).
+				       // If it is 1, then young species get no fitness boost.
 	AgeSignificance        float64
-				       // Percent of ave fitness for survival
+				       // Percent of average fitness for survival, how many get to reproduce based on survival_thresh * pop_size
 	SurvivalThresh         float64
 
 				       // Probabilities of a non-mating reproduction
@@ -134,6 +137,80 @@ type NeatContext struct {
 	NumGenerations         int
 				       // The epoch's executor type to apply
 	EpochExecutorType      int
+}
+
+// Loads context configuration from provided reader as YAML
+func (c *NeatContext) LoadContext(r io.Reader) error {
+	viper.SetConfigType("YAML")
+	err := viper.ReadConfig(r)
+	if err != nil {
+		return err
+	}
+	v := viper.Sub("neat")
+	if v == nil {
+		return errors.New("neat subsection not found in configuration")
+	}
+
+	c.TraitParamMutProb = v.GetFloat64("trait_param_mut_prob")
+	c.TraitMutationPower = v.GetFloat64("trait_mutation_power")
+	c.WeightMutPower = v.GetFloat64("weight_mut_power")
+	c.DisjointCoeff = v.GetFloat64("disjoint_coeff")
+	c.ExcessCoeff = v.GetFloat64("excess_coeff")
+	c.MutdiffCoeff = v.GetFloat64("mutdiff_coeff")
+	c.CompatThreshold = v.GetFloat64("compat_threshold")
+	c.AgeSignificance = v.GetFloat64("age_significance")
+	c.SurvivalThresh = v.GetFloat64("survival_thresh")
+	c.MutateOnlyProb = v.GetFloat64("mutate_only_prob")
+	c.MutateRandomTraitProb = v.GetFloat64("mutate_random_trait_prob")
+	c.MutateLinkTraitProb = v.GetFloat64("mutate_link_trait_prob")
+	c.MutateNodeTraitProb = v.GetFloat64("mutate_node_trait_prob")
+	c.MutateLinkWeightsProb = v.GetFloat64("mutate_link_weights_prob")
+	c.MutateToggleEnableProb = v.GetFloat64("mutate_toggle_enable_prob")
+	c.MutateGeneReenableProb = v.GetFloat64("mutate_gene_reenable_prob")
+	c.MutateAddNodeProb = v.GetFloat64("mutate_add_node_prob")
+	c.MutateAddLinkProb = v.GetFloat64("mutate_add_link_prob")
+	c.MutateConnectSensors = v.GetFloat64("mutate_connect_sensors")
+	c.InterspeciesMateRate = v.GetFloat64("interspecies_mate_rate")
+	c.MateMultipointProb = v.GetFloat64("mate_multipoint_prob")
+	c.MateMultipointAvgProb = v.GetFloat64("mate_multipoint_avg_prob")
+	c.MateSinglepointProb = v.GetFloat64("mate_singlepoint_prob")
+	c.MateOnlyProb = v.GetFloat64("mate_only_prob")
+	c.RecurOnlyProb = v.GetFloat64("recur_only_prob")
+
+	c.PopSize = v.GetInt("pop_size")
+	c.DropOffAge = v.GetInt("dropoff_age")
+	c.NewLinkTries = v.GetInt("newlink_tries")
+	c.PrintEvery = v.GetInt("print_every")
+	c.BabiesStolen = v.GetInt("babies_stolen")
+	c.NumRuns = v.GetInt("num_runs")
+	c.NumGenerations = v.GetInt("num_generations")
+
+	// read epoch executor type [sequential, parallel]
+	ep_exec := v.GetString("epoch_executor")
+	if ep_exec == "sequential" {
+		c.EpochExecutorType = 0 //genetics.SequentialExecutorType
+	} else if ep_exec == "parallel" {
+		c.EpochExecutorType = 1 //genetics.ParallelExecutorType
+	} else {
+		return errors.New(fmt.Sprintf("Unsupported epoch executor type: %s", ep_exec))
+	}
+
+	// read log level [Debug, Info, Warning, Error]
+	l_level := v.GetString("log_level")
+	switch l_level {
+	case "Debug":
+		LogLevel = LogLevelDebug
+	case "Info":
+		LogLevel = LogLevelInfo
+	case "Warning":
+		LogLevel = LogLevelWarning
+	case "Error":
+		LogLevel = LogLevelError
+	default:
+		return errors.New(fmt.Sprintf("Usupported log level: %s", l_level))
+	}
+
+	return nil
 }
 
 // Loads context configuration from provided reader
