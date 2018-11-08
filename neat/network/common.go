@@ -79,140 +79,104 @@ const (
 
 	// The other activators assortment
 	TanhActivation
-	GaussianActivation
-	LinearActivation
+	GaussianBipolarActivation
+	LinearAbsActivation
+	LinearClippedActivation
 	NullFnActivation
 	SignActivation
 	SineActivation
 	StepActivation
 )
 
+// The activation function type
+type ActivationFunction func(float64, []float64) float64
+
 // The default node activators factory reference
-var defaultNodeActivators = NewNodeActivatorsFactory()
+var NodeActivators = NewNodeActivatorsFactory()
 
 // The factory to provide appropriate neuron node activation function
 type NodeActivatorsFactory struct {
 	// The map of registered activators by type
-	Activators map[NodeActivationType]func(node *NNode) float64
+	activators map[NodeActivationType]ActivationFunction
+
+	// The forward and inverse maps of activator type and function name
+	forward    map[NodeActivationType]string
+	inverse    map[string]NodeActivationType
 }
 
 // Returns node activator factory initialized with default activation functions
-func NewNodeActivatorsFactory() NodeActivatorsFactory {
-	af := NodeActivatorsFactory{
-		Activators:make(map[NodeActivationType]func(node *NNode) float64),
+func NewNodeActivatorsFactory() *NodeActivatorsFactory {
+	af := &NodeActivatorsFactory{
+		activators:make(map[NodeActivationType]ActivationFunction),
+		forward:make(map[NodeActivationType]string),
+		inverse:make(map[string]NodeActivationType),
 	}
-	af.Activators[SigmoidPlainActivation] = plainSigmoid
-	af.Activators[SigmoidReducedActivation] = reducedSigmoid
-	af.Activators[SigmoidSteepenedActivation] = steepenedSigmoid
-	af.Activators[SigmoidBipolarActivation] = bipolarSigmoid
-	af.Activators[SigmoidApproximationActivation] = approximationSigmoid
-	af.Activators[SigmoidSteepenedApproximationActivation] = approximationSteepenedSigmoid
-	af.Activators[SigmoidInverseAbsoluteActivation] = inverseAbsoluteSigmoid
-	af.Activators[SigmoidLeftShiftedActivation] = leftShiftedSigmoid
-	af.Activators[SigmoidLeftShiftedSteepenedActivation] = leftShiftedSteepenedSigmoid
-	af.Activators[SigmoidRightShiftedSteepenedActivation] = rightShiftedSteepenedSigmoid
+	af.Register(SigmoidPlainActivation, plainSigmoid, "SigmoidPlainActivation")
+	af.Register(SigmoidReducedActivation, reducedSigmoid, "SigmoidReducedActivation")
+	af.Register(SigmoidSteepenedActivation, steepenedSigmoid, "SigmoidSteepenedActivation")
+	af.Register(SigmoidBipolarActivation, bipolarSigmoid, "SigmoidBipolarActivation")
+	af.Register(SigmoidApproximationActivation, approximationSigmoid, "SigmoidApproximationActivation")
+	af.Register(SigmoidSteepenedApproximationActivation, approximationSteepenedSigmoid, "SigmoidSteepenedApproximationActivation")
+	af.Register(SigmoidInverseAbsoluteActivation, inverseAbsoluteSigmoid, "SigmoidInverseAbsoluteActivation")
+	af.Register(SigmoidLeftShiftedActivation, leftShiftedSigmoid, "SigmoidLeftShiftedActivation")
+	af.Register(SigmoidLeftShiftedSteepenedActivation, leftShiftedSteepenedSigmoid, "SigmoidLeftShiftedSteepenedActivation")
+	af.Register(SigmoidRightShiftedSteepenedActivation, rightShiftedSteepenedSigmoid, "SigmoidRightShiftedSteepenedActivation")
 
-	af.Activators[TanhActivation] = hyperbolicTangent
-	af.Activators[GaussianActivation] = symmetricGaussian
-	af.Activators[LinearActivation] = absoluteLinear
-	af.Activators[NullFnActivation] = nullFunctor
-	af.Activators[SignActivation] = signFunctor
-	af.Activators[SineActivation] = sineFunctor
-	af.Activators[StepActivation] = stepFunction
+	af.Register(TanhActivation, hyperbolicTangent, "TanhActivation")
+	af.Register(GaussianBipolarActivation, bipolarGaussian, "GaussianBipolarActivation")
+	af.Register(LinearAbsActivation, absoluteLinear, "LinearAbsActivation")
+	af.Register(LinearClippedActivation, clippedLinear, "LinearClippedActivation")
+	af.Register(NullFnActivation, nullFunctor, "NullFnActivation")
+	af.Register(SignActivation, signFunctor, "SignActivation")
+	af.Register(SineActivation, sineFunctor, "SineActivation")
+	af.Register(StepActivation, stepFunction, "StepActivation")
 
 	return af
 }
 
 // Method to calculate activation for specified neuron node based on it's ActivationType field value.
 // Will panic if unsupported activation type requested.
-func (a *NodeActivatorsFactory) Activate(node *NNode) float64 {
-	if fn, ok := a.Activators[node.ActivationType]; ok {
-		return fn(node)
+func (a *NodeActivatorsFactory) ActivateNode(node *NNode) float64 {
+	if fn, ok := a.activators[node.ActivationType]; ok {
+		return fn(node.ActivationSum, node.Params)
 	} else {
 		panic("Unknown activation type")
 	}
 }
 
+// Method to calculate activation value for give input and auxiliary parameters using activation function with specified type.
+// Will panic if unsupported activation type requested.
+func (a *NodeActivatorsFactory) ActivateByType(input float64, aux_params[]float64, a_type NodeActivationType) float64 {
+	if fn, ok := a.activators[a_type]; ok {
+		return fn(input, aux_params)
+	} else {
+		panic("Unknown activation type")
+	}
+}
+
+// Registers given function with provided type and name into the factory
+func (a *NodeActivatorsFactory) Register(a_type NodeActivationType, a_func ActivationFunction, f_name string) {
+	// store function
+	a.activators[a_type] = a_func
+	// store name<->type bi-directional mapping
+	a.forward[a_type] = f_name
+	a.inverse[f_name] = a_type
+}
+
 // Parse node activation type name and return corresponding activation type
-func ActivationTypeFromName(name string) NodeActivationType {
-	switch name {
-	case "SigmoidPlainActivation":
-		return SigmoidPlainActivation
-	case "SigmoidReducedActivation":
-		return SigmoidReducedActivation
-	case "SigmoidBipolarActivation":
-		return SigmoidBipolarActivation
-	case "SigmoidSteepenedActivation":
-		return SigmoidSteepenedActivation
-	case "SigmoidApproximationActivation":
-		return SigmoidApproximationActivation
-	case "SigmoidSteepenedApproximationActivation":
-		return SigmoidSteepenedApproximationActivation
-	case "SigmoidInverseAbsoluteActivation":
-		return SigmoidInverseAbsoluteActivation
-	case "SigmoidLeftShiftedActivation":
-		return SigmoidLeftShiftedActivation
-	case "SigmoidLeftShiftedSteepenedActivation":
-		return SigmoidLeftShiftedSteepenedActivation
-	case "SigmoidRightShiftedSteepenedActivation":
-		return SigmoidRightShiftedSteepenedActivation
-	case "TanhActivation":
-		return TanhActivation
-	case "GaussianActivation":
-		return GaussianActivation
-	case "LinearActivation":
-		return LinearActivation
-	case "NullFnActivation":
-		return NullFnActivation
-	case "SignActivation":
-		return SignActivation
-	case "SineActivation":
-		return SineActivation
-	case "StepActivation":
-		return StepActivation
-	default:
+func (a *NodeActivatorsFactory) ActivationTypeFromName(name string) NodeActivationType {
+	if t, ok := a.inverse[name]; ok {
+		return t
+	} else {
 		panic("Unsupported activation type name: " + name)
 	}
 }
 
 // Returns activation function name from given type
-func ActivationNameFromType(atype NodeActivationType) string {
-	switch atype {
-	case SigmoidPlainActivation:
-		return "SigmoidPlainActivation"
-	case SigmoidReducedActivation:
-		return "SigmoidReducedActivation"
-	case SigmoidBipolarActivation:
-		return "SigmoidBipolarActivation"
-	case SigmoidSteepenedActivation:
-		return "SigmoidSteepenedActivation"
-	case SigmoidApproximationActivation:
-		return "SigmoidApproximationActivation"
-	case SigmoidSteepenedApproximationActivation:
-		return "SigmoidSteepenedApproximationActivation"
-	case SigmoidInverseAbsoluteActivation:
-		return "SigmoidInverseAbsoluteActivation"
-	case SigmoidLeftShiftedActivation:
-		return "SigmoidLeftShiftedActivation"
-	case SigmoidLeftShiftedSteepenedActivation:
-		return "SigmoidLeftShiftedSteepenedActivation"
-	case SigmoidRightShiftedSteepenedActivation:
-		return "SigmoidRightShiftedSteepenedActivation"
-	case TanhActivation:
-		return "TanhActivation"
-	case GaussianActivation:
-		return "GaussianActivation"
-	case LinearActivation:
-		return "LinearActivation"
-	case NullFnActivation:
-		return "NullFnActivation"
-	case SignActivation:
-		return "SignActivation"
-	case SineActivation:
-		return "SineActivation"
-	case StepActivation:
-		return "StepActivation"
-	default:
+func (a *NodeActivatorsFactory) ActivationNameFromType(atype NodeActivationType) string {
+	if n, ok := a.forward[atype]; ok {
+		return n
+	} else {
 		panic(fmt.Sprintf("Unsupported activation type: %d", atype))
 	}
 }
@@ -220,99 +184,110 @@ func ActivationNameFromType(atype NodeActivationType) string {
 // The sigmoid activation functions
 var (
 	// The plain sigmoid
-	plainSigmoid = func(node *NNode) float64 {
-		return (1 / (1 + math.Exp(-node.ActivationSum)))
+	plainSigmoid = func(input float64, aux_params[]float64) float64 {
+		return (1 / (1 + math.Exp(-input)))
 	}
 	// The reduced sigmoid
-	reducedSigmoid = func(node *NNode) float64 {
-		return (1 / (1 + math.Exp(-0.5 * node.ActivationSum)))
+	reducedSigmoid = func(input float64, aux_params[]float64) float64 {
+		return (1 / (1 + math.Exp(-0.5 * input)))
 	}
 	// The steepened sigmoid
-	steepenedSigmoid = func(node *NNode) float64 {
-		return 1.0 / (1.0 + math.Exp(-4.924273 * node.ActivationSum))
+	steepenedSigmoid = func(input float64, aux_params[]float64) float64 {
+		return 1.0 / (1.0 + math.Exp(-4.924273 * input))
 	}
-	// The bipolar sigmoid activation function
-	bipolarSigmoid = func(node *NNode) float64 {
-		return (2.0 / (1.0 + math.Exp(-4.924273 * node.ActivationSum))) - 1.0
+	// The bipolar sigmoid activation function xrange->[-1,1] yrange->[-1,1]
+	bipolarSigmoid = func(input float64, aux_params[]float64) float64 {
+		return (2.0 / (1.0 + math.Exp(-4.924273 * input))) - 1.0
 	}
 	// The approximation sigmoid with squashing range [-4.0; 4.0]
-	approximationSigmoid = func(node *NNode) float64 {
+	approximationSigmoid = func(input float64, aux_params[]float64) float64 {
 		four, one_32nd := float64(4.0), float64(0.03125)
-		if node.ActivationSum < -4.0 {
+		if input < -4.0 {
 			return 0.0
-		} else if node.ActivationSum < 0.0 {
-			return (node.ActivationSum + four) * (node.ActivationSum + four) * one_32nd
-		} else if node.ActivationSum < 4.0 {
-			return 1.0 - (node.ActivationSum - four) * (node.ActivationSum - four) * one_32nd
+		} else if input < 0.0 {
+			return (input + four) * (input + four) * one_32nd
+		} else if input < 4.0 {
+			return 1.0 - (input - four) * (input - four) * one_32nd
 		} else {
 			return 1.0
 		}
 	}
 	// The steepened aproximation sigmoid with squashing range [-1.0; 1.0]
-	approximationSteepenedSigmoid = func(node *NNode) float64 {
+	approximationSteepenedSigmoid = func(input float64, aux_params[]float64) float64 {
 		one, one_half := 1.0, 0.5
-		if node.ActivationSum < -1.0 {
+		if input < -1.0 {
 			return 0.0
-		} else if node.ActivationSum < 0.0 {
-			return (node.ActivationSum + one) * (node.ActivationSum + one) * one_half
-		} else if node.ActivationSum < 1.0 {
-			return 1.0 - (node.ActivationSum - one) * (node.ActivationSum - one) * one_half
+		} else if input < 0.0 {
+			return (input + one) * (input + one) * one_half
+		} else if input < 1.0 {
+			return 1.0 - (input - one) * (input - one) * one_half
 		} else {
 			return 1.0;
 		}
 	}
 	// The inverse absolute sigmoid
-	inverseAbsoluteSigmoid = func(node *NNode) float64 {
-		return 0.5 + (node.ActivationSum / (1.0 + math.Abs(node.ActivationSum))) * 0.5
+	inverseAbsoluteSigmoid = func(input float64, aux_params[]float64) float64 {
+		return 0.5 + (input / (1.0 + math.Abs(input))) * 0.5
 	}
 
 	// The left/right shifted sigmoids
-	leftShiftedSigmoid = func(node *NNode) float64 {
-		return 1.0 / (1.0 + math.Exp(-node.ActivationSum - 2.4621365))
+	leftShiftedSigmoid = func(input float64, aux_params[]float64) float64 {
+		return 1.0 / (1.0 + math.Exp(-input - 2.4621365))
 	}
-	leftShiftedSteepenedSigmoid = func(node *NNode) float64 {
-		return 1.0 / (1.0 + math.Exp(-(4.924273 * node.ActivationSum + 2.4621365)))
+	leftShiftedSteepenedSigmoid = func(input float64, aux_params[]float64) float64 {
+		return 1.0 / (1.0 + math.Exp(-(4.924273 * input + 2.4621365)))
 	}
-	rightShiftedSteepenedSigmoid = func(node *NNode) float64 {
-		return 1.0 / (1.0 + math.Exp(-(4.924273 * node.ActivationSum - 2.4621365)))
+	rightShiftedSteepenedSigmoid = func(input float64, aux_params[]float64) float64 {
+		return 1.0 / (1.0 + math.Exp(-(4.924273 * input - 2.4621365)))
 	}
 )
 
 // The other activation functions
 var (
 	// The hyperbolic tangent
-	hyperbolicTangent = func(node *NNode) float64 {
-		return math.Tanh(0.9 * node.ActivationSum)
+	hyperbolicTangent = func(input float64, aux_params[]float64) float64 {
+		return math.Tanh(0.9 * input)
 	}
-	// The symmetric Gaussian activator
-	symmetricGaussian = func(node *NNode) float64 {
-		return 2.0 * math.Exp(-math.Pow(node.ActivationSum * 2.5, 2.0)) - 1.0
+	// The bipolar Gaussian activator xrange->[-1,1] yrange->[-1,1]
+	bipolarGaussian = func(input float64, aux_params[]float64) float64 {
+		return 2.0 * math.Exp(-math.Pow(input * 2.5, 2.0)) - 1.0
 	}
 	// The absolute linear
-	absoluteLinear = func(node *NNode) float64 {
-		return math.Abs(node.ActivationSum)
+	absoluteLinear = func(input float64, aux_params[]float64) float64 {
+		return math.Abs(input)
+	}
+	// Linear activation function with clipping. By 'clipping' we mean the output value is linear between
+	/// x = -1 and x = 1. Below -1 and above +1 the output is clipped at -1 and +1 respectively
+	clippedLinear = func(input float64, aux_params[]float64) float64 {
+		if (input < -1.0) {
+			return -1.0
+		}
+		if (input > 1.0) {
+			return 1.0
+		}
+		return input
 	}
 	// The null activator
-	nullFunctor = func(node *NNode) float64 {
+	nullFunctor = func(input float64, aux_params[]float64) float64 {
 		return 0.0
 	}
 	// The sign activator
-	signFunctor = func(node *NNode) float64 {
-		if math.IsNaN(node.ActivationSum) || node.ActivationSum == 0.0 {
+	signFunctor = func(input float64, aux_params[]float64) float64 {
+		if math.IsNaN(input) || input == 0.0 {
 			return 0.0
-		} else if math.Signbit(node.ActivationSum) {
+		} else if math.Signbit(input) {
 			return -1.0
 		} else {
 			return 1.0
 		}
 	}
 	// The sine periodic activation with doubled period
-	sineFunctor = func(node *NNode) float64 {
-		return math.Sin(2.0 * node.ActivationSum)
+	sineFunctor = func(input float64, aux_params[]float64) float64 {
+		return math.Sin(2.0 * input)
 	}
 	// The step function x<0 ? 0.0 : 1.0
-	stepFunction = func(node *NNode) float64 {
-		if math.Signbit(node.ActivationSum) {
+	stepFunction = func(input float64, aux_params[]float64) float64 {
+		if math.Signbit(input) {
 			return 0.0
 		} else {
 			return 1.0
