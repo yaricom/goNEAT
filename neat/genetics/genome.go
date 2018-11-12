@@ -1788,12 +1788,25 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 /* ******** COMPATIBILITY CHECKING METHODS * ********/
 
-// This function gives a measure of compatibility between two Genomes by computing a linear combination of 3
-// characterizing variables of their compatibility. The 3 variables represent PERCENT DISJOINT GENES,
+// This function gives a measure of compatibility between two Genomes by computing a linear combination of three
+// characterizing variables of their compatibility. The three variables represent PERCENT DISJOINT GENES,
 // PERCENT EXCESS GENES, MUTATIONAL DIFFERENCE WITHIN MATCHING GENES. So the formula for compatibility
 // is:  disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
-// The 3 coefficients are global system parameters */
+// The three coefficients are global system parameters.
+// The bigger returned value the less compatible the genomes. Fully compatible genomes has 0.0 returned.
 func (g *Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
+	if context.GenCompatMethod == 0 {
+		return g.compatLinear(og, context)
+	} else {
+		return g.compatFast(og, context)
+	}
+}
+
+// The compatibility checking method with linear performance depending on the size of the lognest genome in comparison.
+// When genomes are small this method is compatible in performance with Genome#compatFast method.
+// The compatibility formula remains the same: disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
+// where: pdg - PERCENT DISJOINT GENES, peg - PERCENT EXCESS GENES, and mdmg - MUTATIONAL DIFFERENCE WITHIN MATCHING GENES
+func (g *Genome) compatLinear(og *Genome, context *neat.NeatContext) float64 {
 	num_disjoint, num_excess, mut_diff_total, num_matching := 0.0, 0.0, 0.0, 0.0
 	size1, size2 := len(g.Genes), len(og.Genes)
 	max_genome_size := size2
@@ -1842,5 +1855,114 @@ func (g *Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
 }
 
 
+// The faster version of genome compatibility checking. The compatibility check will start from the end of genome where
+// the most of disparities are located - the novel genes with greater innovation ID are always attached at the end (see geneInsert).
+// This has the result of complicating the routine because we must now invoke additional logic to determine which genes
+// are excess and when the first disjoint gene is found. This is done with an extra integer:
+// * excessGenesSwitch=0 // indicates to the loop that it is handling the first gene.
+// * excessGenesSwitch=1 // Indicates that the first gene was excess and on genome 1.
+// * excessGenesSwitch=2 // Indicates that the first gene was excess and on genome 2.
+// * excessGenesSwitch=3 // Indicates that there are no more excess genes.
+//
+// The compatibility formula remains the same: disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
+// where: pdg - PERCENT DISJOINT GENES, peg - PERCENT EXCESS GENES, and mdmg - MUTATIONAL DIFFERENCE WITHIN MATCHING GENES
+func (g *Genome) compatFast(og *Genome, context *neat.NeatContext) float64 {
+	list1_count, list2_count := len(g.Genes), len(og.Genes)
+	// First test edge cases
+	if list1_count == 0 && list2_count == 0 {
+		// Both lists are empty! No disparities, therefore the genomes are compatible!
+		return 0.0
+	}
+	if list1_count == 0 {
+		// All list2 genes are excess.
+		return float64(list2_count) * context.ExcessCoeff
+	}
 
+	if list2_count == 0 {
+		// All list1 genes are excess.
+		return float64(list1_count) * context.ExcessCoeff
+	}
+
+	excess_genes_switch, num_matching := 0, 0
+	compatibility, mut_diff := 0.0, 0.0
+	list1_idx, list2_idx := list1_count - 1, list2_count - 1
+	gene1, gene2 := g.Genes[list1_idx], og.Genes[list2_idx]
+
+	for {
+		if gene2.InnovationNum > gene1.InnovationNum {
+			// Most common test case(s) at top for efficiency.
+			if excess_genes_switch == 3 {
+				// No more excess genes. Therefore this mismatch is disjoint.
+				compatibility += context.DisjointCoeff
+			} else if excess_genes_switch == 2 {
+				// Another excess gene on genome 2.
+				compatibility += context.ExcessCoeff
+			} else if excess_genes_switch == 1 {
+				// We have found the first non-excess gene.
+				excess_genes_switch = 3
+				compatibility += context.DisjointCoeff
+			} else {
+				// First gene is excess, and is on genome 2.
+				excess_genes_switch = 2
+				compatibility += context.ExcessCoeff
+			}
+
+			// Move to the next gene in list2.
+			list2_idx--
+		} else if gene1.InnovationNum == gene2.InnovationNum {
+			// No more excess genes. It's quicker to set this every time than to test if is not yet 3.
+			excess_genes_switch = 3
+
+			// Matching genes. Increase compatibility by MutationNum difference * coeff.
+			mut_diff += math.Abs(gene1.MutationNum - gene2.MutationNum)
+			num_matching++
+
+			// Move to the next gene in both lists.
+			list1_idx--
+			list2_idx--
+		} else {
+			// Most common test case(s) at top for efficiency.
+			if excess_genes_switch == 3 {
+				// No more excess genes. Therefore this mismatch is disjoint.
+				compatibility += context.DisjointCoeff
+			} else if (excess_genes_switch == 1) {
+				// Another excess gene on genome 1.
+				compatibility += context.ExcessCoeff
+			} else if excess_genes_switch == 2 {
+				// We have found the first non-excess gene.
+				excess_genes_switch = 3
+				compatibility += context.DisjointCoeff
+			} else {
+				// First gene is excess, and is on genome 1.
+				excess_genes_switch = 1
+				compatibility += context.ExcessCoeff
+			}
+
+			// Move to the next gene in list1.
+			list1_idx--
+		}
+
+		// Check if we have reached the end of one (or both) of the lists. If we have reached the end of both then
+		// we execute the first 'if' block - but it doesn't matter since the loop is not entered if both lists have
+		// been exhausted.
+		if list1_idx < 0 {
+			// All remaining list2 genes are disjoint.
+			compatibility += float64(list2_idx + 1) * context.DisjointCoeff
+			break
+
+		}
+
+		if list2_idx < 0 {
+			// All remaining list1 genes are disjoint.
+			compatibility += float64(list1_idx + 1) * context.DisjointCoeff
+			break
+		}
+
+		gene1, gene2 = g.Genes[list1_idx], og.Genes[list2_idx]
+	}
+	if num_matching > 0 {
+		compatibility += mut_diff * context.MutdiffCoeff / float64(num_matching)
+	}
+	return compatibility
+}
 
