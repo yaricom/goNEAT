@@ -132,4 +132,7 @@ func checkNeatContext(nc *NeatContext, t *testing.T) {
 	if nc.EpochExecutorType != 0 {
 		t.Error("EpochExecutorType", nc.EpochExecutorType)
 	}
+	if nc.GenCompatMethod != 1 {
+		t.Error("GenCompatMethod", nc.GenCompatMethod)
+	}
 }
