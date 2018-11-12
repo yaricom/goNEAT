@@ -80,8 +80,11 @@ neat:
   # The number of epochs (generations) to execute training
   num_generations: 100
 
-  # The The epoch's executor type to apply
+  # The epoch's executor type to apply [sequential, parallel]
   epoch_executor: sequential
+
+  # The genome compatibility method to use [linear, fast]. The later is best for bigger genomes
+  genome_compat_method: fast
 
   # The log level
   log_level: Info

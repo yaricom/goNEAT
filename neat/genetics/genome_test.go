@@ -336,7 +336,7 @@ func TestGene_Verify(t *testing.T) {
 
 }
 
-func TestGenome_Compatibility(t *testing.T) {
+func TestGenome_Compatibility_Linear(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome2 := buildTestGenome(2)
@@ -346,6 +346,48 @@ func TestGenome_Compatibility(t *testing.T) {
 		DisjointCoeff:0.5,
 		ExcessCoeff:0.5,
 		MutdiffCoeff:0.5,
+		GenCompatMethod:0,
+	}
+
+	// Test fully compatible
+	comp := gnome1.compatibility(gnome2, &conf)
+	if comp != 0 {
+		t.Error("comp != 0 ", comp)
+	}
+
+	// Test incompatible
+	gnome2.Genes = append(gnome2.Genes, NewGene(1.0, network.NewNNode(1, network.InputNeuron),
+		network.NewNNode(1, network.OutputNeuron), false, 10, 1.0))
+	comp = gnome1.compatibility(gnome2, &conf)
+	if comp != 0.5 {
+		t.Error("comp != 0.5", comp)
+	}
+
+	gnome2.Genes = append(gnome2.Genes, NewGene(2.0, network.NewNNode(1, network.InputNeuron),
+		network.NewNNode(1, network.OutputNeuron), false, 5, 1.0))
+	comp = gnome1.compatibility(gnome2, &conf)
+	if comp != 1 {
+		t.Error("comp != 1", comp)
+	}
+
+	gnome2.Genes[1].MutationNum = 6.0
+	comp = gnome1.compatibility(gnome2, &conf)
+	if comp != 2 {
+		t.Error("comp != 2", comp)
+	}
+}
+
+func TestGenome_Compatibility_Fast(t *testing.T) {
+	rand.Seed(42)
+	gnome1 := buildTestGenome(1)
+	gnome2 := buildTestGenome(2)
+
+	// Configuration
+	conf := neat.NeatContext{
+		DisjointCoeff:0.5,
+		ExcessCoeff:0.5,
+		MutdiffCoeff:0.5,
+		GenCompatMethod:1,
 	}
 
 	// Test fully compatible

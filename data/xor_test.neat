@@ -32,3 +32,4 @@ num_runs  100
 num_generations 100
 log_level 1
 epoch_executor 0
+genome_compat_method 1

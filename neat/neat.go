@@ -137,6 +137,8 @@ type NeatContext struct {
 	NumGenerations         int
 				       // The epoch's executor type to apply
 	EpochExecutorType      int
+				       // The genome compatibility testing method to use (0 - linear, 1 - fast (make sense for large genomes))
+	GenCompatMethod        int
 }
 
 // Loads context configuration from provided reader as YAML
@@ -193,6 +195,16 @@ func (c *NeatContext) LoadContext(r io.Reader) error {
 		c.EpochExecutorType = 1 //genetics.ParallelExecutorType
 	} else {
 		return errors.New(fmt.Sprintf("Unsupported epoch executor type: %s", ep_exec))
+	}
+
+	// read genome compatibility method [linear, fast]
+	gen_compat := v.GetString("genome_compat_method")
+	if gen_compat == "" || gen_compat == "linear" {
+		c.GenCompatMethod = 0
+	} else if gen_compat == "fast" {
+		c.GenCompatMethod = 1
+	} else {
+		return errors.New(fmt.Sprintf("Unsupported genome compatibility method: %s", gen_compat))
 	}
 
 	// read log level [Debug, Info, Warning, Error]
@@ -291,6 +303,8 @@ func LoadContext(r io.Reader) *NeatContext {
 			c.NumGenerations = int(param)
 		case "epoch_executor":
 			c.EpochExecutorType = int(param)
+		case "genome_compat_method":
+			c.GenCompatMethod = int(param)
 		case "log_level":
 			LogLevel = LoggerLevel(param)
 		default:
