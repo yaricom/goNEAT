@@ -117,6 +117,16 @@ func (n *NNode) deriveTrait(t *neat.Trait) {
 	}
 }
 
+// Set new activation value to this node
+func (n *NNode) setActivation(input float64) {
+	// Keep a memory of activations for potential time delayed connections
+	n.saveActivations()
+	// Set new activation value
+	n.Activation = input
+	// Increment the activation_count
+	n.ActivationsCount++
+}
+
 // Saves current node's activations for potential time delayed connections
 func (n *NNode) saveActivations() {
 	n.lastActivation2 = n.lastActivation
@@ -245,7 +255,7 @@ func (n *NNode) NodeType() NodeType {
 }
 
 func (n *NNode) String() string {
-	return fmt.Sprintf("(%s %3d, layer: %s, activation: %s -> step: %d = %.3f %.3f)",
+	return fmt.Sprintf("(%s id:%03d, %s, %s -> step: %d = %.3f %.3f)",
 		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), NodeActivators.ActivationNameFromType(n.ActivationType),
 		n.ActivationsCount, n.Activation, n.Params)
 }
