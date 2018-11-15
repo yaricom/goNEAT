@@ -318,10 +318,10 @@ func (g *Genome) IsEqual(og *Genome) (bool, error) {
 	return true, nil
 }
 
-// Return id of final NNode in Genome + 1
+// Return id of final NNode in Genome
 func (g *Genome) getLastNodeId() (int, error) {
 	if len(g.Nodes) > 0 {
-		return g.Nodes[len(g.Nodes) - 1].Id + 1, nil
+		return g.Nodes[len(g.Nodes) - 1].Id, nil
 	} else {
 		return -1, errors.New("Genome has no nodes")
 	}
@@ -338,8 +338,8 @@ func (g *Genome) getLastGeneInnovNum() (int64, error) {
 
 // Returns true if this Genome already includes provided node
 func (g *Genome) hasNode(node *network.NNode) bool {
-	if id, _ := g.getLastNodeId(); node.Id >= id {
-		return false
+	if id, _ := g.getLastNodeId(); node.Id > id {
+		return false // not found
 	}
 	for _, n := range g.Nodes {
 		if n.Id == node.Id {
@@ -681,18 +681,18 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 				trait_num := rand.Intn(len(g.Traits))
 				// Choose the new weight
 				new_weight := float64(neat.RandPosNeg()) * rand.Float64() * 10.0
-				// read curr innovation with post increment
-				curr_innov := pop.getInnovationNumberAndIncrement()
+				// read next innovation id
+				next_innov_id := pop.getNextInnovationNumberAndIncrement()
 
 
 				// Create the new gene
 				new_gene = NewGeneWithTrait(g.Traits[trait_num], new_weight, sensor, output,
-					false, curr_innov, new_weight)
+					false, next_innov_id, new_weight)
 
 				// Add the innovation for created link
-				new_innov := NewInnovationForLink(sensor.Id, output.Id, curr_innov,
+				new_innov := NewInnovationForLink(sensor.Id, output.Id, next_innov_id,
 					new_weight, trait_num)
-				pop.Innovations = append(pop.Innovations, new_innov)
+				pop.addInnovationSynced(new_innov)
 			} else if g.hasGene(new_gene) {
 				// The gene for already occurred innovation already in this genome.
 				// This may happen as result of parent genome mutation in current epoch which is
@@ -846,17 +846,17 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			trait_num := rand.Intn(len(g.Traits))
 			// Choose the new weight
 			new_weight := float64(neat.RandPosNeg()) * rand.Float64() * 10.0
-			// read curr innovation with post increment
-			curr_innov := pop.getInnovationNumberAndIncrement()
+			// read next innovation id
+			next_innov_id := pop.getNextInnovationNumberAndIncrement()
 
 			// Create the new gene
 			new_gene = NewGeneWithTrait(g.Traits[trait_num], new_weight, node_1, node_2,
-				do_recur, curr_innov, new_weight)
+				do_recur, next_innov_id, new_weight)
 
 			// Add the innovation
-			new_innov := NewInnovationForRecurrentLink(node_1.Id, node_2.Id, curr_innov,
+			new_innov := NewInnovationForRecurrentLink(node_1.Id, node_2.Id, next_innov_id,
 				new_weight, trait_num, do_recur)
-			pop.Innovations = append(pop.Innovations, new_innov)
+			pop.addInnovationSynced(new_innov)
 		} else if g.hasGene(new_gene) {
 			// The gene for already occurred innovation already in this genome.
 			// This may happen as result of parent genome mutation in current epoch which is
@@ -973,26 +973,26 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 	// The innovation is totally novel
 	if !innovation_found {
 		// Get the current node id with post increment
-		curr_node_id := pop.getCurrentNodeIdAndIncrement()
+		new_node_id := int(pop.getNextNodeIdAndIncrement())
 
 		// Create the new NNode
-		new_node = network.NewNNode(curr_node_id, network.HiddenNeuron)
+		new_node = network.NewNNode(new_node_id, network.HiddenNeuron)
 		// By convention, it will point to the first trait
 		new_node.Trait = g.Traits[0]
 
-		// get the current gene 1 innovation with post increment
-		gene_innov_1 := pop.getInnovationNumberAndIncrement()
+		// get the next innovation id for gene 1
+		gene_innov_1 := pop.getNextInnovationNumberAndIncrement()
 		// create gene with the current gene innovation
 		new_gene_1 = NewGeneWithTrait(trait, 1.0, in_node, new_node, link.IsRecurrent, gene_innov_1, 0);
 
-		// get the current gene 2 innovation with post increment
-		gene_innov_2 := pop.getInnovationNumberAndIncrement()
+		// get the next innovation id for gene 2
+		gene_innov_2 := pop.getNextInnovationNumberAndIncrement()
 		// create the second gene with this innovation incremented
 		new_gene_2 = NewGeneWithTrait(trait, old_weight, new_node, out_node, false, gene_innov_2, 0);
 
 		// Store innovation
 		innov := NewInnovationForNode(in_node.Id, out_node.Id, gene_innov_1, gene_innov_2, new_node.Id, gene.InnovationNum)
-		pop.Innovations = append(pop.Innovations, innov)
+		pop.addInnovationSynced(innov)
 	} else if g.hasNode(new_node) {
 		// The same add node innovation occurred in the same genome (parent) - just skip.
 		// This may happen when parent of this organism experienced the same mutation in current epoch earlier

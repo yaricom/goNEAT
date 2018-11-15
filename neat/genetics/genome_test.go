@@ -448,7 +448,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	}
 	// The population (DUMMY)
 	pop := newPopulation()
-	pop.currInnovNum = int64(4)
+	pop.nextInnovNum = int64(4)
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
@@ -460,8 +460,8 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	if err != nil {
 		t.Error("err != nil", err)
 	}
-	if pop.currInnovNum != 5 {
-		t.Error("pop.currInnovNum != 5", pop.currInnovNum)
+	if pop.nextInnovNum != 5 {
+		t.Error("pop.currInnovNum != 5", pop.nextInnovNum)
 	}
 	if len(pop.Innovations) != 1 {
 		t.Error("len(pop.Innovations) != 1", len(pop.Innovations))
@@ -492,8 +492,8 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	if err != nil {
 		t.Error("err != nil", err)
 	}
-	if pop.currInnovNum != 6 {
-		t.Error("pop.currInnovNum != 6", pop.currInnovNum)
+	if pop.nextInnovNum != 6 {
+		t.Error("pop.currInnovNum != 6", pop.nextInnovNum)
 	}
 	if len(pop.Innovations) != 2 {
 		t.Error("len(pop.Innovations) != 2", len(pop.Innovations))
@@ -563,8 +563,8 @@ func TestGenome_mutateAddNode(t *testing.T) {
 	if !res || err != nil {
 		t.Error("Failed to add new node")
 	}
-	if pop.currInnovNum != 2 {
-		t.Error("pop.currInnovNum != 2", pop.currInnovNum)
+	if pop.nextInnovNum != 2 {
+		t.Error("pop.currInnovNum != 2", pop.nextInnovNum)
 	}
 	if len(pop.Innovations) != 1 {
 		t.Error("len(pop.Innovations) != 1", len(pop.Innovations))
