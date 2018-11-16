@@ -9,7 +9,7 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 )
 
-func TestReadGene_Plain(t *testing.T) {
+func TestPlainGenomeReader_Read(t *testing.T) {
 	r, err := NewGenomeReader(strings.NewReader(gnome_str), PlainGenomeEncoding)
 	gnome, err := r.Read()
 	if err != nil {
@@ -188,7 +188,7 @@ func TestReadGene_ReadPlainGene(t *testing.T)  {
 }
 
 
-func TestReadGene_ReadPlainGenomeFile(t *testing.T) {
+func TestPlainGenomeReader_ReadFile(t *testing.T) {
 	genomePath := "../../data/xorstartgenes"
 	genomeFile, err := os.Open(genomePath)
 	if err != nil {
@@ -252,5 +252,24 @@ func TestReadGene_ReadPlainGenomeFile(t *testing.T) {
 		if tr.Params[0] != float64(i + 1) / 10.0 {
 			t.Error("Wrong Trait params read", tr.Params[0])
 		}
+	}
+}
+
+func TestYAMLGenomeReader_Read(t *testing.T) {
+	genomePath := "../../data/test_seed_genome.yml"
+	genomeFile, err := os.Open(genomePath)
+	if err != nil {
+		t.Error("Failed to open genome file")
+		return
+	}
+	r, err := NewGenomeReader(genomeFile, YAMLGenomeEncoding)
+	genome, err := r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if genome == nil {
+		t.Error("genome == nil")
+		return
 	}
 }
