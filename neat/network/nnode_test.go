@@ -3,35 +3,10 @@ package network
 import (
 	"testing"
 	"fmt"
-	"strings"
 	"bytes"
 	"github.com/yaricom/goNEAT/neat"
 )
 
-// Tests how NNode read working
-func TestReadNNode(t *testing.T) {
-	node_id, trait_id, ntype, gen_node_label := 1, 10, SensorNode, InputNeuron
-	node_str := fmt.Sprintf("%d %d %d %d", node_id, trait_id, ntype, gen_node_label)
-
-	trait := neat.NewTrait()
-	trait.Id = 10
-	traits := []*neat.Trait{trait}
-
-	node := ReadNNode(strings.NewReader(node_str), traits)
-
-	if node.Id != node_id {
-		t.Errorf("Found node ID is not what expected, %d != %d", node_id, node.Id)
-	}
-	if node.Trait != trait {
-		t.Error("The wrong Trait found in the node")
-	}
-	if node.NodeType() != ntype {
-		t.Errorf("Wrong node type found, %d != %d", ntype, node.NodeType())
-	}
-	if node.NeuronType != gen_node_label {
-		t.Errorf("The wrong node placement label found, %d != %d", gen_node_label, node.NeuronType)
-	}
-}
 
 // Tests NNode serialization
 func TestWriteNNode(t *testing.T) {
@@ -62,7 +37,7 @@ func TestNNode_SensorLoad(t *testing.T) {
 		t.Error("Failed to SensorLoad")
 	}
 	if node.ActivationsCount != 1 {
-		t.Error("ActivationsCount", 1, node.ActivationsCount )
+		t.Error("ActivationsCount", 1, node.ActivationsCount)
 	}
 	if node.Activation != load {
 		t.Error("Activation", load, node.Activation)
@@ -77,7 +52,7 @@ func TestNNode_SensorLoad(t *testing.T) {
 		t.Error("Failed to SensorLoad")
 	}
 	if node.ActivationsCount != 2 {
-		t.Error("ActivationsCount", 2, node.ActivationsCount )
+		t.Error("ActivationsCount", 2, node.ActivationsCount)
 	}
 	if node.Activation != load_2 {
 		t.Error("Activation", load_2, node.Activation)
@@ -191,7 +166,7 @@ func TestNNode_Flushback(t *testing.T) {
 
 	// check that node state has been updated
 	if node.ActivationsCount != 2 {
-		t.Error("ActivationsCount", 2, node.ActivationsCount )
+		t.Error("ActivationsCount", 2, node.ActivationsCount)
 	}
 	if node.Activation != 14.0 {
 		t.Error("Activation", load_2, node.Activation)
@@ -209,7 +184,7 @@ func TestNNode_Flushback(t *testing.T) {
 	node.Flushback()
 
 	if node.ActivationsCount != 0 {
-		t.Error("ActivationsCount", 0, node.ActivationsCount )
+		t.Error("ActivationsCount", 0, node.ActivationsCount)
 	}
 	if node.Activation != 0 {
 		t.Error("Activation", 0, node.Activation)

@@ -76,27 +76,6 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 	return node
 }
 
-// Read a NNode from specified Reader and applies corresponding trait to it from a list of traits provided
-func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
-	n := NewNetworkNode()
-	var trait_id, node_type int
-	fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &node_type, &n.NeuronType)
-	if trait_id != 0 && traits != nil {
-		// find corresponding node trait from list
-		for _, t := range traits {
-			if trait_id == t.Id {
-				n.Trait = t
-				n.DeriveTrait(t)
-				break
-			}
-		}
-	} else {
-		// just create empty params
-		n.DeriveTrait(nil)
-	}
-	return n
-}
-
 // The default constructor
 func NewNetworkNode() *NNode {
 	return &NNode{
