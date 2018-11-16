@@ -469,8 +469,8 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	if len(gnome1.Genes) != 4 {
 		t.Error("No new gene was added")
 	}
-	if gnome1.Genes[3].InnovationNum != 4 {
-		t.Error("gnome1.Genes[3].InnovationNum != 4", gnome1.Genes[3].InnovationNum)
+	if gnome1.Genes[3].InnovationNum != 5 {
+		t.Error("gnome1.Genes[3].InnovationNum != 5", gnome1.Genes[3].InnovationNum)
 	}
 	if !gnome1.Genes[3].Link.IsRecurrent {
 		t.Error("New gene must be recurrent, because only one NEURON node exists")
@@ -575,8 +575,8 @@ func TestGenome_mutateAddNode(t *testing.T) {
 	if len(gnome1.Nodes) != 5 {
 		t.Error("No new node was added to genome")
 	}
-	if gnome1.Nodes[0].Id != 0 {
-		t.Error("New node inserted at wrong position")
+	if gnome1.Nodes[0].Id != 1 {
+		t.Error("New node has wrong ID:", gnome1.Nodes[0].Id)
 	}
 }
 
