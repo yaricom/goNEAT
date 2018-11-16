@@ -31,10 +31,10 @@ func buildTestGenome(id int) *Genome {
 	}
 
 	nodes := []*network.NNode{
-		{Id:1, NeuronType: network.InputNeuron},
-		{Id:2, NeuronType: network.InputNeuron},
-		{Id:3, NeuronType: network.BiasNeuron},
-		{Id:4, NeuronType: network.OutputNeuron},
+		{Id:1, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:2, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:3, NeuronType: network.BiasNeuron, ActivationType: network.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:4, NeuronType: network.OutputNeuron, ActivationType: network.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 	}
 
 	genes := []*Gene{
