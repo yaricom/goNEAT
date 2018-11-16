@@ -14,24 +14,24 @@ import (
 // Use an activation count to avoid flushing
 type NNode struct {
 	// The ID of the node
-	Id               int
+	Id                int
 
 	// The type of node activation function (SIGMOID, ...)
-	ActivationType   NodeActivationType
+	ActivationType    NodeActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
-	NeuronType       NodeNeuronType
+	NeuronType        NodeNeuronType
 
 	// The node's activation value
-	Activation       float64
+	Activation        float64
 	// The number of activations for current node
-	ActivationsCount int32
+	ActivationsCount  int32
 	// The activation sum
-	ActivationSum    float64
+	ActivationSum     float64
 
 	// The list of all incoming connections
-	Incoming         []*Link
+	Incoming          []*Link
 	// The list of all outgoing connections
-	Outgoing         []*Link
+	Outgoing          []*Link
 	// The trait linked to the node
 	Trait             *neat.Trait
 
@@ -51,7 +51,7 @@ type NNode struct {
 	lastActivation2   float64
 
 	// If true the node is active - used during node activation
-	isActive         bool
+	isActive          bool
 }
 
 // Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
@@ -220,8 +220,9 @@ func (n *NNode) NodeType() NodeType {
 }
 
 func (n *NNode) String() string {
+	activation, _ := NodeActivators.ActivationNameFromType(n.ActivationType)
 	return fmt.Sprintf("(%s id:%03d, %s, %s -> step: %d = %.3f %.3f)",
-		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), NodeActivators.ActivationNameFromType(n.ActivationType),
+		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), activation,
 		n.ActivationsCount, n.Activation, n.Params)
 }
 
@@ -232,7 +233,8 @@ func (n *NNode) Print() string {
 	fmt.Fprintf(b, "\tId: %d\n", n.Id)
 	fmt.Fprintf(b, "\tIsActive: %t\n", n.isActive)
 	fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
-	fmt.Fprintf(b, "\tActivation Type: %s\n", NodeActivators.ActivationNameFromType(n.ActivationType))
+	activation, _ := NodeActivators.ActivationNameFromType(n.ActivationType)
+	fmt.Fprintf(b, "\tActivation Type: %s\n", activation)
 	fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
 	fmt.Fprintf(b, "\tActivationsCount: %d\n", n.ActivationsCount)
 	fmt.Fprintf(b, "\tActivationSum: %f\n", n.ActivationSum)

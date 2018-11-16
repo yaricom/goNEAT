@@ -61,6 +61,22 @@ func NeuronTypeName(nlayer NodeNeuronType) string {
 	}
 }
 
+// Returns neuron node type from its name
+func NeuronTypeByName(name string) (NodeNeuronType, error) {
+	switch name {
+	case "HIDN":
+		return HiddenNeuron, nil
+	case "INPT":
+		return InputNeuron, nil
+	case "OUTP":
+		return OutputNeuron, nil
+	case "BIAS":
+		return BiasNeuron, nil
+	default:
+		return math.MaxInt8, errors.New("Unknown neuron type name: " + name)
+	}
+}
+
 // NodeActivationType defines the type of activation function to use for the neuron node
 type NodeActivationType byte
 
@@ -227,20 +243,20 @@ func (a *NodeActivatorsFactory) RegisterModule(a_type NodeActivationType, a_func
 }
 
 // Parse node activation type name and return corresponding activation type
-func (a *NodeActivatorsFactory) ActivationTypeFromName(name string) NodeActivationType {
+func (a *NodeActivatorsFactory) ActivationTypeFromName(name string) (NodeActivationType, error) {
 	if t, ok := a.inverse[name]; ok {
-		return t
+		return t, nil
 	} else {
-		panic("Unsupported activation type name: " + name)
+		return math.MaxInt8, errors.New("Unsupported activation type name: " + name)
 	}
 }
 
 // Returns activation function name from given type
-func (a *NodeActivatorsFactory) ActivationNameFromType(atype NodeActivationType) string {
+func (a *NodeActivatorsFactory) ActivationNameFromType(atype NodeActivationType) (string, error) {
 	if n, ok := a.forward[atype]; ok {
-		return n
+		return n, nil
 	} else {
-		panic(fmt.Sprintf("Unsupported activation type: %d", atype))
+		return "", errors.New(fmt.Sprintf("Unsupported activation type: %d", atype))
 	}
 }
 
