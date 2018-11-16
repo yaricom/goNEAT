@@ -44,39 +44,6 @@ func NewGeneCopy(g *Gene, trait *neat.Trait, in_node, out_node *network.NNode) *
 		g.InnovationNum, g.MutationNum, true)
 }
 
-// Reads Gene from reader
-func ReadGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) *Gene  {
-	var traitId, inNodeId, outNodeId int
-	var inov_num int64
-	var weight, mut_num float64
-	var recurrent, enabled bool
-	fmt.Fscanf(r, "%d %d %d %g %t %d %g %t ",
-		&traitId, &inNodeId, &outNodeId, &weight, &recurrent, &inov_num, &mut_num, &enabled)
-
-	var trait *neat.Trait = nil
-	if traitId != 0 && traits != nil {
-		for _, tr := range traits {
-			if tr.Id == traitId {
-				trait = tr
-			}
-		}
-	}
-	var inNode, outNode *network.NNode
-	for _, np := range nodes {
-		if np.Id == inNodeId {
-			inNode = np
-		}
-		if np.Id == outNodeId {
-			outNode = np
-		}
-	}
-	if trait != nil {
-		return newGene(network.NewLinkWithTrait(trait, weight, inNode, outNode, recurrent), inov_num, mut_num, enabled)
-	} else {
-		return newGene(network.NewLink(weight, inNode, outNode, recurrent), inov_num, mut_num, enabled)
-	}
-}
-
 func newGene(link *network.Link, inov_num int64, mut_num float64, enabled bool) *Gene {
 	return &Gene{
 		Link:link,
