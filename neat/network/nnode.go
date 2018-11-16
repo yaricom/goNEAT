@@ -14,31 +14,24 @@ import (
 // Use an activation count to avoid flushing
 type NNode struct {
 	// The ID of the node
-	Id                int
-
-	// If true the node is active
-	IsActive          bool
+	Id               int
 
 	// The type of node activation function (SIGMOID, ...)
-	ActivationType    NodeActivationType
+	ActivationType   NodeActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
-	NeuronType        NodeNeuronType
+	NeuronType       NodeNeuronType
 
-	// The activation for current step
-	ActiveOut         float64
-	// The activation from PREVIOUS (time-delayed) time step, if there is one
-	ActiveOutTd       float64
 	// The node's activation value
-	Activation        float64
+	Activation       float64
 	// The number of activations for current node
-	ActivationsCount  int32
+	ActivationsCount int32
 	// The activation sum
-	ActivationSum     float64
+	ActivationSum    float64
 
 	// The list of all incoming connections
-	Incoming          []*Link
+	Incoming         []*Link
 	// The list of all outgoing connections
-	Outgoing          []*Link
+	Outgoing         []*Link
 	// The trait linked to the node
 	Trait             *neat.Trait
 
@@ -56,6 +49,9 @@ type NNode struct {
 	// This is necessary for a special recurrent case when the innode of a recurrent link is one time step ahead of the outnode.
 	// The innode then needs to send from TWO time steps ago
 	lastActivation2   float64
+
+	// If true the node is active - used during node activation
+	isActive         bool
 }
 
 // Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
@@ -234,12 +230,10 @@ func (n *NNode) Print() string {
 	str := "NNode fields\n"
 	b := bytes.NewBufferString(str)
 	fmt.Fprintf(b, "\tId: %d\n", n.Id)
-	fmt.Fprintf(b, "\tIsActive: %t\n", n.IsActive)
+	fmt.Fprintf(b, "\tIsActive: %t\n", n.isActive)
 	fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
 	fmt.Fprintf(b, "\tActivation Type: %s\n", NodeActivators.ActivationNameFromType(n.ActivationType))
 	fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
-	fmt.Fprintf(b, "\tActiveOut: %f\n", n.ActiveOut)
-	fmt.Fprintf(b, "\tActiveOutTd: %f\n", n.ActiveOutTd)
 	fmt.Fprintf(b, "\tActivationsCount: %d\n", n.ActivationsCount)
 	fmt.Fprintf(b, "\tActivationSum: %f\n", n.ActivationSum)
 	fmt.Fprintf(b, "\tIncoming: %s\n", n.Incoming)

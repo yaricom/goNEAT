@@ -108,7 +108,7 @@ func (n *Network) Activate() (bool, error) {
 		for _, np := range n.all_nodes {
 			if np.IsNeuron() {
 				np.ActivationSum = 0.0 // reset activation value
-				np.IsActive = false // flag node disabled
+				np.isActive = false // flag node disabled
 
 				// For each node's incoming connection, add the activity from the connection to the activesum
 				for _, link := range np.Incoming {
@@ -116,8 +116,8 @@ func (n *Network) Activate() (bool, error) {
 					if !link.IsTimeDelayed {
 						add_amount = link.Weight * link.InNode.GetActiveOut()
 						//fmt.Printf("%f -> %f\n", link.Weight, (*link.InNode).GetActiveOut())
-						if link.InNode.IsActive || link.InNode.IsSensor() {
-							np.IsActive = true
+						if link.InNode.isActive || link.InNode.IsSensor() {
+							np.isActive = true
 						}
 					} else {
 						add_amount = link.Weight * link.InNode.GetActiveOutTd()
@@ -131,7 +131,7 @@ func (n *Network) Activate() (bool, error) {
 		for _, np := range n.all_nodes {
 			if np.IsNeuron() {
 				// Only activate if some active input came in
-				if np.IsActive {
+				if np.isActive {
 					// Keep a memory of activations for potential time delayed connections
 					np.saveActivations()
 
