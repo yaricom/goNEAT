@@ -71,6 +71,7 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 	node := NewNetworkNode()
 	node.Id = n.Id
 	node.NeuronType = n.NeuronType
+	node.ActivationType = n.ActivationType
 	node.Trait = t
 	node.DeriveTrait(t)
 	return node
