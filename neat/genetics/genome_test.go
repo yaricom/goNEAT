@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"bufio"
 	"math/rand"
-	"os"
 )
 
 const gnome_str = "genomestart 1\n" +
@@ -25,184 +24,26 @@ const gnome_str = "genomestart 1\n" +
 	"genomeend 1"
 
 func buildTestGenome(id int) *Genome {
-	traits := []*neat.Trait {
-		neat.ReadTrait(strings.NewReader("1 0.1 0 0 0 0 0 0 0")),
-		neat.ReadTrait(strings.NewReader("2 0.2 0 0 0 0 0 0 0")),
-		neat.ReadTrait(strings.NewReader("3 0.3 0 0 0 0 0 0 0")),
+	traits := []*neat.Trait{
+		{Id:1, Params:[]float64{0.1, 0, 0, 0, 0, 0, 0, 0}},
+		{Id:3, Params:[]float64{0.3, 0, 0, 0, 0, 0, 0, 0}},
+		{Id:2, Params:[]float64{0.2, 0, 0, 0, 0, 0, 0, 0}},
 	}
 
-	nodes := []*network.NNode {
-		network.ReadNNode(strings.NewReader("1 0 1 1"), traits),
-		network.ReadNNode(strings.NewReader("2 0 1 1"), traits),
-		network.ReadNNode(strings.NewReader("3 0 1 3"), traits),
-		network.ReadNNode(strings.NewReader("4 0 0 2"), traits),
+	nodes := []*network.NNode{
+		{Id:1, NeuronType: network.InputNeuron},
+		{Id:2, NeuronType: network.InputNeuron},
+		{Id:3, NeuronType: network.BiasNeuron},
+		{Id:4, NeuronType: network.OutputNeuron},
 	}
 
-	genes := []*Gene {
-		ReadGene(strings.NewReader("1 1 4 1.5 false 1 0 true"), traits, nodes),
-		ReadGene(strings.NewReader("2 2 4 2.5 false 2 0 true"), traits, nodes),
-		ReadGene(strings.NewReader("3 3 4 3.5 false 3 0 true"), traits, nodes),
+	genes := []*Gene{
+		readPlainConnectionGene(strings.NewReader("1 1 4 1.5 false 1 0 true"), traits, nodes),
+		readPlainConnectionGene(strings.NewReader("2 2 4 2.5 false 2 0 true"), traits, nodes),
+		readPlainConnectionGene(strings.NewReader("3 3 4 3.5 false 3 0 true"), traits, nodes),
 	}
 
 	return NewGenome(id, traits, nodes, genes)
-}
-
-// Tests Genome reading
-func TestGenome_ReadGenome(t *testing.T) {
-	gnome, err := ReadGenome(strings.NewReader(gnome_str), 2)
-	if gnome != nil {
-		t.Error("Genome read should fail due ID mismatch")
-	}
-	if err == nil {
-		t.Error("Genome read should fail due ID mismatch")
-	}
-
-	gnome, err = ReadGenome(strings.NewReader(gnome_str), 1)
-	if err != nil {
-		t.Error("err != nil", err)
-	}
-	if gnome == nil {
-		t.Error("gnome == nil")
-		return
-	}
-	if len(gnome.Traits) != 3 {
-		t.Error("len(gnome.Traits) != 3", len(gnome.Traits))
-		return
-	}
-	for i, tr := range gnome.Traits {
-		if tr.Id != i + 1 {
-			t.Error("Wrong Traint ID", tr.Id)
-		}
-		if len(tr.Params) != 8 {
-			t.Error("Wrong Trait's parameters lenght", len(tr.Params))
-		}
-		if tr.Params[0] != float64(i + 1) / 10.0 {
-			t.Error("Wrong Trait params read", tr.Params[0])
-		}
-	}
-
-
-	if len(gnome.Nodes) != 4 {
-		t.Error("len(gnome.Nodes) != 4", len(gnome.Nodes))
-		return
-	}
-	for i, n := range gnome.Nodes {
-		if n.Id != i + 1 {
-			t.Error("Wrong NNode Id", n.Id)
-		}
-		if i < 3 && !n.IsSensor() {
-			t.Error("Wrong NNode type, SENSOR: ", n.IsSensor())
-		}
-
-		if i == 3 {
-			if !n.IsNeuron() {
-				t.Error("Wrong NNode type, NEURON: ", n.IsNeuron())
-			}
-			if n.NeuronType != network.OutputNeuron {
-				t.Error("Wrong NNode placement", n.NeuronType)
-			}
-		}
-
-		if (i < 2 && n.NeuronType != network.InputNeuron) ||
-			(i == 2 && n.NeuronType != network.BiasNeuron) {
-			t.Error("Wrong NNode placement", n.NeuronType)
-		}
-
-	}
-
-
-	if len(gnome.Genes) != 3 {
-		t.Error("len(gnome.Genes) != 3", len(gnome.Genes))
-	}
-
-	for i, g := range gnome.Genes {
-		if g.Link.Trait.Id != i + 1 {
-			t.Error("Gene Link Traid Id is wrong", g.Link.Trait.Id)
-		}
-		if g.Link.InNode.Id != i + 1 {
-			t.Error("Gene link's input node Id is wrong", g.Link.InNode.Id)
-		}
-		if g.Link.OutNode.Id != 4 {
-			t.Error("Gene link's output node Id is wrong", g.Link.OutNode.Id)
-		}
-		if g.Link.Weight != float64(i) + 1.5 {
-			t.Error("Gene link's weight is wrong", g.Link.Weight)
-		}
-		if g.Link.IsRecurrent {
-			t.Error("Gene link's recurrent flag is wrong")
-		}
-		if g.InnovationNum != int64(i + 1) {
-			t.Error("Gene's innovation number is wrong",  g.InnovationNum)
-		}
-		if g.MutationNum != float64(0) {
-			t.Error("Gene's mutation number is wrong",  g.MutationNum)
-		}
-		if !g.IsEnabled {
-			t.Error("Gene's enabled flag is wrong",  g.IsEnabled)
-		}
-	}
-}
-
-func TestGenome_ReadGenomeFile(t *testing.T) {
-	genomePath := "../../data/xorstartgenes"
-	genomeFile, err := os.Open(genomePath)
-	if err != nil {
-		t.Error("Failed to open genome file")
-		return
-	}
-	genome, err := ReadGenome(genomeFile, 1)
-	if err != nil {
-		t.Error("Failed to read genome from file", err)
-		return
-	}
-
-
-	if len(genome.Genes) != 3 {
-		t.Error("len(gnome.Genes) != 3", len(genome.Genes))
-	}
-	if len(genome.Nodes) != 4 {
-		t.Error("len(gnome.Nodes) != 4", len(genome.Nodes))
-		return
-	}
-	for i, n := range genome.Nodes {
-		if n.Id != i + 1 {
-			t.Error("Wrong NNode Id", n.Id)
-		}
-		if i < 3 && !n.IsSensor() {
-			t.Error("Wrong NNode type, SENSOR: ", n.IsSensor())
-		}
-
-		if i == 3 {
-			if !n.IsNeuron()  {
-				t.Error("Wrong NNode type, NEURON: ", n.IsNeuron())
-			}
-			if n.NeuronType != network.OutputNeuron {
-				t.Error("Wrong NNode placement", n.NeuronType)
-			}
-		}
-
-		if (i == 0 && n.NeuronType != network.BiasNeuron) ||
-			(i > 0 && i < 3 && n.NeuronType != network.InputNeuron) {
-			t.Error("Wrong NNode placement", n.NeuronType)
-		}
-
-	}
-
-	if len(genome.Traits) != 3 {
-		t.Error("len(gnome.Traits) != 3", len(genome.Traits))
-		return
-	}
-	for i, tr := range genome.Traits {
-		if tr.Id != i + 1 {
-			t.Error("Wrong Traint ID", tr.Id)
-		}
-		if len(tr.Params) != 8 {
-			t.Error("Wrong Trait's parameters lenght", len(tr.Params))
-		}
-		if tr.Params[0] != float64(i + 1) / 10.0 {
-			t.Error("Wrong Trait params read", tr.Params[0])
-		}
-	}
 }
 
 // Test write Genome
@@ -249,7 +90,7 @@ func TestGenome_NewGenomeRand(t *testing.T) {
 }
 
 // Test genesis
-func TestGenome_Genesis(t *testing.T)  {
+func TestGenome_Genesis(t *testing.T) {
 	gnome := buildTestGenome(1)
 
 	net_id := 10
@@ -270,7 +111,7 @@ func TestGenome_Genesis(t *testing.T)  {
 }
 
 // Test duplicate
-func TestGenome_Duplicate(t *testing.T)  {
+func TestGenome_Duplicate(t *testing.T) {
 	gnome := buildTestGenome(1)
 
 	new_gnome := gnome.duplicate(2)
@@ -478,9 +319,9 @@ func TestGenome_mutateAddLink(t *testing.T) {
 
 	// add more NEURONs
 	conf.RecurOnlyProb = 0.0
-	nodes := []*network.NNode {
-		network.ReadNNode(strings.NewReader("5 0 0 0"), gnome1.Traits),
-		network.ReadNNode(strings.NewReader("6 0 0 1"), gnome1.Traits),
+	nodes := []*network.NNode{
+		readPlainNetworkNode(strings.NewReader("5 0 0 0"), gnome1.Traits),
+		readPlainNetworkNode(strings.NewReader("6 0 0 1"), gnome1.Traits),
 	}
 	gnome1.Nodes = append(gnome1.Nodes, nodes...)
 	gnome1.genesis(1) // do network genesis with new nodes added
@@ -528,7 +369,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 
 	// adding disconnected input
 	gnome1.Nodes = append(gnome1.Nodes,
-		network.ReadNNode(strings.NewReader("5 0 1 1"), gnome1.Traits))
+		readPlainNetworkNode(strings.NewReader("5 0 1 1"), gnome1.Traits))
 	// Create gnome phenotype
 	gnome1.genesis(1)
 
@@ -661,7 +502,7 @@ func TestGenome_mutateNodeTrait(t *testing.T) {
 			nd.Trait = gnome1.Traits[i]
 		}
 	}
-	gnome1.Nodes[3].Trait = neat.ReadTrait(strings.NewReader("4 0.4 0 0 0 0 0 0 0"))
+	gnome1.Nodes[3].Trait = &neat.Trait{Id:4, Params: []float64{0.4, 0, 0, 0, 0, 0, 0, 0}}
 
 	res, err := gnome1.mutateNodeTrait(2)
 	if !res || err != nil {
@@ -682,7 +523,7 @@ func TestGenome_mutateNodeTrait(t *testing.T) {
 func TestGenome_mutateToggleEnable(t *testing.T) {
 	rand.Seed(41)
 	gnome1 := buildTestGenome(1)
-	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 true"),
+	gnome1.Genes = append(gnome1.Genes, readPlainConnectionGene(strings.NewReader("3 3 4 5.5 false 4 0 true"),
 		gnome1.Traits, gnome1.Nodes))
 
 	res, err := gnome1.mutateToggleEnable(5)
@@ -703,7 +544,7 @@ func TestGenome_mutateToggleEnable(t *testing.T) {
 func TestGenome_mutateGeneReenable(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
-	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
+	gnome1.Genes = append(gnome1.Genes, readPlainConnectionGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
 		gnome1.Traits, gnome1.Nodes))
 
 	gnome1.Genes[1].IsEnabled = false
@@ -746,7 +587,7 @@ func TestGenome_mateMultipoint(t *testing.T) {
 	}
 
 	// check not equal gene pools
-	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
+	gnome1.Genes = append(gnome1.Genes, readPlainConnectionGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
 		gnome1.Traits, gnome1.Nodes))
 	fitness1, fitness2 = 15.0, 2.3
 	gnome_child, err = gnome1.mateMultipoint(gnome2, genomeid, fitness1, fitness2)
@@ -792,9 +633,9 @@ func TestGenome_mateMultipointAvg(t *testing.T) {
 	}
 
 	// check not equal gene pools
-	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
+	gnome1.Genes = append(gnome1.Genes, readPlainConnectionGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
 		gnome1.Traits, gnome1.Nodes))
-	gnome2.Genes = append(gnome2.Genes, ReadGene(strings.NewReader("3 2 4 5.5 true 4 0 false"),
+	gnome2.Genes = append(gnome2.Genes, readPlainConnectionGene(strings.NewReader("3 2 4 5.5 true 4 0 false"),
 		gnome1.Traits, gnome1.Nodes))
 	fitness1, fitness2 = 15.0, 2.3
 	gnome_child, err = gnome1.mateMultipointAvg(gnome2, genomeid, fitness1, fitness2)
@@ -839,7 +680,7 @@ func TestGenome_mateSinglepoint(t *testing.T) {
 	}
 
 	// check not equal gene pools
-	gnome1.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
+	gnome1.Genes = append(gnome1.Genes, readPlainConnectionGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
 		gnome1.Traits, gnome1.Nodes))
 	gnome_child, err = gnome1.mateSinglepoint(gnome2, genomeid)
 	if err != nil {
@@ -858,9 +699,9 @@ func TestGenome_mateSinglepoint(t *testing.T) {
 		t.Error("len(gnome_child.Traits) != 3")
 	}
 
-	gnome2.Genes = append(gnome1.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
+	gnome2.Genes = append(gnome1.Genes, readPlainConnectionGene(strings.NewReader("3 3 4 5.5 false 4 0 false"),
 		gnome1.Traits, gnome1.Nodes))
-	gnome2.Genes = append(gnome2.Genes, ReadGene(strings.NewReader("3 2 4 5.5 true 4 0 false"),
+	gnome2.Genes = append(gnome2.Genes, readPlainConnectionGene(strings.NewReader("3 2 4 5.5 true 4 0 false"),
 		gnome1.Traits, gnome1.Nodes))
 	gnome_child, err = gnome1.mateSinglepoint(gnome2, genomeid)
 	if err != nil {
@@ -882,10 +723,10 @@ func TestGenome_mateSinglepoint(t *testing.T) {
 
 func TestGenome_geneInsert(t *testing.T) {
 	gnome := buildTestGenome(1)
-	gnome.Genes = append(gnome.Genes, ReadGene(strings.NewReader("3 3 4 5.5 false 5 0 false"),
+	gnome.Genes = append(gnome.Genes, readPlainConnectionGene(strings.NewReader("3 3 4 5.5 false 5 0 false"),
 		gnome.Traits, gnome.Nodes))
 
-	gene := ReadGene(strings.NewReader("3 3 4 5.5 false 4 0 false"), gnome.Traits, gnome.Nodes)
+	gene := readPlainConnectionGene(strings.NewReader("3 3 4 5.5 false 4 0 false"), gnome.Traits, gnome.Nodes)
 	genes := geneInsert(gnome.Genes, gene)
 	if len(genes) != 5 {
 		t.Error("len(genes) != 5", len(genes))
