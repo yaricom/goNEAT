@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"errors"
 	"math"
-	"bufio"
-	"strings"
 	"reflect"
 )
 
@@ -177,56 +175,14 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 
 // Reads Genome from reader
 func ReadGenome(ir io.Reader, id int) (*Genome, error) {
-	gnome := Genome{
-		Id:id,
-		Traits:make([]*neat.Trait, 0),
-		Nodes:make([]*network.NNode, 0),
-		Genes:make([]*Gene, 0),
+	// stub for backward compatibility
+	// the new implementations should use GenomeReader to decode genome data in variety of formats
+	r, err := NewGenomeReader(ir, PlainGenomeEncoding)
+	if err != nil {
+		return nil, err
 	}
-
-	var g_id int
-	// Loop until file is finished, parsing each line
-	scanner := bufio.NewScanner(ir)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.SplitN(line, " ", 2)
-		if len(parts) < 2 {
-			return nil, errors.New(fmt.Sprintf("Line: [%s] can not be split when reading Genome", line))
-		}
-		lr := strings.NewReader(parts[1])
-
-		switch parts[0] {
-		case "trait":
-			// Read a Trait
-			new_trait := neat.ReadTrait(lr)
-			gnome.Traits = append(gnome.Traits, new_trait)
-
-		case "node":
-			// Read a NNode
-			new_node := network.ReadNNode(lr, gnome.Traits)
-			gnome.Nodes = append(gnome.Nodes, new_node)
-
-		case "gene":
-			// Read a Gene
-			new_gene := ReadGene(lr, gnome.Traits, gnome.Nodes)
-			gnome.Genes = append(gnome.Genes, new_gene)
-
-		case "genomeend":
-			// Read Genome ID
-			fmt.Fscanf(lr, "%d", &g_id)
-			// check that we have correct genome ID
-			if g_id != id {
-				return nil, errors.New(
-					fmt.Sprintf("Id mismatch in genome. Found: %d, expected: %d", g_id, id))
-			}
-
-		case "/*":
-			// read all comments and print it
-			neat.InfoLog(line)
-		}
-	}
-	return &gnome, nil
+	gnome, err := r.Read()
+	return gnome, err
 }
 
 // Writes this genome into provided writer
