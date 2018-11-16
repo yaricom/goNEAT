@@ -73,7 +73,6 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 	node.NeuronType = n.NeuronType
 	node.ActivationType = n.ActivationType
 	node.Trait = t
-	node.DeriveTrait(t)
 	return node
 }
 
@@ -84,16 +83,6 @@ func NewNetworkNode() *NNode {
 		ActivationType:SigmoidSteepenedActivation,
 		Incoming:make([]*Link, 0),
 		Outgoing:make([]*Link, 0),
-	}
-}
-
-// Copy trait parameters into this node's parameters
-func (n *NNode) DeriveTrait(t *neat.Trait) {
-	n.Params = make([]float64, neat.Num_trait_params)
-	if t != nil {
-		for i, p := range t.Params {
-			n.Params[i] = p
-		}
 	}
 }
 
