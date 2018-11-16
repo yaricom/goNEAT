@@ -60,7 +60,7 @@ type NNode struct {
 
 // Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
 func NewNNode(nodeid int, neuronType NodeNeuronType) *NNode {
-	n := newNode()
+	n := NewNetworkNode()
 	n.Id = nodeid
 	n.NeuronType = neuronType
 	return n
@@ -68,17 +68,17 @@ func NewNNode(nodeid int, neuronType NodeNeuronType) *NNode {
 
 // Construct a NNode off another NNode with given trait for genome purposes
 func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
-	node := newNode()
+	node := NewNetworkNode()
 	node.Id = n.Id
 	node.NeuronType = n.NeuronType
 	node.Trait = t
-	node.deriveTrait(t)
+	node.DeriveTrait(t)
 	return node
 }
 
 // Read a NNode from specified Reader and applies corresponding trait to it from a list of traits provided
 func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
-	n := newNode()
+	n := NewNetworkNode()
 	var trait_id, node_type int
 	fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &node_type, &n.NeuronType)
 	if trait_id != 0 && traits != nil {
@@ -86,19 +86,19 @@ func ReadNNode(r io.Reader, traits []*neat.Trait) *NNode {
 		for _, t := range traits {
 			if trait_id == t.Id {
 				n.Trait = t
-				n.deriveTrait(t)
+				n.DeriveTrait(t)
 				break
 			}
 		}
 	} else {
 		// just create empty params
-		n.deriveTrait(nil)
+		n.DeriveTrait(nil)
 	}
 	return n
 }
 
-// The private default constructor
-func newNode() *NNode {
+// The default constructor
+func NewNetworkNode() *NNode {
 	return &NNode{
 		NeuronType:HiddenNeuron,
 		ActivationType:SigmoidSteepenedActivation,
@@ -108,7 +108,7 @@ func newNode() *NNode {
 }
 
 // Copy trait parameters into this node's parameters
-func (n *NNode) deriveTrait(t *neat.Trait) {
+func (n *NNode) DeriveTrait(t *neat.Trait) {
 	n.Params = make([]float64, neat.Num_trait_params)
 	if t != nil {
 		for i, p := range t.Params {
