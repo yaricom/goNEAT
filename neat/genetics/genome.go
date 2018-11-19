@@ -1164,9 +1164,9 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits := make([]*neat.Trait, len(gen.Traits))
-	for i, tr := range gen.Traits {
-		new_traits[i] = neat.NewTraitAvrg(tr, og.Traits[i])
+	new_traits, err := gen.Traits(og)
+	if err != nil {
+		return nil, err
 	}
 
 	// The new genes and nodes created
@@ -1338,10 +1338,11 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits := make([]*neat.Trait, len(gen.Traits))
-	for i, tr := range gen.Traits {
-		new_traits[i] = neat.NewTraitAvrg(tr, og.Traits[i]) // construct by averaging
+	new_traits, err := gen.Traits(og)
+	if err != nil {
+		return nil, err
 	}
+
 
 	// The new genes and nodes created
 	new_genes := make([]*Gene, 0)
@@ -1535,9 +1536,9 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits := make([]*neat.Trait, len(gen.Traits))
-	for i, tr := range gen.Traits {
-		new_traits[i] = neat.NewTraitAvrg(tr, og.Traits[i]) // construct by averaging
+	new_traits, err := gen.Traits(og)
+	if err != nil {
+		return nil, err
 	}
 
 	// The new genes and nodes created
@@ -1728,6 +1729,19 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 	//Return the baby Genome
 	return new_genome, nil
+}
+
+// Builds array of traits for child genome during crossover
+func (g *Genome) mateTraits(og *Genome) ([]*neat.Trait, error) {
+	new_traits := make([]*neat.Trait, len(g.Traits))
+	var err error
+	for i, tr := range g.Traits {
+		new_traits[i], err = neat.NewTraitAvrg(tr, og.Traits[i]) // construct by averaging
+		if err != nil {
+			return nil, err
+		}
+	}
+	return new_traits, nil
 }
 
 /* ******** COMPATIBILITY CHECKING METHODS * ********/
