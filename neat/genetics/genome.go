@@ -1164,7 +1164,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits, err := gen.Traits(og)
+	new_traits, err := gen.mateTraits(og)
 	if err != nil {
 		return nil, err
 	}
@@ -1338,7 +1338,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits, err := gen.Traits(og)
+	new_traits, err := gen.mateTraits(og)
 	if err != nil {
 		return nil, err
 	}
@@ -1536,7 +1536,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits, err := gen.Traits(og)
+	new_traits, err := gen.mateTraits(og)
 	if err != nil {
 		return nil, err
 	}
