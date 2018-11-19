@@ -59,22 +59,34 @@ func (pgr *plainGenomeReader) Read() (*Genome, error) {
 		switch parts[0] {
 		case "trait":
 			// Read a Trait
-			new_trait := readPlainTrait(lr)
+			new_trait, err := readPlainTrait(lr)
+			if err != nil {
+				return nil, err
+			}
 			gnome.Traits = append(gnome.Traits, new_trait)
 
 		case "node":
 			// Read a Network Node
-			new_node := readPlainNetworkNode(lr, gnome.Traits)
+			new_node, err := readPlainNetworkNode(lr, gnome.Traits)
+			if err != nil {
+				return nil, err
+			}
 			gnome.Nodes = append(gnome.Nodes, new_node)
 
 		case "gene":
 			// Read a Gene
-			new_gene := readPlainConnectionGene(lr, gnome.Traits, gnome.Nodes)
+			new_gene, err := readPlainConnectionGene(lr, gnome.Traits, gnome.Nodes)
+			if err != nil {
+				return nil, err
+			}
 			gnome.Genes = append(gnome.Genes, new_gene)
 
 		case "genomeend":
 			// Read Genome ID
-			fmt.Fscanf(lr, "%d", &g_id)
+			_, err := fmt.Fscanf(lr, "%d", &g_id)
+			if err != nil {
+				return nil, err
+			}
 			// save genome ID
 			gnome.Id = g_id
 
@@ -87,33 +99,44 @@ func (pgr *plainGenomeReader) Read() (*Genome, error) {
 }
 
 // The method to read Trait in plain text format
-func readPlainTrait(r io.Reader) *neat.Trait {
+func readPlainTrait(r io.Reader) (*neat.Trait, error) {
 	nt := neat.NewTrait()
-	fmt.Fscanf(r, "%d ", &nt.Id)
-	for i := 0; i < neat.Num_trait_params; i++ {
-		fmt.Fscanf(r, "%g ", &nt.Params[i])
+	_, err := fmt.Fscanf(r, "%d ", &nt.Id)
+	if err == nil {
+		for i := 0; i < neat.Num_trait_params; i++ {
+			_, err = fmt.Fscanf(r, "%g ", &nt.Params[i])
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
-	return nt
+
+	return nt, err
 }
 
 // Read a Network Node from specified Reader in plain text format
 // and applies corresponding trait to it from a list of traits provided
-func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) *network.NNode {
+func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, error) {
 	n := network.NewNetworkNode()
 	var trait_id, node_type int
-	fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &node_type, &n.NeuronType)
-	n.Trait = traitWithId(trait_id, traits)
-	return n
+	_, err := fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &node_type, &n.NeuronType)
+	if err == nil {
+		n.Trait = traitWithId(trait_id, traits)
+	}
+	return n, err
 }
 
 // Reads Gene from reader in plain text format
-func readPlainConnectionGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) *Gene {
+func readPlainConnectionGene(r io.Reader, traits []*neat.Trait, nodes []*network.NNode) (*Gene, error) {
 	var traitId, inNodeId, outNodeId int
 	var inov_num int64
 	var weight, mut_num float64
 	var recurrent, enabled bool
-	fmt.Fscanf(r, "%d %d %d %g %t %d %g %t ",
+	_, err := fmt.Fscanf(r, "%d %d %d %g %t %d %g %t ",
 		&traitId, &inNodeId, &outNodeId, &weight, &recurrent, &inov_num, &mut_num, &enabled)
+	if err != nil {
+		return nil, err
+	}
 
 	trait := traitWithId(traitId, traits)
 	var inNode, outNode *network.NNode
@@ -126,9 +149,9 @@ func readPlainConnectionGene(r io.Reader, traits []*neat.Trait, nodes []*network
 		}
 	}
 	if trait != nil {
-		return newGene(network.NewLinkWithTrait(trait, weight, inNode, outNode, recurrent), inov_num, mut_num, enabled)
+		return newGene(network.NewLinkWithTrait(trait, weight, inNode, outNode, recurrent), inov_num, mut_num, enabled), nil
 	} else {
-		return newGene(network.NewLink(weight, inNode, outNode, recurrent), inov_num, mut_num, enabled)
+		return newGene(network.NewLink(weight, inNode, outNode, recurrent), inov_num, mut_num, enabled), nil
 	}
 }
 
@@ -181,11 +204,6 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 		}
 		gnome.Genes = append(gnome.Genes, gene)
 	}
-
-
-	//t_type := reflect.TypeOf(traits )
-	//println(t_type.String())
-	println(len(gnome.Traits))
 
 	return gnome, nil
 }
