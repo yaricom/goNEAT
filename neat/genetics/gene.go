@@ -2,7 +2,6 @@ package genetics
 
 import (
 	"github.com/yaricom/goNEAT/neat/network"
-	"io"
 	"fmt"
 	"github.com/yaricom/goNEAT/neat"
 )
@@ -18,23 +17,23 @@ import (
 // (Since it was first innovated). In the current implementation the mutation number is the same as the weight.
 type Gene struct {
 	// The link between nodes
-	Link *network.Link
+	Link          *network.Link
 	// The current innovation number for this gene
 	InnovationNum int64
 	// Used to see how much mutation has changed the link
-	MutationNum float64
+	MutationNum   float64
 	// If true the gene is enabled
-	IsEnabled bool
+	IsEnabled     bool
 }
 
 // Creates new Gene
-func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, inov_num int64, mut_num float64) *Gene  {
+func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, inov_num int64, mut_num float64) *Gene {
 	return newGene(network.NewLink(weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
 // Creates new Gene with Trait
 func NewGeneWithTrait(trait *neat.Trait, weight float64, in_node, out_node *network.NNode,
-			recurrent bool, inov_num int64, mut_num float64) *Gene  {
+recurrent bool, inov_num int64, mut_num float64) *Gene {
 	return newGene(network.NewLinkWithTrait(trait, weight, in_node, out_node, recurrent), inov_num, mut_num, true)
 }
 
@@ -53,26 +52,7 @@ func newGene(link *network.Link, inov_num int64, mut_num float64, enabled bool) 
 	}
 }
 
-// Writes Gene to the provided writer
-func (g *Gene) Write(w io.Writer)  {
-	link := g.Link
-	traitId := 0
-	if link.Trait != nil {
-		traitId = link.Trait.Id
-	}
-	inNodeId := link.InNode.Id
-	outNodeId := link.OutNode.Id
-	weight := link.Weight
-	recurrent := link.IsRecurrent
-	innov_num := g.InnovationNum
-	mut_num := g.MutationNum
-	enabled := g.IsEnabled
-
-	fmt.Fprintf(w, "%d %d %d %g %t %d %g %t",
-		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
-}
-
-func (g *Gene) String() string  {
+func (g *Gene) String() string {
 	enabl_str := ""
 	if !g.IsEnabled {
 		enabl_str = " -DISABLED-"
