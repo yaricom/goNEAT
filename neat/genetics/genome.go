@@ -186,27 +186,15 @@ func ReadGenome(ir io.Reader, id int) (*Genome, error) {
 }
 
 // Writes this genome into provided writer
-func (g *Genome) Write(w io.Writer) {
-	fmt.Fprintf(w, "genomestart %d\n", g.Id)
-
-	for _, tr := range g.Traits {
-		fmt.Fprint(w, "trait ")
-		tr.WriteTrait(w)
-		fmt.Fprintln(w, "")
+func (g *Genome) Write(w io.Writer) error {
+	// stub for backward compatibility
+	// the new implementations should use GenomeWriter to decode genome data in variety of formats
+	wr, err := NewGenomeWriter(w, PlainGenomeEncoding)
+	if err == nil {
+		err = wr.WriteGenome(g)
 	}
 
-	for _, nd := range g.Nodes {
-		fmt.Fprint(w, "node ")
-		nd.Write(w)
-		fmt.Fprintln(w, "")
-	}
-
-	for _, gn := range g.Genes {
-		fmt.Fprint(w, "gene ")
-		gn.Write(w)
-		fmt.Fprintln(w, "")
-	}
-	fmt.Fprintf(w, "genomeend %d\n", g.Id)
+	return err
 }
 
 // Stringer
