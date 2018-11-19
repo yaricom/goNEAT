@@ -9,8 +9,8 @@ import (
 	"errors"
 	"github.com/yaricom/goNEAT/neat/network"
 	"strings"
-	"github.com/spf13/viper"
 	"github.com/spf13/cast"
+	"gopkg.in/yaml.v2"
 )
 
 
@@ -161,22 +161,32 @@ type yamlGenomeReader struct {
 }
 
 func (ygr *yamlGenomeReader) Read() (*Genome, error) {
-	v := viper.New()
-	v.SetConfigType("YAML")
-	err := v.ReadConfig(ygr.r)
+	m := make(map[interface{}]interface{})
+	dec := yaml.NewDecoder(ygr.r)
+	err := dec.Decode(&m)
 	if err != nil {
 		return nil, err
 	}
+
+	gm, ok := m["genome"].(map[interface{}]interface{})
+	if ok == false {
+		return nil, errors.New("failed to parse YAML configuration")
+	}
+
 	// read Genome
+	gen_id, err := cast.ToIntE(gm["id"])
+	if err != nil {
+		return nil, err
+	}
 	gnome := &Genome{
-		Id:v.GetInt("genome.id"),
+		Id:gen_id,
 		Traits:make([]*neat.Trait, 0),
 		Nodes:make([]*network.NNode, 0),
 		Genes:make([]*Gene, 0),
 	}
 
 	// read traits
-	traits := v.Get("genome.traits").([]interface{})
+	traits := gm["traits"].([]interface{})
 	for _, tr := range traits {
 		trait, err := readTrait(tr.(map[interface{}]interface{}))
 		if err != nil {
@@ -186,7 +196,7 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 	}
 
 	// read nodes
-	nodes := v.Get("genome.nodes").([]interface{})
+	nodes := gm["nodes"].([]interface{})
 	for _, nd := range nodes {
 		node, err := readNNode(nd.(map[interface{}]interface{}), gnome.Traits)
 		if err != nil {
@@ -196,7 +206,7 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 	}
 
 	// read Genes
-	genes := v.Get("genome.genes").([]interface{})
+	genes := gm["genes"].([]interface{})
 	for _, g := range genes {
 		gene, err := readGene(g.(map[interface{}]interface{}), gnome.Traits, gnome.Nodes)
 		if err != nil {
