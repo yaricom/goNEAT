@@ -24,20 +24,20 @@ type GenomeReader interface {
 func NewGenomeReader(r io.Reader, encoding GenomeEncoding) (GenomeReader, error) {
 	switch encoding {
 	case PlainGenomeEncoding:
-		return &PlainGenomeReader{r: bufio.NewReader(r)}, nil
+		return &plainGenomeReader{r: bufio.NewReader(r)}, nil
 	case YAMLGenomeEncoding:
-		return &YAMLGenomeReader{r: bufio.NewReader(r)}, nil
+		return &yamlGenomeReader{r: bufio.NewReader(r)}, nil
 	default:
 		return nil, ErrUnsupportedGenomeEncoding
 	}
 }
 
 // A PlainGenomeReader reads genome data from plain text file.
-type PlainGenomeReader struct {
+type plainGenomeReader struct {
 	r *bufio.Reader
 }
 
-func (pgr *PlainGenomeReader) Read() (*Genome, error) {
+func (pgr *plainGenomeReader) Read() (*Genome, error) {
 	gnome := Genome{
 		Traits:make([]*neat.Trait, 0),
 		Nodes:make([]*network.NNode, 0),
@@ -133,11 +133,11 @@ func readPlainConnectionGene(r io.Reader, traits []*neat.Trait, nodes []*network
 }
 
 // A YAMLGenomeReader reads genome data from YAML encoded text file
-type YAMLGenomeReader struct {
+type yamlGenomeReader struct {
 	r *bufio.Reader
 }
 
-func (ygr *YAMLGenomeReader) Read() (*Genome, error) {
+func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 	v := viper.New()
 	v.SetConfigType("YAML")
 	err := v.ReadConfig(ygr.r)
