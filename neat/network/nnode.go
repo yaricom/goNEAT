@@ -1,7 +1,6 @@
 package network
 
 import (
-	"io"
 	"fmt"
 	"errors"
 	"github.com/yaricom/goNEAT/neat"
@@ -175,15 +174,6 @@ func (n *NNode) FlushbackCheck() error {
 		return errors.New(fmt.Sprintf("NNODE: %s has last_activation2 %f", n, n.lastActivation2))
 	}
 	return nil
-}
-
-// Dump node to a writer
-func (n *NNode) Write(w io.Writer) {
-	trait_id := 0
-	if n.Trait != nil {
-		trait_id = n.Trait.Id
-	}
-	fmt.Fprintf(w, "%d %d %d %d", n.Id, trait_id, n.NodeType(), n.NeuronType)
 }
 
 // Find the greatest depth starting from this neuron at depth d

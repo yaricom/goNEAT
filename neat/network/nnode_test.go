@@ -2,29 +2,7 @@ package network
 
 import (
 	"testing"
-	"fmt"
-	"bytes"
-	"github.com/yaricom/goNEAT/neat"
 )
-
-
-// Tests NNode serialization
-func TestWriteNNode(t *testing.T) {
-	node_id, trait_id, ntype, neuron_type := 1, 10, SensorNode, InputNeuron
-	node_str := fmt.Sprintf("%d %d %d %d", node_id, trait_id, ntype, neuron_type)
-	trait := neat.NewTrait()
-	trait.Id = 10
-
-	node := NewNNode(node_id, neuron_type)
-	node.Trait = trait
-	out_buffer := bytes.NewBufferString("")
-	node.Write(out_buffer)
-	out_str := out_buffer.String()
-
-	if out_str != node_str {
-		t.Errorf("Node serialization failed. Expected: %s, but found %s", node_str, out_str)
-	}
-}
 
 // Tests NNode SensorLoad
 func TestNNode_SensorLoad(t *testing.T) {
