@@ -2,29 +2,36 @@ package neat
 
 import (
 	"testing"
-	"fmt"
-	"strings"
-	"bytes"
 )
 
+func TestNewTraitAvrg(t *testing.T) {
+	t1 := &Trait{Id:1, Params:[]float64{1, 2, 3, 4, 5, 6}}
+	t2 := &Trait{Id:2, Params:[]float64{2, 3, 4, 5, 6, 7}}
 
-// Tests Trait WriteTrait
-func TestTrait_WriteTrait(t *testing.T)  {
-	params := []float64 {
-		0.40227575878298616, 0.0, 0.0, 0.0, 0.0, 0.3245553261200018, 0.0, 0.12248956525856575,
+	tr, err := NewTraitAvrg(t1, t2)
+	if err != nil {
+		t.Error(err)
 	}
-	trait_id := 2
-	trait := NewTrait()
-	trait.Id = trait_id
-	trait.Params = params
+	if tr.Id != t1.Id {
+		t.Error("tr.Id != t1.Id", tr.Id)
+	}
+	for i, p := range tr.Params {
+		if p != (t1.Params[i] + t2.Params[i]) / 2.0 {
+			t.Error("Wrong parameter at: ", i)
+		}
+	}
+}
 
-	trait_str := fmt.Sprintf("%d %g %g %g %g %g %g %g %g",
-		trait_id, params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7])
+func TestNewTraitCopy(t *testing.T) {
+	t1 := &Trait{Id:1, Params:[]float64{1, 2, 3, 4, 5, 6}}
 
-	out_buffer := bytes.NewBufferString("")
-	trait.WriteTrait(out_buffer)
-	out_str := strings.TrimSpace(out_buffer.String())
-	if trait_str != out_str {
-		t.Errorf("Wrong trait serialization\n[%s]\n[%s]", trait_str, out_str)
+	tr := NewTraitCopy(t1)
+	if tr.Id != t1.Id {
+		t.Error("tr.Id != t1.Id", tr.Id)
+	}
+	for i, p := range tr.Params {
+		if p != t1.Params[i] {
+			t.Error("Wrong parameter at: ", i)
+		}
 	}
 }
