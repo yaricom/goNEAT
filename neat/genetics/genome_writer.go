@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/yaricom/goNEAT/neat"
 	"github.com/yaricom/goNEAT/neat/network"
+	"github.com/spf13/cast"
+	"gopkg.in/yaml.v2"
 )
 
 // The interface to define genome writer
@@ -119,6 +121,82 @@ type yamlGenomeWriter struct {
 	w *bufio.Writer
 }
 
-func (wr *yamlGenomeWriter) WriteGenome(g *Genome) error {
-	return nil
+func (wr *yamlGenomeWriter) WriteGenome(g *Genome) (err error) {
+	g_map := make(map[string]interface{})
+	g_map["id"] = g.Id
+
+	// encode traits
+	traits := make([]map[string]interface{}, len(g.Traits))
+	for i, t := range g.Traits {
+		traits[i] = wr.encodeGenomeTrait(t)
+	}
+	g_map["traits"] = traits
+
+	// encode network nodes
+	nodes := make([]map[string]interface{}, len(g.Nodes))
+	for i, n := range g.Nodes {
+		nodes[i], err = wr.encodeNetworkNode(n)
+		if err != nil {
+			return err
+		}
+	}
+	g_map["nodes"] = nodes
+
+	// encode network genes
+	genes := make([]map[string]interface{}, len(g.Genes))
+	for i, g := range g.Genes {
+		genes[i] = wr.encodeConnectionGene(g)
+	}
+	g_map["genes"] = genes
+
+	// store genome map
+	r_map := make(map[string]interface{})
+	r_map["genome"] = g_map
+
+	// encode everything as YAML
+	enc := yaml.NewEncoder(wr.w)
+	err = enc.Encode(r_map)
+	if err == nil {
+		// flush stream
+		err = wr.w.Flush()
+	}
+
+	return err
+}
+
+func (wr *yamlGenomeWriter) encodeConnectionGene(gene *Gene) map[string]interface{} {
+	g_map := make(map[string]interface{})
+	if gene.Link.Trait != nil {
+		g_map["trait_id"] = gene.Link.Trait.Id
+	} else {
+		g_map["trait_id"] = 0
+	}
+	g_map["src_id"] = gene.Link.InNode.Id
+	g_map["tgt_id"] = gene.Link.OutNode.Id
+	g_map["innov_num"] = gene.InnovationNum
+	g_map["weight"] = gene.Link.Weight
+	g_map["mut_num"] = gene.MutationNum
+	g_map["recurrent"] = cast.ToString(gene.Link.IsRecurrent)
+	g_map["enabled"] = cast.ToString(gene.IsEnabled)
+	return g_map
+}
+
+func (wr *yamlGenomeWriter) encodeNetworkNode(node *network.NNode) (n_map map[string]interface{}, err error) {
+	n_map = make(map[string]interface{})
+	n_map["id"] = node.Id
+	if node.Trait != nil {
+		n_map["trait_id"] = node.Trait.Id
+	} else {
+		n_map["trait_id"] = 0
+	}
+	n_map["type"] = network.NeuronTypeName(node.NeuronType)
+	n_map["activation"], err = network.NodeActivators.ActivationNameFromType(node.ActivationType)
+	return n_map, err
+}
+
+func (wr *yamlGenomeWriter) encodeGenomeTrait(trait *neat.Trait) map[string]interface{} {
+	tr_map := make(map[string]interface{})
+	tr_map["id"] = trait.Id
+	tr_map["params"] = trait.Params
+	return tr_map
 }

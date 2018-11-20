@@ -8,6 +8,7 @@ import (
 	"strings"
 	"bufio"
 	"github.com/yaricom/goNEAT/neat/network"
+	"reflect"
 )
 
 func TestPlainGenomeWriter_WriteTrait(t *testing.T) {
@@ -63,7 +64,6 @@ func TestPlainGenomeWriter_WriteNetworkNode(t *testing.T) {
 	}
 }
 
-
 func TestPlainGenomeWriter_WriteConnectionGene(t *testing.T) {
 	// gene  1 1 4 1.1983046913458986 0 1.0 1.1983046913458986 0
 	traitId, inNodeId, outNodeId, innov_num := 1, 1, 4, int64(1)
@@ -97,8 +97,10 @@ func TestPlainGenomeWriter_WriteConnectionGene(t *testing.T) {
 func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 	gnome := buildTestGenome(1)
 	out_buf := bytes.NewBufferString("")
-	wr := plainGenomeWriter{w:bufio.NewWriter(out_buf)}
-	err := wr.WriteGenome(gnome)
+	wr, err := NewGenomeWriter(bufio.NewWriter(out_buf), PlainGenomeEncoding)
+	if err == nil {
+		err = wr.WriteGenome(gnome)
+	}
 	if err != nil {
 		t.Error(err)
 		return
@@ -112,6 +114,82 @@ func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 	for i, gsr := range g_str_r {
 		if gsr != o_str_r[i] {
 			t.Error("Lines mismatch", gsr, o_str_r[i])
+		}
+	}
+}
+
+func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
+	gnome := buildTestGenome(1)
+
+	// encode genome
+	out_buf := bytes.NewBufferString("")
+	wr, err := NewGenomeWriter(bufio.NewWriter(out_buf), YAMLGenomeEncoding)
+	if err == nil {
+		err = wr.WriteGenome(gnome)
+	}
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//t.Log(out_buf.String())
+
+	// decode genome and compare
+	enc := yamlGenomeReader{r:bufio.NewReader(bytes.NewBuffer(out_buf.Bytes()))}
+	gnome_enc, err := enc.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if gnome.Id != gnome_enc.Id {
+		t.Error("gnome.Id != gnome_enc.Id", gnome.Id, gnome_enc.Id)
+	}
+	if len(gnome.Genes) != len(gnome_enc.Genes) {
+		t.Error("len(gnome.Genes) != len(gnome_enc.Genes)", len(gnome.Genes), len(gnome_enc.Genes))
+	}
+	for i, g := range gnome.Genes {
+		og := gnome_enc.Genes[i]
+		if !g.Link.IsEqualGenetically(og.Link) {
+			t.Error("!g.Link.IsEqualGenetically(og.Link) at:", i)
+		}
+		if g.IsEnabled != og.IsEnabled {
+			t.Error("g.IsEnabled != og.IsEnabled at:", i)
+		}
+		if g.MutationNum != og.MutationNum {
+			t.Error("g.MutationNum != og.MutationNum at:", i)
+		}
+		if g.InnovationNum != og.InnovationNum {
+			t.Error("g.InnovationNum != og.InnovationNum at:", i)
+		}
+	}
+
+
+	if len(gnome.Nodes) != len(gnome_enc.Nodes) {
+		t.Error("len(gnome.Nodes) != len(gnome_enc.Nodes)", len(gnome.Nodes), len(gnome_enc.Nodes))
+	}
+	for i, n := range gnome.Nodes {
+		nd := gnome_enc.Nodes[i]
+		if n.Id != nd.Id {
+			t.Error("n.Id != nd.Id at:", i)
+		}
+		if n.ActivationType != nd.ActivationType {
+			t.Error("n.ActivationType != nd.ActivationType at:", i)
+		}
+		if n.NeuronType != nd.NeuronType {
+			t.Error("n.NeuronType != nd.NeuronType at:", i)
+		}
+	}
+
+	if len(gnome.Traits) != len(gnome_enc.Traits) {
+		t.Error("len(gnome.Traits) != len(gnome_enc.Traits)", len(gnome.Traits), len(gnome_enc.Traits))
+	}
+	for i, tr := range gnome.Traits {
+		etr := gnome_enc.Traits[i]
+		if tr.Id != etr.Id {
+			t.Error("tr.Id != etr.Id at:", i)
+		}
+		if !reflect.DeepEqual(tr.Params, etr.Params) {
+			t.Error("!reflect.DeepEqual(tr.Params, etr.Params) at:", i)
 		}
 	}
 }
