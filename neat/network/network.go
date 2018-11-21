@@ -153,16 +153,6 @@ func (n *Network) Activate() (bool, error) {
 	return true, nil
 }
 
-// Adds a new input node
-func (n *Network) AddInputNode(node *NNode) {
-	n.Inputs = append(n.Inputs, node)
-}
-
-// Adds a new output node
-func (n *Network) AddOutputNode(node *NNode) {
-	n.Outputs = append(n.Outputs, node)
-}
-
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
 func (n *Network) LoadSensors(sensors []float64) {
 	counter := 0
