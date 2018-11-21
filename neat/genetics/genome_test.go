@@ -50,7 +50,7 @@ func TestGenome_NewGenomeRand(t *testing.T) {
 	recurrent := false
 	link_prob := 0.5
 
-	gnome := NewGenomeRand(new_id, in, out, n, nmax, recurrent, link_prob)
+	gnome := newGenomeRand(new_id, in, out, n, nmax, recurrent, link_prob)
 
 	if gnome == nil {
 		t.Error("Failed to create random genome")

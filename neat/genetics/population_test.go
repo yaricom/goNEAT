@@ -64,7 +64,7 @@ func TestNewPopulation(t *testing.T) {
 		CompatThreshold:0.5,
 		PopSize:10,
 	}
-	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
+	gen := newGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
 
 	pop, err := NewPopulation(gen, &conf)
 	if err != nil {
@@ -80,7 +80,7 @@ func TestNewPopulation(t *testing.T) {
 	if pop.nextNodeId != int32(last_node_id + 1) {
 		t.Error("pop.currNodeId != last_node_id")
 	}
-	last_gene_innov_num, _ := gen.getLastGeneInnovNum()
+	last_gene_innov_num, _ := gen.getNextGeneInnovNum()
 	if pop.nextInnovNum != last_gene_innov_num {
 		t.Error("pop.currInnovNum != last_gene_innov_num")
 	}

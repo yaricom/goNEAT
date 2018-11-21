@@ -85,7 +85,7 @@ func NewPopulationRandom(in, out, nmax int, recurrent bool, link_prob float64, c
 
 	pop := newPopulation()
 	for count := 0; count < context.PopSize; count++ {
-		gen := NewGenomeRand(count, in, out, rand.Intn(nmax), nmax, recurrent, link_prob)
+		gen := newGenomeRand(count, in, out, rand.Intn(nmax), nmax, recurrent, link_prob)
 		pop.Organisms = append(pop.Organisms, NewOrganism(0.0, gen, 1))
 	}
 	pop.nextNodeId = int32(in + out + nmax + 1)
@@ -139,7 +139,7 @@ func ReadPopulation(ir io.Reader, context *neat.NeatContext) (pop *Population, e
 				return nil, err
 			}
 
-			if last_gene_innov_num, err := new_genome.getLastGeneInnovNum(); err == nil {
+			if last_gene_innov_num, err := new_genome.getNextGeneInnovNum(); err == nil {
 				if pop.nextInnovNum < last_gene_innov_num {
 					pop.nextInnovNum = last_gene_innov_num
 				}
@@ -241,7 +241,7 @@ func (p *Population) spawn(g *Genome, context *neat.NeatContext) error {
 	//Keep a record of the innovation and node number we are on
 	nextNodeId, err := new_genome.getLastNodeId()
 	p.nextNodeId = int32(nextNodeId + 1)
-	p.nextInnovNum, err = new_genome.getLastGeneInnovNum()
+	p.nextInnovNum, err = new_genome.getNextGeneInnovNum()
 
 	if err != nil {
 		return err
