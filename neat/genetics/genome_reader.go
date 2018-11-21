@@ -183,6 +183,7 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 		Traits:make([]*neat.Trait, 0),
 		Nodes:make([]*network.NNode, 0),
 		Genes:make([]*Gene, 0),
+		ControlGenes:make([]*MIMOControlGene, 0),
 	}
 
 	// read traits
@@ -213,6 +214,16 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 			return nil, err
 		}
 		gnome.Genes = append(gnome.Genes, gene)
+	}
+
+	// read MIMO control genes
+	mimoGenes := gm["modules"].([]interface{})
+	for _, mg := range mimoGenes {
+		mGene, err := readMIMOControlGene(mg.(map[interface{}]interface{}), gnome.Traits, gnome.Nodes)
+		if err != nil {
+			return nil, err
+		}
+		gnome.ControlGenes = append(gnome.ControlGenes, mGene)
 	}
 
 	return gnome, nil
@@ -261,6 +272,76 @@ func readGene(conf map[interface{}]interface{}, traits []*neat.Trait, nodes []*n
 	}
 }
 
+// Reads MIMOControlGene configuration
+func readMIMOControlGene(conf map[interface{}]interface{}, traits []*neat.Trait, nodes []*network.NNode) (gene *MIMOControlGene, err error) {
+	// read control node parameters
+	activation := conf["activation"].(string)
+	control_node := network.NewNetworkNode()
+	control_node.Id = conf["id"].(int)
+	control_node.ActivationType, err = network.NodeActivators.ActivationTypeFromName(activation)
+	if err != nil {
+		return nil, err
+	}
+	traitId := conf["trait_id"].(int)
+	trait := traitWithId(traitId, traits)
+	control_node.Trait = trait
+
+	// read MIMO gene parameters
+	inov_num, err := cast.ToInt64E(conf["innov_num"])
+	if err != nil {
+		return nil, err
+	}
+	enabled, err := cast.ToBoolE(conf["enabled"])
+	if err != nil {
+		return nil, err
+	}
+
+	// read input links
+	inNodes, err := cast.ToSliceE(conf["inputs"])
+	if err != nil {
+		return nil, err
+	}
+	control_node.Incoming = make([]*network.Link, len(inNodes))
+	for i, mn := range inNodes {
+		n := mn.(map[interface{}]interface{})
+		node_id, err := cast.ToIntE(n["id"])
+		if err != nil {
+			return nil, err
+		}
+		node := nodeWithId(node_id, nodes)
+		if node != nil {
+			control_node.Incoming[i] = network.NewLink(1.0, node, control_node, false)
+		} else {
+			return nil, errors.New(fmt.Sprintf("no MIMO input node with id: %d can be found for module: %d",
+				node_id, control_node.Id))
+		}
+	}
+
+	// read output links
+	outNodes, err := cast.ToSliceE(conf["outputs"])
+	if err != nil {
+		return nil, err
+	}
+	control_node.Outgoing = make([]*network.Link, len(outNodes))
+	for i, mn := range outNodes {
+		n := mn.(map[interface{}]interface{})
+		node_id, err := cast.ToIntE(n["id"])
+		if err != nil {
+			return nil, err
+		}
+		node := nodeWithId(node_id, nodes)
+		if node != nil {
+			control_node.Outgoing[i] = network.NewLink(1.0, control_node, node, false)
+		} else {
+			return nil, errors.New(fmt.Sprintf("no MIMO output node with id: %d can be found for module: %d",
+				node_id, control_node.Id))
+		}
+	}
+
+	// build gene
+	return newMIMOGene(control_node, inov_num, 0.0, enabled), nil
+}
+
 // Reads NNode configuration
 func readNNode(conf map[interface{}]interface{}, traits []*neat.Trait) (*network.NNode, error) {
 	nd := network.NewNetworkNode()
@@ -294,15 +375,25 @@ func readTrait(conf map[interface{}]interface{}) (*neat.Trait, error) {
 }
 
 func traitWithId(trait_id int, traits []*neat.Trait) *neat.Trait {
-	var trait *neat.Trait = nil
 	if trait_id != 0 && traits != nil {
 		for _, tr := range traits {
 			if tr.Id == trait_id {
-				trait = tr
+				return tr
 			}
 		}
 	}
-	return trait
+	return nil
+}
+
+func nodeWithId(node_id int, nodes []*network.NNode) *network.NNode {
+	if node_id != 0 && nodes != nil {
+		for _, n := range nodes {
+			if n.Id == node_id {
+				return n
+			}
+		}
+	}
+	return nil
 }
 
 
