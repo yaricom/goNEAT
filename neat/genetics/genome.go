@@ -16,25 +16,30 @@ import (
 // 	1) A Vector of Traits
 // 	2) A List of NNodes pointing to a Trait from (1)
 // 	3) A List of Genes with Links that point to Traits from (1)
+// 	4) A List of MIMO Control Genes with Links to different genome modules
 //
 // (1) Reserved parameter space for future use.
 // (2) NNode specifications.
 // (3) Is the primary source of innovation in the evolutionary Genome.
+// (4) Control genes allows to receive inputs from multiple independent genome modules and output processed signal to the
+//     multitude of output locations
 //
 // Each Gene in (3) has a marker telling when it arose historically. Thus, these Genes can be used to speciate the
 // population, and the list of Genes provide an evolutionary history of innovation and link-building.
 type Genome struct {
 	// The genome ID
-	Id        int
+	Id           int
 	// The parameters conglomerations
-	Traits    []*neat.Trait
+	Traits       []*neat.Trait
 	// List of NNodes for the Network
-	Nodes     []*network.NNode
+	Nodes        []*network.NNode
 	// List of innovation-tracking genes
-	Genes     []*Gene
+	Genes        []*Gene
+	// List of MIMO control genes
+	ControlGenes []*MIMOControlGene
 
 	// Allows Genome to be matched with its Network
-	Phenotype *network.Network
+	Phenotype    *network.Network
 }
 
 // Constructor which takes full genome specs and puts them into the new one
@@ -47,10 +52,21 @@ func NewGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene) *Genome {
 	}
 }
 
+// Constructs new modular genome
+func NewModularGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene, mimoG []*MIMOControlGene) *Genome {
+	return &Genome{
+		Id:id,
+		Traits:t,
+		Nodes:n,
+		Genes:g,
+		ControlGenes:mimoG,
+	}
+}
+
 // This special constructor creates a Genome with in inputs, out outputs, n out of nmax hidden units, and random
 // connectivity.  If rec is true then recurrent connections will be included. The last input is a bias
-// link_prob is the probability of a link  */
-func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64) *Genome {
+// link_prob is the probability of a link. The created genome is not modular.
+func newGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64) *Genome {
 	total_nodes := in + out + nmax
 	matrix_dim := total_nodes * total_nodes
 	// The connection matrix which will be randomized
@@ -272,12 +288,22 @@ func (g *Genome) getLastNodeId() (int, error) {
 }
 
 // Return innovation number of last gene in Genome + 1
-func (g *Genome) getLastGeneInnovNum() (int64, error) {
+func (g *Genome) getNextGeneInnovNum() (int64, error) {
+	inn_num := int64(0)
+	// check connection genes
 	if len(g.Genes) > 0 {
-		return g.Genes[len(g.Genes) - 1].InnovationNum + int64(1), nil
+		inn_num = g.Genes[len(g.Genes) - 1].InnovationNum
 	} else {
 		return -1, errors.New("Genome has no Genes")
 	}
+	// check control genes if any
+	if len(g.ControlGenes) > 0 {
+		c_inn_num := g.ControlGenes[len(g.ControlGenes) - 1].InnovationNum
+		if c_inn_num > inn_num {
+			inn_num = c_inn_num
+		}
+	}
+	return inn_num + int64(1), nil
 }
 
 // Returns true if this Genome already includes provided node
@@ -295,7 +321,7 @@ func (g *Genome) hasNode(node *network.NNode) bool {
 
 // Returns true if this Genome already includes provided gene
 func (g *Genome) hasGene(gene *Gene) bool {
-	if inn, _ := g.getLastGeneInnovNum(); gene.InnovationNum >= inn {
+	if inn, _ := g.getNextGeneInnovNum(); gene.InnovationNum >= inn {
 		return false
 	}
 
