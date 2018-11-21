@@ -132,9 +132,6 @@ func (n *Network) Activate() (bool, error) {
 			if np.IsNeuron() {
 				// Only activate if some active input came in
 				if np.isActive {
-					// Keep a memory of activations for potential time delayed connections
-					np.saveActivations()
-
 					// Now run the net activation through an activation function
 					err := NodeActivators.ActivateNode(np)
 					if err != nil {
