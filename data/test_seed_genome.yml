@@ -44,18 +44,20 @@ genome:
   # The modules (activators with multiple inputs/outputs). Allows to route outputs of group of neurons within genome and apply specific activation function en route.
   modules:
     -
-      id: 1
+      id: 15
       trait_id: 0
       activation: MultiplyModuleActivation
+      innov_num: 16
       inputs:
         - {id: 8,  order: 0}
         - {id: 9,  order: 1}
       outputs:
         - {id: 10, order: 0}
     -
-      id: 2
+      id: 16
       trait_id: 0
       activation: MultiplyModuleActivation
+      innov_num: 17
       inputs:
         - {id: 11, order: 0}
         - {id: 12, order: 1}
