@@ -383,6 +383,9 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		if g.InnovationNum != int64(i + 16) {
 			t.Error("Wrong innovation number at: ", i, g.InnovationNum)
 		}
+		if g.MutationNum != 0.5 + float64(i) {
+			t.Error("Wrong muttanion number at:", i, g.MutationNum)
+		}
 		if g.IsEnabled == false {
 			t.Error("Wrong enabled value for module at: ", i)
 		}

@@ -294,6 +294,10 @@ func readMIMOControlGene(conf map[interface{}]interface{}, traits []*neat.Trait,
 	if err != nil {
 		return nil, err
 	}
+	mut_num, err := cast.ToFloat64E(conf["mut_num"])
+	if err != nil {
+		return nil, err
+	}
 	enabled, err := cast.ToBoolE(conf["enabled"])
 	if err != nil {
 		return nil, err
@@ -342,7 +346,7 @@ func readMIMOControlGene(conf map[interface{}]interface{}, traits []*neat.Trait,
 	}
 
 	// build gene
-	return newMIMOGene(control_node, inov_num, 0.0, enabled), nil
+	return newMIMOGene(control_node, inov_num, mut_num, enabled), nil
 }
 
 // Reads NNode configuration

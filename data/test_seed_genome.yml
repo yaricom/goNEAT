@@ -48,6 +48,7 @@ genome:
       trait_id: 0
       activation: MultiplyModuleActivation
       innov_num: 16
+      mut_num: 0.5
       enabled: true
       inputs:
         - {id: 8,  order: 0}
@@ -59,6 +60,7 @@ genome:
       trait_id: 0
       activation: MultiplyModuleActivation
       innov_num: 17
+      mut_num: 1.5
       enabled: true
       inputs:
         - {id: 11, order: 0}
