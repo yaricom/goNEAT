@@ -217,14 +217,17 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 	}
 
 	// read MIMO control genes
-	mimoGenes := gm["modules"].([]interface{})
-	for _, mg := range mimoGenes {
-		mGene, err := readMIMOControlGene(mg.(map[interface{}]interface{}), gnome.Traits, gnome.Nodes)
-		if err != nil {
-			return nil, err
+	mimoGenes := gm["modules"]
+	if mimoGenes != nil {
+		for _, mg := range mimoGenes.([]interface{}) {
+			mGene, err := readMIMOControlGene(mg.(map[interface{}]interface{}), gnome.Traits, gnome.Nodes)
+			if err != nil {
+				return nil, err
+			}
+			gnome.ControlGenes = append(gnome.ControlGenes, mGene)
 		}
-		gnome.ControlGenes = append(gnome.ControlGenes, mGene)
 	}
+
 
 	return gnome, nil
 }
