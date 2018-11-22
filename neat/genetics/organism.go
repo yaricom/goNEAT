@@ -66,11 +66,20 @@ type Organism struct {
 
 // Creates new organism with specified genome, fitness and given generation number
 func NewOrganism(fit float64, g *Genome, generation int) *Organism {
-	return &Organism{
-		Fitness:fit,
-		Genotype:g,
-		Phenotype:g.genesis(g.Id),
-		Generation:generation,
+	if g.Phenotype == nil {
+		return &Organism{
+			Fitness:fit,
+			Genotype:g,
+			Phenotype:g.genesis(g.Id),
+			Generation:generation,
+		}
+	} else {
+		return &Organism{
+			Fitness:fit,
+			Genotype:g,
+			Phenotype:g.Phenotype,
+			Generation:generation,
+		}
 	}
 }
 
