@@ -335,7 +335,7 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 	if len(genome.Genes) != 15 {
 		t.Error("len(genome.Genes) != 15", len(genome.Genes))
 	}
-	genes := []*Gene {
+	genes := []*Gene{
 		newGene(network.NewLinkWithTrait(genome.Traits[1], 0.0, nodes[0], nodes[5], false), 1, 0, true),
 		newGene(network.NewLinkWithTrait(genome.Traits[2], 0.0, nodes[1], nodes[5], false), 2, 0, true),
 		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[4], nodes[5], false), 3, 0, true),
@@ -372,5 +372,62 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		if g.Link.OutNode.Id != genome.Genes[i].Link.OutNode.Id {
 			t.Error("g.Link.OutNode.Id != genome.Genes[i].Link.OutNode.Id at:", i)
 		}
+	}
+
+	// Check control genes
+	if len(genome.ControlGenes) != 2 {
+		t.Error("len(genome.ControlGenes) != 2", len(genome.ControlGenes))
+	}
+	id_count := 8
+	for i, g := range genome.ControlGenes {
+		if g.InnovationNum != int64(i + 16) {
+			t.Error("Wrong innovation number at: ", i, g.InnovationNum)
+		}
+		if g.IsEnabled == false {
+			t.Error("Wrong enabled value for module at: ", i)
+		}
+		if g.ControlNode == nil {
+			t.Error("g.ControlNode == nil at:", i)
+			return
+		}
+		if g.ControlNode.Id != i + 15 {
+			t.Error("Wrong control node ID at:", i, g.ControlNode.Id)
+		}
+		if g.ControlNode.ActivationType != network.MultiplyModuleActivation {
+			t.Error("g.ControlNode.ActivationType != network.MultiplyModuleActivation at:", i)
+		}
+		if g.ControlNode.NeuronType != network.HiddenNeuron {
+			t.Error("g.ControlNode.NeuronType != network.HiddenNeuron at:", i)
+		}
+		if len(g.ControlNode.Incoming) != 2 {
+			t.Error("len(g.ControlNode.Incoming) != 2 at:", i, len(g.ControlNode.Incoming))
+			return
+		}
+		if len(g.ControlNode.Outgoing) != 1 {
+			t.Error("len(g.ControlNode.Outgoing) != 1 at:", i, len(g.ControlNode.Outgoing))
+			return
+		}
+		for j, l := range g.ControlNode.Incoming {
+			if l.InNode.Id != id_count {
+				t.Error("l.InNode.Id != id_count", l.InNode.Id, id_count)
+			}
+			if l.OutNode.Id != g.ControlNode.Id {
+				t.Error("l.OutNode.Id != g.ControlNode.Id", l.OutNode.Id, g.ControlNode.Id)
+			}
+			if l.Weight != 1.0 {
+				t.Error("l.Weight != 1.0 at: ", i, j)
+			}
+			id_count++
+		}
+		if g.ControlNode.Outgoing[0].InNode.Id != g.ControlNode.Id {
+			t.Error("g.ControlNode.Outgoing[0].InNode != g.ControlNode.Id", g.ControlNode.Outgoing[0].InNode, g.ControlNode.Id)
+		}
+		if g.ControlNode.Outgoing[0].OutNode.Id != id_count {
+			t.Error("g.ControlNode.Outgoing[0].OutNode != id_count", g.ControlNode.Outgoing[0].OutNode, id_count)
+		}
+		if g.ControlNode.Outgoing[0].Weight != 1.0 {
+			t.Error("g.ControlNode.Outgoing[0].Weight != 1.0 at:", i)
+		}
+		id_count++
 	}
 }

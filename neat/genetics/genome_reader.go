@@ -275,13 +275,16 @@ func readGene(conf map[interface{}]interface{}, traits []*neat.Trait, nodes []*n
 // Reads MIMOControlGene configuration
 func readMIMOControlGene(conf map[interface{}]interface{}, traits []*neat.Trait, nodes []*network.NNode) (gene *MIMOControlGene, err error) {
 	// read control node parameters
-	activation := conf["activation"].(string)
 	control_node := network.NewNetworkNode()
 	control_node.Id = conf["id"].(int)
+	control_node.NeuronType = network.HiddenNeuron
+	// set activation function
+	activation := conf["activation"].(string)
 	control_node.ActivationType, err = network.NodeActivators.ActivationTypeFromName(activation)
 	if err != nil {
 		return nil, err
 	}
+	// set associated Trait
 	traitId := conf["trait_id"].(int)
 	trait := traitWithId(traitId, traits)
 	control_node.Trait = trait
