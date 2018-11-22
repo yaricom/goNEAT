@@ -86,7 +86,11 @@ func NewPopulationRandom(in, out, nmax int, recurrent bool, link_prob float64, c
 	pop := newPopulation()
 	for count := 0; count < context.PopSize; count++ {
 		gen := newGenomeRand(count, in, out, rand.Intn(nmax), nmax, recurrent, link_prob)
-		pop.Organisms = append(pop.Organisms, NewOrganism(0.0, gen, 1))
+		org, err := NewOrganism(0.0, gen, 1)
+		if err != nil {
+			return nil, err
+		}
+		pop.Organisms = append(pop.Organisms, org)
 	}
 	pop.nextNodeId = int32(in + out + nmax + 1)
 	pop.nextInnovNum = int64((in + out + nmax) * (in + out + nmax) + 1)
@@ -128,7 +132,10 @@ func ReadPopulation(ir io.Reader, context *neat.NeatContext) (pop *Population, e
 				return nil, err
 			}
 			// add new organism for read genome
-			new_organism := NewOrganism(0.0, new_genome, 1)
+			new_organism, err := NewOrganism(0.0, new_genome, 1)
+			if err != nil {
+				return nil, err
+			}
 			pop.Organisms = append(pop.Organisms, new_organism)
 
 			if last_node_id, err := new_genome.getLastNodeId(); err == nil {
@@ -235,7 +242,10 @@ func (p *Population) spawn(g *Genome, context *neat.NeatContext) error {
 		if err != nil {
 			return err
 		}
-		new_organism := NewOrganism(0.0, new_genome, 1)
+		new_organism, err := NewOrganism(0.0, new_genome, 1)
+		if err != nil {
+			return err
+		}
 		p.Organisms = append(p.Organisms, new_organism)
 	}
 	//Keep a record of the innovation and node number we are on

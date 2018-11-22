@@ -271,6 +271,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 		}
 
 		var baby *Organism
+		var err error
 
 		if the_champ.superChampOffspring > 0 {
 			neat.DebugLog("SPECIES: Reproduce super champion")
@@ -290,7 +291,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 				} else {
 					// Sometimes we add a link to a superchamp
 					new_genome.genesis(generation)
-					_, err := new_genome.mutateAddLink(pop, context)
+					_, err = new_genome.mutateAddLink(pop, context)
 					if err != nil {
 						return nil, err
 					}
@@ -299,7 +300,10 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 			}
 
 			// Create the new baby organism
-			baby = NewOrganism(0.0, new_genome, generation)
+			baby, err = NewOrganism(0.0, new_genome, generation)
+			if err != nil {
+				return nil, err
+			}
 
 			if the_champ.superChampOffspring == 1 {
 				if the_champ.isPopulationChampion {
@@ -319,7 +323,10 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 			champ_clone_done = true
 
 			// Create the new baby organism
-			baby = NewOrganism(0.0, new_genome, generation)
+			baby, err = NewOrganism(0.0, new_genome, generation)
+			if err != nil {
+				return nil, err
+			}
 
 		} else if rand.Float64() < context.MutateOnlyProb || pool_size == 1 {
 			neat.DebugLog("SPECIES: Reproduce by applying random mutation:")
@@ -334,7 +341,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 				neat.DebugLog("SPECIES: ---> mutateAddNode")
 
 				// Mutate add node
-				_, err := new_genome.mutateAddNode(pop, context)
+				_, err = new_genome.mutateAddNode(pop, context)
 				if err != nil {
 					return nil, err
 				}
@@ -344,7 +351,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 
 				// Mutate add link
 				new_genome.genesis(generation)
-				_, err := new_genome.mutateAddLink(pop, context)
+				_, err = new_genome.mutateAddLink(pop, context)
 				if err != nil {
 					return nil, err
 				}
@@ -362,14 +369,17 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 				neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 				// If we didn't do a structural mutation, we do the other kinds
-				_, err := new_genome.mutateAllNonstructural(context)
+				_, err = new_genome.mutateAllNonstructural(context)
 				if err != nil {
 					return nil, err
 				}
 			}
 
 			// Create the new baby organism
-			baby = NewOrganism(0.0, new_genome, generation);
+			baby, err = NewOrganism(0.0, new_genome, generation);
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			neat.DebugLog("SPECIES: Reproduce by mating:")
 
@@ -482,7 +492,10 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 				}
 			}
 			// Create the new baby organism
-			baby = NewOrganism(0.0, new_genome, generation)
+			baby, err = NewOrganism(0.0, new_genome, generation)
+			if err != nil {
+				return nil, err
+			}
 		} // end else
 
 		baby.mutationStructBaby = mut_struct_baby

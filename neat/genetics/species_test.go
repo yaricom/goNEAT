@@ -14,9 +14,13 @@ func buildSpeciesWithOrganisms(id int) *Species {
 	}
 
 	sp := NewSpecies(id)
-	sp.addOrganism(NewOrganism(5.0 * float64(id), gen, id))
-	sp.addOrganism(NewOrganism(15.0 * float64(id), gen, id))
-	sp.addOrganism(NewOrganism(10.0 * float64(id), gen, id))
+	for i := 0; i < 3; i++ {
+		org, err := NewOrganism( float64(i + 1) * 5.0 * float64(id), gen, id)
+		if err != nil {
+			return nil
+		}
+		sp.addOrganism(org)
+	}
 
 	return sp
 }
@@ -140,8 +144,12 @@ func TestSpecies_removeOrganism(t *testing.T) {
 	gen := &Genome{
 		Id:1,
 	}
-	org := NewOrganism(6.0, gen, 1)
+	org, err := NewOrganism(6.0, gen, 1)
 	res, err = sp.removeOrganism(org)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if res == true {
 		t.Error("res == true", res, err)
 	}
