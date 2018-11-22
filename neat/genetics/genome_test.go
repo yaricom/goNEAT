@@ -73,7 +73,11 @@ func TestGenome_Genesis(t *testing.T) {
 
 	net_id := 10
 
-	net := gnome.genesis(net_id)
+	net, err := gnome.genesis(net_id)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if net == nil {
 		t.Error("Failed to do network genesis")
 	}

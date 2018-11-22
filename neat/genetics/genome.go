@@ -335,7 +335,7 @@ func (g *Genome) hasGene(gene *Gene) bool {
 }
 
 // Generate a Network phenotype from this Genome with specified id
-func (g *Genome) genesis(net_id int) *network.Network {
+func (g *Genome) genesis(net_id int) (*network.Network, error) {
 	// Inputs and outputs will be collected here for the network.
 	// All nodes are collected in an all_list -
 	// this is useful for network traversing routines
@@ -363,11 +363,11 @@ func (g *Genome) genesis(net_id int) *network.Network {
 	}
 
 	if len(g.Genes) == 0 {
-		neat.WarnLog("The network built whitout GENES; the result can be unpredictable")
+		return nil, errors.New("The network built whitout GENES; the result can be unpredictable")
 	}
 
 	if len(out_list) == 0 {
-		neat.WarnLog(fmt.Sprintf("The network whitout OUTPUTS; the result can be unpredictable. Genome: %s", g))
+		return nil, errors.New(fmt.Sprintf("The network whitout OUTPUTS; the result can be unpredictable. Genome: %s", g))
 	}
 
 	var in_node, out_node *network.NNode
@@ -390,16 +390,48 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		}
 	}
 
-	// Create the new network
-	new_net := network.NewNetwork(in_list, out_list, all_list, net_id)
-	// Attach genotype and phenotype together:
-	// new_net point to owner genotype (this)
-	// TODO new_net.Genome = g
+	var new_net *network.Network
+	if len(g.ControlGenes) == 0 {
+		// Create the new network
+		new_net = network.NewNetwork(in_list, out_list, all_list, net_id)
+	} else {
+		// Create MIMO control genes
+		c_nodes := make([]*network.NNode, 0)
+		for _, cg := range g.ControlGenes {
+			// Only process enabled genes
+			if cg.IsEnabled {
+				new_c_node := network.NewNNodeCopy(cg.ControlNode, cg.ControlNode.Trait)
 
+				// connect inputs
+				for _, l := range cg.ControlNode.Incoming {
+					in_node = l.InNode.PhenotypeAnalogue
+					out_node = new_c_node
+					new_link = network.NewLink(l.Weight, in_node, out_node, false)
+					out_node.Incoming = append(out_node.Incoming, new_link)
+					in_node.Outgoing = append(in_node.Outgoing, new_link)
+				}
+
+				// connect outputs
+				for _, l := range cg.ControlNode.Outgoing {
+					in_node = new_c_node
+					out_node = l.OutNode.PhenotypeAnalogue
+					new_link = network.NewLink(l.Weight, in_node, out_node, false)
+					out_node.Incoming = append(out_node.Incoming, new_link)
+					in_node.Outgoing = append(in_node.Outgoing, new_link)
+				}
+
+				// store control node
+				c_nodes = append(c_nodes, new_c_node)
+			}
+		}
+		new_net = network.NewModularNetwork(in_list, out_list, all_list, c_nodes, net_id)
+	}
+
+	// Attach genotype and phenotype together:
 	// genotype points to owner phenotype (new_net)
 	g.Phenotype = new_net
 
-	return new_net
+	return new_net, nil
 }
 
 // Duplicate this Genome to create a new one with the specified id

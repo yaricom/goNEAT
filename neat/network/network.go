@@ -10,28 +10,44 @@ import (
 // or learn on its own, even though it may be part of a larger framework.
 type Network struct {
 	// A network id
-	Id        int
+	Id            int
 	// Is a name of this network */
-	Name      string
+	Name          string
 
 	// The number of links in the net (-1 means not yet counted)
-	numlinks  int
+	numlinks      int
 
 	// A list of all the nodes in the network
-	all_nodes []*NNode
+	all_nodes     []*NNode
 	// NNodes that input into the network
-	Inputs    []*NNode
+	inputs        []*NNode
 	// NNodes that output from the network
-	Outputs   []*NNode
+	Outputs       []*NNode
+
+	// NNodes that connect network modules
+	control_nodes []*NNode
 }
 
 // Creates new network
 func NewNetwork(in, out, all []*NNode, net_id int) *Network {
 	n := Network{
 		Id:net_id,
-		Inputs:in,
+		inputs:in,
 		Outputs:out,
 		all_nodes:all,
+		numlinks:-1,
+	}
+	return &n
+}
+
+// Creates new modular network with control nodes
+func NewModularNetwork(in, out, all, control []*NNode, net_id int) *Network {
+	n := Network{
+		Id:net_id,
+		inputs:in,
+		Outputs:out,
+		all_nodes:all,
+		control_nodes:control,
 		numlinks:-1,
 	}
 	return &n
@@ -69,7 +85,7 @@ func (n *Network) PrintActivation() string {
 // Print the values of network inputs to the console
 func (n *Network) PrintInput() string {
 	out := bytes.NewBufferString(fmt.Sprintf("Network %s with id %d inputs: (", n.Name, n.Id))
-	for i, node := range n.Inputs {
+	for i, node := range n.inputs {
 		fmt.Fprintf(out, "[Input #%d: %s] ", i, node)
 	}
 	fmt.Fprint(out, ")")
@@ -145,6 +161,10 @@ func (n *Network) Activate() (bool, error) {
 				//fmt.Printf("Node: %s, activation sum: %f, active: %t\n", np, np.ActivationSum, np.IsActive)
 			}
 		}
+
+		// Now activate MIMO control genes to propagate activation through genome modules
+		//for _,
+
 		one_time = true
 	}
 	return true, nil
@@ -153,7 +173,7 @@ func (n *Network) Activate() (bool, error) {
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
 func (n *Network) LoadSensors(sensors []float64) {
 	counter := 0
-	for _, node := range n.Inputs {
+	for _, node := range n.inputs {
 		if node.IsSensor() {
 			node.SensorLoad(sensors[counter])
 			counter += 1
@@ -163,7 +183,11 @@ func (n *Network) LoadSensors(sensors []float64) {
 
 // Counts the number of nodes in the net
 func (n *Network) NodeCount() int {
-	return len(n.all_nodes)
+	if len(n.control_nodes) == 0 {
+		return len(n.all_nodes)
+	} else {
+		return len(n.all_nodes) + len(n.control_nodes)
+	}
 }
 
 // Counts the number of links in the net
@@ -171,6 +195,11 @@ func (n *Network) LinkCount() int {
 	n.numlinks = 0
 	for _, node := range n.all_nodes {
 		n.numlinks += len(node.Incoming)
+	}
+	if len(n.control_nodes) != 0 {
+		for _, node := range n.control_nodes {
+			n.numlinks += len(node.Incoming)
+		}
 	}
 	return n.numlinks
 }
@@ -211,7 +240,7 @@ func (n *Network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) 
 // Find the maximum number of neurons between an output and an input
 func (n *Network) MaxDepth() (int, error) {
 	// The quick case when there are no hidden nodes
-	if len(n.all_nodes) == len(n.Inputs) + len(n.Outputs) {
+	if len(n.all_nodes) == len(n.inputs) + len(n.Outputs) && len(n.control_nodes) == 0 {
 		return 1, nil // just one layer depth
 	}
 
