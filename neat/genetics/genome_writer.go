@@ -35,7 +35,7 @@ type plainGenomeWriter struct {
 
 // Writes genome in Plain Text format
 func (wr *plainGenomeWriter) WriteGenome(g *Genome) error {
-	_, err:=fmt.Fprintf(wr.w, "genomestart %d\n", g.Id)
+	_, err := fmt.Fprintf(wr.w, "genomestart %d\n", g.Id)
 	if err != nil {
 		return err
 	}
@@ -142,12 +142,25 @@ func (wr *yamlGenomeWriter) WriteGenome(g *Genome) (err error) {
 	}
 	g_map["nodes"] = nodes
 
-	// encode network genes
+	// encode connection genes
 	genes := make([]map[string]interface{}, len(g.Genes))
-	for i, g := range g.Genes {
-		genes[i] = wr.encodeConnectionGene(g)
+	for i, gn := range g.Genes {
+		genes[i] = wr.encodeConnectionGene(gn)
 	}
 	g_map["genes"] = genes
+
+	// encode control genes if any
+	if len(g.ControlGenes) > 0 {
+		modules := make([]map[string]interface{}, len(g.ControlGenes))
+		for i, cg := range g.ControlGenes {
+			modules[i], err = wr.encodeControlGene(cg)
+			if err != nil {
+				return err
+			}
+		}
+		g_map["modules"] = modules
+	}
+
 
 	// store genome map
 	r_map := make(map[string]interface{})
@@ -162,6 +175,45 @@ func (wr *yamlGenomeWriter) WriteGenome(g *Genome) (err error) {
 	}
 
 	return err
+}
+
+func (wr *yamlGenomeWriter) encodeControlGene(gene *MIMOControlGene) (g_map map[string]interface{}, err error) {
+	g_map = make(map[string]interface{})
+	g_map["id"] = gene.ControlNode.Id
+	if gene.ControlNode.Trait != nil {
+		g_map["trait_id"] = gene.ControlNode.Trait.Id
+	} else {
+		g_map["trait_id"] = 0
+	}
+	g_map["innov_num"] = gene.InnovationNum
+	g_map["mut_num"] = gene.MutationNum
+	g_map["enabled"] = gene.IsEnabled
+	g_map["activation"], err = network.NodeActivators.ActivationNameFromType(gene.ControlNode.ActivationType)
+	if err != nil {
+		return nil, err
+	}
+	// store inputs
+	inputs := make([]map[string]interface{}, len(gene.ControlNode.Incoming))
+	for i, in := range gene.ControlNode.Incoming {
+		inputs[i] = wr.encodeModuleLink(in.InNode.Id, i)
+	}
+	g_map["inputs"] = inputs
+
+	// store outputs
+	outputs := make([]map[string]interface{}, len(gene.ControlNode.Outgoing))
+	for i, out := range gene.ControlNode.Outgoing {
+		outputs[i] = wr.encodeModuleLink(out.OutNode.Id, i)
+	}
+	g_map["outputs"] = outputs
+
+	return g_map, err
+}
+
+func (wr *yamlGenomeWriter) encodeModuleLink(id, order int) map[string]interface{} {
+	l_map := make(map[string]interface{})
+	l_map["id"] = id
+	l_map["order"] = order
+	return l_map
 }
 
 func (wr *yamlGenomeWriter) encodeConnectionGene(gene *Gene) map[string]interface{} {

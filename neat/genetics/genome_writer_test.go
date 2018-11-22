@@ -121,6 +121,36 @@ func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
 	gnome := buildTestGenome(1)
 
+	// append module with it's IO nodes
+	io_nodes := []*network.NNode{
+		{Id:5, NeuronType: network.HiddenNeuron, ActivationType: network.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:6, NeuronType: network.HiddenNeuron, ActivationType: network.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:7, NeuronType: network.HiddenNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+	}
+	gnome.Nodes = append(gnome.Nodes, io_nodes ...)
+
+	// connect added nodes
+	io_conn_genes := []*Gene{
+		newGene(network.NewLinkWithTrait(gnome.Traits[0], 1.5, gnome.Nodes[0], gnome.Nodes[4], false), 4, 0, true),
+		newGene(network.NewLinkWithTrait(gnome.Traits[2], 2.5, gnome.Nodes[1], gnome.Nodes[5], false), 5, 0, true),
+		newGene(network.NewLinkWithTrait(gnome.Traits[1], 3.5, gnome.Nodes[6], gnome.Nodes[3], false), 6, 0, true),
+	}
+	gnome.Genes = append(gnome.Genes, io_conn_genes ...)
+
+	// add control gene
+	c_node := &network.NNode{
+		Id:8, NeuronType: network.HiddenNeuron,
+		ActivationType: network.MultiplyModuleActivation,
+	}
+	c_node.Incoming = []*network.Link{
+		{Weight:1.0, InNode:io_nodes[0], OutNode:c_node},
+		{Weight:1.0, InNode:io_nodes[1], OutNode:c_node},
+	}
+	c_node.Outgoing = []*network.Link{
+		{Weight:1.0, InNode:c_node, OutNode:io_nodes[2]},
+	}
+	gnome.ControlGenes = []*MIMOControlGene{newMIMOGene(c_node, int64(7), 5.5, true)}
+
 	// encode genome
 	out_buf := bytes.NewBufferString("")
 	wr, err := NewGenomeWriter(bufio.NewWriter(out_buf), YAMLGenomeEncoding)
@@ -163,7 +193,6 @@ func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
 		}
 	}
 
-
 	if len(gnome.Nodes) != len(gnome_enc.Nodes) {
 		t.Error("len(gnome.Nodes) != len(gnome_enc.Nodes)", len(gnome.Nodes), len(gnome_enc.Nodes))
 	}
@@ -190,6 +219,46 @@ func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
 		}
 		if !reflect.DeepEqual(tr.Params, etr.Params) {
 			t.Error("!reflect.DeepEqual(tr.Params, etr.Params) at:", i)
+		}
+	}
+
+	if len(gnome.ControlGenes) != len(gnome_enc.ControlGenes) {
+		t.Error("len(gnome.ControlGenes) != len(gnome_enc.ControlGenes)",
+			len(gnome.ControlGenes), len(gnome_enc.ControlGenes))
+	}
+	for i, cg := range gnome.ControlGenes {
+		ocg := gnome_enc.ControlGenes[i]
+		if cg.IsEnabled != ocg.IsEnabled {
+			t.Error("cg.IsEnabled != ocg.IsEnabled at: ", i)
+		}
+		if cg.MutationNum != ocg.MutationNum {
+			t.Error("cg.MutationNum != ocg.MutationNum at:", i)
+		}
+		if cg.InnovationNum != ocg.InnovationNum {
+			t.Error("cg.InnovationNum != ocg.InnovationNum at:", i)
+		}
+		if cg.ControlNode.Id != ocg.ControlNode.Id {
+			t.Error("cg.ControlNode.Id != ocg.ControlNode.Id at:", i, cg.ControlNode.Id, ocg.ControlNode.Id)
+		}
+		checkLinks(cg.ControlNode.Incoming, ocg.ControlNode.Incoming, t)
+		checkLinks(cg.ControlNode.Outgoing, ocg.ControlNode.Outgoing, t)
+	}
+}
+
+func checkLinks(left, right []*network.Link, t *testing.T) {
+	if len(left) != len(right) {
+		t.Error("Links size mismatch", len(left), len(right))
+	}
+	for i, l := range left {
+		r := right[i]
+		if l.InNode.Id != r.InNode.Id {
+			t.Error("l.InNode.Id != r.InNode.Id", l.InNode.Id, r.InNode.Id)
+		}
+		if l.OutNode.Id != r.OutNode.Id {
+			t.Error("l.OutNode.Id != r.OutNode.Id", l.OutNode.Id, r.OutNode.Id )
+		}
+		if l.Weight != r.Weight {
+			t.Error("l.Weight != r.Weight", l.Weight, r.Weight)
 		}
 	}
 }
