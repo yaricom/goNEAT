@@ -25,15 +25,16 @@ func TestPlainGenomeReader_Read(t *testing.T) {
 		t.Error("len(gnome.Traits) != 3", len(gnome.Traits))
 		return
 	}
+	ids := []int{1, 3, 2}
 	for i, tr := range gnome.Traits {
-		if tr.Id != i + 1 {
-			t.Error("Wrong Traint ID", tr.Id)
+		if tr.Id != ids[i] {
+			t.Error("Wrong Traint ID", tr.Id, i)
 		}
 		if len(tr.Params) != 8 {
 			t.Error("Wrong Trait's parameters lenght", len(tr.Params))
 		}
-		if tr.Params[0] != float64(i + 1) / 10.0 {
-			t.Error("Wrong Trait params read", tr.Params[0])
+		if tr.Params[0] != float64(ids[i]) / 10.0 {
+			t.Error("Wrong Trait params read", tr.Params[0], i)
 		}
 	}
 

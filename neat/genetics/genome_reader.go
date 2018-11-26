@@ -11,6 +11,7 @@ import (
 	"strings"
 	"github.com/spf13/cast"
 	"gopkg.in/yaml.v2"
+	"strconv"
 )
 
 
@@ -104,8 +105,7 @@ func readPlainTrait(r io.Reader) (*neat.Trait, error) {
 	_, err := fmt.Fscanf(r, "%d ", &nt.Id)
 	if err == nil {
 		for i := 0; i < neat.Num_trait_params; i++ {
-			_, err = fmt.Fscanf(r, "%g ", &nt.Params[i])
-			if err != nil {
+			if _, err = fmt.Fscanf(r, "%g ", &nt.Params[i]); err != nil {
 				return nil, err
 			}
 		}
@@ -118,11 +118,36 @@ func readPlainTrait(r io.Reader) (*neat.Trait, error) {
 // and applies corresponding trait to it from a list of traits provided
 func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, error) {
 	n := network.NewNetworkNode()
-	var trait_id, node_type int
-	_, err := fmt.Fscanf(r, "%d %d %d %d ", &n.Id, &trait_id, &node_type, &n.NeuronType)
-	if err == nil {
-		n.Trait = traitWithId(trait_id, traits)
+	buf_r := bufio.NewReader(r)
+	line, _, err := buf_r.ReadLine()
+	if err != nil {
+		return nil, err
 	}
+	parts := strings.Split(string(line), " ")
+	if len(parts) < 4 {
+		return nil, errors.New(fmt.Sprintf("node line is too short: %d (%s)", len(parts), parts))
+	}
+	if n_Id, err := strconv.ParseInt(parts[0], 10, 32); err != nil {
+		return nil, err
+	} else {
+		n.Id = int(n_Id)
+	}
+	if trait_id, err := strconv.ParseInt(parts[1], 10, 32); err != nil {
+		return nil, err
+	} else {
+		n.Trait = traitWithId(int(trait_id), traits)
+	}
+
+	if n_NeuronType, err := strconv.ParseInt(parts[3], 10, 32); err != nil {
+		return nil, err
+	} else {
+		n.NeuronType = network.NodeNeuronType(n_NeuronType)
+	}
+
+	if len(parts) == 5 {
+		n.ActivationType, err = network.NodeActivators.ActivationTypeFromName(parts[4])
+	}
+
 	return n, err
 }
 
@@ -227,7 +252,6 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 			gnome.ControlGenes = append(gnome.ControlGenes, mGene)
 		}
 	}
-
 
 	return gnome, nil
 }
@@ -349,7 +373,9 @@ func readMIMOControlGene(conf map[interface{}]interface{}, traits []*neat.Trait,
 	}
 
 	// build gene
-	return newMIMOGene(control_node, inov_num, mut_num, enabled), nil
+	gene = newMIMOGene(control_node, inov_num, mut_num, enabled)
+
+	return gene, nil
 }
 
 // Reads NNode configuration
