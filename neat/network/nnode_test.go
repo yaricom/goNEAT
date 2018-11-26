@@ -57,7 +57,7 @@ func TestNNode_AddIncoming(t *testing.T) {
 	node2 := NewNNode(2, HiddenNeuron)
 
 	weight := 1.5
-	node2.AddIncoming(node, weight)
+	node2.addIncoming(node, weight)
 	if len(node2.Incoming) != 1 {
 		t.Error("Wrong number of incoming nodes", len(node2.Incoming))
 	}
@@ -70,31 +70,6 @@ func TestNNode_AddIncoming(t *testing.T) {
 	}
 	if link.OutNode != node2 {
 		t.Error("Wrong OutNode in Link")
-	}
-}
-
-// Tests NNode AddIncomingRecurrent
-func TestNNode_AddIncomingRecurrent(t *testing.T) {
-	node := NewNNode(1, InputNeuron)
-	node2 := NewNNode(2, HiddenNeuron)
-
-	weight := 1.5
-	node2.AddIncomingRecurrent(node, weight, true)
-	if len(node2.Incoming) != 1 {
-		t.Error("Wrong number of incoming nodes", len(node2.Incoming))
-	}
-	link := node2.Incoming[0]
-	if link.Weight != weight {
-		t.Error("Wrong incoming link weight", weight, link.Weight)
-	}
-	if link.InNode != node {
-		t.Error("Wrong InNode in Link")
-	}
-	if link.OutNode != node2 {
-		t.Error("Wrong OutNode in Link")
-	}
-	if !link.IsRecurrent {
-		t.Error("link.IsRecurrent", true, link.IsRecurrent)
 	}
 }
 
@@ -104,8 +79,8 @@ func TestNNode_Depth(t *testing.T) {
 	node2 := NewNNode(2, HiddenNeuron)
 	node3 := NewNNode(3, OutputNeuron)
 
-	node2.AddIncoming(node, 15.0)
-	node3.AddIncoming(node2, 20.0)
+	node2.addIncoming(node, 15.0)
+	node3.addIncoming(node2, 20.0)
 
 	depth, err := node3.Depth(0)
 	if err != nil {
@@ -121,9 +96,9 @@ func TestNNode_DepthWithLoop(t *testing.T) {
 	node2 := NewNNode(2, HiddenNeuron)
 	node3 := NewNNode(3, OutputNeuron)
 
-	node2.AddIncoming(node, 15.0)
-	node3.AddIncoming(node2, 20.0)
-	node2.AddIncoming(node3, 10.0)
+	node2.addIncoming(node, 15.0)
+	node3.addIncoming(node2, 20.0)
+	node2.addIncoming(node3, 10.0)
 	depth, err := node3.Depth(0)
 	if err == nil {
 		t.Error("Alert expected")

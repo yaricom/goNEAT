@@ -139,15 +139,15 @@ func (n *NNode) SensorLoad(load float64) bool {
 	}
 }
 
-// Adds a NONRECURRENT Link to an incoming NNode in the incoming List
-func (n *NNode) AddIncoming(in *NNode, weight float64) {
-	newLink := NewLink(weight, in, n, false)
-	n.Incoming = append(n.Incoming, newLink)
+// Adds a non recurrent outgoing link to this node
+func (n *NNode) addOutgoing(out *NNode, weight float64) {
+	newLink := NewLink(weight, n, out, false)
+	n.Outgoing = append(n.Outgoing, newLink)
 }
 
-// Adds a Link to a new NNode in the incoming List
-func (n *NNode) AddIncomingRecurrent(in *NNode, weight float64, recur bool) {
-	newLink := NewLink(weight, in, n, recur)
+// Adds a NONRECURRENT Link to an incoming NNode in the incoming List
+func (n *NNode) addIncoming(in *NNode, weight float64) {
+	newLink := NewLink(weight, in, n, false)
 	n.Incoming = append(n.Incoming, newLink)
 }
 
