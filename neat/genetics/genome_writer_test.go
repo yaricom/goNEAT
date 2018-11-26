@@ -41,7 +41,7 @@ func TestPlainGenomeWriter_WriteTrait(t *testing.T) {
 // Tests NNode serialization
 func TestPlainGenomeWriter_WriteNetworkNode(t *testing.T) {
 	node_id, trait_id, ntype, neuron_type := 1, 10, network.SensorNode, network.InputNeuron
-	node_str := fmt.Sprintf("%d %d %d %d", node_id, trait_id, ntype, neuron_type)
+	node_str := fmt.Sprintf("%d %d %d %d SigmoidSteepenedActivation", node_id, trait_id, ntype, neuron_type)
 	trait := neat.NewTrait()
 	trait.Id = 10
 
@@ -106,14 +106,20 @@ func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 		return
 	}
 
-	_, g_str_r, err_g := bufio.ScanLines([]byte(gnome_str), true)
-	_, o_str_r, err_o := bufio.ScanLines(out_buf.Bytes(), true)
-	if err_g != nil || err_o != nil {
-		t.Error("Failed to parse strings", err_o, err_g)
-	}
-	for i, gsr := range g_str_r {
-		if gsr != o_str_r[i] {
-			t.Error("Lines mismatch", gsr, o_str_r[i])
+	g_scanner := bufio.NewScanner(strings.NewReader(gnome_str))
+	g_scanner.Split(bufio.ScanLines)
+
+	o_scanner := bufio.NewScanner(out_buf)
+	o_scanner.Split(bufio.ScanLines)
+
+	for g_scanner.Scan() {
+		if !o_scanner.Scan() {
+			t.Error("Unexpected end of genome data")
+		}
+		g_text := g_scanner.Text()
+		o_text := o_scanner.Text()
+		if g_text != o_text {
+			t.Error(fmt.Sprintf("Lines mismatch [%s] != [%s]" , g_text, o_text))
 		}
 	}
 }

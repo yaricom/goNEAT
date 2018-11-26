@@ -78,8 +78,13 @@ func (wr *plainGenomeWriter) WriteGenome(g *Genome) error {
 func (wr *plainGenomeWriter) writeTrait(t *neat.Trait) error {
 	_, err := fmt.Fprintf(wr.w, "%d ", t.Id)
 	if err == nil {
-		for _, p := range t.Params {
-			_, err = fmt.Fprintf(wr.w, "%g ", p)
+		for i, p := range t.Params {
+			if i < len(t.Params) - 1 {
+				_, err = fmt.Fprintf(wr.w, "%g ", p)
+			} else {
+				_, err = fmt.Fprintf(wr.w, "%g", p)
+			}
+
 			if err != nil {
 				return err
 			}
@@ -93,7 +98,11 @@ func (wr *plainGenomeWriter) writeNetworkNode(n *network.NNode) error {
 	if n.Trait != nil {
 		trait_id = n.Trait.Id
 	}
-	_, err := fmt.Fprintf(wr.w, "%d %d %d %d", n.Id, trait_id, n.NodeType(), n.NeuronType)
+	act_str, err := network.NodeActivators.ActivationNameFromType(n.ActivationType)
+	if err == nil {
+		_, err = fmt.Fprintf(wr.w, "%d %d %d %d %s", n.Id, trait_id, n.NodeType(),
+			n.NeuronType, act_str)
+	}
 	return err
 }
 // Dump connection gene in plain text format
