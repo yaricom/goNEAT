@@ -19,7 +19,7 @@ type MIMOControlGene struct {
 }
 
 // Creates new MIMO gene
-func newMIMOGene(control_node *network.NNode, innov_num int64, mut_num float64, enabled bool) *MIMOControlGene {
+func NewMIMOGene(control_node *network.NNode, innov_num int64, mut_num float64, enabled bool) *MIMOControlGene {
 	gene := &MIMOControlGene{
 		ControlNode:control_node,
 		InnovationNum:innov_num,
@@ -27,4 +27,10 @@ func newMIMOGene(control_node *network.NNode, innov_num int64, mut_num float64, 
 		IsEnabled:enabled,
 	}
 	return gene
+}
+
+// The copy constructor taking parameters from provided control gene for given control node
+func NewMIMOGeneCopy(g *MIMOControlGene, control_node *network.NNode) *MIMOControlGene {
+	cg := NewMIMOGene(control_node, g.InnovationNum, g.MutationNum, g.IsEnabled)
+	return cg
 }
