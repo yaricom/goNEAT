@@ -86,8 +86,8 @@ func (l *Link) String() string {
 
 // Copy trait parameters into this link's parameters
 func (l *Link) deriveTrait(t *neat.Trait) {
-	l.Params = make([]float64, neat.Num_trait_params)
 	if t != nil {
+		l.Params = make([]float64, len(t.Params))
 		for i, p := range t.Params {
 			l.Params[i] = p
 		}
