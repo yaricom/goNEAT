@@ -271,14 +271,16 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 		}
 
 		var baby *Organism
-		var err error
 
 		if the_champ.superChampOffspring > 0 {
 			neat.DebugLog("SPECIES: Reproduce super champion")
 
 			// If we have a super_champ (Population champion), finish off some special clones
 			mom := the_champ;
-			new_genome := mom.Genotype.duplicate(count)
+			new_genome, err := mom.Genotype.duplicate(count)
+			if err != nil {
+				return nil, err
+			}
 
 			// Most superchamp offspring will have their connection weights mutated only
 			// The last offspring will be an exact duplicate of this super_champ
@@ -291,8 +293,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 				} else {
 					// Sometimes we add a link to a superchamp
 					new_genome.genesis(generation)
-					_, err = new_genome.mutateAddLink(pop, context)
-					if err != nil {
+					if _, err = new_genome.mutateAddLink(pop, context); err != nil {
 						return nil, err
 					}
 					mut_struct_baby = true;
@@ -318,7 +319,10 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 
 			// If we have a Species champion, just clone it
 			mom := the_champ // Mom is the champ
-			new_genome := mom.Genotype.duplicate(count)
+			new_genome, err := mom.Genotype.duplicate(count)
+			if err != nil {
+				return nil, err
+			}
 			// Baby is just like mommy
 			champ_clone_done = true
 
@@ -334,15 +338,17 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 			// Apply mutations
 			org_num := rand.Int31n(int32(pool_size)) // select random mom
 			mom := s.Organisms[org_num]
-			new_genome := mom.Genotype.duplicate(count)
+			new_genome, err := mom.Genotype.duplicate(count)
+			if err != nil {
+				return nil, err
+			}
 
 			// Do the mutation depending on probabilities of various mutations
 			if rand.Float64() < context.MutateAddNodeProb {
 				neat.DebugLog("SPECIES: ---> mutateAddNode")
 
 				// Mutate add node
-				_, err = new_genome.mutateAddNode(pop, context)
-				if err != nil {
+				if _, err = new_genome.mutateAddNode(pop, context); err != nil {
 					return nil, err
 				}
 				mut_struct_baby = true
@@ -351,26 +357,24 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 
 				// Mutate add link
 				new_genome.genesis(generation)
-				_, err = new_genome.mutateAddLink(pop, context)
-				if err != nil {
+				if _, err = new_genome.mutateAddLink(pop, context); err != nil {
 					return nil, err
 				}
 				mut_struct_baby = true
 			} else if rand.Float64() < context.MutateConnectSensors {
 				neat.DebugLog("SPECIES: ---> mutateConnectSensors")
-				link_added, err := new_genome.mutateConnectSensors(pop, context)
-				if err != nil {
+				if link_added, err := new_genome.mutateConnectSensors(pop, context); err != nil {
 					return nil, err
+				} else {
+					mut_struct_baby = link_added
 				}
-				mut_struct_baby = link_added
 			}
 
 			if !mut_struct_baby {
 				neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 				// If we didn't do a structural mutation, we do the other kinds
-				_, err = new_genome.mutateAllNonstructural(context)
-				if err != nil {
+				if _, err = new_genome.mutateAllNonstructural(context); err != nil {
 					return nil, err
 				}
 			}
@@ -457,8 +461,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 					neat.DebugLog("SPECIES: ---------> mutateAddNode")
 
 					// mutate_add_node
-					_, err = new_genome.mutateAddNode(pop, context)
-					if err != nil {
+					if _, err = new_genome.mutateAddNode(pop, context); err != nil {
 						return nil, err
 					}
 					mut_struct_baby = true
@@ -467,26 +470,24 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 
 					// mutate_add_link
 					new_genome.genesis(generation)
-					_, err = new_genome.mutateAddLink(pop, context)
-					if err != nil {
+					if _, err = new_genome.mutateAddLink(pop, context); err != nil {
 						return nil, err
 					}
 					mut_struct_baby = true
 				} else if rand.Float64() < context.MutateConnectSensors {
 					neat.DebugLog("SPECIES: ---> mutateConnectSensors")
-					link_added, err := new_genome.mutateConnectSensors(pop, context)
-					if err != nil {
+					if link_added, err := new_genome.mutateConnectSensors(pop, context); err != nil {
 						return nil, err
+					} else {
+						mut_struct_baby = link_added
 					}
-					mut_struct_baby = link_added
 				}
 
 				if !mut_struct_baby {
 					neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 					// If we didn't do a structural mutation, we do the other kinds
-					_, err := new_genome.mutateAllNonstructural(context)
-					if err != nil {
+					if _, err := new_genome.mutateAllNonstructural(context); err != nil {
 						return nil, err
 					}
 				}
