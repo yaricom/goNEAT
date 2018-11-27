@@ -237,6 +237,10 @@ func TestGenome_DuplicateModular(t *testing.T) {
 			}
 		}
 	}
+	equal, err := gnome.IsEqual(new_gnome)
+	if !equal {
+		t.Error(err)
+	}
 }
 
 func TestGene_Verify(t *testing.T) {
