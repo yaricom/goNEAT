@@ -50,6 +50,17 @@ func NewLinkWithTrait(trait *neat.Trait, weight float64, innode, outnode *NNode,
 	return link
 }
 
+// The copy constructor to create new link with parameters taken from provided ones and connecting specified nodes
+func NewLinkCopy(l *Link, innode, outnode *NNode) *Link {
+	link := newLink(l.Weight)
+	link.InNode = innode
+	link.OutNode = outnode
+	link.Trait = l.Trait
+	link.deriveTrait(l.Trait)
+	link.IsRecurrent = l.IsRecurrent
+	return link
+}
+
 // The private default constructor
 func newLink(weight float64) *Link {
 	return &Link{
