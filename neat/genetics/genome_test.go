@@ -43,6 +43,41 @@ func buildTestGenome(id int) *Genome {
 	return NewGenome(id, traits, nodes, genes)
 }
 
+func buildTestModularGenome(id int) *Genome {
+	gnome := buildTestGenome(1)
+
+	// append module with it's IO nodes
+	io_nodes := []*network.NNode{
+		{Id:5, NeuronType: network.HiddenNeuron, ActivationType: network.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:6, NeuronType: network.HiddenNeuron, ActivationType: network.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:7, NeuronType: network.HiddenNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+	}
+	gnome.Nodes = append(gnome.Nodes, io_nodes ...)
+
+	// connect added nodes
+	io_conn_genes := []*Gene{
+		newGene(network.NewLinkWithTrait(gnome.Traits[0], 1.5, gnome.Nodes[0], gnome.Nodes[4], false), 4, 0, true),
+		newGene(network.NewLinkWithTrait(gnome.Traits[2], 2.5, gnome.Nodes[1], gnome.Nodes[5], false), 5, 0, true),
+		newGene(network.NewLinkWithTrait(gnome.Traits[1], 3.5, gnome.Nodes[6], gnome.Nodes[3], false), 6, 0, true),
+	}
+	gnome.Genes = append(gnome.Genes, io_conn_genes ...)
+
+	// add control gene
+	c_node := &network.NNode{
+		Id:8, NeuronType: network.HiddenNeuron,
+		ActivationType: network.MultiplyModuleActivation,
+	}
+	c_node.Incoming = []*network.Link{
+		{Weight:1.0, InNode:io_nodes[0], OutNode:c_node},
+		{Weight:1.0, InNode:io_nodes[1], OutNode:c_node},
+	}
+	c_node.Outgoing = []*network.Link{
+		{Weight:1.0, InNode:c_node, OutNode:io_nodes[2]},
+	}
+	gnome.ControlGenes = []*MIMOControlGene{NewMIMOGene(c_node, int64(7), 5.5, true)}
+	return gnome
+}
+
 // Test create random genome
 func TestGenome_NewGenomeRand(t *testing.T) {
 	rand.Seed(42)
@@ -92,11 +127,51 @@ func TestGenome_Genesis(t *testing.T) {
 	}
 }
 
+func TestGenome_GenesisModular(t *testing.T) {
+	gnome := buildTestModularGenome(1)
+
+	net_id := 10
+
+	net, err := gnome.genesis(net_id)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if net == nil {
+		t.Error("Failed to do modular network genesis")
+	}
+	if net.Id != net_id {
+		t.Error("net.Id != net_id", net.Id)
+	}
+
+	// check plain neuron nodes
+	neuron_nodes_count := len(gnome.Nodes) + len(gnome.ControlGenes)
+	if net.NodeCount() != neuron_nodes_count {
+		t.Error("net.NodeCount() != neuron_nodes_count", net.NodeCount(), neuron_nodes_count)
+	}
+
+	// find extra nodes and links due to MIMO control genes
+	incoming, outgoing := 0, 0
+	for _, cg := range gnome.ControlGenes {
+		incoming += len(cg.ControlNode.Incoming)
+		outgoing += len(cg.ControlNode.Outgoing)
+	}
+	// check connection genes
+	conn_genes_count := len(gnome.Genes) + incoming + outgoing
+	if net.LinkCount() != conn_genes_count {
+		t.Error("net.LinkCount() != conn_genes_count", net.LinkCount(), conn_genes_count)
+	}
+}
+
 // Test duplicate
 func TestGenome_Duplicate(t *testing.T) {
 	gnome := buildTestGenome(1)
 
-	new_gnome := gnome.duplicate(2)
+	new_gnome, err := gnome.duplicate(2)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if new_gnome.Id != 2 {
 		t.Error("new_gnome.Id != 2", new_gnome.Id)
 	}
@@ -115,7 +190,53 @@ func TestGenome_Duplicate(t *testing.T) {
 	if !equal {
 		t.Error(err)
 	}
+}
 
+func TestGenome_DuplicateModular(t *testing.T) {
+	gnome := buildTestModularGenome(1)
+
+	new_gnome, err := gnome.duplicate(2)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if new_gnome.Id != 2 {
+		t.Error("new_gnome.Id != 2", new_gnome.Id)
+	}
+
+	if len(new_gnome.Traits) != len(gnome.Traits) {
+		t.Error("len(new_gnome.Traits) != len(gnome.Traits)", len(new_gnome.Traits), len(gnome.Traits))
+	}
+	if len(new_gnome.Nodes) != len(gnome.Nodes) {
+		t.Error("len(new_gnome.Nodes) != len(gnome.Nodes)", len(new_gnome.Nodes), len(gnome.Nodes))
+	}
+	if len(new_gnome.Genes) != len(gnome.Genes) {
+		t.Error("len(new_gnome.Genes) != len(gnome.Genes)", len(new_gnome.Genes), len(gnome.Genes))
+	}
+	if len(new_gnome.ControlGenes) != len(gnome.ControlGenes) {
+		t.Error("len(new_gnome.ControlGenes) != len(gnome.ControlGenes", len(new_gnome.ControlGenes), len(gnome.ControlGenes))
+	}
+	for i, cg := range new_gnome.ControlGenes {
+		ocg := gnome.ControlGenes[i]
+		if len(cg.ControlNode.Incoming) != len(ocg.ControlNode.Incoming) {
+			t.Error("len(cg.ControlNode.Incoming) != len(ocg.ControlNode.Incoming) at:", cg.String())
+		}
+		for i, l := range cg.ControlNode.Incoming {
+			ol := ocg.ControlNode.Incoming[i]
+			if !l.IsEqualGenetically(ol) {
+				t.Error("!l.IsEqualGenetically(ol) incoming at: ", cg.ControlNode.Id)
+			}
+		}
+		if len(cg.ControlNode.Outgoing) != len(ocg.ControlNode.Outgoing) {
+			t.Error("len(cg.ControlNode.Outgoing) != len(ocg.ControlNode.Outgoing) at:", cg.String())
+		}
+		for i, l := range cg.ControlNode.Outgoing {
+			ol := ocg.ControlNode.Outgoing[i]
+			if !l.IsEqualGenetically(ol) {
+				t.Error("!l.IsEqualGenetically(ol) outgoing at: ", cg.ControlNode.Id)
+			}
+		}
+	}
 }
 
 func TestGene_Verify(t *testing.T) {
@@ -244,7 +365,11 @@ func TestGenome_Compatibility_Fast(t *testing.T) {
 func TestGenome_Compatibility_Duplicate(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
-	gnome2 := gnome1.duplicate(2)
+	gnome2, err := gnome1.duplicate(2)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Configuration
 	conf := neat.NeatContext{

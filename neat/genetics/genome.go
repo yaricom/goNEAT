@@ -256,22 +256,47 @@ func (g *Genome) Extrons() int {
 // Tests if given genome is equal to this one genetically and phenotypically. This method will check that both genomes has the same traits, nodes and genes.
 // If mismatch detected the error will be returned with mismatch details.
 func (g *Genome) IsEqual(og *Genome) (bool, error) {
+	if len(g.Traits) != len(og.Traits) {
+		return false, errors.New(fmt.Sprintf("traits count mismatch: %d != %d",
+			len(g.Traits), len(og.Traits)))
+	}
 	for i, tr := range og.Traits {
 		if !reflect.DeepEqual(tr, g.Traits[i]) {
-			return false, errors.New("Traits mismatch")
+			return false, errors.New(
+				fmt.Sprintf("traits mismatch, expected: %s, but found: %s", tr, g.Traits[i]))
 		}
+	}
+
+	if len(g.Nodes) != len(og.Nodes) {
+		return false, errors.New(fmt.Sprintf("nodes count mismatch: %d != %d",
+			len(g.Nodes), len(og.Nodes)))
 	}
 	for i, nd := range og.Nodes {
 		if !reflect.DeepEqual(nd, g.Nodes[i]) {
 			return false, errors.New(
-				fmt.Sprintf("Node mismatch, expected: %s, but found: %s", nd, g.Nodes[i]))
+				fmt.Sprintf("node mismatch, expected: %s\nfound: %s", nd, g.Nodes[i]))
 		}
 	}
 
+	if len(g.Genes) != len(og.Genes) {
+		return false, errors.New(fmt.Sprintf("genes count mismatch: %d != %d",
+			len(g.Genes), len(og.Genes)))
+	}
 	for i, gen := range og.Genes {
 		if !reflect.DeepEqual(gen, g.Genes[i]) {
 			return false, errors.New(
-				fmt.Sprintf("Gene mismatch, expected: %s, but found: %s", gen, g.Genes[i]))
+				fmt.Sprintf("gene mismatch, expected: %s\nfound: %s", gen, g.Genes[i]))
+		}
+	}
+
+	if len(g.ControlGenes) != len(og.ControlGenes) {
+		return false, errors.New(fmt.Sprintf("control genes count mismatch: %d != %d",
+			len(g.ControlGenes), len(og.ControlGenes)))
+	}
+	for i, cg := range og.ControlGenes {
+		if !reflect.DeepEqual(cg, g.ControlGenes[i]) {
+			return false, errors.New(
+				fmt.Sprintf("control gene mismatch, expected: %s\nfound: %s", cg, g.ControlGenes[i]))
 		}
 	}
 
@@ -280,11 +305,17 @@ func (g *Genome) IsEqual(og *Genome) (bool, error) {
 
 // Return id of final NNode in Genome
 func (g *Genome) getLastNodeId() (int, error) {
-	if len(g.Nodes) > 0 {
-		return g.Nodes[len(g.Nodes) - 1].Id, nil
-	} else {
+	if len(g.Nodes) == 0 {
 		return -1, errors.New("Genome has no nodes")
 	}
+	id := g.Nodes[len(g.Nodes) - 1].Id
+	// check control genes
+	for _, cg := range g.ControlGenes {
+		if cg.ControlNode.Id > id {
+			id = cg.ControlNode.Id
+		}
+	}
+	return id, nil
 }
 
 // Return innovation number of last gene in Genome + 1
@@ -435,7 +466,7 @@ func (g *Genome) genesis(net_id int) (*network.Network, error) {
 }
 
 // Duplicate this Genome to create a new one with the specified id
-func (g *Genome) duplicate(new_id int) *Genome {
+func (g *Genome) duplicate(new_id int) (*Genome, error) {
 
 	// Duplicate the traits
 	traits_dup := make([]*neat.Trait, 0)
@@ -445,24 +476,14 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	}
 
 	// Duplicate NNodes
-	dup_nodes := make(map[int]*network.NNode)
-	var assoc_trait *neat.Trait
 	nodes_dup := make([]*network.NNode, 0)
 	for _, nd := range g.Nodes {
-		// First, find the trait that this node points to
-		assoc_trait = nil
-		if nd.Trait != nil {
-			for _, tr := range traits_dup {
-				if nd.Trait.Id == tr.Id {
-					assoc_trait = tr
-					break
-				}
-			}
+		// First, find the duplicate of the trait that this node points to
+		assoc_trait := nd.Trait
+		if assoc_trait != nil {
+			assoc_trait = traitWithId(assoc_trait.Id, traits_dup)
 		}
-
 		new_node := network.NewNNodeCopy(nd, assoc_trait)
-		// Remember this node's old copy
-		dup_nodes[nd.Id] = new_node
 
 		nodes_dup = append(nodes_dup, new_node)
 	}
@@ -471,24 +492,75 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	genes_dup := make([]*Gene, 0)
 	for _, gn := range g.Genes {
 		// First find the nodes connected by the gene's link
-		in_node := dup_nodes[gn.Link.InNode.Id]
-		out_node := dup_nodes[gn.Link.OutNode.Id]
-
-		// Find the trait associated with this gene
-		assoc_trait = nil
-		if gn.Link.Trait != nil {
-			for _, tr := range traits_dup {
-				if gn.Link.Trait.Id == tr.Id {
-					assoc_trait = tr
-					break
-				}
-			}
+		in_node := nodeWithId(gn.Link.InNode.Id, nodes_dup)
+		if in_node == nil {
+			return nil, errors.New(
+				fmt.Sprintf("incoming node: %d not found for gene %s",
+					gn.Link.InNode.Id, gn.String()))
 		}
+		out_node := nodeWithId(gn.Link.OutNode.Id, nodes_dup)
+		if out_node == nil {
+			return nil, errors.New(
+				fmt.Sprintf("outgoing node: %d not found for gene %s",
+					gn.Link.OutNode.Id, gn.String()))
+		}
+
+		// Find the duplicate of trait associated with this gene
+		assoc_trait := gn.Link.Trait
+		if assoc_trait != nil {
+			assoc_trait = traitWithId(assoc_trait.Id, traits_dup)
+		}
+
 		new_gene := NewGeneCopy(gn, assoc_trait, in_node, out_node)
 		genes_dup = append(genes_dup, new_gene)
 	}
 
-	return NewGenome(new_id, traits_dup, nodes_dup, genes_dup)
+	if len(g.ControlGenes) == 0 {
+		// If no MIMO control genes return plain genome
+		return NewGenome(new_id, traits_dup, nodes_dup, genes_dup), nil
+	} else {
+		// Duplicate MIMO Control Genes and build modular genome
+		control_genes_dup := make([]*MIMOControlGene, 0)
+		for _, cg := range g.ControlGenes {
+			// duplicate control node
+			c_node := cg.ControlNode
+			// find duplicate of trait associated with control node
+			assoc_trait := c_node.Trait
+			if assoc_trait != nil {
+				assoc_trait = traitWithId(assoc_trait.Id, traits_dup)
+			}
+			new_c_node := network.NewNNodeCopy(c_node, assoc_trait)
+			// add incoming links
+			for _, l := range c_node.Incoming {
+				in_node := nodeWithId(l.InNode.Id, nodes_dup)
+				if in_node == nil {
+					return nil, errors.New(
+						fmt.Sprintf("incoming node: %d not found for control node: %d",
+							l.InNode.Id, c_node.Id))
+				}
+				new_in_link := network.NewLinkCopy(l, in_node, new_c_node)
+				new_c_node.Incoming = append(new_c_node.Incoming, new_in_link)
+			}
+
+			// add outgoing links
+			for _, l := range c_node.Outgoing {
+				out_node := nodeWithId(l.OutNode.Id, nodes_dup)
+				if out_node == nil {
+					return nil, errors.New(
+						fmt.Sprintf("outgoing node: %d not found for control node: %d",
+							l.InNode.Id, c_node.Id))
+				}
+				new_out_link := network.NewLinkCopy(l, new_c_node, out_node)
+				new_c_node.Outgoing = append(new_c_node.Outgoing, new_out_link)
+			}
+
+			// add MIMO control gene
+			new_cg := NewMIMOGeneCopy(cg, new_c_node)
+			control_genes_dup = append(control_genes_dup, new_cg)
+		}
+
+		return NewModularGenome(new_id, traits_dup, nodes_dup, genes_dup, control_genes_dup), nil
+	}
 }
 
 // For debugging: A number of tests can be run on a genome to check its integrity.
@@ -1788,6 +1860,10 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 	//Return the baby Genome
 	return new_genome, nil
 }
+
+// Builds array of modules to be added to the child during crossover.
+// If any or both parents has module and at least one modular endpoint node already inherited by child genome than make
+// sure that child get all associated module nodes
 
 // Builds array of traits for child genome during crossover
 func (g *Genome) mateTraits(og *Genome) ([]*neat.Trait, error) {
