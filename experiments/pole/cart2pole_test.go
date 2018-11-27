@@ -13,7 +13,7 @@ import (
 // Run double pole-balancing experiment with Markov environment setup
 func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T) {
 	// to make sure we have predictable results
-	rand.Seed(423)
+	rand.Seed(3423)
 
 	out_dir_path, context_path, genome_path := "../../out/pole2_markov_test", "../../data/pole2_markov.neat", "../../data/pole2_markov_startgenes"
 
