@@ -373,7 +373,7 @@ func readMIMOControlGene(conf map[interface{}]interface{}, traits []*neat.Trait,
 	}
 
 	// build gene
-	gene = newMIMOGene(control_node, inov_num, mut_num, enabled)
+	gene = NewMIMOGene(control_node, inov_num, mut_num, enabled)
 
 	return gene, nil
 }
@@ -409,27 +409,4 @@ func readTrait(conf map[interface{}]interface{}) (*neat.Trait, error) {
 	}
 	return nt, nil
 }
-
-func traitWithId(trait_id int, traits []*neat.Trait) *neat.Trait {
-	if trait_id != 0 && traits != nil {
-		for _, tr := range traits {
-			if tr.Id == trait_id {
-				return tr
-			}
-		}
-	}
-	return nil
-}
-
-func nodeWithId(node_id int, nodes []*network.NNode) *network.NNode {
-	if node_id != 0 && nodes != nil {
-		for _, n := range nodes {
-			if n.Id == node_id {
-				return n
-			}
-		}
-	}
-	return nil
-}
-
 
