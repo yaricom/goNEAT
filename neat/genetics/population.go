@@ -234,26 +234,31 @@ func (p *Population) addInnovationSynced(i *Innovation) {
 
 // Create a population of size size off of Genome g. The new Population will have the same topology as g
 // with link weights slightly perturbed from g's
-func (p *Population) spawn(g *Genome, context *neat.NeatContext) error {
-	var new_genome *Genome
+func (p *Population) spawn(g *Genome, context *neat.NeatContext) (err error) {
 	for count := 0; count < context.PopSize; count++ {
-		new_genome = g.duplicate(count)
-		_, err := new_genome.mutateLinkWeights(1.0, 1.0, gaussianMutator)
+		// make genome duplicate for new organism
+		new_genome, err := g.duplicate(count)
 		if err != nil {
 			return err
 		}
-		new_organism, err := NewOrganism(0.0, new_genome, 1)
-		if err != nil {
+		// introduce initial mutations
+		if _, err = new_genome.mutateLinkWeights(1.0, 1.0, gaussianMutator); err != nil {
 			return err
 		}
-		p.Organisms = append(p.Organisms, new_organism)
+		// create organism for new genome
+		if new_organism, err := NewOrganism(0.0, new_genome, 1); err != nil {
+			return err
+		} else {
+			p.Organisms = append(p.Organisms, new_organism)
+		}
 	}
-	//Keep a record of the innovation and node number we are on
-	nextNodeId, err := new_genome.getLastNodeId()
-	p.nextNodeId = int32(nextNodeId + 1)
-	p.nextInnovNum, err = new_genome.getNextGeneInnovNum()
-
-	if err != nil {
+	// Keep a record of the innovation and node number we are on
+	if nextNodeId, err := g.getLastNodeId(); err != nil {
+		return err
+	} else {
+		p.nextNodeId = int32(nextNodeId + 1)
+	}
+	if p.nextInnovNum, err = g.getNextGeneInnovNum(); err != nil {
 		return err
 	}
 
