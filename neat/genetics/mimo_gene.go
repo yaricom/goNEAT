@@ -1,6 +1,9 @@
 package genetics
 
-import "github.com/yaricom/goNEAT/neat/network"
+import (
+	"github.com/yaricom/goNEAT/neat/network"
+	"fmt"
+)
 
 // The Multiple-Input Multiple-Output (MIMO) control Gene allows to create modular genomes, in which several groups of genes
 // connected through single MIMO Gene and corresponding control function is applied to all inputs in order to produce
@@ -33,4 +36,14 @@ func NewMIMOGene(control_node *network.NNode, innov_num int64, mut_num float64, 
 func NewMIMOGeneCopy(g *MIMOControlGene, control_node *network.NNode) *MIMOControlGene {
 	cg := NewMIMOGene(control_node, g.InnovationNum, g.MutationNum, g.IsEnabled)
 	return cg
+}
+
+// The stringer
+func (g *MIMOControlGene) String() string {
+	enabl_str := ""
+	if !g.IsEnabled {
+		enabl_str = " -DISABLED-"
+	}
+	return fmt.Sprintf("[MIMO Gene INNOV (%4d, % .3f) %s control node: %s]",
+		g.InnovationNum, g.MutationNum, enabl_str, g.ControlNode.String())
 }
