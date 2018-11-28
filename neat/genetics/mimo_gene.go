@@ -19,6 +19,9 @@ type MIMOControlGene struct {
 
 	// The control node with control/activation function
 	ControlNode   *network.NNode
+
+	// The list of associated IO nodes for fast traversal
+	ioNodes       []*network.NNode
 }
 
 // Creates new MIMO gene
@@ -29,6 +32,15 @@ func NewMIMOGene(control_node *network.NNode, innov_num int64, mut_num float64, 
 		MutationNum:mut_num,
 		IsEnabled:enabled,
 	}
+	// collect IO nodes list
+	gene.ioNodes = make([]*network.NNode, 0)
+	for _, l := range control_node.Incoming {
+		gene.ioNodes = append(gene.ioNodes, l.InNode)
+	}
+	for _, l := range control_node.Outgoing {
+		gene.ioNodes = append(gene.ioNodes, l.OutNode)
+	}
+
 	return gene
 }
 
@@ -36,6 +48,17 @@ func NewMIMOGene(control_node *network.NNode, innov_num int64, mut_num float64, 
 func NewMIMOGeneCopy(g *MIMOControlGene, control_node *network.NNode) *MIMOControlGene {
 	cg := NewMIMOGene(control_node, g.InnovationNum, g.MutationNum, g.IsEnabled)
 	return cg
+}
+
+// Tests whether this gene has intersection with provided map of nodes, i.e. any of it's IO nodes included into list
+func (g *MIMOControlGene) hasIntersection(nodes map[int]*network.NNode) bool {
+	for _, nd := range g.ioNodes {
+		if _, Ok := nodes[nd.Id]; Ok {
+			// found
+			return true
+		}
+	}
+	return false
 }
 
 // The stringer
