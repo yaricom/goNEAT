@@ -1329,6 +1329,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 	// The new genes and nodes created
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
+	child_nodes_map := make(map[int]*network.NNode)
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
@@ -1344,6 +1345,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 
 			// Add the new node
 			new_nodes = nodeInsert(new_nodes, new_onode)
+			child_nodes_map[new_onode.Id] = new_onode
 		}
 	}
 
@@ -1444,6 +1446,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 				}
 				new_in_node = network.NewNNodeCopy(in_node, new_traits[in_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_in_node)
+				child_nodes_map[new_in_node.Id] = new_in_node
 			}
 
 			// Checking for onode's existence
@@ -1463,6 +1466,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 				}
 				new_out_node = network.NewNNodeCopy(out_node, new_traits[out_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_out_node)
+				child_nodes_map[new_out_node.Id] = new_out_node
 			}
 
 
@@ -1479,10 +1483,19 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 			new_genes = append(new_genes, newgene)
 		} // end SKIP
 	} // end FOR
-	new_genome := NewGenome(genomeid, new_traits, new_nodes, new_genes)
+	// check if parent's control genes should be inherited
+	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
+		extra_nodes, modules := gen.mateModules(child_nodes_map, og)
+		if modules != nil && len(extra_nodes) > 0 {
+			new_nodes = append(new_nodes, extra_nodes...)
 
-	//Return the baby Genome
-	return new_genome, nil
+			// Return modular baby genome
+			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
+		}
+	}
+
+	// Return plain baby Genome
+	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
 }
 
 // This method mates like multipoint but instead of selecting one or the other when the innovation numbers match,
@@ -1504,6 +1517,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 	// The new genes and nodes created
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
+	child_nodes_map := make(map[int]*network.NNode)
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
@@ -1519,6 +1533,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 
 			// Add the new node
 			new_nodes = nodeInsert(new_nodes, new_onode)
+			child_nodes_map[new_onode.Id] = new_onode
 		}
 	}
 
@@ -1645,6 +1660,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 				}
 				new_in_node = network.NewNNodeCopy(in_node, new_traits[in_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_in_node)
+				child_nodes_map[new_in_node.Id] = new_in_node
 			}
 
 			// Checking for onode's existence
@@ -1664,6 +1680,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 				}
 				new_out_node = network.NewNNodeCopy(out_node, new_traits[out_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_out_node)
+				child_nodes_map[new_out_node.Id] = new_out_node
 			}
 
 			// Add the Gene
@@ -1676,10 +1693,19 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 			new_genes = append(new_genes, new_gene)
 		} // end SKIP
 	} // end FOR
-	new_genome := NewGenome(genomeid, new_traits, new_nodes, new_genes)
+	// check if parent's control genes should be inherited
+	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
+		extra_nodes, modules := gen.mateModules(child_nodes_map, og)
+		if modules != nil && len(extra_nodes) > 0 {
+			new_nodes = append(new_nodes, extra_nodes...)
 
-	//Return the baby Genome
-	return new_genome, nil
+			// Return modular baby genome
+			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
+		}
+	}
+
+	// Return plain baby Genome
+	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
 }
 
 // This method is similar to a standard single point CROSSOVER operator. Traits are averaged as in the previous two
@@ -1701,6 +1727,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 	// The new genes and nodes created
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
+	child_nodes_map := make(map[int]*network.NNode)
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
@@ -1716,6 +1743,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 			// Add the new node
 			new_nodes = nodeInsert(new_nodes, new_onode)
+			child_nodes_map[new_onode.Id] = new_onode
 		}
 	}
 
@@ -1851,6 +1879,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 				}
 				new_in_node = network.NewNNodeCopy(in_node, new_traits[in_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_in_node)
+				child_nodes_map[new_in_node.Id] = new_in_node
 			}
 
 			// Checking for onode's existence
@@ -1870,6 +1899,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 				}
 				new_out_node = network.NewNNodeCopy(out_node, new_traits[out_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_out_node)
+				child_nodes_map[new_out_node.Id] = new_out_node
 			}
 
 			// Add the Gene
@@ -1882,15 +1912,63 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 			new_genes = append(new_genes, new_gene)
 		}// end SKIP
 	} // end FOR
-	new_genome := NewGenome(genomeid, new_traits, new_nodes, new_genes)
+	// check if parent's control genes should be inherited
+	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
+		extra_nodes, modules := gen.mateModules(child_nodes_map, og)
+		if modules != nil && len(extra_nodes) > 0 {
+			new_nodes = append(new_nodes, extra_nodes...)
 
-	//Return the baby Genome
-	return new_genome, nil
+			// Return modular baby genome
+			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
+		}
+	}
+
+	// Return plain baby Genome
+	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
 }
 
-// Builds array of modules to be added to the child during crossover.
+// Builds an array of modules to be added to the child during crossover.
 // If any or both parents has module and at least one modular endpoint node already inherited by child genome than make
 // sure that child get all associated module nodes
+func (g *Genome) mateModules(child_nodes map[int]*network.NNode, og *Genome) ([]*network.NNode, []*MIMOControlGene) {
+	parent_modules := make([]*MIMOControlGene, 0)
+	g_modules := findModulesIntersection(child_nodes, g.ControlGenes)
+	if len(g_modules) > 0 {
+		parent_modules = append(parent_modules, g_modules...)
+	}
+	og_modules := findModulesIntersection(child_nodes, og.ControlGenes)
+	if len(og_modules) > 0 {
+		parent_modules = append(parent_modules, og_modules...)
+	}
+	if len(parent_modules) == 0 {
+		return nil, nil
+	}
+
+	// collect IO nodes from all included modules and add return it as extra ones
+	extra_nodes := make([]*network.NNode, 0)
+	for _, cg := range parent_modules {
+		for _, n := range cg.ioNodes {
+			if _, ok := child_nodes[n.Id]; !ok {
+				// not found in known child nodes - collect it
+				extra_nodes = append(extra_nodes, n)
+			}
+		}
+	}
+
+	return extra_nodes, parent_modules
+}
+
+// Finds intersection of provided nodes with IO nodes from control genes and returns list of control genes found.
+// If no intersection found empty list returned.
+func findModulesIntersection(nodes map[int]*network.NNode, genes []*MIMOControlGene) []*MIMOControlGene {
+	modules := make([]*MIMOControlGene, 0)
+	for _, cg := range genes {
+		if cg.hasIntersection(nodes) {
+			modules = append(modules, cg)
+		}
+	}
+	return modules
+}
 
 // Builds array of traits for child genome during crossover
 func (g *Genome) mateTraits(og *Genome) ([]*neat.Trait, error) {
