@@ -64,6 +64,11 @@ func (pgr *plainGenomeReader) Read() (*Genome, error) {
 			if err != nil {
 				return nil, err
 			}
+			// check that trait ID is unique
+			if prev_trait := traitWithId(new_trait.Id, gnome.Traits); prev_trait != nil {
+				return nil, errors.New(
+					fmt.Sprintf("Trait ID: %d is not unique", new_trait.Id))
+			}
 			gnome.Traits = append(gnome.Traits, new_trait)
 
 		case "node":
@@ -71,6 +76,11 @@ func (pgr *plainGenomeReader) Read() (*Genome, error) {
 			new_node, err := readPlainNetworkNode(lr, gnome.Traits)
 			if err != nil {
 				return nil, err
+			}
+			// check that node ID is unique
+			if prev_node := nodeWithId(new_node.Id, gnome.Nodes); prev_node != nil {
+				return nil, errors.New(
+					fmt.Sprintf("Node ID: %d is not unique", new_node.Id))
 			}
 			gnome.Nodes = append(gnome.Nodes, new_node)
 
@@ -218,6 +228,11 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 		if err != nil {
 			return nil, err
 		}
+		// check that trait ID is unique
+		if prev_trait := traitWithId(trait.Id, gnome.Traits); prev_trait != nil {
+			return nil, errors.New(
+				fmt.Sprintf("Trait ID: %d is not unique", trait.Id))
+		}
 		gnome.Traits = append(gnome.Traits, trait)
 	}
 
@@ -227,6 +242,11 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 		node, err := readNNode(nd.(map[interface{}]interface{}), gnome.Traits)
 		if err != nil {
 			return nil, err
+		}
+		// check that node ID is unique
+		if prev_node := nodeWithId(node.Id, gnome.Nodes); prev_node != nil {
+			return nil, errors.New(
+				fmt.Sprintf("Node ID: %d is not unique", node.Id))
 		}
 		gnome.Nodes = append(gnome.Nodes, node)
 	}
@@ -248,6 +268,11 @@ func (ygr *yamlGenomeReader) Read() (*Genome, error) {
 			mGene, err := readMIMOControlGene(mg.(map[interface{}]interface{}), gnome.Traits, gnome.Nodes)
 			if err != nil {
 				return nil, err
+			}
+			// check that control node ID is unique
+			if prev_node := nodeWithId(mGene.ControlNode.Id, gnome.Nodes); prev_node != nil {
+				return nil, errors.New(
+					fmt.Sprintf("Control node ID: %d is not unique", mGene.ControlNode.Id))
 			}
 			gnome.ControlGenes = append(gnome.ControlGenes, mGene)
 		}
