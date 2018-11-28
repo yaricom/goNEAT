@@ -633,10 +633,23 @@ func (g *Genome) verify() (bool, error) {
 
 // Inserts a NNode into a given ordered list of NNodes in ascending order by NNode ID
 func nodeInsert(nodes[]*network.NNode, n *network.NNode) []*network.NNode {
-	index := len(nodes) // to make sure that greater IDs appended at the end
-	for i, node := range nodes {
-		if node.Id >= n.Id {
+	index := len(nodes)
+	// quick insert at the end or beginning (we assume that nodes is already ordered)
+	if index == 0 || n.Id >= nodes[index - 1].Id {
+		// append last
+		nodes = append(nodes, n)
+		return nodes
+	} else if n.Id <= nodes[0].Id {
+		// insert first
+		index = 0
+	}
+	// find split index
+	for i := index - 1; i >= 0; i-- {
+		if n.Id == nodes[i].Id {
 			index = i
+			break
+		} else if n.Id > nodes[i].Id {
+			index = i + 1 // previous
 			break
 		}
 	}
@@ -653,12 +666,26 @@ func nodeInsert(nodes[]*network.NNode, n *network.NNode) []*network.NNode {
 // *correct order* into the list of genes in the genome, i.e. ordered by innovation number ascending
 func geneInsert(genes[]*Gene, g *Gene) []*Gene {
 	index := len(genes) // to make sure that greater IDs appended at the end
-	for i, gene := range genes {
-		if gene.InnovationNum >= g.InnovationNum {
+	// quick insert at the end or beginning (we assume that nodes is already ordered)
+	if index == 0 || g.InnovationNum >= genes[index - 1].InnovationNum {
+		// append last
+		genes = append(genes, g)
+		return genes
+	} else if g.InnovationNum <= genes[0].InnovationNum {
+		// insert first
+		index = 0
+	}
+	// find split index
+	for i := index - 1; i >= 0; i-- {
+		if g.InnovationNum == genes[i].InnovationNum {
 			index = i
+			break
+		} else if g.InnovationNum > genes[i].InnovationNum {
+			index = i + 1 // previous
 			break
 		}
 	}
+
 	first := make([]*Gene, index + 1)
 	copy(first, genes[0:index])
 	first[index] = g
