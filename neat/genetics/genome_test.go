@@ -44,7 +44,7 @@ func buildTestGenome(id int) *Genome {
 }
 
 func buildTestModularGenome(id int) *Genome {
-	gnome := buildTestGenome(1)
+	gnome := buildTestGenome(id)
 
 	// append module with it's IO nodes
 	io_nodes := []*network.NNode{
@@ -724,6 +724,36 @@ func TestGenome_mateMultipoint(t *testing.T) {
 	}
 }
 
+func TestGenome_mateMultipointModular(t *testing.T) {
+	rand.Seed(42)
+	gnome1 := buildTestGenome(1)
+	gnome2 := buildTestModularGenome(2)
+
+	genomeid := 3
+	fitness1, fitness2 := 1.0, 2.3
+
+	gnome_child, err := gnome1.mateMultipoint(gnome2, genomeid, fitness1, fitness2)
+	if err != nil {
+		t.Error(err)
+	}
+	if gnome_child == nil {
+		t.Error("Failed to create child genome")
+	}
+
+	if len(gnome_child.Genes) != 6 {
+		t.Error("len(gnome_child.Genes) != 6", len(gnome_child.Genes))
+	}
+	if len(gnome_child.Nodes) != 7 {
+		t.Error("len(gnome_child.Nodes) != 7", len(gnome_child.Nodes))
+	}
+	if len(gnome_child.Traits) != 3 {
+		t.Error("len(gnome_child.Traits) != 3", len(gnome_child.Traits))
+	}
+	if len(gnome_child.ControlGenes) != 1 {
+		t.Error("len(gnome_child.ControlGenes) != 1", len(gnome_child.ControlGenes))
+	}
+}
+
 func TestGenome_mateMultipointAvg(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
@@ -770,6 +800,36 @@ func TestGenome_mateMultipointAvg(t *testing.T) {
 	}
 	if len(gnome_child.Traits) != 3 {
 		t.Error("len(gnome_child.Traits) != 3", len(gnome_child.Traits))
+	}
+}
+
+func TestGenome_mateMultipointAvgModular(t *testing.T) {
+	rand.Seed(42)
+	gnome1 := buildTestGenome(1)
+	gnome2 := buildTestModularGenome(2)
+
+	genomeid := 3
+	fitness1, fitness2 := 1.0, 2.3
+
+	gnome_child, err := gnome1.mateMultipointAvg(gnome2, genomeid, fitness1, fitness2)
+	if err != nil {
+		t.Error(err)
+	}
+	if gnome_child == nil {
+		t.Error("Failed to create child genome")
+	}
+
+	if len(gnome_child.Genes) != 6 {
+		t.Error("len(gnome_child.Genes) != 6", len(gnome_child.Genes))
+	}
+	if len(gnome_child.Nodes) != 7 {
+		t.Error("len(gnome_child.Nodes) != 7", len(gnome_child.Nodes))
+	}
+	if len(gnome_child.Traits) != 3 {
+		t.Error("len(gnome_child.Traits) != 3", len(gnome_child.Traits))
+	}
+	if len(gnome_child.ControlGenes) != 1 {
+		t.Error("len(gnome_child.ControlGenes) != 1", len(gnome_child.ControlGenes))
 	}
 }
 
@@ -836,6 +896,35 @@ func TestGenome_mateSinglepoint(t *testing.T) {
 	}
 	if len(gnome_child.Traits) != 3 {
 		t.Error("len(gnome_child.Traits) != 3", len(gnome_child.Traits))
+	}
+}
+
+func TestGenome_mateSinglepointModular(t *testing.T) {
+	rand.Seed(42)
+	gnome1 := buildTestGenome(1)
+	gnome2 := buildTestModularGenome(2)
+
+	genomeid := 3
+
+	gnome_child, err := gnome1.mateSinglepoint(gnome2, genomeid)
+	if err != nil {
+		t.Error(err)
+	}
+	if gnome_child == nil {
+		t.Error("Failed to create child genome")
+	}
+
+	if len(gnome_child.Genes) != 6 {
+		t.Error("len(gnome_child.Genes) != 6", len(gnome_child.Genes))
+	}
+	if len(gnome_child.Nodes) != 7 {
+		t.Error("len(gnome_child.Nodes) != 7", len(gnome_child.Nodes))
+	}
+	if len(gnome_child.Traits) != 3 {
+		t.Error("len(gnome_child.Traits) != 3", len(gnome_child.Traits))
+	}
+	if len(gnome_child.ControlGenes) != 1 {
+		t.Error("len(gnome_child.ControlGenes) != 1", len(gnome_child.ControlGenes))
 	}
 }
 
