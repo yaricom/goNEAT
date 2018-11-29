@@ -1483,17 +1483,19 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 			new_genes = append(new_genes, newgene)
 		} // end SKIP
 	} // end FOR
-	// check if parent's control genes should be inherited
+	// check if parent's MIMO control genes should be inherited
 	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
-		extra_nodes, modules := gen.mateModules(child_nodes_map, og)
-		if modules != nil && len(extra_nodes) > 0 {
-			new_nodes = append(new_nodes, extra_nodes...)
+		// MIMO control genes found at least in one parent - append it to child if appropriate
+		if extra_nodes, modules := gen.mateModules(child_nodes_map, og); modules != nil {
+			if len(extra_nodes) > 0 {
+				// append extra IO nodes of MIMO genes not found in child
+				new_nodes = append(new_nodes, extra_nodes...)
+			}
 
 			// Return modular baby genome
 			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
 		}
 	}
-
 	// Return plain baby Genome
 	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
 }
@@ -1693,17 +1695,19 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 			new_genes = append(new_genes, new_gene)
 		} // end SKIP
 	} // end FOR
-	// check if parent's control genes should be inherited
+	// check if parent's MIMO control genes should be inherited
 	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
-		extra_nodes, modules := gen.mateModules(child_nodes_map, og)
-		if modules != nil && len(extra_nodes) > 0 {
-			new_nodes = append(new_nodes, extra_nodes...)
+		// MIMO control genes found at least in one parent - append it to child if appropriate
+		if extra_nodes, modules := gen.mateModules(child_nodes_map, og); modules != nil {
+			if len(extra_nodes) > 0 {
+				// append extra IO nodes of MIMO genes not found in child
+				new_nodes = append(new_nodes, extra_nodes...)
+			}
 
 			// Return modular baby genome
 			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
 		}
 	}
-
 	// Return plain baby Genome
 	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
 }
@@ -1912,17 +1916,19 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 			new_genes = append(new_genes, new_gene)
 		}// end SKIP
 	} // end FOR
-	// check if parent's control genes should be inherited
+	// check if parent's MIMO control genes should be inherited
 	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
-		extra_nodes, modules := gen.mateModules(child_nodes_map, og)
-		if modules != nil && len(extra_nodes) > 0 {
-			new_nodes = append(new_nodes, extra_nodes...)
+		// MIMO control genes found at least in one parent - append it to child if appropriate
+		if extra_nodes, modules := gen.mateModules(child_nodes_map, og); modules != nil {
+			if len(extra_nodes) > 0 {
+				// append extra IO nodes of MIMO genes not found in child
+				new_nodes = append(new_nodes, extra_nodes...)
+			}
 
 			// Return modular baby genome
 			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
 		}
 	}
-
 	// Return plain baby Genome
 	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
 }
