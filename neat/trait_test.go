@@ -2,47 +2,36 @@ package neat
 
 import (
 	"testing"
-	"fmt"
-	"strings"
-	"bytes"
 )
 
-// Tests Trait ReadTrait
-func TestTrait_ReadTrait(t *testing.T)  {
-	params := []float64 {
-		0.40227575878298616, 0.0, 0.0, 0.0, 0.0, 0.3245553261200018, 0.0, 0.12248956525856575,
+func TestNewTraitAvrg(t *testing.T) {
+	t1 := &Trait{Id:1, Params:[]float64{1, 2, 3, 4, 5, 6}}
+	t2 := &Trait{Id:2, Params:[]float64{2, 3, 4, 5, 6, 7}}
+
+	tr, err := NewTraitAvrg(t1, t2)
+	if err != nil {
+		t.Error(err)
 	}
-	trait_id := 2
-	trait_str := fmt.Sprintf("%d %g %g %g %g %g %g %g %g",
-			trait_id, params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7])
-	trait := ReadTrait(strings.NewReader(trait_str))
-	if trait.Id != trait_id {
-		t.Error("trait.TraitId", trait_id, trait.Id)
+	if tr.Id != t1.Id {
+		t.Error("tr.Id != t1.Id", tr.Id)
 	}
-	for i, p := range params {
-		if trait.Params[i] != p {
-			t.Error("trait.Params[i] != p", trait.Params[i], p)
+	for i, p := range tr.Params {
+		if p != (t1.Params[i] + t2.Params[i]) / 2.0 {
+			t.Error("Wrong parameter at: ", i)
 		}
 	}
 }
 
-// Tests Trait WriteTrait
-func TestTrait_WriteTrait(t *testing.T)  {
-	params := []float64 {
-		0.40227575878298616, 0.0, 0.0, 0.0, 0.0, 0.3245553261200018, 0.0, 0.12248956525856575,
+func TestNewTraitCopy(t *testing.T) {
+	t1 := &Trait{Id:1, Params:[]float64{1, 2, 3, 4, 5, 6}}
+
+	tr := NewTraitCopy(t1)
+	if tr.Id != t1.Id {
+		t.Error("tr.Id != t1.Id", tr.Id)
 	}
-	trait_id := 2
-	trait := NewTrait()
-	trait.Id = trait_id
-	trait.Params = params
-
-	trait_str := fmt.Sprintf("%d %g %g %g %g %g %g %g %g",
-		trait_id, params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7])
-
-	out_buffer := bytes.NewBufferString("")
-	trait.WriteTrait(out_buffer)
-	out_str := strings.TrimSpace(out_buffer.String())
-	if trait_str != out_str {
-		t.Errorf("Wrong trait serialization\n[%s]\n[%s]", trait_str, out_str)
+	for i, p := range tr.Params {
+		if p != t1.Params[i] {
+			t.Error("Wrong parameter at: ", i)
+		}
 	}
 }

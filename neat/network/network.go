@@ -3,6 +3,12 @@ package network
 import (
 	"fmt"
 	"bytes"
+	"errors"
+)
+
+var (
+	// The error to be raised when maximal network activation attempts exceeded
+	NetErrMaxAttempts = errors.New("Max network activation attempts exceeded. Inputs disconnected from outputs!")
 )
 
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
@@ -10,31 +16,41 @@ import (
 // or learn on its own, even though it may be part of a larger framework.
 type Network struct {
 	// A network id
-	Id        int
+	Id            int
 	// Is a name of this network */
-	Name      string
+	Name          string
 
 	// The number of links in the net (-1 means not yet counted)
-	numlinks  int
+	numlinks      int
 
-	// A list of all the nodes in the network
-	all_nodes []*NNode
+	// A list of all the nodes in the network except MIMO control ones
+	all_nodes     []*NNode
 	// NNodes that input into the network
-	Inputs    []*NNode
+	inputs        []*NNode
 	// NNodes that output from the network
-	Outputs   []*NNode
+	Outputs       []*NNode
+
+	// NNodes that connect network modules
+	control_nodes []*NNode
 }
 
 // Creates new network
 func NewNetwork(in, out, all []*NNode, net_id int) *Network {
 	n := Network{
 		Id:net_id,
-		Inputs:in,
+		inputs:in,
 		Outputs:out,
 		all_nodes:all,
 		numlinks:-1,
 	}
 	return &n
+}
+
+// Creates new modular network with control nodes
+func NewModularNetwork(in, out, all, control []*NNode, net_id int) *Network {
+	n := NewNetwork(in, out, all, net_id)
+	n.control_nodes = control
+	return n
 }
 
 // Puts the network back into an initial state
@@ -69,7 +85,7 @@ func (n *Network) PrintActivation() string {
 // Print the values of network inputs to the console
 func (n *Network) PrintInput() string {
 	out := bytes.NewBufferString(fmt.Sprintf("Network %s with id %d inputs: (", n.Name, n.Id))
-	for i, node := range n.Inputs {
+	for i, node := range n.inputs {
 		fmt.Fprintf(out, "[Input #%d: %s] ", i, node)
 	}
 	fmt.Fprint(out, ")")
@@ -86,38 +102,36 @@ func (n *Network) OutputIsOff() bool {
 	return false
 }
 
-// Activates the net such that all outputs are active
-func (n *Network) Activate() (bool, error) {
-	//For adding to the activesum
+// Attempts to activate the network given number of steps before returning error.
+func (n *Network) ActivateSteps(max_steps int) (bool, error) {
+	// For adding to the activesum
 	add_amount := 0.0
-	//Make sure we at least activate once
+	// Make sure we at least activate once
 	one_time := false
-	//Used in case the output is somehow truncated from the network
+	// Used in case the output is somehow truncated from the network
 	abort_count := 0
 
 	// Keep activating until all the outputs have become active
 	// (This only happens on the first activation, because after that they are always active)
 	for n.OutputIsOff() || !one_time {
-		abort_count += 1
 
-		if abort_count >= 20 {
-			return false, nil//errors.New("Inputs disconnected from outputs!")
+		if abort_count >= max_steps {
+			return false, NetErrMaxAttempts
 		}
 
 		// For each neuron node, compute the sum of its incoming activation
 		for _, np := range n.all_nodes {
 			if np.IsNeuron() {
 				np.ActivationSum = 0.0 // reset activation value
-				np.IsActive = false // flag node disabled
+				np.isActive = false // flag node disabled
 
 				// For each node's incoming connection, add the activity from the connection to the activesum
 				for _, link := range np.Incoming {
 					// Handle possible time delays
 					if !link.IsTimeDelayed {
 						add_amount = link.Weight * link.InNode.GetActiveOut()
-						//fmt.Printf("%f -> %f\n", link.Weight, (*link.InNode).GetActiveOut())
-						if link.InNode.IsActive || link.InNode.IsSensor() {
-							np.IsActive = true
+						if link.InNode.isActive || link.InNode.IsSensor() {
+							np.isActive = true
 						}
 					} else {
 						add_amount = link.Weight * link.InNode.GetActiveOutTd()
@@ -129,41 +143,52 @@ func (n *Network) Activate() (bool, error) {
 
 		// Now activate all the neuron nodes off their incoming activation
 		for _, np := range n.all_nodes {
+			//if np.Id >= 7 && np.Id <= 9 {
+			//	println(np.Id, np.isActive, np.ActivationsCount)
+			//}
 			if np.IsNeuron() {
 				// Only activate if some active input came in
-				if np.IsActive {
-					// Keep a memory of activations for potential time delayed connections
-					np.saveActivations()
-
+				if np.isActive {
 					// Now run the net activation through an activation function
-					np.Activation = NodeActivators.ActivateNode(np)
-
-					// Increment the activation_count
-					// First activation cannot be from nothing!!
-					np.ActivationsCount++
+					err := NodeActivators.ActivateNode(np)
+					if err != nil {
+						return false, err
+					}
 				}
 				//fmt.Printf("Node: %s, activation sum: %f, active: %t\n", np, np.ActivationSum, np.IsActive)
 			}
+			//if np.Id >= 7 && np.Id <= 9 {
+			//	println(np.Id, np.isActive, np.ActivationsCount)
+			//}
 		}
+
+		// Now activate all MIMO control genes to propagate activation through genome modules
+		for _, cn := range n.control_nodes {
+			cn.isActive = false
+			// Activate control MIMO node as control module
+			err := NodeActivators.ActivateModule(cn)
+			if err != nil {
+				return false, err
+			}
+			// mark control node as active
+			cn.isActive = true
+		}
+
 		one_time = true
+		abort_count += 1
 	}
 	return true, nil
 }
 
-// Adds a new input node
-func (n *Network) AddInputNode(node *NNode) {
-	n.Inputs = append(n.Inputs, node)
-}
-
-// Adds a new output node
-func (n *Network) AddOutputNode(node *NNode) {
-	n.Outputs = append(n.Outputs, node)
+// Activates the net such that all outputs are active
+func (n *Network) Activate() (bool, error) {
+	return n.ActivateSteps(20)
 }
 
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
 func (n *Network) LoadSensors(sensors []float64) {
 	counter := 0
-	for _, node := range n.Inputs {
+	for _, node := range n.inputs {
 		if node.IsSensor() {
 			node.SensorLoad(sensors[counter])
 			counter += 1
@@ -173,7 +198,11 @@ func (n *Network) LoadSensors(sensors []float64) {
 
 // Counts the number of nodes in the net
 func (n *Network) NodeCount() int {
-	return len(n.all_nodes)
+	if len(n.control_nodes) == 0 {
+		return len(n.all_nodes)
+	} else {
+		return len(n.all_nodes) + len(n.control_nodes)
+	}
 }
 
 // Counts the number of links in the net
@@ -181,6 +210,11 @@ func (n *Network) LinkCount() int {
 	n.numlinks = 0
 	for _, node := range n.all_nodes {
 		n.numlinks += len(node.Incoming)
+	}
+	if len(n.control_nodes) != 0 {
+		for _, node := range n.control_nodes {
+			n.numlinks += len(node.Incoming)
+		}
 	}
 	return n.numlinks
 }
@@ -221,7 +255,7 @@ func (n *Network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) 
 // Find the maximum number of neurons between an output and an input
 func (n *Network) MaxDepth() (int, error) {
 	// The quick case when there are no hidden nodes
-	if len(n.all_nodes) == len(n.Inputs) + len(n.Outputs) {
+	if len(n.all_nodes) == len(n.inputs) + len(n.Outputs) && len(n.control_nodes) == 0 {
 		return 1, nil // just one layer depth
 	}
 
@@ -235,6 +269,9 @@ func (n *Network) MaxDepth() (int, error) {
 			max = curr_depth
 		}
 	}
+	// add control nodes
+	max += len(n.control_nodes)
+
 	return max, nil
 }
 

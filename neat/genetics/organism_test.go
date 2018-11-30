@@ -14,8 +14,13 @@ func TestOrganisms(t *testing.T) {
 	gnome := buildTestGenome(1)
 	count := 100
 	orgs := make(Organisms, count)
+	var err error
 	for i := 0; i < count; i++ {
-		orgs[i] = NewOrganism(rand.Float64(), gnome, 1)
+		orgs[i], err = NewOrganism(rand.Float64(), gnome, 1)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 	}
 
 	// sort ascending
@@ -30,7 +35,11 @@ func TestOrganisms(t *testing.T) {
 
 	// sort descending
 	for i := 0; i < count; i++ {
-		orgs[i] = NewOrganism(rand.Float64(), gnome, 1)
+		orgs[i], err = NewOrganism(rand.Float64(), gnome, 1)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 	}
 	sort.Sort(sort.Reverse(orgs))
 	fit = math.MaxFloat64
@@ -44,12 +53,16 @@ func TestOrganisms(t *testing.T) {
 
 func TestOrganism_MarshalBinary(t *testing.T) {
 	gnome := buildTestGenome(1)
-	org := NewOrganism(rand.Float64(), gnome, 1)
+	org, err := NewOrganism(rand.Float64(), gnome, 1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Marshal to binary
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(org)
+	err = enc.Encode(org)
 	if err != nil {
 		t.Error(err)
 		return

@@ -28,10 +28,10 @@ func TestNewPopulationRandom(t *testing.T) {
 	if len(pop.Organisms) != conf.PopSize {
 		t.Error("len(pop.Organisms) != size")
 	}
-	if pop.currNodeId != 11 {
+	if pop.nextNodeId != 11 {
 		t.Error("pop.currNodeId != 11")
 	}
-	if pop.currInnovNum != int64(101) {
+	if pop.nextInnovNum != int64(101) {
 		t.Error("pop.currInnovNum != 101")
 	}
 	if len(pop.Species) == 0 {
@@ -64,7 +64,7 @@ func TestNewPopulation(t *testing.T) {
 		CompatThreshold:0.5,
 		PopSize:10,
 	}
-	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
+	gen := newGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
 
 	pop, err := NewPopulation(gen, &conf)
 	if err != nil {
@@ -77,11 +77,11 @@ func TestNewPopulation(t *testing.T) {
 		t.Error("len(pop.Organisms) != conf.PopSize")
 	}
 	last_node_id, _ := gen.getLastNodeId()
-	if pop.currNodeId != last_node_id {
+	if pop.nextNodeId != int32(last_node_id + 1) {
 		t.Error("pop.currNodeId != last_node_id")
 	}
-	last_gene_innov_num, _ := gen.getLastGeneInnovNum()
-	if pop.currInnovNum != last_gene_innov_num {
+	last_gene_innov_num, _ := gen.getNextGeneInnovNum()
+	if pop.nextInnovNum != last_gene_innov_num {
 		t.Error("pop.currInnovNum != last_gene_innov_num")
 	}
 

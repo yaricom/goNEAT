@@ -12,6 +12,8 @@ import (
 	"bytes"
 	"strconv"
 	"math"
+	"sync/atomic"
+	"sync"
 )
 
 // A Population is a group of Organisms including their species
@@ -40,10 +42,13 @@ type Population struct {
 	Variance                 float64
 	StandardDev              float64
 
-	// The current innovation number for population
-	currInnovNum             int64
-	// The current ID for new node in population
-	currNodeId               int
+	// The next innovation number for population
+	nextInnovNum             int64
+	// The next ID for new node in population
+	nextNodeId               int32
+
+	// The mutex to guard against concurrent modifications
+	mutex                    *sync.Mutex
 }
 
 // The auxiliary data type to hold results of parallel reproduction sent over the wires
@@ -80,11 +85,15 @@ func NewPopulationRandom(in, out, nmax int, recurrent bool, link_prob float64, c
 
 	pop := newPopulation()
 	for count := 0; count < context.PopSize; count++ {
-		gen := NewGenomeRand(count, in, out, rand.Intn(nmax), nmax, recurrent, link_prob)
-		pop.Organisms = append(pop.Organisms, NewOrganism(0.0, gen, 1))
+		gen := newGenomeRand(count, in, out, rand.Intn(nmax), nmax, recurrent, link_prob)
+		org, err := NewOrganism(0.0, gen, 1)
+		if err != nil {
+			return nil, err
+		}
+		pop.Organisms = append(pop.Organisms, org)
 	}
-	pop.currNodeId = in + out + nmax + 1
-	pop.currInnovNum = int64((in + out + nmax) * (in + out + nmax) + 1)
+	pop.nextNodeId = int32(in + out + nmax + 1)
+	pop.nextInnovNum = int64((in + out + nmax) * (in + out + nmax) + 1)
 
 	err := pop.speciate(pop.Organisms, context)
 	if err != nil {
@@ -123,20 +132,23 @@ func ReadPopulation(ir io.Reader, context *neat.NeatContext) (pop *Population, e
 				return nil, err
 			}
 			// add new organism for read genome
-			new_organism := NewOrganism(0.0, new_genome, 1)
+			new_organism, err := NewOrganism(0.0, new_genome, 1)
+			if err != nil {
+				return nil, err
+			}
 			pop.Organisms = append(pop.Organisms, new_organism)
 
 			if last_node_id, err := new_genome.getLastNodeId(); err == nil {
-				if pop.currNodeId < last_node_id {
-					pop.currNodeId = last_node_id
+				if pop.nextNodeId < int32(last_node_id) {
+					pop.nextNodeId = int32(last_node_id + 1)
 				}
 			} else {
 				return nil, err
 			}
 
-			if last_gene_innov_num, err := new_genome.getLastGeneInnovNum(); err == nil {
-				if pop.currInnovNum < last_gene_innov_num {
-					pop.currInnovNum = last_gene_innov_num
+			if last_gene_innov_num, err := new_genome.getNextGeneInnovNum(); err == nil {
+				if pop.nextInnovNum < last_gene_innov_num {
+					pop.nextInnovNum = last_gene_innov_num
 				}
 			} else {
 				return nil, err
@@ -200,41 +212,53 @@ func newPopulation() *Population {
 		Species:make([]*Species, 0),
 		Organisms:make([]*Organism, 0),
 		Innovations:make([]*Innovation, 0),
+		mutex:&sync.Mutex{},
 	}
 }
 
 // Returns current innovation number and increment innovations number counter after that
-func (p *Population) getInnovationNumberAndIncrement() int64 {
-	inn_num := p.currInnovNum
-	p.currInnovNum++
-	return inn_num
+func (p *Population) getNextInnovationNumberAndIncrement() int64 {
+	return atomic.AddInt64(&p.nextInnovNum, 1)
 }
-// Returns the current node ID which can be used to create new node in population and increment it after
-func (p *Population) getCurrentNodeIdAndIncrement() int {
-	node_id := p.currNodeId
-	p.currNodeId++
-	return node_id
+// Returns the next node ID which can be used to create new node in population
+func (p *Population) getNextNodeIdAndIncrement() int32 {
+	return atomic.AddInt32(&p.nextNodeId, 1)
+}
+
+// Appends given innovation to the list of known innovations in thread safe manner
+func (p *Population) addInnovationSynced(i *Innovation) {
+	p.mutex.Lock()
+	p.Innovations = append(p.Innovations, i)
+	p.mutex.Unlock()
 }
 
 // Create a population of size size off of Genome g. The new Population will have the same topology as g
 // with link weights slightly perturbed from g's
-func (p *Population) spawn(g *Genome, context *neat.NeatContext) error {
-	var new_genome *Genome
+func (p *Population) spawn(g *Genome, context *neat.NeatContext) (err error) {
 	for count := 0; count < context.PopSize; count++ {
-		new_genome = g.duplicate(count)
-		_, err := new_genome.mutateLinkWeights(1.0, 1.0, gaussianMutator)
+		// make genome duplicate for new organism
+		new_genome, err := g.duplicate(count)
 		if err != nil {
 			return err
 		}
-		new_organism := NewOrganism(0.0, new_genome, 1)
-		p.Organisms = append(p.Organisms, new_organism)
+		// introduce initial mutations
+		if _, err = new_genome.mutateLinkWeights(1.0, 1.0, gaussianMutator); err != nil {
+			return err
+		}
+		// create organism for new genome
+		if new_organism, err := NewOrganism(0.0, new_genome, 1); err != nil {
+			return err
+		} else {
+			p.Organisms = append(p.Organisms, new_organism)
+		}
 	}
-	//Keep a record of the innovation and node number we are on
-	var err error
-	p.currNodeId, err = new_genome.getLastNodeId()
-	p.currInnovNum, err = new_genome.getLastGeneInnovNum()
-
-	if err != nil {
+	// Keep a record of the innovation and node number we are on
+	if nextNodeId, err := g.getLastNodeId(); err != nil {
+		return err
+	} else {
+		p.nextNodeId = int32(nextNodeId + 1)
+	}
+	if p.nextInnovNum, err = g.getNextGeneInnovNum(); err != nil {
 		return err
 	}
 

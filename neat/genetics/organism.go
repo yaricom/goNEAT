@@ -16,21 +16,21 @@ type OrganismData struct {
 // i.e. the genotype and phenotype together.
 type Organism struct {
 	// A measure of fitness for the Organism
-	Fitness           float64
+	Fitness                   float64
 	// The error value indicating how far organism's performance is from ideal task goal, e.g. MSE
-	Error             float64
+	Error                     float64
 	// Win marker (if needed for a particular task)
-	IsWinner          bool
+	IsWinner                  bool
 
 	// The Organism's phenotype
-	Phenotype         *network.Network
+	Phenotype                 *network.Network
 	// The Organism's genotype
-	Genotype          *Genome
+	Genotype                  *Genome
 	// The Species of the Organism
-	Species           *Species
+	Species                   *Species
 
 	// Number of children this Organism may have
-	ExpectedOffspring float64
+	ExpectedOffspring         float64
 	// Tells which generation this Organism is from
 	Generation                int
 
@@ -39,7 +39,7 @@ type Organism struct {
 	Data                      *OrganismData
 
 	// A fitness measure that won't change during fitness adjustments of population's epoch evaluation
-	originalFitness   float64
+	originalFitness           float64
 
 	// Marker for destruction of inferior Organisms
 	toEliminate               bool
@@ -65,22 +65,31 @@ type Organism struct {
 }
 
 // Creates new organism with specified genome, fitness and given generation number
-func NewOrganism(fit float64, g *Genome, generation int) *Organism {
-	return &Organism{
+func NewOrganism(fit float64, g *Genome, generation int) (org *Organism, err error) {
+	phenotype := g.Phenotype
+	if phenotype == nil {
+		phenotype, err = g.genesis(g.Id)
+		if err != nil {
+			return nil, err
+		}
+	}
+	org = &Organism{
 		Fitness:fit,
 		Genotype:g,
-		Phenotype:g.genesis(g.Id),
+		Phenotype:phenotype,
 		Generation:generation,
 	}
+	return org, nil
 }
 
 // Regenerate the network based on a change in the genotype
-func (o *Organism) UpdatePhenotype() {
+func (o *Organism) UpdatePhenotype() (err error) {
 	// First, delete the old phenotype (net)
 	o.Phenotype = nil
 
 	// Now, recreate the phenotype off the new genotype
-	o.Phenotype = o.Genotype.genesis(o.Genotype.Id)
+	o.Phenotype, err = o.Genotype.genesis(o.Genotype.Id)
+	return err
 }
 
 // Method to check if this algorithm is champion child and if so than if it's damaged
@@ -110,7 +119,7 @@ func (o *Organism) UnmarshalBinary(data []byte) error {
 	_, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &o.highestFitness, &o.isPopulationChampionChild, &genotype_id)
 	o.Genotype, err = ReadGenome(b, genotype_id)
 	if err == nil {
-		o.Phenotype = o.Genotype.genesis(genotype_id)
+		o.Phenotype, err = o.Genotype.genesis(genotype_id)
 	}
 
 	return err

@@ -2,78 +2,41 @@ package genetics
 
 import (
 	"testing"
-	"fmt"
-	"strings"
 	"github.com/yaricom/goNEAT/neat/network"
-	"bytes"
 	"github.com/yaricom/goNEAT/neat"
+	"reflect"
 )
 
-// Tests Gene ReadGene
-func TestGene_ReadGene(t *testing.T)  {
-	// gene  1 1 4 1.1983046913458986 0 1.0 1.1983046913458986 0
-	traitId, inNodeId, outNodeId, innov_num := 1, 1, 4, int64(1)
-	weight, mut_num := 1.1983046913458986, 1.1983046913458986
-	recurrent, enabled := false, false
-	gene_str := fmt.Sprintf("%d %d %d %g %t %d %g %t",
-		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
-
-	trait := neat.NewTrait()
-	trait.Id = 1
-	nodes := []*network.NNode{
-		network.NewNNode(1, network.InputNeuron),
-		network.NewNNode(4, network.HiddenNeuron),
-	}
-
-	gene := ReadGene(strings.NewReader(gene_str), []*neat.Trait{trait}, nodes)
-
-	if gene.InnovationNum != innov_num {
-		t.Error("gene.InnovationNum", innov_num, gene.InnovationNum)
-	}
-	if gene.MutationNum != mut_num {
-		t.Error("gene.MutationNum", mut_num, gene.MutationNum)
-	}
-	if gene.IsEnabled != enabled {
-		t.Error("gene.IsEnabled", enabled, gene.IsEnabled)
-	}
-	link := gene.Link
-	if link.Trait.Id != traitId {
-		t.Error("link.LinkTrait.TraitId", traitId, link.Trait.Id)
-	}
-	if link.InNode.Id != inNodeId {
-		t.Error("link.InNode.NodeId", inNodeId, link.InNode.Id)
-	}
-	if link.OutNode.Id != outNodeId {
-		t.Error("link.OutNode.NodeId", outNodeId, link.OutNode.Id)
-	}
-	if link.Weight != weight {
-		t.Error("link.Weight", weight, link.Weight)
-	}
-	if link.IsRecurrent != recurrent {
-		t.Error("link.IsRecurrent", recurrent, link.IsRecurrent)
-	}
-}
-
 // Tests Gene WriteGene
-func TestGene_WriteGene(t *testing.T)  {
-	// gene  1 1 4 1.1983046913458986 0 1.0 1.1983046913458986 0
-	traitId, inNodeId, outNodeId, innov_num := 1, 1, 4, int64(1)
-	weight, mut_num := 1.1983046913458986, 1.1983046913458986
-	recurrent, enabled := false, false
-	gene_str := fmt.Sprintf("%d %d %d %g %t %d %g %t",
-		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
+func TestNewGeneCopy(t *testing.T) {
+	nodes := []*network.NNode{
+		{Id:1, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:2, NeuronType: network.OutputNeuron, ActivationType: network.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+	}
+	trait := &neat.Trait{Id:1, Params:[]float64{0.1, 0, 0, 0, 0, 0, 0, 0}}
+	g1 := NewGeneWithTrait(trait, 3.2, nodes[0], nodes[1], true, 42, 5.2)
 
-	trait := neat.NewTrait()
-	trait.Id = traitId
-	gene := NewGeneWithTrait(trait, weight, network.NewNNode(1, network.InputNeuron),
-		network.NewNNode(4, network.HiddenNeuron), recurrent, innov_num, mut_num)
-	gene.IsEnabled = enabled
-
-	out_buf := bytes.NewBufferString("")
-	gene.Write(out_buf)
-
-	out_str := out_buf.String()
-	if gene_str != out_str {
-		t.Errorf("Wrong Gene serialization\n[%s]\n[%s]", gene_str, out_str)
+	// test
+	g := NewGeneCopy(g1, trait, nodes[0], nodes[1])
+	if g.Link.InNode.Id != nodes[0].Id {
+		t.Error("g.Link.InNode.Id != nodes[0].Id", g.Link.InNode.Id)
+	}
+	if g.Link.OutNode.Id != nodes[1].Id {
+		t.Error("g.Link.OutNode.Id != nodes[1].Id", g.Link.OutNode.Id)
+	}
+	if g.Link.Trait.Id != trait.Id {
+		t.Error("g.Link.Trait.Id != trait.Id", g.Link.Trait.Id)
+	}
+	if reflect.DeepEqual(g.Link.Trait.Params, trait.Params) == false {
+		t.Error("reflect.DeepEqual(g.Link.Trait.Params, trait.Params) == false")
+	}
+	if g.InnovationNum != g1.InnovationNum {
+		t.Error("g.InnovationNum != g1.InnovationNum", g.InnovationNum, g1.InnovationNum)
+	}
+	if g.MutationNum != g1.MutationNum {
+		t.Error("g.MutationNum != g1.MutationNum", g.MutationNum, g1.MutationNum)
+	}
+	if g.IsEnabled != g1.IsEnabled {
+		t.Error("g.IsEnabled != g1.IsEnabled", g.IsEnabled, g1.IsEnabled)
 	}
 }

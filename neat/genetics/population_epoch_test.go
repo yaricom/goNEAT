@@ -44,7 +44,7 @@ func TestPopulationEpochExecutor_NextEpoch(t *testing.T) {
 		RecurOnlyProb:0.2,
 	}
 	neat.LogLevel = neat.LogLevelInfo
-	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
+	gen := newGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
 	pop, err := NewPopulation(gen, &conf)
 	if err != nil {
 		t.Error(err)

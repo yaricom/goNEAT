@@ -8,31 +8,41 @@ import (
 	"bytes"
 )
 
-func buildSpeciesWithOrganisms(id int) *Species {
-	gen := &Genome{
-		Id:1,
-	}
+func buildSpeciesWithOrganisms(id int) (*Species, error) {
+	gen := buildTestGenome(1)
 
 	sp := NewSpecies(id)
-	sp.addOrganism(NewOrganism(5.0 * float64(id), gen, id))
-	sp.addOrganism(NewOrganism(15.0 * float64(id), gen, id))
-	sp.addOrganism(NewOrganism(10.0 * float64(id), gen, id))
+	for i := 0; i < 3; i++ {
+		org, err := NewOrganism( float64(i + 1) * 5.0 * float64(id), gen, id)
+		if err != nil {
+			return nil, err
+		}
+		sp.addOrganism(org)
+	}
 
-	return sp
+	return sp, nil
 }
 
 func TestSpecies_Write(t *testing.T) {
-	sp := buildSpeciesWithOrganisms(1)
+	sp, err := buildSpeciesWithOrganisms(1)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	out_buf := bytes.NewBufferString("")
 	sp.Write(out_buf)
-
-	t.Log(out_buf)
 }
 
 // Tests Species adjustFitness
 func TestSpecies_adjustFitness(t *testing.T)  {
-	sp := buildSpeciesWithOrganisms(1)
+	sp, err := buildSpeciesWithOrganisms(1)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Configuration
 	conf := neat.NeatContext{
@@ -59,7 +69,12 @@ func TestSpecies_adjustFitness(t *testing.T)  {
 
 // Tests Species countOffspring
 func TestSpecies_countOffspring(t *testing.T) {
-	sp := buildSpeciesWithOrganisms(1)
+	sp, err := buildSpeciesWithOrganisms(1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	for i, o := range sp.Organisms {
 		o.ExpectedOffspring = float64(i) * 1.5
 	}
@@ -76,7 +91,12 @@ func TestSpecies_countOffspring(t *testing.T) {
 		return
 	}
 
-	sp = buildSpeciesWithOrganisms(2)
+	sp, err = buildSpeciesWithOrganisms(2)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	for i, o := range sp.Organisms {
 		o.ExpectedOffspring = float64(i) * 1.5
 	}
@@ -93,7 +113,11 @@ func TestSpecies_countOffspring(t *testing.T) {
 }
 
 func TestSpecies_computeMaxFitness(t *testing.T) {
-	sp := buildSpeciesWithOrganisms(1)
+	sp, err := buildSpeciesWithOrganisms(1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	avg_check := 0.0
 	for _, o := range sp.Organisms{
 		avg_check += o.Fitness
@@ -110,7 +134,11 @@ func TestSpecies_computeMaxFitness(t *testing.T) {
 }
 
 func TestSpecies_findChampion(t *testing.T) {
-	sp := buildSpeciesWithOrganisms(1)
+	sp, err := buildSpeciesWithOrganisms(1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	champ := sp.findChampion()
 	if champ.Fitness != 15.0 {
@@ -120,7 +148,11 @@ func TestSpecies_findChampion(t *testing.T) {
 }
 
 func TestSpecies_removeOrganism(t *testing.T) {
-	sp := buildSpeciesWithOrganisms(1)
+	sp, err := buildSpeciesWithOrganisms(1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	// test remove
 	size := len(sp.Organisms)
@@ -137,10 +169,12 @@ func TestSpecies_removeOrganism(t *testing.T) {
 
 	// test fail to remove
 	size = len(sp.Organisms)
-	gen := &Genome{
-		Id:1,
+	gen := buildTestGenome(2)
+	org, err := NewOrganism(6.0, gen, 1)
+	if err != nil {
+		t.Error(err)
+		return
 	}
-	org := NewOrganism(6.0, gen, 1)
 	res, err = sp.removeOrganism(org)
 	if res == true {
 		t.Error("res == true", res, err)
@@ -185,7 +219,7 @@ func TestSpecies_reproduce(t *testing.T) {
 	}
 	neat.LogLevel = neat.LogLevelInfo
 
-	gen := NewGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
+	gen := newGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
 	pop, err := NewPopulation(gen, &conf)
 	if err != nil {
 		t.Error(err)

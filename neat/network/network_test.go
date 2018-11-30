@@ -5,7 +5,7 @@ import (
 )
 
 func buildNetwork() *Network {
-	all_nodes := []*NNode {
+	all_nodes := []*NNode{
 		NewNNode(1, InputNeuron),
 		NewNNode(2, InputNeuron),
 		NewNNode(3, InputNeuron),
@@ -17,20 +17,93 @@ func buildNetwork() *Network {
 	}
 
 	// HIDDEN 4
-	all_nodes[3].AddIncoming(all_nodes[0], 15.0)
-	all_nodes[3].AddIncoming(all_nodes[1], 10.0)
+	all_nodes[3].addIncoming(all_nodes[0], 15.0)
+	all_nodes[3].addIncoming(all_nodes[1], 10.0)
 	// HIDDEN 5
-	all_nodes[4].AddIncoming(all_nodes[1], 5.0)
-	all_nodes[4].AddIncoming(all_nodes[2], 1.0)
+	all_nodes[4].addIncoming(all_nodes[1], 5.0)
+	all_nodes[4].addIncoming(all_nodes[2], 1.0)
 	// HIDDEN 6
-	all_nodes[5].AddIncoming(all_nodes[4], 17.0)
+	all_nodes[5].addIncoming(all_nodes[4], 17.0)
 	// OUTPUT 7
-	all_nodes[6].AddIncoming(all_nodes[3], 7.0)
-	all_nodes[6].AddIncoming(all_nodes[5], 4.5)
+	all_nodes[6].addIncoming(all_nodes[3], 7.0)
+	all_nodes[6].addIncoming(all_nodes[5], 4.5)
 	// OUTPUT 8
-	all_nodes[7].AddIncoming(all_nodes[5], 13.0)
+	all_nodes[7].addIncoming(all_nodes[5], 13.0)
 
 	return NewNetwork(all_nodes[0:3], all_nodes[6:8], all_nodes, 0)
+}
+
+func buildModularNetwork() *Network {
+	all_nodes := []*NNode{
+		NewNNode(1, InputNeuron),
+		NewNNode(2, InputNeuron),
+		NewNNode(3, BiasNeuron),
+		NewNNode(4, HiddenNeuron),
+		NewNNode(5, HiddenNeuron),
+		NewNNode(7, HiddenNeuron),
+		NewNNode(8, OutputNeuron),
+		NewNNode(9, OutputNeuron),
+	}
+	control_nodes := []*NNode{
+		NewNNode(6, HiddenNeuron),
+	}
+	// HIDDEN 6
+	control_nodes[0].ActivationType = MultiplyModuleActivation
+	control_nodes[0].addIncoming(all_nodes[3], 17.0)
+	control_nodes[0].addIncoming(all_nodes[4], 17.0)
+	control_nodes[0].addOutgoing(all_nodes[5], 17.0)
+
+	// HIDDEN 4
+	all_nodes[3].ActivationType = LinearActivation
+	all_nodes[3].addIncoming(all_nodes[0], 15.0)
+	all_nodes[3].addIncoming(all_nodes[2], 10.0)
+	// HIDDEN 5
+	all_nodes[4].ActivationType = LinearActivation
+	all_nodes[4].addIncoming(all_nodes[1], 5.0)
+	all_nodes[4].addIncoming(all_nodes[2], 1.0)
+
+	// HIDDEN 7
+	all_nodes[5].ActivationType = NullActivation
+	all_nodes[5].addIncoming(control_nodes[0], 17.0)
+
+	// OUTPUT 8
+	all_nodes[6].addIncoming(all_nodes[5], 4.5)
+	all_nodes[6].ActivationType = LinearActivation
+	// OUTPUT 9
+	all_nodes[7].addIncoming(all_nodes[5], 13.0)
+	all_nodes[7].ActivationType = LinearActivation
+
+	return NewModularNetwork(all_nodes[0:2], all_nodes[6:8], all_nodes, control_nodes, 0)
+}
+
+func TestModularNetwork_Activate(t *testing.T) {
+	netw := buildModularNetwork()
+	data := []float64{1.0, 2.0}
+	netw.LoadSensors(data)
+
+	depth, err := netw.MaxDepth()
+	if err != nil {
+		t.Error(err)
+	}
+	if depth != 5 {
+		t.Error("MaxDepth", 5, depth)
+	}
+	for i := 0; i < depth; i++ {
+		res, err := netw.Activate()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if !res {
+			t.Error("activation failed unexpectedly")
+		}
+	}
+	if netw.Outputs[0].Activation != 6.750000e+002 {
+		t.Error("netw.Outputs[0].Activation != 6.750000e+002", netw.Outputs[0].Activation)
+	}
+	if netw.Outputs[1].Activation != 1.950000e+003 {
+		t.Error("netw.Outputs[1].Activation != 1.950000e+003", netw.Outputs[1].Activation)
+	}
 }
 
 // Tests Network MaxDepth
@@ -47,7 +120,7 @@ func TestNetwork_MaxDepth(t *testing.T) {
 }
 
 // Tests Network OutputIsOff
-func TestNetwork_OutputIsOff(t *testing.T)  {
+func TestNetwork_OutputIsOff(t *testing.T) {
 	netw := buildNetwork()
 
 	res := netw.OutputIsOff()
@@ -71,7 +144,7 @@ func TestNetwork_Activate(t *testing.T) {
 	for _, node := range netw.AllNodes() {
 		if node.IsNeuron() {
 			if node.ActivationsCount == 0 {
-				t.Error("ActivationsCount not set", node.ActivationsCount, node )
+				t.Error("ActivationsCount not set", node.ActivationsCount, node)
 			}
 			if node.Activation == 0 {
 				t.Error("Activation not set", node.Activation, node)
@@ -123,7 +196,7 @@ func TestNetwork_Flush(t *testing.T) {
 	netw.Flush()
 	for _, node := range netw.AllNodes() {
 		if node.ActivationsCount != 0 {
-			t.Error("ActivationsCount", 0, node.ActivationsCount )
+			t.Error("ActivationsCount", 0, node.ActivationsCount)
 		}
 		if node.Activation != 0 {
 			t.Error("Activation", 0, node.Activation)
@@ -195,7 +268,7 @@ func TestNetwork_IsRecurrent(t *testing.T) {
 	}
 
 	// Introduce recurrence
-	nodes[4].AddIncoming(nodes[7], 3.0)
+	nodes[4].addIncoming(nodes[7], 3.0)
 
 	recur = netw.IsRecurrent(nodes[5], nodes[7], &count, 32)
 	if !recur {

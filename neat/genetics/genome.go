@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"errors"
 	"math"
-	"bufio"
-	"strings"
 	"reflect"
 )
 
@@ -18,25 +16,30 @@ import (
 // 	1) A Vector of Traits
 // 	2) A List of NNodes pointing to a Trait from (1)
 // 	3) A List of Genes with Links that point to Traits from (1)
+// 	4) A List of MIMO Control Genes with Links to different genome modules
 //
 // (1) Reserved parameter space for future use.
 // (2) NNode specifications.
 // (3) Is the primary source of innovation in the evolutionary Genome.
+// (4) Control genes allows to receive inputs from multiple independent genome modules and output processed signal to the
+//     multitude of output locations
 //
 // Each Gene in (3) has a marker telling when it arose historically. Thus, these Genes can be used to speciate the
 // population, and the list of Genes provide an evolutionary history of innovation and link-building.
 type Genome struct {
 	// The genome ID
-	Id        int
+	Id           int
 	// The parameters conglomerations
-	Traits    []*neat.Trait
+	Traits       []*neat.Trait
 	// List of NNodes for the Network
-	Nodes     []*network.NNode
+	Nodes        []*network.NNode
 	// List of innovation-tracking genes
-	Genes     []*Gene
+	Genes        []*Gene
+	// List of MIMO control genes
+	ControlGenes []*MIMOControlGene
 
 	// Allows Genome to be matched with its Network
-	Phenotype *network.Network
+	Phenotype    *network.Network
 }
 
 // Constructor which takes full genome specs and puts them into the new one
@@ -49,10 +52,21 @@ func NewGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene) *Genome {
 	}
 }
 
+// Constructs new modular genome
+func NewModularGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene, mimoG []*MIMOControlGene) *Genome {
+	return &Genome{
+		Id:id,
+		Traits:t,
+		Nodes:n,
+		Genes:g,
+		ControlGenes:mimoG,
+	}
+}
+
 // This special constructor creates a Genome with in inputs, out outputs, n out of nmax hidden units, and random
 // connectivity.  If rec is true then recurrent connections will be included. The last input is a bias
-// link_prob is the probability of a link  */
-func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64) *Genome {
+// link_prob is the probability of a link. The created genome is not modular.
+func newGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64) *Genome {
 	total_nodes := in + out + nmax
 	matrix_dim := total_nodes * total_nodes
 	// The connection matrix which will be randomized
@@ -177,80 +191,26 @@ func NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 
 // Reads Genome from reader
 func ReadGenome(ir io.Reader, id int) (*Genome, error) {
-	gnome := Genome{
-		Id:id,
-		Traits:make([]*neat.Trait, 0),
-		Nodes:make([]*network.NNode, 0),
-		Genes:make([]*Gene, 0),
+	// stub for backward compatibility
+	// the new implementations should use GenomeReader to decode genome data in variety of formats
+	r, err := NewGenomeReader(ir, PlainGenomeEncoding)
+	if err != nil {
+		return nil, err
 	}
-
-	var g_id int
-	// Loop until file is finished, parsing each line
-	scanner := bufio.NewScanner(ir)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.SplitN(line, " ", 2)
-		if len(parts) < 2 {
-			return nil, errors.New(fmt.Sprintf("Line: [%s] can not be split when reading Genome", line))
-		}
-		lr := strings.NewReader(parts[1])
-
-		switch parts[0] {
-		case "trait":
-			// Read a Trait
-			new_trait := neat.ReadTrait(lr)
-			gnome.Traits = append(gnome.Traits, new_trait)
-
-		case "node":
-			// Read a NNode
-			new_node := network.ReadNNode(lr, gnome.Traits)
-			gnome.Nodes = append(gnome.Nodes, new_node)
-
-		case "gene":
-			// Read a Gene
-			new_gene := ReadGene(lr, gnome.Traits, gnome.Nodes)
-			gnome.Genes = append(gnome.Genes, new_gene)
-
-		case "genomeend":
-			// Read Genome ID
-			fmt.Fscanf(lr, "%d", &g_id)
-			// check that we have correct genome ID
-			if g_id != id {
-				return nil, errors.New(
-					fmt.Sprintf("Id mismatch in genome. Found: %d, expected: %d", g_id, id))
-			}
-
-		case "/*":
-			// read all comments and print it
-			neat.InfoLog(line)
-		}
-	}
-	return &gnome, nil
+	gnome, err := r.Read()
+	return gnome, err
 }
 
 // Writes this genome into provided writer
-func (g *Genome) Write(w io.Writer) {
-	fmt.Fprintf(w, "genomestart %d\n", g.Id)
-
-	for _, tr := range g.Traits {
-		fmt.Fprint(w, "trait ")
-		tr.WriteTrait(w)
-		fmt.Fprintln(w, "")
+func (g *Genome) Write(w io.Writer) error {
+	// stub for backward compatibility
+	// the new implementations should use GenomeWriter to decode genome data in variety of formats
+	wr, err := NewGenomeWriter(w, PlainGenomeEncoding)
+	if err == nil {
+		err = wr.WriteGenome(g)
 	}
 
-	for _, nd := range g.Nodes {
-		fmt.Fprint(w, "node ")
-		nd.Write(w)
-		fmt.Fprintln(w, "")
-	}
-
-	for _, gn := range g.Genes {
-		fmt.Fprint(w, "gene ")
-		gn.Write(w)
-		fmt.Fprintln(w, "")
-	}
-	fmt.Fprintf(w, "genomeend %d\n", g.Id)
+	return err
 }
 
 // Stringer
@@ -296,50 +256,91 @@ func (g *Genome) Extrons() int {
 // Tests if given genome is equal to this one genetically and phenotypically. This method will check that both genomes has the same traits, nodes and genes.
 // If mismatch detected the error will be returned with mismatch details.
 func (g *Genome) IsEqual(og *Genome) (bool, error) {
+	if len(g.Traits) != len(og.Traits) {
+		return false, errors.New(fmt.Sprintf("traits count mismatch: %d != %d",
+			len(g.Traits), len(og.Traits)))
+	}
 	for i, tr := range og.Traits {
 		if !reflect.DeepEqual(tr, g.Traits[i]) {
-			return false, errors.New("Traits mismatch")
+			return false, errors.New(
+				fmt.Sprintf("traits mismatch, expected: %s, but found: %s", tr, g.Traits[i]))
 		}
+	}
+
+	if len(g.Nodes) != len(og.Nodes) {
+		return false, errors.New(fmt.Sprintf("nodes count mismatch: %d != %d",
+			len(g.Nodes), len(og.Nodes)))
 	}
 	for i, nd := range og.Nodes {
 		if !reflect.DeepEqual(nd, g.Nodes[i]) {
 			return false, errors.New(
-				fmt.Sprintf("Node mismatch, expected: %s, but found: %s", nd, g.Nodes[i]))
+				fmt.Sprintf("node mismatch, expected: %s\nfound: %s", nd, g.Nodes[i]))
 		}
 	}
 
+	if len(g.Genes) != len(og.Genes) {
+		return false, errors.New(fmt.Sprintf("genes count mismatch: %d != %d",
+			len(g.Genes), len(og.Genes)))
+	}
 	for i, gen := range og.Genes {
 		if !reflect.DeepEqual(gen, g.Genes[i]) {
 			return false, errors.New(
-				fmt.Sprintf("Gene mismatch, expected: %s, but found: %s", gen, g.Genes[i]))
+				fmt.Sprintf("gene mismatch, expected: %s\nfound: %s", gen, g.Genes[i]))
+		}
+	}
+
+	if len(g.ControlGenes) != len(og.ControlGenes) {
+		return false, errors.New(fmt.Sprintf("control genes count mismatch: %d != %d",
+			len(g.ControlGenes), len(og.ControlGenes)))
+	}
+	for i, cg := range og.ControlGenes {
+		if !reflect.DeepEqual(cg, g.ControlGenes[i]) {
+			return false, errors.New(
+				fmt.Sprintf("control gene mismatch, expected: %s\nfound: %s", cg, g.ControlGenes[i]))
 		}
 	}
 
 	return true, nil
 }
 
-// Return id of final NNode in Genome + 1
+// Return id of final NNode in Genome
 func (g *Genome) getLastNodeId() (int, error) {
-	if len(g.Nodes) > 0 {
-		return g.Nodes[len(g.Nodes) - 1].Id + 1, nil
-	} else {
+	if len(g.Nodes) == 0 {
 		return -1, errors.New("Genome has no nodes")
 	}
+	id := g.Nodes[len(g.Nodes) - 1].Id
+	// check control genes
+	for _, cg := range g.ControlGenes {
+		if cg.ControlNode.Id > id {
+			id = cg.ControlNode.Id
+		}
+	}
+	return id, nil
 }
 
 // Return innovation number of last gene in Genome + 1
-func (g *Genome) getLastGeneInnovNum() (int64, error) {
+func (g *Genome) getNextGeneInnovNum() (int64, error) {
+	inn_num := int64(0)
+	// check connection genes
 	if len(g.Genes) > 0 {
-		return g.Genes[len(g.Genes) - 1].InnovationNum + int64(1), nil
+		inn_num = g.Genes[len(g.Genes) - 1].InnovationNum
 	} else {
 		return -1, errors.New("Genome has no Genes")
 	}
+	// check control genes if any
+	if len(g.ControlGenes) > 0 {
+		c_inn_num := g.ControlGenes[len(g.ControlGenes) - 1].InnovationNum
+		if c_inn_num > inn_num {
+			inn_num = c_inn_num
+		}
+	}
+	return inn_num + int64(1), nil
 }
 
 // Returns true if this Genome already includes provided node
 func (g *Genome) hasNode(node *network.NNode) bool {
-	if id, _ := g.getLastNodeId(); node.Id >= id {
-		return false
+	if id, _ := g.getLastNodeId(); node.Id > id {
+		return false // not found
 	}
 	for _, n := range g.Nodes {
 		if n.Id == node.Id {
@@ -351,7 +352,7 @@ func (g *Genome) hasNode(node *network.NNode) bool {
 
 // Returns true if this Genome already includes provided gene
 func (g *Genome) hasGene(gene *Gene) bool {
-	if inn, _ := g.getLastGeneInnovNum(); gene.InnovationNum >= inn {
+	if inn, _ := g.getNextGeneInnovNum(); gene.InnovationNum >= inn {
 		return false
 	}
 
@@ -365,7 +366,7 @@ func (g *Genome) hasGene(gene *Gene) bool {
 }
 
 // Generate a Network phenotype from this Genome with specified id
-func (g *Genome) genesis(net_id int) *network.Network {
+func (g *Genome) genesis(net_id int) (*network.Network, error) {
 	// Inputs and outputs will be collected here for the network.
 	// All nodes are collected in an all_list -
 	// this is useful for network traversing routines
@@ -393,11 +394,11 @@ func (g *Genome) genesis(net_id int) *network.Network {
 	}
 
 	if len(g.Genes) == 0 {
-		neat.WarnLog("The network built whitout GENES; the result can be unpredictable")
+		return nil, errors.New("The network built whitout GENES; the result can be unpredictable")
 	}
 
 	if len(out_list) == 0 {
-		neat.WarnLog(fmt.Sprintf("The network whitout OUTPUTS; the result can be unpredictable. Genome: %s", g))
+		return nil, errors.New(fmt.Sprintf("The network whitout OUTPUTS; the result can be unpredictable. Genome: %s", g))
 	}
 
 	var in_node, out_node *network.NNode
@@ -420,20 +421,52 @@ func (g *Genome) genesis(net_id int) *network.Network {
 		}
 	}
 
-	// Create the new network
-	new_net := network.NewNetwork(in_list, out_list, all_list, net_id)
-	// Attach genotype and phenotype together:
-	// new_net point to owner genotype (this)
-	// TODO new_net.Genome = g
+	var new_net *network.Network
+	if len(g.ControlGenes) == 0 {
+		// Create the new network
+		new_net = network.NewNetwork(in_list, out_list, all_list, net_id)
+	} else {
+		// Create MIMO control genes
+		c_nodes := make([]*network.NNode, 0)
+		for _, cg := range g.ControlGenes {
+			// Only process enabled genes
+			if cg.IsEnabled {
+				new_c_node := network.NewNNodeCopy(cg.ControlNode, cg.ControlNode.Trait)
 
+				// connect inputs
+				for _, l := range cg.ControlNode.Incoming {
+					in_node = l.InNode.PhenotypeAnalogue
+					out_node = new_c_node
+					new_link = network.NewLink(l.Weight, in_node, out_node, false)
+					out_node.Incoming = append(out_node.Incoming, new_link)
+					in_node.Outgoing = append(in_node.Outgoing, new_link)
+				}
+
+				// connect outputs
+				for _, l := range cg.ControlNode.Outgoing {
+					in_node = new_c_node
+					out_node = l.OutNode.PhenotypeAnalogue
+					new_link = network.NewLink(l.Weight, in_node, out_node, false)
+					out_node.Incoming = append(out_node.Incoming, new_link)
+					in_node.Outgoing = append(in_node.Outgoing, new_link)
+				}
+
+				// store control node
+				c_nodes = append(c_nodes, new_c_node)
+			}
+		}
+		new_net = network.NewModularNetwork(in_list, out_list, all_list, c_nodes, net_id)
+	}
+
+	// Attach genotype and phenotype together:
 	// genotype points to owner phenotype (new_net)
 	g.Phenotype = new_net
 
-	return new_net
+	return new_net, nil
 }
 
 // Duplicate this Genome to create a new one with the specified id
-func (g *Genome) duplicate(new_id int) *Genome {
+func (g *Genome) duplicate(new_id int) (*Genome, error) {
 
 	// Duplicate the traits
 	traits_dup := make([]*neat.Trait, 0)
@@ -443,24 +476,14 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	}
 
 	// Duplicate NNodes
-	dup_nodes := make(map[int]*network.NNode)
-	var assoc_trait *neat.Trait
 	nodes_dup := make([]*network.NNode, 0)
 	for _, nd := range g.Nodes {
-		// First, find the trait that this node points to
-		assoc_trait = nil
-		if nd.Trait != nil {
-			for _, tr := range traits_dup {
-				if nd.Trait.Id == tr.Id {
-					assoc_trait = tr
-					break
-				}
-			}
+		// First, find the duplicate of the trait that this node points to
+		assoc_trait := nd.Trait
+		if assoc_trait != nil {
+			assoc_trait = traitWithId(assoc_trait.Id, traits_dup)
 		}
-
 		new_node := network.NewNNodeCopy(nd, assoc_trait)
-		// Remember this node's old copy
-		dup_nodes[nd.Id] = new_node
 
 		nodes_dup = append(nodes_dup, new_node)
 	}
@@ -469,24 +492,75 @@ func (g *Genome) duplicate(new_id int) *Genome {
 	genes_dup := make([]*Gene, 0)
 	for _, gn := range g.Genes {
 		// First find the nodes connected by the gene's link
-		in_node := dup_nodes[gn.Link.InNode.Id]
-		out_node := dup_nodes[gn.Link.OutNode.Id]
-
-		// Find the trait associated with this gene
-		assoc_trait = nil
-		if gn.Link.Trait != nil {
-			for _, tr := range traits_dup {
-				if gn.Link.Trait.Id == tr.Id {
-					assoc_trait = tr
-					break
-				}
-			}
+		in_node := nodeWithId(gn.Link.InNode.Id, nodes_dup)
+		if in_node == nil {
+			return nil, errors.New(
+				fmt.Sprintf("incoming node: %d not found for gene %s",
+					gn.Link.InNode.Id, gn.String()))
 		}
+		out_node := nodeWithId(gn.Link.OutNode.Id, nodes_dup)
+		if out_node == nil {
+			return nil, errors.New(
+				fmt.Sprintf("outgoing node: %d not found for gene %s",
+					gn.Link.OutNode.Id, gn.String()))
+		}
+
+		// Find the duplicate of trait associated with this gene
+		assoc_trait := gn.Link.Trait
+		if assoc_trait != nil {
+			assoc_trait = traitWithId(assoc_trait.Id, traits_dup)
+		}
+
 		new_gene := NewGeneCopy(gn, assoc_trait, in_node, out_node)
 		genes_dup = append(genes_dup, new_gene)
 	}
 
-	return NewGenome(new_id, traits_dup, nodes_dup, genes_dup)
+	if len(g.ControlGenes) == 0 {
+		// If no MIMO control genes return plain genome
+		return NewGenome(new_id, traits_dup, nodes_dup, genes_dup), nil
+	} else {
+		// Duplicate MIMO Control Genes and build modular genome
+		control_genes_dup := make([]*MIMOControlGene, 0)
+		for _, cg := range g.ControlGenes {
+			// duplicate control node
+			c_node := cg.ControlNode
+			// find duplicate of trait associated with control node
+			assoc_trait := c_node.Trait
+			if assoc_trait != nil {
+				assoc_trait = traitWithId(assoc_trait.Id, traits_dup)
+			}
+			new_c_node := network.NewNNodeCopy(c_node, assoc_trait)
+			// add incoming links
+			for _, l := range c_node.Incoming {
+				in_node := nodeWithId(l.InNode.Id, nodes_dup)
+				if in_node == nil {
+					return nil, errors.New(
+						fmt.Sprintf("incoming node: %d not found for control node: %d",
+							l.InNode.Id, c_node.Id))
+				}
+				new_in_link := network.NewLinkCopy(l, in_node, new_c_node)
+				new_c_node.Incoming = append(new_c_node.Incoming, new_in_link)
+			}
+
+			// add outgoing links
+			for _, l := range c_node.Outgoing {
+				out_node := nodeWithId(l.OutNode.Id, nodes_dup)
+				if out_node == nil {
+					return nil, errors.New(
+						fmt.Sprintf("outgoing node: %d not found for control node: %d",
+							l.InNode.Id, c_node.Id))
+				}
+				new_out_link := network.NewLinkCopy(l, new_c_node, out_node)
+				new_c_node.Outgoing = append(new_c_node.Outgoing, new_out_link)
+			}
+
+			// add MIMO control gene
+			new_cg := NewMIMOGeneCopy(cg, new_c_node)
+			control_genes_dup = append(control_genes_dup, new_cg)
+		}
+
+		return NewModularGenome(new_id, traits_dup, nodes_dup, genes_dup, control_genes_dup), nil
+	}
 }
 
 // For debugging: A number of tests can be run on a genome to check its integrity.
@@ -559,10 +633,23 @@ func (g *Genome) verify() (bool, error) {
 
 // Inserts a NNode into a given ordered list of NNodes in ascending order by NNode ID
 func nodeInsert(nodes[]*network.NNode, n *network.NNode) []*network.NNode {
-	index := len(nodes) // to make sure that greater IDs appended at the end
-	for i, node := range nodes {
-		if node.Id >= n.Id {
+	index := len(nodes)
+	// quick insert at the end or beginning (we assume that nodes is already ordered)
+	if index == 0 || n.Id >= nodes[index - 1].Id {
+		// append last
+		nodes = append(nodes, n)
+		return nodes
+	} else if n.Id <= nodes[0].Id {
+		// insert first
+		index = 0
+	}
+	// find split index
+	for i := index - 1; i >= 0; i-- {
+		if n.Id == nodes[i].Id {
 			index = i
+			break
+		} else if n.Id > nodes[i].Id {
+			index = i + 1 // previous
 			break
 		}
 	}
@@ -579,12 +666,26 @@ func nodeInsert(nodes[]*network.NNode, n *network.NNode) []*network.NNode {
 // *correct order* into the list of genes in the genome, i.e. ordered by innovation number ascending
 func geneInsert(genes[]*Gene, g *Gene) []*Gene {
 	index := len(genes) // to make sure that greater IDs appended at the end
-	for i, gene := range genes {
-		if gene.InnovationNum >= g.InnovationNum {
+	// quick insert at the end or beginning (we assume that nodes is already ordered)
+	if index == 0 || g.InnovationNum >= genes[index - 1].InnovationNum {
+		// append last
+		genes = append(genes, g)
+		return genes
+	} else if g.InnovationNum <= genes[0].InnovationNum {
+		// insert first
+		index = 0
+	}
+	// find split index
+	for i := index - 1; i >= 0; i-- {
+		if g.InnovationNum == genes[i].InnovationNum {
 			index = i
+			break
+		} else if g.InnovationNum > genes[i].InnovationNum {
+			index = i + 1 // previous
 			break
 		}
 	}
+
 	first := make([]*Gene, index + 1)
 	copy(first, genes[0:index])
 	first[index] = g
@@ -681,18 +782,18 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 				trait_num := rand.Intn(len(g.Traits))
 				// Choose the new weight
 				new_weight := float64(neat.RandPosNeg()) * rand.Float64() * 10.0
-				// read curr innovation with post increment
-				curr_innov := pop.getInnovationNumberAndIncrement()
+				// read next innovation id
+				next_innov_id := pop.getNextInnovationNumberAndIncrement()
 
 
 				// Create the new gene
 				new_gene = NewGeneWithTrait(g.Traits[trait_num], new_weight, sensor, output,
-					false, curr_innov, new_weight)
+					false, next_innov_id, new_weight)
 
 				// Add the innovation for created link
-				new_innov := NewInnovationForLink(sensor.Id, output.Id, curr_innov,
+				new_innov := NewInnovationForLink(sensor.Id, output.Id, next_innov_id,
 					new_weight, trait_num)
-				pop.Innovations = append(pop.Innovations, new_innov)
+				pop.addInnovationSynced(new_innov)
 			} else if g.hasGene(new_gene) {
 				// The gene for already occurred innovation already in this genome.
 				// This may happen as result of parent genome mutation in current epoch which is
@@ -846,17 +947,17 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			trait_num := rand.Intn(len(g.Traits))
 			// Choose the new weight
 			new_weight := float64(neat.RandPosNeg()) * rand.Float64() * 10.0
-			// read curr innovation with post increment
-			curr_innov := pop.getInnovationNumberAndIncrement()
+			// read next innovation id
+			next_innov_id := pop.getNextInnovationNumberAndIncrement()
 
 			// Create the new gene
 			new_gene = NewGeneWithTrait(g.Traits[trait_num], new_weight, node_1, node_2,
-				do_recur, curr_innov, new_weight)
+				do_recur, next_innov_id, new_weight)
 
 			// Add the innovation
-			new_innov := NewInnovationForRecurrentLink(node_1.Id, node_2.Id, curr_innov,
+			new_innov := NewInnovationForRecurrentLink(node_1.Id, node_2.Id, next_innov_id,
 				new_weight, trait_num, do_recur)
-			pop.Innovations = append(pop.Innovations, new_innov)
+			pop.addInnovationSynced(new_innov)
 		} else if g.hasGene(new_gene) {
 			// The gene for already occurred innovation already in this genome.
 			// This may happen as result of parent genome mutation in current epoch which is
@@ -973,26 +1074,26 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 	// The innovation is totally novel
 	if !innovation_found {
 		// Get the current node id with post increment
-		curr_node_id := pop.getCurrentNodeIdAndIncrement()
+		new_node_id := int(pop.getNextNodeIdAndIncrement())
 
 		// Create the new NNode
-		new_node = network.NewNNode(curr_node_id, network.HiddenNeuron)
+		new_node = network.NewNNode(new_node_id, network.HiddenNeuron)
 		// By convention, it will point to the first trait
 		new_node.Trait = g.Traits[0]
 
-		// get the current gene 1 innovation with post increment
-		gene_innov_1 := pop.getInnovationNumberAndIncrement()
+		// get the next innovation id for gene 1
+		gene_innov_1 := pop.getNextInnovationNumberAndIncrement()
 		// create gene with the current gene innovation
 		new_gene_1 = NewGeneWithTrait(trait, 1.0, in_node, new_node, link.IsRecurrent, gene_innov_1, 0);
 
-		// get the current gene 2 innovation with post increment
-		gene_innov_2 := pop.getInnovationNumberAndIncrement()
+		// get the next innovation id for gene 2
+		gene_innov_2 := pop.getNextInnovationNumberAndIncrement()
 		// create the second gene with this innovation incremented
 		new_gene_2 = NewGeneWithTrait(trait, old_weight, new_node, out_node, false, gene_innov_2, 0);
 
 		// Store innovation
 		innov := NewInnovationForNode(in_node.Id, out_node.Id, gene_innov_1, gene_innov_2, new_node.Id, gene.InnovationNum)
-		pop.Innovations = append(pop.Innovations, innov)
+		pop.addInnovationSynced(innov)
 	} else if g.hasNode(new_node) {
 		// The same add node innovation occurred in the same genome (parent) - just skip.
 		// This may happen when parent of this organism experienced the same mutation in current epoch earlier
@@ -1220,14 +1321,15 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits := make([]*neat.Trait, len(gen.Traits))
-	for i, tr := range gen.Traits {
-		new_traits[i] = neat.NewTraitAvrg(tr, og.Traits[i])
+	new_traits, err := gen.mateTraits(og)
+	if err != nil {
+		return nil, err
 	}
 
 	// The new genes and nodes created
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
+	child_nodes_map := make(map[int]*network.NNode)
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
@@ -1243,6 +1345,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 
 			// Add the new node
 			new_nodes = nodeInsert(new_nodes, new_onode)
+			child_nodes_map[new_onode.Id] = new_onode
 		}
 	}
 
@@ -1343,6 +1446,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 				}
 				new_in_node = network.NewNNodeCopy(in_node, new_traits[in_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_in_node)
+				child_nodes_map[new_in_node.Id] = new_in_node
 			}
 
 			// Checking for onode's existence
@@ -1362,6 +1466,7 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 				}
 				new_out_node = network.NewNNodeCopy(out_node, new_traits[out_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_out_node)
+				child_nodes_map[new_out_node.Id] = new_out_node
 			}
 
 
@@ -1378,10 +1483,21 @@ func (gen *Genome) mateMultipoint(og *Genome, genomeid int, fitness1, fitness2 f
 			new_genes = append(new_genes, newgene)
 		} // end SKIP
 	} // end FOR
-	new_genome := NewGenome(genomeid, new_traits, new_nodes, new_genes)
+	// check if parent's MIMO control genes should be inherited
+	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
+		// MIMO control genes found at least in one parent - append it to child if appropriate
+		if extra_nodes, modules := gen.mateModules(child_nodes_map, og); modules != nil {
+			if len(extra_nodes) > 0 {
+				// append extra IO nodes of MIMO genes not found in child
+				new_nodes = append(new_nodes, extra_nodes...)
+			}
 
-	//Return the baby Genome
-	return new_genome, nil
+			// Return modular baby genome
+			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
+		}
+	}
+	// Return plain baby Genome
+	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
 }
 
 // This method mates like multipoint but instead of selecting one or the other when the innovation numbers match,
@@ -1394,14 +1510,16 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits := make([]*neat.Trait, len(gen.Traits))
-	for i, tr := range gen.Traits {
-		new_traits[i] = neat.NewTraitAvrg(tr, og.Traits[i]) // construct by averaging
+	new_traits, err := gen.mateTraits(og)
+	if err != nil {
+		return nil, err
 	}
+
 
 	// The new genes and nodes created
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
+	child_nodes_map := make(map[int]*network.NNode)
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
@@ -1417,6 +1535,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 
 			// Add the new node
 			new_nodes = nodeInsert(new_nodes, new_onode)
+			child_nodes_map[new_onode.Id] = new_onode
 		}
 	}
 
@@ -1543,6 +1662,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 				}
 				new_in_node = network.NewNNodeCopy(in_node, new_traits[in_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_in_node)
+				child_nodes_map[new_in_node.Id] = new_in_node
 			}
 
 			// Checking for onode's existence
@@ -1562,6 +1682,7 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 				}
 				new_out_node = network.NewNNodeCopy(out_node, new_traits[out_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_out_node)
+				child_nodes_map[new_out_node.Id] = new_out_node
 			}
 
 			// Add the Gene
@@ -1574,10 +1695,21 @@ func (gen *Genome) mateMultipointAvg(og *Genome, genomeid int, fitness1, fitness
 			new_genes = append(new_genes, new_gene)
 		} // end SKIP
 	} // end FOR
-	new_genome := NewGenome(genomeid, new_traits, new_nodes, new_genes)
+	// check if parent's MIMO control genes should be inherited
+	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
+		// MIMO control genes found at least in one parent - append it to child if appropriate
+		if extra_nodes, modules := gen.mateModules(child_nodes_map, og); modules != nil {
+			if len(extra_nodes) > 0 {
+				// append extra IO nodes of MIMO genes not found in child
+				new_nodes = append(new_nodes, extra_nodes...)
+			}
 
-	//Return the baby Genome
-	return new_genome, nil
+			// Return modular baby genome
+			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
+		}
+	}
+	// Return plain baby Genome
+	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
 }
 
 // This method is similar to a standard single point CROSSOVER operator. Traits are averaged as in the previous two
@@ -1591,14 +1723,15 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 	// First, average the Traits from the 2 parents to form the baby's Traits. It is assumed that trait vectors are
 	// the same length. In the future, may decide on a different method for trait mating.
-	new_traits := make([]*neat.Trait, len(gen.Traits))
-	for i, tr := range gen.Traits {
-		new_traits[i] = neat.NewTraitAvrg(tr, og.Traits[i]) // construct by averaging
+	new_traits, err := gen.mateTraits(og)
+	if err != nil {
+		return nil, err
 	}
 
 	// The new genes and nodes created
 	new_genes := make([]*Gene, 0)
 	new_nodes := make([]*network.NNode, 0)
+	child_nodes_map := make(map[int]*network.NNode)
 
 	// NEW: Make sure all sensors and outputs are included (in case some inputs are disconnected)
 	for _, curr_node := range og.Nodes {
@@ -1614,6 +1747,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 
 			// Add the new node
 			new_nodes = nodeInsert(new_nodes, new_onode)
+			child_nodes_map[new_onode.Id] = new_onode
 		}
 	}
 
@@ -1749,6 +1883,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 				}
 				new_in_node = network.NewNNodeCopy(in_node, new_traits[in_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_in_node)
+				child_nodes_map[new_in_node.Id] = new_in_node
 			}
 
 			// Checking for onode's existence
@@ -1768,6 +1903,7 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 				}
 				new_out_node = network.NewNNodeCopy(out_node, new_traits[out_node_trait_num])
 				new_nodes = nodeInsert(new_nodes, new_out_node)
+				child_nodes_map[new_out_node.Id] = new_out_node
 			}
 
 			// Add the Gene
@@ -1780,10 +1916,77 @@ func (gen *Genome) mateSinglepoint(og *Genome, genomeid int) (*Genome, error) {
 			new_genes = append(new_genes, new_gene)
 		}// end SKIP
 	} // end FOR
-	new_genome := NewGenome(genomeid, new_traits, new_nodes, new_genes)
+	// check if parent's MIMO control genes should be inherited
+	if len(gen.ControlGenes) != 0 || len(og.ControlGenes) != 0 {
+		// MIMO control genes found at least in one parent - append it to child if appropriate
+		if extra_nodes, modules := gen.mateModules(child_nodes_map, og); modules != nil {
+			if len(extra_nodes) > 0 {
+				// append extra IO nodes of MIMO genes not found in child
+				new_nodes = append(new_nodes, extra_nodes...)
+			}
 
-	//Return the baby Genome
-	return new_genome, nil
+			// Return modular baby genome
+			return NewModularGenome(genomeid, new_traits, new_nodes, new_genes, modules), nil
+		}
+	}
+	// Return plain baby Genome
+	return NewGenome(genomeid, new_traits, new_nodes, new_genes), nil
+}
+
+// Builds an array of modules to be added to the child during crossover.
+// If any or both parents has module and at least one modular endpoint node already inherited by child genome than make
+// sure that child get all associated module nodes
+func (g *Genome) mateModules(child_nodes map[int]*network.NNode, og *Genome) ([]*network.NNode, []*MIMOControlGene) {
+	parent_modules := make([]*MIMOControlGene, 0)
+	g_modules := findModulesIntersection(child_nodes, g.ControlGenes)
+	if len(g_modules) > 0 {
+		parent_modules = append(parent_modules, g_modules...)
+	}
+	og_modules := findModulesIntersection(child_nodes, og.ControlGenes)
+	if len(og_modules) > 0 {
+		parent_modules = append(parent_modules, og_modules...)
+	}
+	if len(parent_modules) == 0 {
+		return nil, nil
+	}
+
+	// collect IO nodes from all included modules and add return it as extra ones
+	extra_nodes := make([]*network.NNode, 0)
+	for _, cg := range parent_modules {
+		for _, n := range cg.ioNodes {
+			if _, ok := child_nodes[n.Id]; !ok {
+				// not found in known child nodes - collect it
+				extra_nodes = append(extra_nodes, n)
+			}
+		}
+	}
+
+	return extra_nodes, parent_modules
+}
+
+// Finds intersection of provided nodes with IO nodes from control genes and returns list of control genes found.
+// If no intersection found empty list returned.
+func findModulesIntersection(nodes map[int]*network.NNode, genes []*MIMOControlGene) []*MIMOControlGene {
+	modules := make([]*MIMOControlGene, 0)
+	for _, cg := range genes {
+		if cg.hasIntersection(nodes) {
+			modules = append(modules, cg)
+		}
+	}
+	return modules
+}
+
+// Builds array of traits for child genome during crossover
+func (g *Genome) mateTraits(og *Genome) ([]*neat.Trait, error) {
+	new_traits := make([]*neat.Trait, len(g.Traits))
+	var err error
+	for i, tr := range g.Traits {
+		new_traits[i], err = neat.NewTraitAvrg(tr, og.Traits[i]) // construct by averaging
+		if err != nil {
+			return nil, err
+		}
+	}
+	return new_traits, nil
 }
 
 /* ******** COMPATIBILITY CHECKING METHODS * ********/

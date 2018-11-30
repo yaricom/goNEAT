@@ -6,7 +6,6 @@ import (
 	"github.com/yaricom/goNEAT/neat"
 	"github.com/yaricom/goNEAT/neat/genetics"
 	"github.com/yaricom/goNEAT/neat/network"
-	"strings"
 	"testing"
 	"time"
 	"reflect"
@@ -122,22 +121,22 @@ func buildTestGeneration(gen_id int, fitness float64) *Generation {
 
 func buildTestGenome(id int) *genetics.Genome {
 	traits := []*neat.Trait{
-		neat.ReadTrait(strings.NewReader("1 0.1 0 0 0 0 0 0 0")),
-		neat.ReadTrait(strings.NewReader("2 0.2 0 0 0 0 0 0 0")),
-		neat.ReadTrait(strings.NewReader("3 0.3 0 0 0 0 0 0 0")),
+		{Id:1, Params:[]float64{0.1, 0, 0, 0, 0, 0, 0, 0}},
+		{Id:3, Params:[]float64{0.3, 0, 0, 0, 0, 0, 0, 0}},
+		{Id:2, Params:[]float64{0.2, 0, 0, 0, 0, 0, 0, 0}},
 	}
 
 	nodes := []*network.NNode{
-		network.ReadNNode(strings.NewReader("1 0 1 1"), traits),
-		network.ReadNNode(strings.NewReader("2 0 1 1"), traits),
-		network.ReadNNode(strings.NewReader("3 0 1 3"), traits),
-		network.ReadNNode(strings.NewReader("4 0 0 2"), traits),
+		{Id:1, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:2, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:3, NeuronType: network.BiasNeuron, ActivationType: network.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:4, NeuronType: network.OutputNeuron, ActivationType: network.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 	}
 
 	genes := []*genetics.Gene{
-		genetics.ReadGene(strings.NewReader("1 1 4 1.5 false 1 0 true"), traits, nodes),
-		genetics.ReadGene(strings.NewReader("2 2 4 2.5 false 2 0 true"), traits, nodes),
-		genetics.ReadGene(strings.NewReader("3 3 4 3.5 false 3 0 true"), traits, nodes),
+		genetics.NewGeneWithTrait(traits[0], 1.5, nodes[0], nodes[3], false, 1, 0),
+		genetics.NewGeneWithTrait(traits[2], 2.5, nodes[1], nodes[3], false, 2, 0),
+		genetics.NewGeneWithTrait(traits[1], 3.5, nodes[2], nodes[3], false, 3, 0),
 	}
 
 	return genetics.NewGenome(id, traits, nodes, genes)
