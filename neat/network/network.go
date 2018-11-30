@@ -6,6 +6,11 @@ import (
 	"errors"
 )
 
+var (
+	// The error to be raised when maximal network activation attempts exceeded
+	NetErrMaxAttempts = errors.New("Max network activation attempts exceeded. Inputs disconnected from outputs!")
+)
+
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
 // The point of the network is to define a single entity which can evolve
 // or learn on its own, even though it may be part of a larger framework.
@@ -97,8 +102,8 @@ func (n *Network) OutputIsOff() bool {
 	return false
 }
 
-// Activates the net such that all outputs are active
-func (n *Network) Activate() (bool, error) {
+// Attempts to activate the network given number of steps before returning error.
+func (n *Network) ActivateSteps(max_steps int) (bool, error) {
 	// For adding to the activesum
 	add_amount := 0.0
 	// Make sure we at least activate once
@@ -110,8 +115,8 @@ func (n *Network) Activate() (bool, error) {
 	// (This only happens on the first activation, because after that they are always active)
 	for n.OutputIsOff() || !one_time {
 
-		if abort_count >= 20 {
-			return false, errors.New("Inputs disconnected from outputs!")
+		if abort_count >= max_steps {
+			return false, NetErrMaxAttempts
 		}
 
 		// For each neuron node, compute the sum of its incoming activation
@@ -173,6 +178,11 @@ func (n *Network) Activate() (bool, error) {
 		abort_count += 1
 	}
 	return true, nil
+}
+
+// Activates the net such that all outputs are active
+func (n *Network) Activate() (bool, error) {
+	return n.ActivateSteps(20)
 }
 
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
