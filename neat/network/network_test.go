@@ -193,7 +193,16 @@ func TestNetwork_Flush(t *testing.T) {
 	netw.Activate()
 
 	// flush and check
-	netw.Flush()
+	res, err = netw.Flush()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if !res {
+		t.Error("Network flush failed")
+		return
+	}
+
 	for _, node := range netw.AllNodes() {
 		if node.ActivationsCount != 0 {
 			t.Error("ActivationsCount", 0, node.ActivationsCount)
@@ -208,30 +217,6 @@ func TestNetwork_Flush(t *testing.T) {
 		if node.GetActiveOutTd() != 0 {
 			t.Error("GetActiveOutTd", 0, node.GetActiveOutTd())
 		}
-	}
-}
-
-// Test Network FlushCheck
-func TestNetwork_FlushCheck(t *testing.T) {
-	netw := buildNetwork()
-	// activate and check state
-	res, err := netw.Activate()
-	if err != nil {
-		t.Error(err)
-	}
-	if !res {
-		t.Error("Failed to activate")
-	}
-
-	flush_err := netw.FlushCheck()
-	if flush_err == nil {
-		t.Error("Flush check expected to fail")
-	}
-
-	netw.Flush()
-	flush_err = netw.FlushCheck()
-	if flush_err != nil {
-		t.Error("Flush check expected to succeed")
 	}
 }
 

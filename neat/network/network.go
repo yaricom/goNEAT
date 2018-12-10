@@ -54,22 +54,19 @@ func NewModularNetwork(in, out, all, control []*NNode, net_id int) *Network {
 }
 
 // Puts the network back into an initial state
-func (n *Network) Flush() {
+func (n *Network) Flush() (res bool, err error){
+	res = true
 	// Flush back recursively
 	for _, node := range n.all_nodes {
 		node.Flushback()
-	}
-}
-
-// Verify that network was successfully flushed for debugging
-func (n *Network) FlushCheck() error {
-	for _, node := range n.all_nodes {
-		err := node.FlushbackCheck()
+		err = node.FlushbackCheck()
 		if err != nil {
-			return err
+			// failed - no need to continue
+			res = false
+			break
 		}
 	}
-	return nil
+	return res, err
 }
 
 // Prints the values of network outputs to the console
@@ -143,9 +140,6 @@ func (n *Network) ActivateSteps(max_steps int) (bool, error) {
 
 		// Now activate all the neuron nodes off their incoming activation
 		for _, np := range n.all_nodes {
-			//if np.Id >= 7 && np.Id <= 9 {
-			//	println(np.Id, np.isActive, np.ActivationsCount)
-			//}
 			if np.IsNeuron() {
 				// Only activate if some active input came in
 				if np.isActive {
@@ -155,11 +149,7 @@ func (n *Network) ActivateSteps(max_steps int) (bool, error) {
 						return false, err
 					}
 				}
-				//fmt.Printf("Node: %s, activation sum: %f, active: %t\n", np, np.ActivationSum, np.IsActive)
 			}
-			//if np.Id >= 7 && np.Id <= 9 {
-			//	println(np.Id, np.isActive, np.ActivationsCount)
-			//}
 		}
 
 		// Now activate all MIMO control genes to propagate activation through genome modules
@@ -185,6 +175,32 @@ func (n *Network) Activate() (bool, error) {
 	return n.ActivateSteps(20)
 }
 
+// Propagates activation wave through all network nodes provided number of steps in forward direction.
+// Returns true if activation wave passed from all inputs to outputs.
+func (n *Network) ForwardSteps(steps int) (res bool, err error) {
+	for i := 0; i < steps; i++ {
+		res, err = n.Activate()
+		if err != nil {
+			// failure - no need to continue
+			break
+		}
+	}
+	return res, err
+}
+
+// Propagates activation wave through all network nodes provided number of steps by recursion from output nodes
+// Returns true if activation wave passed from all inputs to outputs.
+func (n *Network) RecursiveSteps() (bool, error) {
+	return false, errors.New("RecursiveSteps Not Implemented")
+}
+
+// Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute
+// value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
+// If maxAllowedSignalDelta value is less than or equal to 0, the method will return true without checking for relaxation.
+func (n *Network) Relax(maxSteps int, maxAllowedSignalDelta float64) (bool, error) {
+	return false, errors.New("Relax Not Implemented")
+}
+
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
 func (n *Network) LoadSensors(sensors []float64) {
 	counter := 0
@@ -194,6 +210,10 @@ func (n *Network) LoadSensors(sensors []float64) {
 			counter += 1
 		}
 	}
+}
+// Read output values from the output nodes of the network
+func (n *Network) ReadOutputs() []float64 {
+	return n.Outputs
 }
 
 // Counts the number of nodes in the net
