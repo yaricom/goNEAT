@@ -53,8 +53,139 @@ func NewModularNetwork(in, out, all, control []*NNode, net_id int) *Network {
 	return n
 }
 
+// Creates fast network solver based on the architecture of this network. It's primarily aimed for big networks to improve
+// processing speed.
+func (n *Network) FastNetworkSolver() (*NetworkSolver, error) {
+	// calculate neurons per layer
+	outputNeuronCount := len(n.Outputs)
+	// build bias, input and hidden neurons lists
+	biasNeuronCount := 0
+	in_list := make([]*NNode, 0)
+	bias_list := make([]*NNode, 0)
+	hidn_list := make([]*NNode, 0)
+	for _, ne := range n.all_nodes {
+		switch ne.NeuronType {
+		case BiasNeuron:
+			biasNeuronCount += 1
+			bias_list = append(bias_list, ne)
+		case InputNeuron:
+			in_list = append(in_list, ne)
+		case HiddenNeuron:
+			hidn_list = append(hidn_list, ne)
+		}
+	}
+	inputNeuronCount := len(in_list)
+	totalNeuronCount := len(n.all_nodes)
+
+	// create activation functions array
+
+	activations := make([]NodeActivationType, totalNeuronCount)
+	neuronLookup := make(map[int]int)
+	neuronIndex := 0
+	// walk through neuron nodes in order: bias, input, output, hidden
+	neuronIndex = processList(neuronIndex, bias_list, activations, neuronLookup)
+	neuronIndex = processList(neuronIndex, in_list, activations, neuronLookup)
+	neuronIndex = processList(neuronIndex, n.Outputs, activations, neuronLookup)
+	neuronIndex = processList(neuronIndex, hidn_list, activations, neuronLookup)
+
+	// walk through neurons in order: input, output, hidden and create bias and connections lists
+	biases := make([]float64, totalNeuronCount)
+	connections := make([]*FastNetworkLink, 0)
+
+	if in_connects, err := processIncomingConnections(in_list, biases, neuronLookup); err == nil {
+		connections = append(connections, in_connects...)
+	} else {
+		return nil, err
+	}
+	if in_connects, err := processIncomingConnections(hidn_list, biases, neuronLookup); err == nil {
+		connections = append(connections, in_connects...)
+	} else {
+		return nil, err
+	}
+	if in_connects, err := processIncomingConnections(n.Outputs, biases, neuronLookup); err == nil {
+		connections = append(connections, in_connects...)
+	} else {
+		return nil, err
+	}
+
+	// walk through control neurons
+	modules := make([]*FastControlNode, len(n.control_nodes))
+	for i, cn := range n.control_nodes {
+		// collect inputs
+		inputs := make([]int, len(cn.Incoming))
+		for j, in := range cn.Incoming {
+			if in_index, ok := neuronLookup[in.InNode.Id]; ok {
+				inputs[j] = in_index
+			} else {
+				return nil, errors.New(
+					fmt.Sprintf("Failed to lookup for input neuron with id: %d at control neuron: %d",
+						in.InNode.Id, cn.Id))
+			}
+		}
+		// collect outputs
+		outputs := make([]int, len(cn.Outgoing))
+		for j, out := range cn.Outgoing {
+			if out_index, ok := neuronLookup[out.OutNode.Id]; ok {
+				outputs[j] = out_index
+			} else {
+				return nil, errors.New(
+					fmt.Sprintf("Failed to lookup for output neuron with id: %d at control neuron: %d",
+						out.InNode.Id, cn.Id))
+			}
+		}
+		// build control node
+		modules[i] = &FastControlNode{InputIndxs:inputs, OutputIndxs:outputs, ActivationType:cn.ActivationType}
+	}
+
+	return &NewFastModularNetwork(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount,
+		activations, connections, biases, modules)
+}
+
+func processList(startIndex int, nList []*NNode, activations[]NodeActivationType, neuronLookup map[int]int) int {
+	for _, ne := range nList {
+		activations[startIndex] = ne.ActivationType
+		neuronLookup[ne.Id] = startIndex
+		startIndex += 1
+	}
+	return startIndex
+}
+
+func processIncomingConnections(nList []*NNode, biases []float64, neuronLookup map[int]int) (connections []*FastNetworkLink, err error) {
+	connections = make([]*FastNetworkLink, 0)
+	for _, ne := range nList {
+		if targetIndex, ok := neuronLookup[ne.Id]; ok {
+			for _, in := range ne.Incoming {
+				if sourceIndex, ok := neuronLookup[in.InNode.Id]; ok {
+					if in.InNode.NeuronType == BiasNeuron {
+						// store bias for target neuron
+						biases[targetIndex] += in.Weight
+					}
+					// save connection
+					conn := FastNetworkLink{
+						SourceIndx:sourceIndex,
+						TargetIndx:targetIndex,
+						Weight:in.Weight,
+					}
+					connections = append(connections, &conn)
+				} else {
+					err = errors.New(
+						fmt.Sprintf("Failed to lookup for source neuron with id: %d", in.InNode.Id))
+					break
+				}
+			}
+		} else {
+			err = errors.New(fmt.Sprintf("Failed to lookup for target neuron with id: %d", ne.Id))
+			break
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return connections, err
+}
+
 // Puts the network back into an initial state
-func (n *Network) Flush() (res bool, err error){
+func (n *Network) Flush() (res bool, err error) {
 	res = true
 	// Flush back recursively
 	for _, node := range n.all_nodes {
