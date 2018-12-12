@@ -1,7 +1,30 @@
 package network
 
+import "fmt"
+
+// The connection descriptor for fast network
+type FastNetworkLink struct {
+	// The index of source neuron
+	SourceIndx int
+	// The index of target neuron
+	TargetIndx int
+	// The weight of this link
+	Weight     float64
+	// The signal relayed by this link
+	Signal     float64
+}
+// The module relay (control node) descriptor for fast network
+type FastControlNode struct {
+	// The activation function for control node
+	ActivationType NodeActivationType
+	// The indexes of the input nodes
+	InputIndxs     []int
+	// The indexes of the output nodes
+	OutputIndxs    []int
+}
+
 // The fast modular network solver implementation to be used for big neural networks simulation.
-type FastModularNetwork struct {
+type FastModularNetworkSolver struct {
 	// A network id
 	Id                          int
 	// Is a name of this network */
@@ -14,7 +37,11 @@ type FastModularNetwork struct {
 
 	// The activation functions per neuron, must be in the same order as neuronSignals. Has nil entries for
 	// neurons that are inputs or outputs of a module.
-	activationFunctions         []ActivationFunction
+	activationFunctions         []NodeActivationType
+	// The bias values associated with neurons
+	biasList                    []float64
+	// The control nodes relaying between network modules
+	modules                     []*FastControlNode
 
 	// The number of input neurons
 	inputNeuronCount            int
@@ -24,6 +51,8 @@ type FastModularNetwork struct {
 	outputNeuronCount           int
 	// The bias neuron count (usually one). This is also the index of the first input neuron in the neuron signals.
 	biasNeuronCount             int
+	// The total number of neurons in network
+	totalNeuronCount            int
 
 	// For recursive activation, marks whether we have finished this node yet
 	activated                   []bool
@@ -38,4 +67,32 @@ type FastModularNetwork struct {
 	reverseAdjacentList         [][]int
 	// The adjacent matrix to hold connection weights between all connected nodes
 	adjacentMatrix              [][]float64
+}
+
+// Creates new fast modular network solver
+func NewFastModularNetwork(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount int,
+activationFunctions []NodeActivationType, connections []*FastNetworkLink,
+biasList []float64, modules []*FastControlNode) *FastModularNetworkSolver {
+	fmm := FastModularNetworkSolver{
+		biasNeuronCount:biasNeuronCount,
+		inputNeuronCount:inputNeuronCount,
+		sensorNeuronCount:biasNeuronCount + inputNeuronCount,
+		outputNeuronCount:outputNeuronCount,
+		totalNeuronCount:totalNeuronCount,
+		activationFunctions:activationFunctions,
+		biasList:biasList,
+		modules:modules,
+	}
+
+	// TODO! Continue initialization
+
+	return &fmm
+}
+
+// Stringer
+func (fmm *FastModularNetworkSolver) String() string {
+	str := fmt.Sprintf("FastModularNetwork, id: %d, name: [%s], neurons: %d,\n\tinputs: %d,\tbias: %d,\toutputs:%d,\t hidden: %d",
+		fmm.Id, fmm.Name, fmm.totalNeuronCount, fmm.inputNeuronCount, fmm.biasNeuronCount, fmm.outputNeuronCount,
+		fmm.totalNeuronCount - fmm.sensorNeuronCount - fmm.outputNeuronCount)
+	return str
 }
