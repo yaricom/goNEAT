@@ -6,11 +6,6 @@ import (
 	"errors"
 )
 
-var (
-	// The error to be raised when maximal network activation attempts exceeded
-	NetErrMaxAttempts = errors.New("Max network activation attempts exceeded. Inputs disconnected from outputs!")
-)
-
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
 // The point of the network is to define a single entity which can evolve
 // or learn on its own, even though it may be part of a larger framework.
@@ -55,7 +50,7 @@ func NewModularNetwork(in, out, all, control []*NNode, net_id int) *Network {
 
 // Creates fast network solver based on the architecture of this network. It's primarily aimed for big networks to improve
 // processing speed.
-func (n *Network) FastNetworkSolver() (*NetworkSolver, error) {
+func (n *Network) FastNetworkSolver() (NetworkSolver, error) {
 	// calculate neurons per layer
 	outputNeuronCount := len(n.Outputs)
 	// build bias, input and hidden neurons lists
@@ -80,13 +75,15 @@ func (n *Network) FastNetworkSolver() (*NetworkSolver, error) {
 	// create activation functions array
 
 	activations := make([]NodeActivationType, totalNeuronCount)
-	neuronLookup := make(map[int]int)
+	neuronLookup := make(map[int]int)// id:index
 	neuronIndex := 0
 	// walk through neuron nodes in order: bias, input, output, hidden
 	neuronIndex = processList(neuronIndex, bias_list, activations, neuronLookup)
 	neuronIndex = processList(neuronIndex, in_list, activations, neuronLookup)
 	neuronIndex = processList(neuronIndex, n.Outputs, activations, neuronLookup)
 	neuronIndex = processList(neuronIndex, hidn_list, activations, neuronLookup)
+
+	fmt.Println(neuronLookup)
 
 	// walk through neurons in order: input, output, hidden and create bias and connections lists
 	biases := make([]float64, totalNeuronCount)
@@ -137,8 +134,8 @@ func (n *Network) FastNetworkSolver() (*NetworkSolver, error) {
 		modules[i] = &FastControlNode{InputIndxs:inputs, OutputIndxs:outputs, ActivationType:cn.ActivationType}
 	}
 
-	return &NewFastModularNetwork(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount,
-		activations, connections, biases, modules)
+	return NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount,
+		activations, connections, biases, modules), nil
 }
 
 func processList(startIndex int, nList []*NNode, activations[]NodeActivationType, neuronLookup map[int]int) int {
@@ -244,7 +241,7 @@ func (n *Network) ActivateSteps(max_steps int) (bool, error) {
 	for n.OutputIsOff() || !one_time {
 
 		if abort_count >= max_steps {
-			return false, NetErrMaxAttempts
+			return false, NetErrExceededMaxActivationAttempts
 		}
 
 		// For each neuron node, compute the sum of its incoming activation
@@ -333,7 +330,11 @@ func (n *Network) Relax(maxSteps int, maxAllowedSignalDelta float64) (bool, erro
 }
 
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
-func (n *Network) LoadSensors(sensors []float64) {
+func (n *Network) LoadSensors(sensors []float64) error {
+	if len(sensors) != len(n.inputs) {
+		return NetErrUnsupportedSensorsArraySize
+	}
+
 	counter := 0
 	for _, node := range n.inputs {
 		if node.IsSensor() {
@@ -341,10 +342,16 @@ func (n *Network) LoadSensors(sensors []float64) {
 			counter += 1
 		}
 	}
+	return nil
 }
+
 // Read output values from the output nodes of the network
 func (n *Network) ReadOutputs() []float64 {
-	return n.Outputs
+	outs := make([]float64, len(n.Outputs))
+	for i, o := range n.Outputs {
+		outs[i] = o.Activation
+	}
+	return outs
 }
 
 // Counts the number of nodes in the net

@@ -7,6 +7,13 @@ import (
 	"errors"
 )
 
+var (
+	// The error to be raised when maximal number of network activation attempts exceeded
+	NetErrExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded.")
+	// The error to be raised when unsupported sensors data array size provided
+	NetErrUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
+)
+
 // Defines network solver interface which describes neural network structures with methods to run activation waves through
 // them.
 type NetworkSolver interface {
@@ -28,7 +35,7 @@ type NetworkSolver interface {
 	Flush() (bool, error)
 
 	// Set sensors values to the input nodes of the network
-	LoadSensors(inputs []float64)
+	LoadSensors(inputs []float64) error
 	// Read output values from the output nodes of the network
 	ReadOutputs() []float64
 
@@ -37,7 +44,6 @@ type NetworkSolver interface {
 	// Returns the total number of links between nodes in the network
 	LinkCount() int
 }
-
 
 // NNodeType defines the type of NNode to create
 type NodeType byte

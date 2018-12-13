@@ -260,3 +260,22 @@ func TestNetwork_IsRecurrent(t *testing.T) {
 		t.Error("Network is actually recurrent now")
 	}
 }
+
+// test fast network solver generation
+func TestNetwork_FastNetworkSolver(t *testing.T) {
+	netw := buildModularNetwork()
+
+	solver, err := netw.FastNetworkSolver()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// check solver
+	if solver.NodeCount() != netw.NodeCount() {
+		t.Error("solver.NodeCount() != netw.NodeCount()", solver.NodeCount(), netw.NodeCount())
+	}
+	if solver.LinkCount() != netw.LinkCount() {
+		t.Error("solver.LinkCount() != netw.LinkCount()", solver.LinkCount(), netw.LinkCount())
+	}
+}
