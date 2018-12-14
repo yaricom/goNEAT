@@ -109,6 +109,10 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	}
 
 	t.Logf("Trials solved/run: %d/%d", solved_trials, len(experiment.Trials))
+
+	if solved_trials == 0 {
+		t.Error("Failed to solve at least one trial. Need to be checked what was going wrong")
+	}
 }
 
 // Run double pole-balancing experiment with Non-Markov environment setup
@@ -209,6 +213,10 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 		}
 	}
 	t.Logf("Trials solved/run: %d/%d\n", solved_trials, len(experiment.Trials))
+
+	if solved_trials == 0 {
+		t.Error("Failed to solve at least one trial. Need to be checked what was going wrong")
+	}
 
 	best_g_score := 0.0
 	for _, tr := range experiment.Trials {
