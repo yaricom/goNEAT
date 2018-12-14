@@ -211,8 +211,12 @@ func (n *NNode) NodeType() NodeType {
 
 func (n *NNode) String() string {
 	activation, _ := NodeActivators.ActivationNameFromType(n.ActivationType)
-	return fmt.Sprintf("(%s id:%03d, %s, %s -> step: %d = %.3f %.3f)",
-		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), activation,
+	active := "active"
+	if !n.isActive {
+		active = "inactive"
+	}
+	return fmt.Sprintf("(%s id:%03d, %s, %s,\t%s -> step: %d = %.3f %.3f)",
+		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), activation, active,
 		n.ActivationsCount, n.Activation, n.Params)
 }
 
