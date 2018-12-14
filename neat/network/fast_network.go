@@ -182,7 +182,7 @@ func (fmm *FastModularNetworkSolver) ReadOutputs() []float64 {
 
 // Returns the total number of neural units in the network
 func (fmm *FastModularNetworkSolver) NodeCount() int {
-	return fmm.totalNeuronCount
+	return fmm.totalNeuronCount + len(fmm.modules)
 }
 // Returns the total number of links between nodes in the network
 func (fmm *FastModularNetworkSolver) LinkCount() int {
