@@ -157,6 +157,7 @@ func (n *NNode) Flushback() {
 	n.Activation = 0
 	n.lastActivation = 0
 	n.lastActivation2 = 0
+	n.isActive = false
 }
 
 // Verify flushing for debuging
