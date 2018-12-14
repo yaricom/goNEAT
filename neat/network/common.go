@@ -248,6 +248,7 @@ func (a *NodeActivatorsFactory) ActivateModule(module *NNode) error {
 	// set outputs
 	for i, out := range outputs {
 		module.Outgoing[i].OutNode.setActivation(out)
+		module.Outgoing[i].OutNode.isActive = true // activate output node
 	}
 	return nil
 }
