@@ -83,8 +83,6 @@ func (n *Network) FastNetworkSolver() (NetworkSolver, error) {
 	neuronIndex = processList(neuronIndex, n.Outputs, activations, neuronLookup)
 	neuronIndex = processList(neuronIndex, hidn_list, activations, neuronLookup)
 
-	fmt.Println(neuronLookup)
-
 	// walk through neurons in order: input, output, hidden and create bias and connections lists
 	biases := make([]float64, totalNeuronCount)
 	connections := make([]*FastNetworkLink, 0)
@@ -223,6 +221,7 @@ func (n *Network) OutputIsOff() bool {
 		if node.ActivationsCount == 0 {
 			return true
 		}
+
 	}
 	return false
 }
@@ -248,7 +247,6 @@ func (n *Network) ActivateSteps(max_steps int) (bool, error) {
 		for _, np := range n.all_nodes {
 			if np.IsNeuron() {
 				np.ActivationSum = 0.0 // reset activation value
-				np.isActive = false // flag node disabled
 
 				// For each node's incoming connection, add the activity from the connection to the activesum
 				for _, link := range np.Incoming {
@@ -372,6 +370,7 @@ func (n *Network) LinkCount() int {
 	if len(n.control_nodes) != 0 {
 		for _, node := range n.control_nodes {
 			n.numlinks += len(node.Incoming)
+			n.numlinks += len(node.Outgoing)
 		}
 	}
 	return n.numlinks
@@ -412,6 +411,9 @@ func (n *Network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) 
 
 // Find the maximum number of neurons between an output and an input
 func (n *Network) MaxDepth() (int, error) {
+	if len(n.control_nodes) > 0 {
+		return -1, errors.New("unsupported for modular networks")
+	}
 	// The quick case when there are no hidden nodes
 	if len(n.all_nodes) == len(n.inputs) + len(n.Outputs) && len(n.control_nodes) == 0 {
 		return 1, nil // just one layer depth
@@ -427,8 +429,6 @@ func (n *Network) MaxDepth() (int, error) {
 			max = curr_depth
 		}
 	}
-	// add control nodes
-	max += len(n.control_nodes)
 
 	return max, nil
 }
