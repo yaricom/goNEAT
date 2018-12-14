@@ -64,7 +64,6 @@ func buildModularNetwork() *Network {
 
 	// HIDDEN 7
 	all_nodes[5].ActivationType = NullActivation
-	all_nodes[5].addIncoming(control_nodes[0], 17.0)
 
 	// OUTPUT 8
 	all_nodes[6].addIncoming(all_nodes[5], 4.5)
@@ -81,14 +80,7 @@ func TestModularNetwork_Activate(t *testing.T) {
 	data := []float64{1.0, 2.0}
 	netw.LoadSensors(data)
 
-	depth, err := netw.MaxDepth()
-	if err != nil {
-		t.Error(err)
-	}
-	if depth != 5 {
-		t.Error("MaxDepth", 5, depth)
-	}
-	for i := 0; i < depth; i++ {
+	for i := 0; i < 5; i++ {
 		res, err := netw.Activate()
 		if err != nil {
 			t.Error(err)
