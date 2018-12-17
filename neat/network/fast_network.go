@@ -2,6 +2,7 @@ package network
 
 import (
 	"fmt"
+	"math"
 	"errors"
 )
 
@@ -130,23 +131,167 @@ biasList []float64, modules []*FastControlNode) *FastModularNetworkSolver {
 }
 
 // Propagates activation wave through all network nodes provided number of steps in forward direction.
-// Returns true if activation wave passed from all inputs to outputs.
-func (fmm *FastModularNetworkSolver) ForwardSteps(steps int) (bool, error) {
-	return false, errors.New("not implemented")
+// Returns true if activation wave passed from all inputs to the outputs.
+func (fmm *FastModularNetworkSolver) ForwardSteps(steps int) (res bool, err error) {
+	for i := 0; i < steps; i++ {
+		if res, err = fmm.forwardStep(0); err != nil {
+			return false, err
+		}
+	}
+	return res, nil
 }
 
 // Propagates activation wave through all network nodes provided number of steps by recursion from output nodes
-// Returns true if activation wave passed from all inputs to outputs.
-func (fmm *FastModularNetworkSolver) RecursiveSteps() (bool, error) {
-	return false, errors.New("not implemented")
+// Returns true if activation wave passed from all inputs to the outputs. This method is preferred method
+// of network activation when number of forward steps can not be easy calculated and no network modules are set.
+func (fmm *FastModularNetworkSolver) RecursiveSteps() (res bool, err error) {
+	if len(fmm.modules) > 0 {
+		return false, errors.New("recursive activation can not be used for network with defined modules")
+	}
+
+	// Initialize boolean arrays and set the last activation signal for output/hidden neurons
+	for i := 0; i < fmm.totalNeuronCount; i++ {
+		// Set as activated if i is an input node, otherwise ensure it is unactivated (false)
+		fmm.activated[i] = i < fmm.sensorNeuronCount
+
+		fmm.inActivation[i] = false
+		// set last activation for output/hidden neurons
+		if i >= fmm.sensorNeuronCount {
+			fmm.lastActivation[i] = fmm.neuronSignals[i]
+		}
+	}
+
+	// Get each output node activation recursively
+	for i := 0; i < fmm.outputNeuronCount; i++ {
+		if res, err = fmm.recursiveActivateNode(fmm.sensorNeuronCount + i); err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+// Propagate activation wave by recursively looking for input signals graph for a given output neuron
+func (fmm *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res bool, err error) {
+	// If we've reached an input node then return since the signal is already set
+	if fmm.activated[currentNode] {
+		fmm.inActivation[currentNode] = false
+		return true, nil
+	}
+	// Mark that the node is currently being calculated
+	fmm.inActivation[currentNode] = true
+
+	// Set the pre-signal to 0
+	fmm.neuronSignalsBeingProcessed[currentNode] = 0
+
+	// Adjacency list in reverse holds incoming connections, go through each one and activate it
+	for i := 0; i < len(fmm.reverseAdjacentList[currentNode]); i++ {
+		crntAdjNode := fmm.reverseAdjacentList[currentNode][i]
+
+		// If this node is currently being activated then we have reached a cycle, or recurrent connection.
+		// Use the previous activation in this case
+		if fmm.inActivation[crntAdjNode] {
+			fmm.neuronSignalsBeingProcessed[currentNode] += fmm.lastActivation[crntAdjNode] * fmm.adjacentMatrix[crntAdjNode][currentNode]
+		} else {
+			// Otherwise proceed as normal
+			// Recurse if this neuron has not been activated yet
+			if !fmm.activated[crntAdjNode] {
+				res, err = fmm.recursiveActivateNode(crntAdjNode)
+				if err != nil {
+					// recursive activation failed
+					return false, err
+				}
+			}
+
+			// Add it to the new activation
+			fmm.neuronSignalsBeingProcessed[currentNode] += fmm.neuronSignals[crntAdjNode] * fmm.adjacentMatrix[crntAdjNode][currentNode]
+		}
+	}
+
+	// Mark this neuron as completed
+	fmm.activated[currentNode] = true
+
+	// This is no longer being calculated (for cycle detection)
+	fmm.inActivation[currentNode] = false
+
+	// Set this signal after running it through the activation function
+	if fmm.neuronSignals[currentNode], err = NodeActivators.ActivateByType(
+		fmm.neuronSignalsBeingProcessed[currentNode], nil,
+		fmm.activationFunctions[currentNode]); err != nil {
+		// failed to activate
+		res = false
+	}
+	return res, err
 }
 
 // Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute
 // value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
 // If maxAllowedSignalDelta value is less than or equal to 0, the method will return true without checking for relaxation.
-func (fmm *FastModularNetworkSolver) Relax(maxSteps int, maxAllowedSignalDelta float64) (bool, error) {
-	return false, errors.New("not implemented")
+func (fmm *FastModularNetworkSolver) Relax(maxSteps int, maxAllowedSignalDelta float64) (relaxed bool, err error) {
+	for i := 0; i < maxSteps; i++ {
+		if relaxed, err = fmm.forwardStep(maxAllowedSignalDelta); err != nil {
+			return false, err
+		}
+	}
+	return relaxed, nil
 }
+
+// Performs single forward step through the network and tests if network become relaxed. The network considered relaxed
+// when absolute value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
+func (fmm *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) (isRelaxed bool, err error) {
+	isRelaxed = true
+
+	// Calculate output signal per each connection and add the signals to the target neurons
+	for _, conn := range fmm.connections {
+		fmm.neuronSignalsBeingProcessed[conn.TargetIndx] += fmm.neuronSignals[conn.SourceIndx] * conn.Weight
+	}
+
+	// Pass the signals through the single-valued activation functions
+	for i := fmm.sensorNeuronCount; i < fmm.totalNeuronCount; i++ {
+		fmm.neuronSignalsBeingProcessed[i], err = NodeActivators.ActivateByType(
+			fmm.neuronSignalsBeingProcessed[i] + fmm.biasList[i], nil,
+			fmm.activationFunctions[i])
+		if err != nil {
+			return false, err
+		}
+	}
+
+	// Pass the signals through each module (activation function with more than one input or output)
+	for _, module := range fmm.modules {
+		inputs := make([]float64, len(module.InputIndxs))
+		for i, in_index := range module.InputIndxs {
+			inputs[i] = fmm.neuronSignalsBeingProcessed[in_index]
+		}
+		if outputs, err := NodeActivators.ActivateModuleByType(inputs, nil, module.ActivationType); err == nil {
+			// save outputs
+			for i, out_index := range module.OutputIndxs {
+				fmm.neuronSignalsBeingProcessed[out_index] = outputs[i]
+			}
+		} else {
+			return false, err
+		}
+	}
+
+	// Move all the neuron signals we changed while processing this network activation into storage.
+	if maxAllowedSignalDelta <= 0 {
+		// iterate through output and hidden neurons and collect activations
+		for i := fmm.sensorNeuronCount; i < fmm.totalNeuronCount; i++ {
+			fmm.neuronSignals[i] = fmm.neuronSignalsBeingProcessed[i]
+			fmm.neuronSignalsBeingProcessed[i] = 0
+		}
+	} else {
+		for i := fmm.sensorNeuronCount; i < fmm.totalNeuronCount; i++ {
+			// First check whether any location in the network has changed by more than a small amount.
+			isRelaxed = isRelaxed && !(math.Abs(fmm.neuronSignals[i] - fmm.neuronSignalsBeingProcessed[i]) > maxAllowedSignalDelta)
+
+			fmm.neuronSignals[i] = fmm.neuronSignalsBeingProcessed[i]
+			fmm.neuronSignalsBeingProcessed[i] = 0
+		}
+	}
+
+	return isRelaxed, err
+}
+
 
 // Flushes network state by removing all current activations. Returns true if network flushed successfully or
 // false in case of error.
@@ -164,7 +309,7 @@ func (fmm *FastModularNetworkSolver) LoadSensors(inputs []float64) error {
 		for i := 0; i < fmm.inputNeuronCount; i++ {
 			fmm.neuronSignals[fmm.biasNeuronCount + i] = inputs[i]
 		}
-	} else if len(inputs) == fmm.sensorNeuronCount  {
+	} else if len(inputs) == fmm.sensorNeuronCount {
 		// inputs and bias provided
 		for i := 0; i < fmm.sensorNeuronCount; i++ {
 			fmm.neuronSignals[i] = inputs[i]
