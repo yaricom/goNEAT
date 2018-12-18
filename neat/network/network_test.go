@@ -8,7 +8,7 @@ func buildNetwork() *Network {
 	all_nodes := []*NNode{
 		NewNNode(1, InputNeuron),
 		NewNNode(2, InputNeuron),
-		NewNNode(3, InputNeuron),
+		NewNNode(3, BiasNeuron),
 		NewNNode(4, HiddenNeuron),
 		NewNNode(5, HiddenNeuron),
 		NewNNode(6, HiddenNeuron),
@@ -49,9 +49,9 @@ func buildModularNetwork() *Network {
 	}
 	// HIDDEN 6
 	control_nodes[0].ActivationType = MultiplyModuleActivation
-	control_nodes[0].addIncoming(all_nodes[3], 17.0)
-	control_nodes[0].addIncoming(all_nodes[4], 17.0)
-	control_nodes[0].addOutgoing(all_nodes[5], 17.0)
+	control_nodes[0].addIncoming(all_nodes[3], 1.0)
+	control_nodes[0].addIncoming(all_nodes[4], 1.0)
+	control_nodes[0].addOutgoing(all_nodes[5], 1.0)
 
 	// HIDDEN 4
 	all_nodes[3].ActivationType = LinearActivation
@@ -72,29 +72,28 @@ func buildModularNetwork() *Network {
 	all_nodes[7].addIncoming(all_nodes[5], 13.0)
 	all_nodes[7].ActivationType = LinearActivation
 
-	return NewModularNetwork(all_nodes[0:2], all_nodes[6:8], all_nodes, control_nodes, 0)
+	return NewModularNetwork(all_nodes[0:3], all_nodes[6:8], all_nodes, control_nodes, 0)
 }
 
 func TestModularNetwork_Activate(t *testing.T) {
 	netw := buildModularNetwork()
-	data := []float64{1.0, 2.0}
+	data := []float64{1.0, 2.0, 0.5}
 	netw.LoadSensors(data)
 
 	for i := 0; i < 5; i++ {
-		res, err := netw.Activate()
-		if err != nil {
+		if res, err := netw.Activate(); err != nil {
 			t.Error(err)
 			return
-		}
-		if !res {
-			t.Error("activation failed unexpectedly")
+		} else if !res {
+			t.Error("failed to activate")
+			return
 		}
 	}
-	if netw.Outputs[0].Activation != 6.750000e+002 {
-		t.Error("netw.Outputs[0].Activation != 6.750000e+002", netw.Outputs[0].Activation)
+	if netw.Outputs[0].Activation != 945 {
+		t.Error("netw.Outputs[0].Activation != 945", netw.Outputs[0].Activation)
 	}
-	if netw.Outputs[1].Activation != 1.950000e+003 {
-		t.Error("netw.Outputs[1].Activation != 1.950000e+003", netw.Outputs[1].Activation)
+	if netw.Outputs[1].Activation != 2730 {
+		t.Error("netw.Outputs[1].Activation != 2730", netw.Outputs[1].Activation)
 	}
 }
 
