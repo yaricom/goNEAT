@@ -154,14 +154,15 @@ func processIncomingConnections(nList []*NNode, biases []float64, neuronLookup m
 					if in.InNode.NeuronType == BiasNeuron {
 						// store bias for target neuron
 						biases[targetIndex] += in.Weight
+					} else {
+						// save connection
+						conn := FastNetworkLink{
+							SourceIndx:sourceIndex,
+							TargetIndx:targetIndex,
+							Weight:in.Weight,
+						}
+						connections = append(connections, &conn)
 					}
-					// save connection
-					conn := FastNetworkLink{
-						SourceIndx:sourceIndex,
-						TargetIndx:targetIndex,
-						Weight:in.Weight,
-					}
-					connections = append(connections, &conn)
 				} else {
 					err = errors.New(
 						fmt.Sprintf("Failed to lookup for source neuron with id: %d", in.InNode.Id))
