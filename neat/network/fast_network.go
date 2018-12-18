@@ -328,7 +328,15 @@ func (fmm *FastModularNetworkSolver) NodeCount() int {
 }
 // Returns the total number of links between nodes in the network
 func (fmm *FastModularNetworkSolver) LinkCount() int {
+	// count all connections
 	num_links := len(fmm.connections)
+	// count all bias links
+	for _, b := range fmm.biasList {
+		if b != 0 {
+			num_links++
+		}
+	}
+	// count all modules links
 	if len(fmm.modules) != 0 {
 		for _, module := range fmm.modules {
 			num_links += len(module.InputIndxs) + len(module.OutputIndxs)
