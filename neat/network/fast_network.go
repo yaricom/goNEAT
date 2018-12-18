@@ -305,14 +305,9 @@ func (fmm *FastModularNetworkSolver) Flush() (bool, error) {
 // Set sensors values to the input nodes of the network
 func (fmm *FastModularNetworkSolver) LoadSensors(inputs []float64) error {
 	if len(inputs) == fmm.inputNeuronCount {
-		// only inputs provided
+		// only inputs should be provided
 		for i := 0; i < fmm.inputNeuronCount; i++ {
 			fmm.neuronSignals[fmm.biasNeuronCount + i] = inputs[i]
-		}
-	} else if len(inputs) == fmm.sensorNeuronCount {
-		// inputs and bias provided
-		for i := 0; i < fmm.sensorNeuronCount; i++ {
-			fmm.neuronSignals[i] = inputs[i]
 		}
 	} else {
 		return NetErrUnsupportedSensorsArraySize
