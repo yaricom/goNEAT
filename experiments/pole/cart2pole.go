@@ -193,12 +193,12 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 				epoch.WinnerEvals = context.PopSize * epoch.Id + champion.Genotype.Id
 				epoch.Best = champion
 			} else {
-				neat.InfoLog("The non-Markov champion failed to generalize")
+				neat.InfoLog("The non-Markov champion unable to generalize")
 				champion.Fitness = champion_fitness // Restore the champ's fitness
 				champion.IsWinner = false
 			}
 		} else {
-			neat.InfoLog("The non-Markov champion failed the 100'000 run test")
+			neat.InfoLog("The non-Markov champion missed the 100'000 run test")
 			champion.Fitness = champion_fitness // Restore the champ's fitness
 			champion.IsWinner = false
 		}
