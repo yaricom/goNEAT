@@ -231,6 +231,8 @@ func (fmm *FastModularNetworkSolver) Relax(maxSteps int, maxAllowedSignalDelta f
 	for i := 0; i < maxSteps; i++ {
 		if relaxed, err = fmm.forwardStep(maxAllowedSignalDelta); err != nil {
 			return false, err
+		} else if relaxed {
+			break // no need to iterate any further, already reached desired accuracy
 		}
 	}
 	return relaxed, nil
