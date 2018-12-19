@@ -12,6 +12,8 @@ var (
 	NetErrExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded.")
 	// The error to be raised when unsupported sensors data array size provided
 	NetErrUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
+	// The error to be raised when depth calculation failed due to the loop in network
+	NetErrDepthCalculationFailedLoopDetected = errors.New("depth can not be determined for network with loop")
 )
 
 // Defines network solver interface which describes neural network structures with methods to run activation waves through
