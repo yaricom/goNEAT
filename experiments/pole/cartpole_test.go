@@ -110,4 +110,8 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	}
 
 	t.Logf("Trials solved/run: %d/%d", solved_trials, len(experiment.Trials))
+
+	if solved_trials == 0 {
+		t.Error("Failed to solve at least one trial. Need to be checked what was going wrong")
+	}
 }

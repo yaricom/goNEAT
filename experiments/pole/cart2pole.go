@@ -66,7 +66,10 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
-		winner := ex.orgEvaluate(org, cartPole)
+		winner, err := ex.orgEvaluate(org, cartPole)
+		if err != nil {
+			return err
+		}
 
 		if winner && (epoch.Best == nil || org.Fitness > epoch.Best.Fitness){
 			// This will be winner in Markov case
@@ -129,7 +132,11 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		cartPole.nonMarkovLong = true
 		cartPole.generalizationTest = false
 
-		if ex.orgEvaluate(champion, cartPole) {
+		longRunPassed, err := ex.orgEvaluate(champion, cartPole)
+		if err != nil {
+			return err
+		}
+		if longRunPassed {
 
 			// the champion passed non-Markov long test, start generalization
 			cartPole.nonMarkovLong = false
@@ -156,7 +163,7 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 							// its recurrent memory
 							champion.Phenotype.Flush()
 
-							if ex.orgEvaluate(champion, cartPole) {
+							if generalized, err := ex.orgEvaluate(champion, cartPole); generalized {
 								generalization_score++
 
 								if neat.LogLevel == neat.LogLevelDebug {
@@ -165,6 +172,8 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 										cartPole.state[0], cartPole.state[1],
 										cartPole.state[2], cartPole.state[4], thirty_six_degrees))
 								}
+							} else if err != nil {
+								return err
 							}
 						}
 					}
@@ -184,12 +193,12 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 				epoch.WinnerEvals = context.PopSize * epoch.Id + champion.Genotype.Id
 				epoch.Best = champion
 			} else {
-				neat.DebugLog("The non-Markov champion failed to generalize")
+				neat.InfoLog("The non-Markov champion unable to generalize")
 				champion.Fitness = champion_fitness // Restore the champ's fitness
 				champion.IsWinner = false
 			}
 		} else {
-			neat.DebugLog("The non-Markov champion failed the 100'000 run test")
+			neat.InfoLog("The non-Markov champion missed the 100'000 run test")
 			champion.Fitness = champion_fitness // Restore the champ's fitness
 			champion.IsWinner = false
 		}
@@ -233,9 +242,12 @@ func (ex CartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 }
 
 // This methods evaluates provided organism for cart double pole-balancing task
-func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism, cartPole *CartPole) (winner bool) {
+func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism, cartPole *CartPole) (winner bool, err error) {
 	// Try to balance a pole now
-	organism.Fitness = cartPole.evalNet(organism.Phenotype, ex.ActionType)
+	organism.Fitness, err = cartPole.evalNet(organism.Phenotype, ex.ActionType)
+	if err != nil {
+		return false, err
+	}
 
 	if neat.LogLevel == neat.LogLevelDebug {
 		neat.DebugLog(fmt.Sprintf("Organism #%3d\tfitness: %f", organism.Genotype.Id, organism.Fitness))
@@ -269,7 +281,7 @@ func (ex *CartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Orga
 	} else {
 		winner = false
 	}
-	return winner
+	return winner, err
 }
 
 
@@ -280,17 +292,18 @@ func newCartPole(markov bool) *CartPole {
 	}
 }
 
-func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionType) (steps float64) {
+func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionType) (steps float64, err error) {
 	non_markov_max := non_markov_generalization_max_steps
 	if cp.nonMarkovLong {
 		non_markov_max = non_markov_long_max_steps
 	}
 
-	input := make([]float64, 7)
+
 
 	cp.resetState()
 
 	if cp.isMarkov {
+		input := make([]float64, 7)
 		for steps = 0; steps < markov_max_steps; steps++ {
 			input[0] = (cp.state[0] + 2.4) / 4.8
 			input[1] = (cp.state[1] + 1.0) / 2.0
@@ -306,7 +319,7 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 			if res, err := net.Activate(); !res {
 				//If it loops, exit returning only fitness of 1 step
 				neat.DebugLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
-				return 1.0
+				return 1.0, nil
 			}
 			action := net.Outputs[0].Activation
 			if actionType == experiments.DiscreteAction {
@@ -326,8 +339,9 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 
 			//fmt.Printf("x: % f, xv: % f, t1: % f, t2: % f, angle: % f\n", cp.state[0], cp.state[1], cp.state[2], cp.state[4], thirty_six_degrees)
 		}
-		return steps
+		return steps, nil
 	} else {
+		input := make([]float64, 4)
 		// The non Markov case
 		for steps = 0; steps < float64(non_markov_max); steps++ {
 			input[0] = cp.state[0] / 4.8
@@ -335,13 +349,16 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 			input[2] = cp.state[4] / 0.52
 			input[3] = 1.0
 
-			net.LoadSensors(input)
+			err = net.LoadSensors(input)
+			if err != nil {
+				return 0, err
+			}
 
 			/*-- activate the network based on the input --*/
 			if res, err := net.Activate(); !res {
 				// If it loops, exit returning only fitness of 1 step
 				neat.WarnLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
-				return 0.0001
+				return 0.0001, err
 			}
 
 			action := net.Outputs[0].Activation
@@ -355,15 +372,17 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 			}
 			cp.performAction(action, steps)
 			if cp.outsideBounds() {
+				//fmt.Printf("x: % f, xv: % f, t1: % f, t2: % f, angle: % f, steps: %f\n",
+				//	cp.state[0], cp.state[1], cp.state[2], cp.state[4], thirty_six_degrees, steps)
 				// if failure stop it now
 				break;
 			}
 
-			//fmt.Printf("x: % f, xv: % f, t1: % f, t2: % f, angle: % f\n", cp.state[0], cp.state[1], cp.state[2], cp.state[4], thirty_six_degrees)
+
 		}
 		/*-- If we are generalizing we just need to balance it for a while --*/
 		if cp.generalizationTest {
-			return float64(cp.balanced_time_steps)
+			return float64(cp.balanced_time_steps), nil
 		}
 
 		// Sum last 100
@@ -387,9 +406,9 @@ func (cp *CartPole)evalNet(net *network.Network, actionType experiments.ActionTy
 				neat.DebugLog(fmt.Sprintf("Balanced time steps: %d, jiggle: %f ***\n",
 					cp.balanced_time_steps, jiggle_total))
 			}
-			return non_markov_fitness
+			return non_markov_fitness, nil
 		} else {
-			return steps
+			return steps, nil
 		}
 	}
 }

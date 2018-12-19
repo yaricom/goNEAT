@@ -37,6 +37,9 @@ type NNode struct {
 	// Used for Gene decoding by referencing analogue to this node in organism phenotype
 	PhenotypeAnalogue *NNode
 
+	// the flag to use for loop detection
+	visited bool
+
 	/* ************ LEARNING PARAMETERS *********** */
 	// The following parameters are for use in neurons that learn through habituation,
 	// sensitization, or Hebbian-type processes  */
@@ -157,6 +160,8 @@ func (n *NNode) Flushback() {
 	n.Activation = 0
 	n.lastActivation = 0
 	n.lastActivation2 = 0
+	n.isActive = false
+	n.visited = false
 }
 
 // Verify flushing for debuging
@@ -178,9 +183,10 @@ func (n *NNode) FlushbackCheck() error {
 
 // Find the greatest depth starting from this neuron at depth d
 func (n *NNode) Depth(d int) (int, error) {
-	if d > 100 {
-		return 10, errors.New("NNode: Depth can not be determined for network with loop");
+	if d > 1000 {
+		return 10, NetErrDepthCalculationFailedLoopDetected
 	}
+	n.visited = true
 	// Base Case
 	if n.IsSensor() {
 		return d, nil
@@ -188,6 +194,10 @@ func (n *NNode) Depth(d int) (int, error) {
 		// recursion
 		max := d // The max depth
 		for _, l := range n.Incoming {
+			if l.InNode.visited {
+				// was already visited (loop detected) - skipping
+				continue
+			}
 			cur_depth, err := l.InNode.Depth(d + 1)
 			if err != nil {
 				return cur_depth, err
@@ -211,8 +221,12 @@ func (n *NNode) NodeType() NodeType {
 
 func (n *NNode) String() string {
 	activation, _ := NodeActivators.ActivationNameFromType(n.ActivationType)
-	return fmt.Sprintf("(%s id:%03d, %s, %s -> step: %d = %.3f %.3f)",
-		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), activation,
+	active := "active"
+	if !n.isActive {
+		active = "inactive"
+	}
+	return fmt.Sprintf("(%s id:%03d, %s, %s,\t%s -> step: %d = %.3f %.3f)",
+		NodeTypeName(n.NodeType()), n.Id, NeuronTypeName(n.NeuronType), activation, active,
 		n.ActivationsCount, n.Activation, n.Params)
 }
 

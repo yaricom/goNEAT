@@ -6,11 +6,6 @@ import (
 	"errors"
 )
 
-var (
-	// The error to be raised when maximal network activation attempts exceeded
-	NetErrMaxAttempts = errors.New("Max network activation attempts exceeded. Inputs disconnected from outputs!")
-)
-
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
 // The point of the network is to define a single entity which can evolve
 // or learn on its own, even though it may be part of a larger framework.
@@ -53,23 +48,152 @@ func NewModularNetwork(in, out, all, control []*NNode, net_id int) *Network {
 	return n
 }
 
+// Creates fast network solver based on the architecture of this network. It's primarily aimed for big networks to improve
+// processing speed.
+func (n *Network) FastNetworkSolver() (NetworkSolver, error) {
+	// calculate neurons per layer
+	outputNeuronCount := len(n.Outputs)
+	// build bias, input and hidden neurons lists
+	biasNeuronCount := 0
+	in_list := make([]*NNode, 0)
+	bias_list := make([]*NNode, 0)
+	hidn_list := make([]*NNode, 0)
+	for _, ne := range n.all_nodes {
+		switch ne.NeuronType {
+		case BiasNeuron:
+			biasNeuronCount += 1
+			bias_list = append(bias_list, ne)
+		case InputNeuron:
+			in_list = append(in_list, ne)
+		case HiddenNeuron:
+			hidn_list = append(hidn_list, ne)
+		}
+	}
+	inputNeuronCount := len(in_list)
+	totalNeuronCount := len(n.all_nodes)
+
+	// create activation functions array
+
+	activations := make([]NodeActivationType, totalNeuronCount)
+	neuronLookup := make(map[int]int)// id:index
+	neuronIndex := 0
+	// walk through neuron nodes in order: bias, input, output, hidden
+	neuronIndex = processList(neuronIndex, bias_list, activations, neuronLookup)
+	neuronIndex = processList(neuronIndex, in_list, activations, neuronLookup)
+	neuronIndex = processList(neuronIndex, n.Outputs, activations, neuronLookup)
+	neuronIndex = processList(neuronIndex, hidn_list, activations, neuronLookup)
+
+	// walk through neurons in order: input, output, hidden and create bias and connections lists
+	biases := make([]float64, totalNeuronCount)
+	connections := make([]*FastNetworkLink, 0)
+
+	if in_connects, err := processIncomingConnections(in_list, biases, neuronLookup); err == nil {
+		connections = append(connections, in_connects...)
+	} else {
+		return nil, err
+	}
+	if in_connects, err := processIncomingConnections(hidn_list, biases, neuronLookup); err == nil {
+		connections = append(connections, in_connects...)
+	} else {
+		return nil, err
+	}
+	if in_connects, err := processIncomingConnections(n.Outputs, biases, neuronLookup); err == nil {
+		connections = append(connections, in_connects...)
+	} else {
+		return nil, err
+	}
+
+	// walk through control neurons
+	modules := make([]*FastControlNode, len(n.control_nodes))
+	for i, cn := range n.control_nodes {
+		// collect inputs
+		inputs := make([]int, len(cn.Incoming))
+		for j, in := range cn.Incoming {
+			if in_index, ok := neuronLookup[in.InNode.Id]; ok {
+				inputs[j] = in_index
+			} else {
+				return nil, errors.New(
+					fmt.Sprintf("Failed to lookup for input neuron with id: %d at control neuron: %d",
+						in.InNode.Id, cn.Id))
+			}
+		}
+		// collect outputs
+		outputs := make([]int, len(cn.Outgoing))
+		for j, out := range cn.Outgoing {
+			if out_index, ok := neuronLookup[out.OutNode.Id]; ok {
+				outputs[j] = out_index
+			} else {
+				return nil, errors.New(
+					fmt.Sprintf("Failed to lookup for output neuron with id: %d at control neuron: %d",
+						out.InNode.Id, cn.Id))
+			}
+		}
+		// build control node
+		modules[i] = &FastControlNode{InputIndxs:inputs, OutputIndxs:outputs, ActivationType:cn.ActivationType}
+	}
+
+	return NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount,
+		activations, connections, biases, modules), nil
+}
+
+func processList(startIndex int, nList []*NNode, activations[]NodeActivationType, neuronLookup map[int]int) int {
+	for _, ne := range nList {
+		activations[startIndex] = ne.ActivationType
+		neuronLookup[ne.Id] = startIndex
+		startIndex += 1
+	}
+	return startIndex
+}
+
+func processIncomingConnections(nList []*NNode, biases []float64, neuronLookup map[int]int) (connections []*FastNetworkLink, err error) {
+	connections = make([]*FastNetworkLink, 0)
+	for _, ne := range nList {
+		if targetIndex, ok := neuronLookup[ne.Id]; ok {
+			for _, in := range ne.Incoming {
+				if sourceIndex, ok := neuronLookup[in.InNode.Id]; ok {
+					if in.InNode.NeuronType == BiasNeuron {
+						// store bias for target neuron
+						biases[targetIndex] += in.Weight
+					} else {
+						// save connection
+						conn := FastNetworkLink{
+							SourceIndx:sourceIndex,
+							TargetIndx:targetIndex,
+							Weight:in.Weight,
+						}
+						connections = append(connections, &conn)
+					}
+				} else {
+					err = errors.New(
+						fmt.Sprintf("Failed to lookup for source neuron with id: %d", in.InNode.Id))
+					break
+				}
+			}
+		} else {
+			err = errors.New(fmt.Sprintf("Failed to lookup for target neuron with id: %d", ne.Id))
+			break
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return connections, err
+}
+
 // Puts the network back into an initial state
-func (n *Network) Flush() {
+func (n *Network) Flush() (res bool, err error) {
+	res = true
 	// Flush back recursively
 	for _, node := range n.all_nodes {
 		node.Flushback()
-	}
-}
-
-// Verify that network was successfully flushed for debugging
-func (n *Network) FlushCheck() error {
-	for _, node := range n.all_nodes {
-		err := node.FlushbackCheck()
+		err = node.FlushbackCheck()
 		if err != nil {
-			return err
+			// failed - no need to continue
+			res = false
+			break
 		}
 	}
-	return nil
+	return res, err
 }
 
 // Prints the values of network outputs to the console
@@ -98,6 +222,7 @@ func (n *Network) OutputIsOff() bool {
 		if node.ActivationsCount == 0 {
 			return true
 		}
+
 	}
 	return false
 }
@@ -116,14 +241,13 @@ func (n *Network) ActivateSteps(max_steps int) (bool, error) {
 	for n.OutputIsOff() || !one_time {
 
 		if abort_count >= max_steps {
-			return false, NetErrMaxAttempts
+			return false, NetErrExceededMaxActivationAttempts
 		}
 
 		// For each neuron node, compute the sum of its incoming activation
 		for _, np := range n.all_nodes {
 			if np.IsNeuron() {
 				np.ActivationSum = 0.0 // reset activation value
-				np.isActive = false // flag node disabled
 
 				// For each node's incoming connection, add the activity from the connection to the activesum
 				for _, link := range np.Incoming {
@@ -143,9 +267,6 @@ func (n *Network) ActivateSteps(max_steps int) (bool, error) {
 
 		// Now activate all the neuron nodes off their incoming activation
 		for _, np := range n.all_nodes {
-			//if np.Id >= 7 && np.Id <= 9 {
-			//	println(np.Id, np.isActive, np.ActivationsCount)
-			//}
 			if np.IsNeuron() {
 				// Only activate if some active input came in
 				if np.isActive {
@@ -155,11 +276,7 @@ func (n *Network) ActivateSteps(max_steps int) (bool, error) {
 						return false, err
 					}
 				}
-				//fmt.Printf("Node: %s, activation sum: %f, active: %t\n", np, np.ActivationSum, np.IsActive)
 			}
-			//if np.Id >= 7 && np.Id <= 9 {
-			//	println(np.Id, np.isActive, np.ActivationsCount)
-			//}
 		}
 
 		// Now activate all MIMO control genes to propagate activation through genome modules
@@ -185,8 +302,38 @@ func (n *Network) Activate() (bool, error) {
 	return n.ActivateSteps(20)
 }
 
+// Propagates activation wave through all network nodes provided number of steps in forward direction.
+// Returns true if activation wave passed from all inputs to outputs.
+func (n *Network) ForwardSteps(steps int) (res bool, err error) {
+	for i := 0; i < steps; i++ {
+		res, err = n.Activate()
+		if err != nil {
+			// failure - no need to continue
+			break
+		}
+	}
+	return res, err
+}
+
+// Propagates activation wave through all network nodes provided number of steps by recursion from output nodes
+// Returns true if activation wave passed from all inputs to outputs.
+func (n *Network) RecursiveSteps() (bool, error) {
+	return false, errors.New("RecursiveSteps Not Implemented")
+}
+
+// Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute
+// value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
+// If maxAllowedSignalDelta value is less than or equal to 0, the method will return true without checking for relaxation.
+func (n *Network) Relax(maxSteps int, maxAllowedSignalDelta float64) (bool, error) {
+	return false, errors.New("Relax Not Implemented")
+}
+
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
-func (n *Network) LoadSensors(sensors []float64) {
+func (n *Network) LoadSensors(sensors []float64) error {
+	if len(sensors) != len(n.inputs) {
+		return NetErrUnsupportedSensorsArraySize
+	}
+
 	counter := 0
 	for _, node := range n.inputs {
 		if node.IsSensor() {
@@ -194,6 +341,16 @@ func (n *Network) LoadSensors(sensors []float64) {
 			counter += 1
 		}
 	}
+	return nil
+}
+
+// Read output values from the output nodes of the network
+func (n *Network) ReadOutputs() []float64 {
+	outs := make([]float64, len(n.Outputs))
+	for i, o := range n.Outputs {
+		outs[i] = o.Activation
+	}
+	return outs
 }
 
 // Counts the number of nodes in the net
@@ -214,6 +371,7 @@ func (n *Network) LinkCount() int {
 	if len(n.control_nodes) != 0 {
 		for _, node := range n.control_nodes {
 			n.numlinks += len(node.Incoming)
+			n.numlinks += len(node.Outgoing)
 		}
 	}
 	return n.numlinks
@@ -254,6 +412,9 @@ func (n *Network) IsRecurrent(in_node, out_node *NNode, count *int, thresh int) 
 
 // Find the maximum number of neurons between an output and an input
 func (n *Network) MaxDepth() (int, error) {
+	if len(n.control_nodes) > 0 {
+		return -1, errors.New("unsupported for modular networks")
+	}
 	// The quick case when there are no hidden nodes
 	if len(n.all_nodes) == len(n.inputs) + len(n.Outputs) && len(n.control_nodes) == 0 {
 		return 1, nil // just one layer depth
@@ -269,8 +430,6 @@ func (n *Network) MaxDepth() (int, error) {
 			max = curr_depth
 		}
 	}
-	// add control nodes
-	max += len(n.control_nodes)
 
 	return max, nil
 }

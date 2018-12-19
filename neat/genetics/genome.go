@@ -438,8 +438,8 @@ func (g *Genome) genesis(net_id int) (*network.Network, error) {
 					in_node = l.InNode.PhenotypeAnalogue
 					out_node = new_c_node
 					new_link = network.NewLink(l.Weight, in_node, out_node, false)
+					// only incoming to control node
 					out_node.Incoming = append(out_node.Incoming, new_link)
-					in_node.Outgoing = append(in_node.Outgoing, new_link)
 				}
 
 				// connect outputs
@@ -447,7 +447,7 @@ func (g *Genome) genesis(net_id int) (*network.Network, error) {
 					in_node = new_c_node
 					out_node = l.OutNode.PhenotypeAnalogue
 					new_link = network.NewLink(l.Weight, in_node, out_node, false)
-					out_node.Incoming = append(out_node.Incoming, new_link)
+					// only outgoing from control node
 					in_node.Outgoing = append(in_node.Outgoing, new_link)
 				}
 

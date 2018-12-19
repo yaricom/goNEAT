@@ -8,7 +8,7 @@ func buildNetwork() *Network {
 	all_nodes := []*NNode{
 		NewNNode(1, InputNeuron),
 		NewNNode(2, InputNeuron),
-		NewNNode(3, InputNeuron),
+		NewNNode(3, BiasNeuron),
 		NewNNode(4, HiddenNeuron),
 		NewNNode(5, HiddenNeuron),
 		NewNNode(6, HiddenNeuron),
@@ -49,9 +49,9 @@ func buildModularNetwork() *Network {
 	}
 	// HIDDEN 6
 	control_nodes[0].ActivationType = MultiplyModuleActivation
-	control_nodes[0].addIncoming(all_nodes[3], 17.0)
-	control_nodes[0].addIncoming(all_nodes[4], 17.0)
-	control_nodes[0].addOutgoing(all_nodes[5], 17.0)
+	control_nodes[0].addIncoming(all_nodes[3], 1.0)
+	control_nodes[0].addIncoming(all_nodes[4], 1.0)
+	control_nodes[0].addOutgoing(all_nodes[5], 1.0)
 
 	// HIDDEN 4
 	all_nodes[3].ActivationType = LinearActivation
@@ -64,7 +64,6 @@ func buildModularNetwork() *Network {
 
 	// HIDDEN 7
 	all_nodes[5].ActivationType = NullActivation
-	all_nodes[5].addIncoming(control_nodes[0], 17.0)
 
 	// OUTPUT 8
 	all_nodes[6].addIncoming(all_nodes[5], 4.5)
@@ -73,36 +72,28 @@ func buildModularNetwork() *Network {
 	all_nodes[7].addIncoming(all_nodes[5], 13.0)
 	all_nodes[7].ActivationType = LinearActivation
 
-	return NewModularNetwork(all_nodes[0:2], all_nodes[6:8], all_nodes, control_nodes, 0)
+	return NewModularNetwork(all_nodes[0:3], all_nodes[6:8], all_nodes, control_nodes, 0)
 }
 
 func TestModularNetwork_Activate(t *testing.T) {
 	netw := buildModularNetwork()
-	data := []float64{1.0, 2.0}
+	data := []float64{1.0, 2.0, 0.5}
 	netw.LoadSensors(data)
 
-	depth, err := netw.MaxDepth()
-	if err != nil {
-		t.Error(err)
-	}
-	if depth != 5 {
-		t.Error("MaxDepth", 5, depth)
-	}
-	for i := 0; i < depth; i++ {
-		res, err := netw.Activate()
-		if err != nil {
+	for i := 0; i < 5; i++ {
+		if res, err := netw.Activate(); err != nil {
 			t.Error(err)
 			return
-		}
-		if !res {
-			t.Error("activation failed unexpectedly")
+		} else if !res {
+			t.Error("failed to activate")
+			return
 		}
 	}
-	if netw.Outputs[0].Activation != 6.750000e+002 {
-		t.Error("netw.Outputs[0].Activation != 6.750000e+002", netw.Outputs[0].Activation)
+	if netw.Outputs[0].Activation != 945 {
+		t.Error("netw.Outputs[0].Activation != 945", netw.Outputs[0].Activation)
 	}
-	if netw.Outputs[1].Activation != 1.950000e+003 {
-		t.Error("netw.Outputs[1].Activation != 1.950000e+003", netw.Outputs[1].Activation)
+	if netw.Outputs[1].Activation != 2730 {
+		t.Error("netw.Outputs[1].Activation != 2730", netw.Outputs[1].Activation)
 	}
 }
 
@@ -193,7 +184,16 @@ func TestNetwork_Flush(t *testing.T) {
 	netw.Activate()
 
 	// flush and check
-	netw.Flush()
+	res, err = netw.Flush()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if !res {
+		t.Error("Network flush failed")
+		return
+	}
+
 	for _, node := range netw.AllNodes() {
 		if node.ActivationsCount != 0 {
 			t.Error("ActivationsCount", 0, node.ActivationsCount)
@@ -208,30 +208,6 @@ func TestNetwork_Flush(t *testing.T) {
 		if node.GetActiveOutTd() != 0 {
 			t.Error("GetActiveOutTd", 0, node.GetActiveOutTd())
 		}
-	}
-}
-
-// Test Network FlushCheck
-func TestNetwork_FlushCheck(t *testing.T) {
-	netw := buildNetwork()
-	// activate and check state
-	res, err := netw.Activate()
-	if err != nil {
-		t.Error(err)
-	}
-	if !res {
-		t.Error("Failed to activate")
-	}
-
-	flush_err := netw.FlushCheck()
-	if flush_err == nil {
-		t.Error("Flush check expected to fail")
-	}
-
-	netw.Flush()
-	flush_err = netw.FlushCheck()
-	if flush_err != nil {
-		t.Error("Flush check expected to succeed")
 	}
 }
 
@@ -273,5 +249,24 @@ func TestNetwork_IsRecurrent(t *testing.T) {
 	recur = netw.IsRecurrent(nodes[5], nodes[7], &count, 32)
 	if !recur {
 		t.Error("Network is actually recurrent now")
+	}
+}
+
+// test fast network solver generation
+func TestNetwork_FastNetworkSolver(t *testing.T) {
+	netw := buildModularNetwork()
+
+	solver, err := netw.FastNetworkSolver()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// check solver
+	if solver.NodeCount() != netw.NodeCount() {
+		t.Error("solver.NodeCount() != netw.NodeCount()", solver.NodeCount(), netw.NodeCount())
+	}
+	if solver.LinkCount() != netw.LinkCount() {
+		t.Error("solver.LinkCount() != netw.LinkCount()", solver.LinkCount(), netw.LinkCount())
 	}
 }
