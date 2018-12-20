@@ -184,6 +184,7 @@ func (n *NNode) FlushbackCheck() error {
 // Find the greatest depth starting from this neuron at depth d
 func (n *NNode) Depth(d int) (int, error) {
 	if d > 1000 {
+		// to avoid infinite recursion
 		return 10, NetErrDepthCalculationFailedLoopDetected
 	}
 	n.visited = true
