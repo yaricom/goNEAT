@@ -100,11 +100,12 @@ func TestNNode_DepthWithLoop(t *testing.T) {
 	node3.addIncoming(node2, 20.0)
 	node2.addIncoming(node3, 10.0)
 	depth, err := node3.Depth(0)
-	if err == nil {
-		t.Error("Alert expected")
+	if err != nil {
+		t.Error(err)
+		return
 	}
-	if depth != 10 {
-		t.Error("node3.Depth", 10, depth)
+	if depth != 2 {
+		t.Error("node3.Depth", 2, depth)
 	}
 }
 
