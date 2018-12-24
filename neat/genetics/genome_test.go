@@ -108,7 +108,7 @@ func TestGenome_Genesis(t *testing.T) {
 
 	net_id := 10
 
-	net, err := gnome.genesis(net_id)
+	net, err := gnome.Genesis(net_id)
 	if err != nil {
 		t.Error(err)
 		return
@@ -132,7 +132,7 @@ func TestGenome_GenesisModular(t *testing.T) {
 
 	net_id := 10
 
-	net, err := gnome.genesis(net_id)
+	net, err := gnome.Genesis(net_id)
 	if err != nil {
 		t.Error(err)
 		return
@@ -402,7 +402,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	pop := newPopulation()
 	pop.nextInnovNum = int64(4)
 	// Create gnome phenotype
-	gnome1.genesis(1)
+	gnome1.Genesis(1)
 
 	res, err := gnome1.mutateAddLink(pop, &conf)
 	if !res {
@@ -435,7 +435,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 		{Id:6, NeuronType: network.InputNeuron, ActivationType: network.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 	}
 	gnome1.Nodes = append(gnome1.Nodes, nodes...)
-	gnome1.genesis(1) // do network genesis with new nodes added
+	gnome1.Genesis(1) // do network genesis with new nodes added
 
 	res, err = gnome1.mutateAddLink(pop, &conf)
 	if !res {
@@ -465,7 +465,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 	// The population (DUMMY)
 	pop := newPopulation()
 	// Create gnome phenotype
-	gnome1.genesis(1)
+	gnome1.Genesis(1)
 
 	context := neat.NeatContext{}
 
@@ -487,7 +487,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 		Outgoing:make([]*network.Link, 0)}
 	gnome1.Nodes = append(gnome1.Nodes, node)
 	// Create gnome phenotype
-	gnome1.genesis(1)
+	gnome1.Genesis(1)
 
 	res, err = gnome1.mutateConnectSensors(pop, &context)
 	if err != nil {
@@ -512,7 +512,7 @@ func TestGenome_mutateAddNode(t *testing.T) {
 	// The population (DUMMY)
 	pop := newPopulation()
 	// Create gnome phenotype
-	gnome1.genesis(1)
+	gnome1.Genesis(1)
 
 	context := neat.NeatContext{}
 
