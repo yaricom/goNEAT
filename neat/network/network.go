@@ -330,17 +330,27 @@ func (n *Network) Relax(maxSteps int, maxAllowedSignalDelta float64) (bool, erro
 
 // Takes an array of sensor values and loads it into SENSOR inputs ONLY
 func (n *Network) LoadSensors(sensors []float64) error {
-	if len(sensors) != len(n.inputs) {
-		return NetErrUnsupportedSensorsArraySize
-	}
-
 	counter := 0
-	for _, node := range n.inputs {
-		if node.IsSensor() {
-			node.SensorLoad(sensors[counter])
-			counter += 1
+	if len(sensors) == len(n.inputs) {
+		// BIAS value provided as input
+		for _, node := range n.inputs {
+			if node.IsSensor() {
+				node.SensorLoad(sensors[counter])
+				counter += 1
+			}
+		}
+	} else {
+		// use default BIAS value
+		for _, node := range n.inputs {
+			if node.NeuronType == InputNeuron {
+				node.SensorLoad(sensors[counter])
+				counter += 1
+			} else {
+				node.SensorLoad(1.0) // default BIAS value
+			}
 		}
 	}
+
 	return nil
 }
 
