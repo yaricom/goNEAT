@@ -68,7 +68,7 @@ type Organism struct {
 func NewOrganism(fit float64, g *Genome, generation int) (org *Organism, err error) {
 	phenotype := g.Phenotype
 	if phenotype == nil {
-		phenotype, err = g.genesis(g.Id)
+		phenotype, err = g.Genesis(g.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +88,7 @@ func (o *Organism) UpdatePhenotype() (err error) {
 	o.Phenotype = nil
 
 	// Now, recreate the phenotype off the new genotype
-	o.Phenotype, err = o.Genotype.genesis(o.Genotype.Id)
+	o.Phenotype, err = o.Genotype.Genesis(o.Genotype.Id)
 	return err
 }
 
@@ -119,7 +119,7 @@ func (o *Organism) UnmarshalBinary(data []byte) error {
 	_, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &o.highestFitness, &o.isPopulationChampionChild, &genotype_id)
 	o.Genotype, err = ReadGenome(b, genotype_id)
 	if err == nil {
-		o.Phenotype, err = o.Genotype.genesis(genotype_id)
+		o.Phenotype, err = o.Genotype.Genesis(genotype_id)
 	}
 
 	return err

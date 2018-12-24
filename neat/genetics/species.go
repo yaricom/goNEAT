@@ -292,7 +292,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 					new_genome.mutateLinkWeights(context.WeightMutPower, 1.0, gaussianMutator)
 				} else {
 					// Sometimes we add a link to a superchamp
-					new_genome.genesis(generation)
+					new_genome.Genesis(generation)
 					if _, err = new_genome.mutateAddLink(pop, context); err != nil {
 						return nil, err
 					}
@@ -356,7 +356,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 				neat.DebugLog("SPECIES: ---> mutateAddLink")
 
 				// Mutate add link
-				new_genome.genesis(generation)
+				new_genome.Genesis(generation)
 				if _, err = new_genome.mutateAddLink(pop, context); err != nil {
 					return nil, err
 				}
@@ -469,7 +469,7 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 					neat.DebugLog("SPECIES: ---------> mutateAddLink")
 
 					// mutate_add_link
-					new_genome.genesis(generation)
+					new_genome.Genesis(generation)
 					if _, err = new_genome.mutateAddLink(pop, context); err != nil {
 						return nil, err
 					}

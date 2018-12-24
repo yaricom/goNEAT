@@ -366,7 +366,7 @@ func (g *Genome) hasGene(gene *Gene) bool {
 }
 
 // Generate a Network phenotype from this Genome with specified id
-func (g *Genome) genesis(net_id int) (*network.Network, error) {
+func (g *Genome) Genesis(net_id int) (*network.Network, error) {
 	// Inputs and outputs will be collected here for the network.
 	// All nodes are collected in an all_list -
 	// this is useful for network traversing routines
