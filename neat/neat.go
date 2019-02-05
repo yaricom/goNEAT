@@ -3,7 +3,6 @@
 package neat
 
 import (
-	"math/rand"
 	"fmt"
 	"io"
 	"log"
@@ -313,14 +312,4 @@ func LoadContext(r io.Reader) *NeatContext {
 	}
 
 	return &c
-}
-
-// Returns
-func RandPosNeg() int32 {
-	v := rand.Int()
-	if (v % 2) == 0 {
-		return -1
-	} else {
-		return 1
-	}
 }

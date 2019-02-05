@@ -1,6 +1,7 @@
 package genetics
 
 import (
+	"github.com/yaricom/goNEAT/neat/utils"
 	"github.com/yaricom/goNEAT/neat/network"
 	"github.com/yaricom/goNEAT/neat"
 	"math/rand"
@@ -172,7 +173,7 @@ func newGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float
 					}
 
 					// Create the gene
-					new_weight := float64(neat.RandPosNeg()) * rand.Float64()
+					new_weight := float64(utils.RandSign()) * rand.Float64()
 					new_gene = NewGeneWithTrait(new_trait, new_weight, in_node, out_node, flag_recurrent, int64(count), new_weight)
 
 					//Add the gene to the genome
@@ -781,7 +782,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, context *neat.NeatContext
 				// Choose a random trait
 				trait_num := rand.Intn(len(g.Traits))
 				// Choose the new weight
-				new_weight := float64(neat.RandPosNeg()) * rand.Float64() * 10.0
+				new_weight := float64(utils.RandSign()) * rand.Float64() * 10.0
 				// read next innovation id
 				next_innov_id := pop.getNextInnovationNumberAndIncrement()
 
@@ -946,7 +947,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			// Choose a random trait
 			trait_num := rand.Intn(len(g.Traits))
 			// Choose the new weight
-			new_weight := float64(neat.RandPosNeg()) * rand.Float64() * 10.0
+			new_weight := float64(utils.RandSign()) * rand.Float64() * 10.0
 			// read next innovation id
 			next_innov_id := pop.getNextInnovationNumberAndIncrement()
 
@@ -1158,7 +1159,7 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutation_type mutatorTyp
 			}
 		}
 
-		rand_val := float64(neat.RandPosNeg()) * rand.Float64() * power
+		rand_val := float64(utils.RandSign()) * rand.Float64() * power
 		if mutation_type == gaussianMutator {
 			rand_choice := rand.Float64()
 			if rand_choice > gauss_point {
