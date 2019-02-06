@@ -88,3 +88,10 @@ neat:
 
   # The log level
   log_level: Info
+
+  # The nodes activation functions list to choose from (activation function -> it's selection probability)
+  node_activators:
+    - SigmoidBipolarActivation 0.25
+    - GaussianBipolarActivation 0.35
+    - LinearAbsActivation 0.15
+    - SineActivation 0.25
