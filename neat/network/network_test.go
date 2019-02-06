@@ -2,6 +2,7 @@ package network
 
 import (
 	"testing"
+	"github.com/yaricom/goNEAT/neat/utils"
 )
 
 func buildNetwork() *Network {
@@ -48,29 +49,29 @@ func buildModularNetwork() *Network {
 		NewNNode(6, HiddenNeuron),
 	}
 	// HIDDEN 6
-	control_nodes[0].ActivationType = MultiplyModuleActivation
+	control_nodes[0].ActivationType = utils.MultiplyModuleActivation
 	control_nodes[0].addIncoming(all_nodes[3], 1.0)
 	control_nodes[0].addIncoming(all_nodes[4], 1.0)
 	control_nodes[0].addOutgoing(all_nodes[5], 1.0)
 
 	// HIDDEN 4
-	all_nodes[3].ActivationType = LinearActivation
+	all_nodes[3].ActivationType = utils.LinearActivation
 	all_nodes[3].addIncoming(all_nodes[0], 15.0)
 	all_nodes[3].addIncoming(all_nodes[2], 10.0)
 	// HIDDEN 5
-	all_nodes[4].ActivationType = LinearActivation
+	all_nodes[4].ActivationType = utils.LinearActivation
 	all_nodes[4].addIncoming(all_nodes[1], 5.0)
 	all_nodes[4].addIncoming(all_nodes[2], 1.0)
 
 	// HIDDEN 7
-	all_nodes[5].ActivationType = NullActivation
+	all_nodes[5].ActivationType = utils.NullActivation
 
 	// OUTPUT 8
 	all_nodes[6].addIncoming(all_nodes[5], 4.5)
-	all_nodes[6].ActivationType = LinearActivation
+	all_nodes[6].ActivationType = utils.LinearActivation
 	// OUTPUT 9
 	all_nodes[7].addIncoming(all_nodes[5], 13.0)
-	all_nodes[7].ActivationType = LinearActivation
+	all_nodes[7].ActivationType = utils.LinearActivation
 
 	return NewModularNetwork(all_nodes[0:3], all_nodes[6:8], all_nodes, control_nodes, 0)
 }

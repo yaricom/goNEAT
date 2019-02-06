@@ -3,8 +3,9 @@ package network
 import (
 	"fmt"
 	"errors"
-	"github.com/yaricom/goNEAT/neat"
 	"bytes"
+	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/neat/utils"
 )
 
 // A NODE is either a NEURON or a SENSOR.
@@ -16,7 +17,7 @@ type NNode struct {
 	Id                int
 
 	// The type of node activation function (SIGMOID, ...)
-	ActivationType    NodeActivationType
+	ActivationType    utils.NodeActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
 	NeuronType        NodeNeuronType
 
@@ -38,7 +39,7 @@ type NNode struct {
 	PhenotypeAnalogue *NNode
 
 	// the flag to use for loop detection
-	visited bool
+	visited           bool
 
 	/* ************ LEARNING PARAMETERS *********** */
 	// The following parameters are for use in neurons that learn through habituation,
@@ -78,7 +79,7 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 func NewNetworkNode() *NNode {
 	return &NNode{
 		NeuronType:HiddenNeuron,
-		ActivationType:SigmoidSteepenedActivation,
+		ActivationType:utils.SigmoidSteepenedActivation,
 		Incoming:make([]*Link, 0),
 		Outgoing:make([]*Link, 0),
 	}
@@ -221,7 +222,7 @@ func (n *NNode) NodeType() NodeType {
 }
 
 func (n *NNode) String() string {
-	activation, _ := NodeActivators.ActivationNameFromType(n.ActivationType)
+	activation, _ := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
 	active := "active"
 	if !n.isActive {
 		active = "inactive"
@@ -238,7 +239,7 @@ func (n *NNode) Print() string {
 	fmt.Fprintf(b, "\tId: %d\n", n.Id)
 	fmt.Fprintf(b, "\tIsActive: %t\n", n.isActive)
 	fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
-	activation, _ := NodeActivators.ActivationNameFromType(n.ActivationType)
+	activation, _ := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
 	fmt.Fprintf(b, "\tActivation Type: %s\n", activation)
 	fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
 	fmt.Fprintf(b, "\tActivationsCount: %d\n", n.ActivationsCount)
