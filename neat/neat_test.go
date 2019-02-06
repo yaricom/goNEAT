@@ -25,7 +25,7 @@ func TestNeatContext_LoadContext(t *testing.T) {
 	}
 
 	// Load YAML context
-	nc := &NeatContext{}
+	nc := NewNeatContext()
 	err = nc.LoadContext(config)
 	if err != nil {
 		t.Error(err)

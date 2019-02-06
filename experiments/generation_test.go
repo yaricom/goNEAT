@@ -3,12 +3,14 @@ package experiments
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/yaricom/goNEAT/neat"
-	"github.com/yaricom/goNEAT/neat/genetics"
-	"github.com/yaricom/goNEAT/neat/network"
 	"testing"
 	"time"
 	"reflect"
+
+	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/neat/utils"
+	"github.com/yaricom/goNEAT/neat/genetics"
+	"github.com/yaricom/goNEAT/neat/network"
 )
 
 // Tests encoding/decoding of generation
@@ -127,10 +129,10 @@ func buildTestGenome(id int) *genetics.Genome {
 	}
 
 	nodes := []*network.NNode{
-		{Id:1, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:2, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:3, NeuronType: network.BiasNeuron, ActivationType: network.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:4, NeuronType: network.OutputNeuron, ActivationType: network.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:1, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:3, NeuronType: network.BiasNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:4, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 	}
 
 	genes := []*genetics.Gene{

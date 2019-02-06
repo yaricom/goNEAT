@@ -1081,6 +1081,12 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 		new_node = network.NewNNode(new_node_id, network.HiddenNeuron)
 		// By convention, it will point to the first trait
 		new_node.Trait = g.Traits[0]
+		// Set node activation function as random from a list of types registered with context
+		if act_type, err := context.RandomNodeActivationType(); err != nil {
+			return false, err
+		} else {
+			new_node.ActivationType = act_type
+		}
 
 		// get the next innovation id for gene 1
 		gene_innov_1 := pop.getNextInnovationNumberAndIncrement()

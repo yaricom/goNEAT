@@ -148,6 +148,13 @@ type NeatContext struct {
 	NodeActivatorsProb     []float64
 }
 
+// Creates new empty NEAT context
+func NewNeatContext() *NeatContext {
+	nc := &NeatContext{}
+	nc.initDefaultNodeActivators()
+	return nc
+}
+
 // Loads context configuration from provided reader as YAML
 func (c *NeatContext) LoadContext(r io.Reader) error {
 	viper.SetConfigType("YAML")
@@ -253,6 +260,21 @@ func (c *NeatContext) LoadContext(r io.Reader) error {
 	return nil
 }
 
+// Returns next random node activation type among registered with this context
+func (c *NeatContext) RandomNodeActivationType() (utils.NodeActivationType, error) {
+	// quick check for the most cases
+	if len(c.NodeActivators) == 1 {
+		return c.NodeActivators[0], nil
+	}
+	// find next random
+	index := utils.SingleRouletteThrow(c.NodeActivatorsProb)
+	if index < 0 || index >= len(c.NodeActivators){
+		return 0, errors.New(
+			fmt.Sprintf("unexpected error when trying to find random node activator, activator index: %d", index))
+	}
+	return c.NodeActivators[index], nil
+}
+
 // Loads context configuration from provided reader
 func LoadContext(r io.Reader) *NeatContext {
 	c := NeatContext{}
@@ -345,8 +367,8 @@ func LoadContext(r io.Reader) *NeatContext {
 	return &c
 }
 
+// set default values for activator type and its probability of selection
 func (c *NeatContext) initDefaultNodeActivators() {
-
 	c.NodeActivators = []utils.NodeActivationType{utils.SigmoidSteepenedActivation}
 	c.NodeActivatorsProb = []float64{1.0}
 }
