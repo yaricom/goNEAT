@@ -4,6 +4,9 @@ out
 # The IDEA project forlder
 .idea
 
+# The MacOS specific
+.DS_Store
+
 # Binaries for programs and plugins
 *.exe
 *.dll

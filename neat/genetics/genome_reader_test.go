@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/neat/utils"
 )
 
 func TestPlainGenomeReader_Read(t *testing.T) {
@@ -287,25 +288,25 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		t.Error("len(genome.Nodes) != 14", len(genome.Nodes))
 	}
 	nodes := []*network.NNode{
-		{Id:1, NeuronType: network.BiasNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:1, NeuronType: network.BiasNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 
-		{Id:2, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:3, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:4, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:5, NeuronType: network.InputNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:3, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:4, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:5, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 
-		{Id:6, NeuronType: network.OutputNeuron, ActivationType: network.SigmoidBipolarActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:7, NeuronType: network.OutputNeuron, ActivationType: network.SigmoidBipolarActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:6, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidBipolarActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:7, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidBipolarActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 
-		{Id:8, NeuronType: network.HiddenNeuron, ActivationType: network.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:9, NeuronType: network.HiddenNeuron, ActivationType: network.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:10, NeuronType: network.HiddenNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:8, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:9, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:10, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 
-		{Id:11, NeuronType: network.HiddenNeuron, ActivationType: network.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:12, NeuronType: network.HiddenNeuron, ActivationType: network.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:13, NeuronType: network.HiddenNeuron, ActivationType: network.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:11, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:12, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:13, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 
-		{Id:14, NeuronType: network.HiddenNeuron, ActivationType: network.SignActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id:14, NeuronType: network.HiddenNeuron, ActivationType: utils.SignActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
 	}
 	for i, n := range nodes {
 		if n.Id != genome.Nodes[i].Id {
@@ -397,7 +398,7 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		if g.ControlNode.Id != i + 15 {
 			t.Error("Wrong control node ID at:", i, g.ControlNode.Id)
 		}
-		if g.ControlNode.ActivationType != network.MultiplyModuleActivation {
+		if g.ControlNode.ActivationType != utils.MultiplyModuleActivation {
 			t.Error("g.ControlNode.ActivationType != network.MultiplyModuleActivation at:", i)
 		}
 		if g.ControlNode.NeuronType != network.HiddenNeuron {

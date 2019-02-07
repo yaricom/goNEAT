@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"errors"
+	"github.com/yaricom/goNEAT/neat/utils"
 )
 
 // The number of parameters used in neurons that learn through habituation,
@@ -63,7 +64,7 @@ func newTrait(lenght int) *Trait {
 func (t *Trait) Mutate(trait_mutation_power, trait_param_mut_prob float64) {
 	for i := 0; i < len(t.Params); i++ {
 		if rand.Float64() > trait_param_mut_prob {
-			t.Params[i] += float64(RandPosNeg()) * rand.Float64() * trait_mutation_power
+			t.Params[i] += float64(utils.RandSign()) * rand.Float64() * trait_mutation_power
 			if t.Params[i] < 0 {
 				t.Params[i] = 0
 			}

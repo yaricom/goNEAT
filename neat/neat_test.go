@@ -3,6 +3,8 @@ package neat
 import (
 	"testing"
 	"os"
+	"fmt"
+	"github.com/yaricom/goNEAT/neat/utils"
 )
 
 func TestLoadContext(t *testing.T) {
@@ -23,13 +25,30 @@ func TestNeatContext_LoadContext(t *testing.T) {
 	}
 
 	// Load YAML context
-	nc := &NeatContext{}
+	nc := NewNeatContext()
 	err = nc.LoadContext(config)
 	if err != nil {
 		t.Error(err)
 	}
 
 	checkNeatContext(nc, t)
+
+	// check activators
+	if len(nc.NodeActivators) != 4 {
+		t.Error(fmt.Sprintf("len(nc.NodeActivators) != 4, but: %d", len(nc.NodeActivators)))
+		return
+	}
+	activators := []utils.NodeActivationType{utils.SigmoidBipolarActivation,
+		utils.GaussianBipolarActivation, utils.LinearAbsActivation, utils.SineActivation}
+	probs := []float64{0.25, 0.35, 0.15, 0.25}
+	for i, a := range activators {
+		if nc.NodeActivators[i] != a {
+			t.Error(fmt.Sprintf("Wrong CPPN activator type at: %d", i))
+		}
+		if nc.NodeActivatorsProb[i] != probs[i] {
+			t.Error("nc.NodeActivatorsProb[i] != probs[i]", nc.NodeActivatorsProb[i], probs[i])
+		}
+	}
 }
 
 func checkNeatContext(nc *NeatContext, t *testing.T) {
@@ -58,7 +77,7 @@ func checkNeatContext(nc *NeatContext, t *testing.T) {
 		t.Error("AgeSignificance", nc.AgeSignificance)
 	}
 	if nc.SurvivalThresh != 0.2 {
-		t.Error("SurvivalThresh", nc.SurvivalThresh )
+		t.Error("SurvivalThresh", nc.SurvivalThresh)
 	}
 	if nc.MutateOnlyProb != 0.25 {
 		t.Error("MutateOnlyProb", nc.MutateOnlyProb)
@@ -70,7 +89,7 @@ func checkNeatContext(nc *NeatContext, t *testing.T) {
 		t.Error("MutateLinkTraitProb", nc.MutateLinkTraitProb)
 	}
 	if nc.MutateNodeTraitProb != 0.1 {
-		t.Error("MutateNodeTraitProb", nc.MutateNodeTraitProb )
+		t.Error("MutateNodeTraitProb", nc.MutateNodeTraitProb)
 	}
 	if nc.MutateLinkWeightsProb != 0.9 {
 		t.Error("MutateLinkWeightsProb", nc.MutateLinkWeightsProb)
@@ -97,7 +116,7 @@ func checkNeatContext(nc *NeatContext, t *testing.T) {
 		t.Error("MateMultipointProb", nc.MateMultipointProb)
 	}
 	if nc.MateMultipointAvgProb != 0.3 {
-		t.Error("MateMultipointAvgProb", nc.MateMultipointAvgProb )
+		t.Error("MateMultipointAvgProb", nc.MateMultipointAvgProb)
 	}
 	if nc.MateSinglepointProb != 0.3 {
 		t.Error("MateSinglepointProb", nc.MateSinglepointProb)

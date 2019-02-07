@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"errors"
+	"github.com/yaricom/goNEAT/neat/utils"
 )
 
 // The connection descriptor for fast network
@@ -20,7 +21,7 @@ type FastNetworkLink struct {
 // The module relay (control node) descriptor for fast network
 type FastControlNode struct {
 	// The activation function for control node
-	ActivationType NodeActivationType
+	ActivationType utils.NodeActivationType
 	// The indexes of the input nodes
 	InputIndxs     []int
 	// The indexes of the output nodes
@@ -41,7 +42,7 @@ type FastModularNetworkSolver struct {
 
 	// The activation functions per neuron, must be in the same order as neuronSignals. Has nil entries for
 	// neurons that are inputs or outputs of a module.
-	activationFunctions         []NodeActivationType
+	activationFunctions         []utils.NodeActivationType
 	// The bias values associated with neurons
 	biasList                    []float64
 	// The control nodes relaying between network modules
@@ -77,7 +78,7 @@ type FastModularNetworkSolver struct {
 
 // Creates new fast modular network solver
 func NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount int,
-activationFunctions []NodeActivationType, connections []*FastNetworkLink,
+activationFunctions []utils.NodeActivationType, connections []*FastNetworkLink,
 biasList []float64, modules []*FastControlNode) *FastModularNetworkSolver {
 
 	fmm := FastModularNetworkSolver{
@@ -215,7 +216,7 @@ func (fmm *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res
 	fmm.inActivation[currentNode] = false
 
 	// Set this signal after running it through the activation function
-	if fmm.neuronSignals[currentNode], err = NodeActivators.ActivateByType(
+	if fmm.neuronSignals[currentNode], err = utils.NodeActivators.ActivateByType(
 		fmm.neuronSignalsBeingProcessed[currentNode], nil,
 		fmm.activationFunctions[currentNode]); err != nil {
 		// failed to activate
@@ -250,7 +251,7 @@ func (fmm *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) 
 
 	// Pass the signals through the single-valued activation functions
 	for i := fmm.sensorNeuronCount; i < fmm.totalNeuronCount; i++ {
-		fmm.neuronSignalsBeingProcessed[i], err = NodeActivators.ActivateByType(
+		fmm.neuronSignalsBeingProcessed[i], err = utils.NodeActivators.ActivateByType(
 			fmm.neuronSignalsBeingProcessed[i] + fmm.biasList[i], nil,
 			fmm.activationFunctions[i])
 		if err != nil {
@@ -264,7 +265,7 @@ func (fmm *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) 
 		for i, in_index := range module.InputIndxs {
 			inputs[i] = fmm.neuronSignalsBeingProcessed[in_index]
 		}
-		if outputs, err := NodeActivators.ActivateModuleByType(inputs, nil, module.ActivationType); err == nil {
+		if outputs, err := utils.NodeActivators.ActivateModuleByType(inputs, nil, module.ActivationType); err == nil {
 			// save outputs
 			for i, out_index := range module.OutputIndxs {
 				fmm.neuronSignalsBeingProcessed[out_index] = outputs[i]

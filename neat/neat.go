@@ -3,13 +3,15 @@
 package neat
 
 import (
-	"math/rand"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"github.com/spf13/viper"
 	"errors"
+	"github.com/yaricom/goNEAT/neat/utils"
+	"strings"
+	"strconv"
 )
 
 // LoggerLevel type to specify logger output level
@@ -139,6 +141,18 @@ type NeatContext struct {
 	EpochExecutorType      int
 				       // The genome compatibility testing method to use (0 - linear, 1 - fast (make sense for large genomes))
 	GenCompatMethod        int
+
+				       // The neuron nodes activation functions list to choose from
+	NodeActivators         []utils.NodeActivationType
+				       // The probabilities of selection of the specific node activator function
+	NodeActivatorsProb     []float64
+}
+
+// Creates new empty NEAT context
+func NewNeatContext() *NeatContext {
+	nc := &NeatContext{}
+	nc.initDefaultNodeActivators()
+	return nc
 }
 
 // Loads context configuration from provided reader as YAML
@@ -222,7 +236,43 @@ func (c *NeatContext) LoadContext(r io.Reader) error {
 		return errors.New(fmt.Sprintf("Usupported log level: %s", l_level))
 	}
 
+	// read node activators
+	actFns := v.GetStringSlice("node_activators")
+	if actFns != nil {
+		c.NodeActivators = make([]utils.NodeActivationType, len(actFns))
+		c.NodeActivatorsProb = make([]float64, len(actFns))
+		for i, line := range actFns {
+			fields := strings.Fields(line)
+			if c.NodeActivators[i], err = utils.NodeActivators.ActivationTypeFromName(fields[0]); err != nil {
+				return err
+			}
+			if prob, err := strconv.ParseFloat(fields[1], 64); err != nil {
+				return err
+			} else {
+				c.NodeActivatorsProb[i] = prob
+			}
+		}
+	} else {
+		// just use default activators
+		c.initDefaultNodeActivators()
+	}
+
 	return nil
+}
+
+// Returns next random node activation type among registered with this context
+func (c *NeatContext) RandomNodeActivationType() (utils.NodeActivationType, error) {
+	// quick check for the most cases
+	if len(c.NodeActivators) == 1 {
+		return c.NodeActivators[0], nil
+	}
+	// find next random
+	index := utils.SingleRouletteThrow(c.NodeActivatorsProb)
+	if index < 0 || index >= len(c.NodeActivators){
+		return 0, errors.New(
+			fmt.Sprintf("unexpected error when trying to find random node activator, activator index: %d", index))
+	}
+	return c.NodeActivators[index], nil
 }
 
 // Loads context configuration from provided reader
@@ -311,16 +361,14 @@ func LoadContext(r io.Reader) *NeatContext {
 			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %f\n", name, param)
 		}
 	}
+	// just use default value for nodes activators
+	c.initDefaultNodeActivators()
 
 	return &c
 }
 
-// Returns
-func RandPosNeg() int32 {
-	v := rand.Int()
-	if (v % 2) == 0 {
-		return -1
-	} else {
-		return 1
-	}
+// set default values for activator type and its probability of selection
+func (c *NeatContext) initDefaultNodeActivators() {
+	c.NodeActivators = []utils.NodeActivationType{utils.SigmoidSteepenedActivation}
+	c.NodeActivatorsProb = []float64{1.0}
 }

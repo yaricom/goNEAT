@@ -3,15 +3,15 @@ package genetics
 import (
 	"io"
 	"fmt"
-
-	"github.com/yaricom/goNEAT/neat"
 	"bufio"
 	"errors"
-	"github.com/yaricom/goNEAT/neat/network"
 	"strings"
-	"github.com/spf13/cast"
-	"gopkg.in/yaml.v2"
 	"strconv"
+	"gopkg.in/yaml.v2"
+	"github.com/spf13/cast"
+	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/neat/utils"
+	"github.com/yaricom/goNEAT/neat/network"
 )
 
 
@@ -155,7 +155,7 @@ func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, er
 	}
 
 	if len(parts) == 5 {
-		n.ActivationType, err = network.NodeActivators.ActivationTypeFromName(parts[4])
+		n.ActivationType, err = utils.NodeActivators.ActivationTypeFromName(parts[4])
 	}
 
 	return n, err
@@ -332,7 +332,7 @@ func readMIMOControlGene(conf map[interface{}]interface{}, traits []*neat.Trait,
 	control_node.NeuronType = network.HiddenNeuron
 	// set activation function
 	activation := conf["activation"].(string)
-	control_node.ActivationType, err = network.NodeActivators.ActivationTypeFromName(activation)
+	control_node.ActivationType, err = utils.NodeActivators.ActivationTypeFromName(activation)
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +416,7 @@ func readNNode(conf map[interface{}]interface{}, traits []*neat.Trait) (*network
 		return nil, err
 	}
 	activation := conf["activation"].(string)
-	nd.ActivationType, err = network.NodeActivators.ActivationTypeFromName(activation)
+	nd.ActivationType, err = utils.NodeActivators.ActivationTypeFromName(activation)
 	return nd, err
 }
 
