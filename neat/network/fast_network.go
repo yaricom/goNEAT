@@ -251,10 +251,14 @@ func (fmm *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) 
 
 	// Pass the signals through the single-valued activation functions
 	for i := fmm.sensorNeuronCount; i < fmm.totalNeuronCount; i++ {
-		fmm.neuronSignalsBeingProcessed[i], err = utils.NodeActivators.ActivateByType(
-			fmm.neuronSignalsBeingProcessed[i] + fmm.biasList[i], nil,
-			fmm.activationFunctions[i])
-		if err != nil {
+		signal := fmm.neuronSignalsBeingProcessed[i]
+		if fmm.biasNeuronCount > 0 {
+			// append BIAS value to the signal if appropriate
+			signal += fmm.biasList[i]
+		}
+
+		if fmm.neuronSignalsBeingProcessed[i], err = utils.NodeActivators.ActivateByType(
+			signal, nil, fmm.activationFunctions[i]); err != nil {
 			return false, err
 		}
 	}
@@ -331,12 +335,16 @@ func (fmm *FastModularNetworkSolver) NodeCount() int {
 func (fmm *FastModularNetworkSolver) LinkCount() int {
 	// count all connections
 	num_links := len(fmm.connections)
-	// count all bias links
-	for _, b := range fmm.biasList {
-		if b != 0 {
-			num_links++
+
+	// count all bias links if any
+	if fmm.biasNeuronCount > 0 {
+		for _, b := range fmm.biasList {
+			if b != 0 {
+				num_links++
+			}
 		}
 	}
+
 	// count all modules links
 	if len(fmm.modules) != 0 {
 		for _, module := range fmm.modules {
