@@ -14,8 +14,8 @@ import (
 	"github.com/yaricom/goNEAT/experiments"
 )
 
-// The precision to use for XOR evaluation, i.e. one is x > 1 - precision and zero is x < precision
-const precision = 0.5
+// The fitness threshold value for successful solver
+const fitness_threshold = 15.5
 
 // XOR is very simple and does not make a very interesting scientific experiment; however, it is a good way to
 // check whether your system works.
@@ -148,16 +148,16 @@ func (ex *XORGenerationEvaluator) org_evaluate(organism *genetics.Organism, cont
 	if (success) {
 		// Mean Squared Error
 		error_sum := math.Abs(out[0]) + math.Abs(1.0 - out[1]) + math.Abs(1.0 - out[2]) + math.Abs(out[3]) // ideal == 0
-		target := math.Abs(1.0 - out[0]) + math.Abs(out[1]) + math.Abs(out[2]) + math.Abs(1.0 - out[3]) // ideal == 4.0
-		organism.Fitness = math.Sqrt(math.Pow(4.0 - error_sum, 2.0)) / 4.0
-		organism.Error = math.Sqrt(math.Pow(4.0 - target, 2.0)) / 4.0
+		target := 4.0 - error_sum // ideal == 4.0
+		organism.Fitness = math.Pow(4.0 - error_sum, 2.0)
+		organism.Error = math.Pow(4.0 - target, 2.0)
 	} else {
 		// The network is flawed (shouldn't happen) - flag as anomaly
 		organism.Error = 1.0
 		organism.Fitness = 0.0
 	}
 
-	if out[0] < precision && out[1] >= 1 - precision && out[2] >= 1 - precision && out[3] < precision {
+	if organism.Fitness > fitness_threshold {
 		organism.IsWinner = true
 		neat.InfoLog(fmt.Sprintf(">>>> Output activations: %e\n", out))
 
