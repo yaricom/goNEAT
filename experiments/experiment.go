@@ -40,12 +40,12 @@ func (e *Experiment) AvgEpochDuration() time.Duration {
 // Calculates average number of generations evaluated per trial during this experiment. This can be helpful when estimating
 // algorithm efficiency, because when winner organism is found the trial is terminated, i.e. less evaluations - more fast
 // convergence.
-func (e *Experiment) AvgGenerationsPerTrial() int {
-	total := 0
+func (e *Experiment) AvgGenerationsPerTrial() float64 {
+	total := 0.0
 	for _, t := range e.Trials {
-		total += len(t.Generations)
+		total += float64(len(t.Generations))
 	}
-	return total / len(e.Trials)
+	return total / float64(len(e.Trials))
 }
 
 // Returns time of last trial's execution
@@ -153,6 +153,12 @@ func (e *Experiment) TrialsSolved() int {
 	return count
 }
 
+// The success rate
+func (e *Experiment) SuccessRate() float64 {
+	soved := float64(e.TrialsSolved())
+	return soved / float64(len(e.Trials))
+}
+
 // Returns average number of nodes, genes, organisms evaluations, and species diversity of winner genomes among all
 // trials, i.e. for all trials where winning solution was found
 func (e *Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity float64) {
@@ -179,15 +185,15 @@ func (e *Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity
 
 // Prints experiment statistics
 func (ex *Experiment) PrintStatistics() {
-	fmt.Printf("\n+++ Solved %d trials from %d +++\n", ex.TrialsSolved(), len(ex.Trials))
-	fmt.Printf("Average\n\ttrial duration:\t\t%s\n\tepoch duration:\t\t%s\n\tgenerations/trial:\t%d\n",
+	fmt.Printf("\nSolved %d trials from %d, success rate: %f\n", ex.TrialsSolved(), len(ex.Trials), ex.SuccessRate())
+	fmt.Printf("Average\n\tTrial duration:\t\t%s\n\tEpoch duration:\t\t%s\n\tGenerations/trial:\t%.1f\n",
 		ex.AvgTrialDuration(), ex.AvgEpochDuration(), ex.AvgGenerationsPerTrial())
 	// Print absolute champion statistics
 	if org, trid, found := ex.BestOrganism(true); found {
 		nodes, genes, evals, divers := ex.Trials[trid].Winner()
-		fmt.Printf("\nChampion found in %d trial run\n\tWinner Nodes:\t%d\n\tWinner Genes:\t%d\n\tWinner Evals:\t%d\n\n\tDiversity:\t%d",
+		fmt.Printf("\nChampion found in %d trial run\n\tWinner Nodes:\t\t%d\n\tWinner Genes:\t\t%d\n\tWinner Evals:\t\t%d\n\n\tDiversity:\t\t%d",
 			trid, nodes, genes, evals, divers)
-		fmt.Printf("\n\tComplexity:\t%d\n\tAge:\t\t%d\n\tFitness:\t%.1f\n",
+		fmt.Printf("\n\tComplexity:\t\t%d\n\tAge:\t\t\t%d\n\tFitness:\t\t%f\n",
 			org.Phenotype.Complexity(), org.Species.Age, org.Fitness)
 	} else {
 		fmt.Println("\nNo winner found in the experiment!!!")
@@ -196,7 +202,7 @@ func (ex *Experiment) PrintStatistics() {
 	// Print average winner statistics
 	mean_complexity, mean_diversity, mean_age, mean_fitness := 0.0, 0.0, 0.0, 0.0
 	if len(ex.Trials) > 1 {
-		avg_nodes, avg_genes, avg_evals, avg_divers := 0.0, 0.0, 0.0, 0.0
+		avg_nodes, avg_genes, avg_evals, avg_divers, avg_generations := 0.0, 0.0, 0.0, 0.0, 0.0
 		count := 0.0
 		for i := 0; i < len(ex.Trials); i++ {
 			t := ex.Trials[i]
@@ -206,6 +212,7 @@ func (ex *Experiment) PrintStatistics() {
 				avg_genes += float64(genes)
 				avg_evals += float64(evals)
 				avg_divers += float64(diversity)
+				avg_generations += float64(len(t.Generations))
 
 				mean_complexity += float64(t.WinnerGeneration.Best.Phenotype.Complexity())
 				mean_age += float64(t.WinnerGeneration.Best.Species.Age)
@@ -218,13 +225,14 @@ func (ex *Experiment) PrintStatistics() {
 		avg_genes /= count
 		avg_evals /= count
 		avg_divers /= count
-		fmt.Printf("\nAverage among winners\n\tWinner Nodes:\t%.1f\n\tWinner Genes:\t%.1f\n\tWinner Evals:\t%.1f\n\n\tDiversity:\t%.1f\n",
-			avg_nodes, avg_genes, avg_evals, avg_divers)
+		avg_generations /= count
+		fmt.Printf("\nAverage among winners\n\tWinner Nodes:\t\t%.1f\n\tWinner Genes:\t\t%.1f\n\tWinner Evals:\t\t%.1f\n\tGenerations/trial:\t%.1f\n\n\tDiversity:\t\t%f\n",
+			avg_nodes, avg_genes, avg_evals, avg_generations, avg_divers)
 
 		mean_complexity /= count
 		mean_age /= count
 		mean_fitness /=count
-		fmt.Printf("\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n",
+		fmt.Printf("\tComplexity:\t\t%f\n\tAge:\t\t\t%f\n\tFitness:\t\t%f\n",
 			mean_complexity, mean_age, mean_fitness)
 	}
 
@@ -242,7 +250,7 @@ func (ex *Experiment) PrintStatistics() {
 	mean_diversity /= count
 	mean_age /= count
 	mean_fitness /=count
-	fmt.Printf("\nAverages for all organisms evaluated during experiment\n\tDiversity:\t%.1f\n\tComplexity:\t%.1f\n\tAge:\t\t%.1f\n\tFitness:\t%.1f\n\n",
+	fmt.Printf("\nAverages for all organisms evaluated during experiment\n\tDiversity:\t\t%f\n\tComplexity:\t\t%f\n\tAge:\t\t\t%f\n\tFitness:\t\t%f\n\n",
 		mean_diversity, mean_complexity, mean_age, mean_fitness)
 
 }
