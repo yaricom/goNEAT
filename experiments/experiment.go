@@ -7,6 +7,7 @@ import (
 	"io"
 	"encoding/gob"
 	"fmt"
+	"math"
 )
 
 // An Experiment is a collection of trials for one experiment. It's useful for statistical analysis of a series of
@@ -236,6 +237,15 @@ func (ex *Experiment) PrintStatistics() {
 			mean_complexity, mean_age, mean_fitness)
 	}
 
+	// Calculate efficiency score of the solution
+	// We are interested in efficient solver search solution that take
+	// less time per epoch, less generations per trial, and produce less complicated winner genomes.
+	// At the same time it should have maximal fitness score and maximal success rate among trials.
+	score := ex.AvgEpochDuration().Seconds() * 1000.0 * ex.AvgGenerationsPerTrial() * mean_complexity
+	if score > 0 {
+		score = ex.SuccessRate() * mean_fitness / math.Log(score)
+	}
+
 	// Print the average values for each population of organisms evaluated
 	count := float64(len(ex.Trials))
 	for _, t := range ex.Trials {
@@ -250,9 +260,10 @@ func (ex *Experiment) PrintStatistics() {
 	mean_diversity /= count
 	mean_age /= count
 	mean_fitness /=count
-	fmt.Printf("\nAverages for all organisms evaluated during experiment\n\tDiversity:\t\t%f\n\tComplexity:\t\t%f\n\tAge:\t\t\t%f\n\tFitness:\t\t%f\n\n",
+	fmt.Printf("\nAverages for all organisms evaluated during experiment\n\tDiversity:\t\t%f\n\tComplexity:\t\t%f\n\tAge:\t\t\t%f\n\tFitness:\t\t%f\n",
 		mean_diversity, mean_complexity, mean_age, mean_fitness)
 
+	fmt.Printf("\nEfficiency score:\t\t%f\n\n", score)
 }
 
 // Encodes experiment and writes to provided writer
