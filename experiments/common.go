@@ -104,20 +104,26 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 				return err
 			}
 			generation.Executed = time.Now()
+
+			// Turnover population of organisms to the next epoch if appropriate
+			if !generation.Solved {
+				neat.DebugLog(">>>>> start next generation")
+				err = epoch_executor.NextEpoch(generation_id, pop, context)
+				if err != nil {
+					neat.InfoLog(fmt.Sprintf("!!!!! Epoch execution failed in generation [%d] !!!!!\n", generation_id))
+					return err
+				}
+			}
+
+			// Set generation duration, which also includes preparation for the next epoch
 			generation.Duration = generation.Executed.Sub(gen_start_time)
 			trial.Generations = append(trial.Generations, generation)
+
 			if generation.Solved {
+				// stop further evaluation if already solved
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation, fitness: %f <<<<<\n",
 					generation_id, generation.Best.Fitness))
 				break
-			}
-
-			// Turnover population of organisms to the next epoch
-			neat.DebugLog(">>>>> start next generation")
-			err = epoch_executor.NextEpoch(generation_id, pop, context)
-			if err != nil {
-				neat.InfoLog(fmt.Sprintf("!!!!! Epoch execution failed in generation [%d] !!!!!\n", generation_id))
-				return err
 			}
 
 		}
