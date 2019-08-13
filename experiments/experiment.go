@@ -13,9 +13,13 @@ import (
 // An Experiment is a collection of trials for one experiment. It's useful for statistical analysis of a series of
 // experiments
 type Experiment struct {
-	Id   int
-	Name string
+	Id              int
+	Name            string
 	Trials
+	// The maximal allowed fitness score as defined by fitness function of experiment.
+	// It is used to normalize fitness score value used in efficiency score calculation. If this value
+	// is not set, than fitness score will not be normalized during efficiency score estimation.
+	MaxFintessScore float64
 }
 
 // Calculates average duration of experiment's trial
@@ -184,6 +188,47 @@ func (e *Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity
 	return avg_nodes, avg_genes, avg_evals, avg_diversity
 }
 
+// Calculates the efficiency score of the solution
+// We are interested in efficient solver search solution that take
+// less time per epoch, less generations per trial, and produce less complicated winner genomes.
+// At the same time it should have maximal fitness score and maximal success rate among trials.
+func (ex *Experiment) EfficiencyScore() float64 {
+	mean_complexity, mean_fitness := 0.0, 0.0
+	if len(ex.Trials) > 1 {
+		count := 0.0
+		for i := 0; i < len(ex.Trials); i++ {
+			t := ex.Trials[i]
+			if t.Solved() {
+				if t.WinnerGeneration == nil {
+					// find winner
+					t.Winner()
+				}
+
+				mean_complexity += float64(t.WinnerGeneration.Best.Phenotype.Complexity())
+				mean_fitness += t.WinnerGeneration.Best.Fitness
+
+				count++
+			}
+		}
+		mean_complexity /= count
+		mean_fitness /= count
+	}
+
+	// normalize and scale fitness score if appropriate
+	fitness_score := mean_fitness
+	if ex.MaxFintessScore > 0 {
+		fitness_score /= ex.MaxFintessScore
+		fitness_score *= 100
+	}
+
+	score := ex.AvgEpochDuration().Seconds() * 1000.0 * ex.AvgGenerationsPerTrial() * mean_complexity
+	if score > 0 {
+		score = ex.SuccessRate() * fitness_score / math.Log(score)
+	}
+
+	return score
+}
+
 // Prints experiment statistics
 func (ex *Experiment) PrintStatistics() {
 	fmt.Printf("\nSolved %d trials from %d, success rate: %f\n", ex.TrialsSolved(), len(ex.Trials), ex.SuccessRate())
@@ -207,6 +252,7 @@ func (ex *Experiment) PrintStatistics() {
 		count := 0.0
 		for i := 0; i < len(ex.Trials); i++ {
 			t := ex.Trials[i]
+
 			if t.Solved() {
 				nodes, genes, evals, diversity := t.Winner()
 				avg_nodes += float64(nodes)
@@ -220,6 +266,9 @@ func (ex *Experiment) PrintStatistics() {
 				mean_fitness += t.WinnerGeneration.Best.Fitness
 
 				count++
+
+				// update trials array
+				ex.Trials[i] = t
 			}
 		}
 		avg_nodes /= count
@@ -232,18 +281,9 @@ func (ex *Experiment) PrintStatistics() {
 
 		mean_complexity /= count
 		mean_age /= count
-		mean_fitness /=count
+		mean_fitness /= count
 		fmt.Printf("\tComplexity:\t\t%f\n\tAge:\t\t\t%f\n\tFitness:\t\t%f\n",
 			mean_complexity, mean_age, mean_fitness)
-	}
-
-	// Calculate efficiency score of the solution
-	// We are interested in efficient solver search solution that take
-	// less time per epoch, less generations per trial, and produce less complicated winner genomes.
-	// At the same time it should have maximal fitness score and maximal success rate among trials.
-	score := ex.AvgEpochDuration().Seconds() * 1000.0 * ex.AvgGenerationsPerTrial() * mean_complexity
-	if score > 0 {
-		score = ex.SuccessRate() * mean_fitness / math.Log(score)
 	}
 
 	// Print the average values for each population of organisms evaluated
@@ -259,10 +299,11 @@ func (ex *Experiment) PrintStatistics() {
 	mean_complexity /= count
 	mean_diversity /= count
 	mean_age /= count
-	mean_fitness /=count
+	mean_fitness /= count
 	fmt.Printf("\nAverages for all organisms evaluated during experiment\n\tDiversity:\t\t%f\n\tComplexity:\t\t%f\n\tAge:\t\t\t%f\n\tFitness:\t\t%f\n",
 		mean_diversity, mean_complexity, mean_age, mean_fitness)
 
+	score := ex.EfficiencyScore()
 	fmt.Printf("\nEfficiency score:\t\t%f\n\n", score)
 }
 
