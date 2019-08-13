@@ -80,8 +80,10 @@ func main() {
 	}
 	var generationEvaluator experiments.GenerationEvaluator
 	if *experiment_name == "XOR" {
+		experiment.MaxFintessScore = 16.0 // as given by fitness function definition
 		generationEvaluator = xor.XORGenerationEvaluator{OutputPath:out_dir}
 	} else if *experiment_name == "cart_pole" {
+		experiment.MaxFintessScore = 1.0 // as given by fitness function definition
 		generationEvaluator = pole.CartPoleGenerationEvaluator{
 			OutputPath:out_dir,
 			WinBalancingSteps:500000,
