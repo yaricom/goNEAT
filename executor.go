@@ -90,6 +90,7 @@ func main() {
 			RandomStart:true,
 		}
 	} else if *experiment_name == "cart_2pole_markov" {
+		experiment.MaxFintessScore = 1.0 // as given by fitness function definition
 		generationEvaluator = pole.CartDoublePoleGenerationEvaluator{
 			OutputPath:out_dir,
 			Markov:true,
