@@ -1,6 +1,9 @@
 language: go
 
 go:
-  - 1.9.x
+  - 1.15.x
+
+env:
+  - GO111MODULE=on
 
 script: travis_wait 20 go test -timeout 20m -v ./...
