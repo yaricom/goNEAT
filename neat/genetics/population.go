@@ -1,69 +1,67 @@
 package genetics
 
 import (
-	"math/rand"
-	"errors"
-	"github.com/yaricom/goNEAT/neat"
-
-	"io"
-	"fmt"
 	"bufio"
-	"strings"
 	"bytes"
-	"strconv"
+	"errors"
+	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"io"
 	"math"
-	"sync/atomic"
+	"math/rand"
+	"strconv"
+	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // A Population is a group of Organisms including their species
 type Population struct {
 	// Species in the Population. Note that the species should comprise all the genomes
-	Species                  []*Species
+	Species []*Species
 	// The organisms in the Population
-	Organisms                []*Organism
+	Organisms []*Organism
 	// The highest species number
-	LastSpecies              int
+	LastSpecies int
 	// For holding the genetic innovations of the newest generation
-	Innovations              []*Innovation
+	Innovations []*Innovation
 	// An integer that when above zero tells when the first winner appeared
-	WinnerGen                int
+	WinnerGen int
 	// The last generation played
-	FinalGen                 int
+	FinalGen int
 
 	// Stagnation detector
-	HighestFitness           float64
+	HighestFitness float64
 	// The number of epochs when highest fitness was recorded for this population. If it was too long before
 	// than delta coding will be applied to avoid population's fitness stagnation
 	EpochsHighestLastChanged int
 
 	/* Fitness Statistics */
-	MeanFitness              float64
-	Variance                 float64
-	StandardDev              float64
+	MeanFitness float64
+	Variance    float64
+	StandardDev float64
 
 	// The next innovation number for population
-	nextInnovNum             int64
+	nextInnovNum int64
 	// The next ID for new node in population
-	nextNodeId               int32
+	nextNodeId int32
 
 	// The mutex to guard against concurrent modifications
-	mutex                    *sync.Mutex
+	mutex *sync.Mutex
 }
 
 // The auxiliary data type to hold results of parallel reproduction sent over the wires
 type reproductionResult struct {
-	babies_stored int
-	babies        []byte
-	err           error
-	species_id    int
+	babiesStored int
+	babies       []byte
+	err          error
+	speciesId    int
 }
 
 // Construct off of a single spawning Genome
 func NewPopulation(g *Genome, context *neat.NeatContext) (*Population, error) {
 	if context.PopSize <= 0 {
-		return nil, errors.New(
-			fmt.Sprintf("Wrong population size in the context: %d", context.PopSize))
+		return nil, fmt.Errorf("wrong population size in the context: %d", context.PopSize)
 	}
 
 	pop := newPopulation()
@@ -75,25 +73,24 @@ func NewPopulation(g *Genome, context *neat.NeatContext) (*Population, error) {
 }
 
 // Special constructor to create a population of random topologies uses
-// NewGenomeRand(new_id, in, out, n, nmax int, recurrent bool, link_prob float64)
+// NewGenomeRand(new_id, in, out, n, maxHidden int, recurrent bool, link_prob float64)
 // See the Genome constructor above for the argument specifications
-func NewPopulationRandom(in, out, nmax int, recurrent bool, link_prob float64, context *neat.NeatContext) (*Population, error) {
+func NewPopulationRandom(in, out, maxHidden int, recurrent bool, linkProb float64, context *neat.NeatContext) (*Population, error) {
 	if context.PopSize <= 0 {
-		return nil, errors.New(
-			fmt.Sprintf("Wrong population size in the context: %d", context.PopSize))
+		return nil, fmt.Errorf("wrong population size in the context: %d", context.PopSize)
 	}
 
 	pop := newPopulation()
 	for count := 0; count < context.PopSize; count++ {
-		gen := newGenomeRand(count, in, out, rand.Intn(nmax), nmax, recurrent, link_prob)
+		gen := newGenomeRand(count, in, out, rand.Intn(maxHidden), maxHidden, recurrent, linkProb)
 		org, err := NewOrganism(0.0, gen, 1)
 		if err != nil {
 			return nil, err
 		}
 		pop.Organisms = append(pop.Organisms, org)
 	}
-	pop.nextNodeId = int32(in + out + nmax + 1)
-	pop.nextInnovNum = int64((in + out + nmax) * (in + out + nmax) + 1)
+	pop.nextNodeId = int32(in + out + maxHidden + 1)
+	pop.nextInnovNum = int64((in+out+maxHidden)*(in+out+maxHidden) + 1)
 
 	err := pop.speciate(pop.Organisms, context)
 	if err != nil {
@@ -110,84 +107,92 @@ func ReadPopulation(ir io.Reader, context *neat.NeatContext) (pop *Population, e
 	// Loop until file is finished, parsing each line
 	scanner := bufio.NewScanner(ir)
 	scanner.Split(bufio.ScanLines)
-	var out_buff *bytes.Buffer
-	var id_check int
+	var outBuff *bytes.Buffer
+	var idCheck int
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.SplitN(line, " ", 2)
 		if len(parts) < 2 {
-			return nil, errors.New(fmt.Sprintf("Line: [%s] can not be split when reading Population", line))
+			return nil, fmt.Errorf("line: [%s] can not be split when reading Population", line)
 		}
 		switch parts[0] {
 		case "genomestart":
-			out_buff = bytes.NewBufferString(fmt.Sprintf("genomestart %s", parts[1]))
-			id_check, err = strconv.Atoi(parts[1])
+			outBuff = bytes.NewBufferString(fmt.Sprintf("genomestart %s", parts[1]))
+			idCheck, err = strconv.Atoi(parts[1])
 			if err != nil {
 				return nil, err
 			}
 		case "genomeend":
-			fmt.Fprintf(out_buff, "genomeend %d", id_check)
-			new_genome, err := ReadGenome(bufio.NewReader(out_buff), id_check)
+			if _, err = fmt.Fprintf(outBuff, "genomeend %d", idCheck); err != nil {
+				return nil, err
+			}
+			newGenome, err := ReadGenome(bufio.NewReader(outBuff), idCheck)
 			if err != nil {
 				return nil, err
 			}
 			// add new organism for read genome
-			new_organism, err := NewOrganism(0.0, new_genome, 1)
-			if err != nil {
+			if newOrganism, err := NewOrganism(0.0, newGenome, 1); err != nil {
 				return nil, err
+			} else {
+				pop.Organisms = append(pop.Organisms, newOrganism)
 			}
-			pop.Organisms = append(pop.Organisms, new_organism)
 
-			if last_node_id, err := new_genome.getLastNodeId(); err == nil {
-				if pop.nextNodeId < int32(last_node_id) {
-					pop.nextNodeId = int32(last_node_id + 1)
+			if lastNodeId, err := newGenome.getLastNodeId(); err == nil {
+				if pop.nextNodeId < int32(lastNodeId) {
+					pop.nextNodeId = int32(lastNodeId + 1)
 				}
 			} else {
 				return nil, err
 			}
 
-			if last_gene_innov_num, err := new_genome.getNextGeneInnovNum(); err == nil {
-				if pop.nextInnovNum < last_gene_innov_num {
-					pop.nextInnovNum = last_gene_innov_num
+			if lastGeneInnovNum, err := newGenome.getNextGeneInnovNum(); err == nil {
+				if pop.nextInnovNum < lastGeneInnovNum {
+					pop.nextInnovNum = lastGeneInnovNum
 				}
 			} else {
 				return nil, err
 			}
 			// clear buffer
-			out_buff = nil
-			id_check = -1
+			outBuff = nil
+			idCheck = -1
 
 		case "/*":
 			// read all comments and print it
 			neat.InfoLog(line)
 		default:
 			// write line to buffer
-			fmt.Fprintln(out_buff, line)
+			if _, err = fmt.Fprintln(outBuff, line); err != nil {
+				return nil, err
+			}
 		}
 
 	}
-	err = pop.speciate(pop.Organisms, context)
-	if err != nil {
+	if err = pop.speciate(pop.Organisms, context); err != nil {
 		return nil, err
-	} else {
-		return pop, nil
 	}
+	return pop, nil
 }
 
 // Writes given population to a writer
-func (p *Population) Write(w io.Writer) {
+func (p *Population) Write(w io.Writer) error {
 	// Prints all the Organisms' Genomes to the outFile
 	for _, o := range p.Organisms {
-		o.Genotype.Write(w)
+		if err := o.Genotype.Write(w); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Writes given population by species
-func (p *Population) WriteBySpecies(w io.Writer) {
+func (p *Population) WriteBySpecies(w io.Writer) error {
 	// Step through the Species and write them
 	for _, sp := range p.Species {
-		sp.Write(w)
+		if err := sp.Write(w); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Run verify on all Genomes in this Population (Debugging)
@@ -206,13 +211,13 @@ func (p *Population) Verify() (bool, error) {
 // Default private constructor
 func newPopulation() *Population {
 	return &Population{
-		WinnerGen:0,
-		HighestFitness:0.0,
-		EpochsHighestLastChanged:0,
-		Species:make([]*Species, 0),
-		Organisms:make([]*Organism, 0),
-		Innovations:make([]*Innovation, 0),
-		mutex:&sync.Mutex{},
+		WinnerGen:                0,
+		HighestFitness:           0.0,
+		EpochsHighestLastChanged: 0,
+		Species:                  make([]*Species, 0),
+		Organisms:                make([]*Organism, 0),
+		Innovations:              make([]*Innovation, 0),
+		mutex:                    &sync.Mutex{},
 	}
 }
 
@@ -220,6 +225,7 @@ func newPopulation() *Population {
 func (p *Population) getNextInnovationNumberAndIncrement() int64 {
 	return atomic.AddInt64(&p.nextInnovNum, 1)
 }
+
 // Returns the next node ID which can be used to create new node in population
 func (p *Population) getNextNodeIdAndIncrement() int32 {
 	return atomic.AddInt32(&p.nextNodeId, 1)
@@ -237,19 +243,19 @@ func (p *Population) addInnovationSynced(i *Innovation) {
 func (p *Population) spawn(g *Genome, context *neat.NeatContext) (err error) {
 	for count := 0; count < context.PopSize; count++ {
 		// make genome duplicate for new organism
-		new_genome, err := g.duplicate(count)
+		newGenome, err := g.duplicate(count)
 		if err != nil {
 			return err
 		}
 		// introduce initial mutations
-		if _, err = new_genome.mutateLinkWeights(1.0, 1.0, gaussianMutator); err != nil {
+		if _, err = newGenome.mutateLinkWeights(1.0, 1.0, gaussianMutator); err != nil {
 			return err
 		}
 		// create organism for new genome
-		if new_organism, err := NewOrganism(0.0, new_genome, 1); err != nil {
+		if newOrganism, err := NewOrganism(0.0, newGenome, 1); err != nil {
 			return err
 		} else {
-			p.Organisms = append(p.Organisms, new_organism)
+			p.Organisms = append(p.Organisms, newOrganism)
 		}
 	}
 	// Keep a record of the innovation and node number we are on
@@ -272,22 +278,25 @@ func (p *Population) spawn(g *Genome, context *neat.NeatContext) (err error) {
 // N.B. the mutated offspring of best species may be added to other more compatible species and as result
 // the best species from previous generation will be removed, but their offspring still be alive.
 // Returns error if best species died.
-func (p *Population) checkBestSpeciesAlive(best_species_id int, best_species_reproduced bool) error {
-	best_ok := false
-	var best_sp_max_fitness float64
-	for _, curr_species := range p.Species {
-		neat.DebugLog(fmt.Sprintf("POPULATION: %d <> %d\n", curr_species.Id, best_species_id))
-		if curr_species.Id == best_species_id {
-			best_ok = true
-			best_sp_max_fitness = curr_species.MaxFitnessEver
+func (p *Population) checkBestSpeciesAlive(bestSpeciesId int, bestSpeciesReproduced bool) error {
+	bestOk := false
+	var bestSpMaxFitness float64
+	for _, currSpecies := range p.Species {
+		if neat.LogLevel == neat.LogLevelDebug {
+			neat.DebugLog(fmt.Sprintf("POPULATION: %d <> %d\n", currSpecies.Id, bestSpeciesId))
+		}
+
+		if currSpecies.Id == bestSpeciesId {
+			bestOk = true
+			bestSpMaxFitness = currSpecies.MaxFitnessEver
 			break
 		}
 	}
-	if !best_ok && !best_species_reproduced {
-		return errors.New("POPULATION: The best species died without offspring!")
-	} else {
+	if !bestOk && !bestSpeciesReproduced {
+		return errors.New("best species died without offspring")
+	} else if neat.LogLevel == neat.LogLevelDebug {
 		neat.DebugLog(fmt.Sprintf("POPULATION: The best survived species Id: %d, max fitness ever: %f",
-			best_species_id, best_sp_max_fitness))
+			bestSpeciesId, bestSpMaxFitness))
 	}
 	return nil
 }
@@ -296,45 +305,46 @@ func (p *Population) checkBestSpeciesAlive(best_species_id int, best_species_rep
 // Any organism that does is not compatible with the first organism in any existing species becomes a new species.
 func (p *Population) speciate(organisms []*Organism, context *neat.NeatContext) error {
 	if len(organisms) == 0 {
-		return errors.New("There is no organisms to speciate from")
+		return errors.New("no organisms to speciate from")
 	}
 
 	// Step through all given organisms and speciate them within the population
-	for _, curr_org := range organisms {
+	for _, currOrg := range organisms {
 		if len(p.Species) == 0 {
 			// Create the first species
-			createFirstSpecies(p, curr_org)
+			createFirstSpecies(p, currOrg)
 		} else {
 			if context.CompatThreshold == 0 {
-				return errors.New("POPULATION: compatibility thershold is set to ZERO. " +
-					"Will not find any compatible species.")
+				return errors.New("compatibility threshold is set to ZERO - will not find any compatible species")
 			}
 			// For each organism, search for a species it is compatible to
 			done := false
-			var best_compatible *Species // the best compatible species
-			best_compat_value := math.MaxFloat64
-			for _, curr_species := range p.Species {
-				comp_org := curr_species.firstOrganism()
+			var bestCompatible *Species // the best compatible species
+			bestCompatValue := math.MaxFloat64
+			for _, currSpecies := range p.Species {
+				compOrg := currSpecies.firstOrganism()
 				// compare current organism with first organism in current specie
-				if comp_org != nil {
-					curr_compat := curr_org.Genotype.compatibility(comp_org.Genotype, context)
-					if curr_compat < context.CompatThreshold && curr_compat < best_compat_value {
-						best_compatible = curr_species
-						best_compat_value = curr_compat
+				if compOrg != nil {
+					currCompat := currOrg.Genotype.compatibility(compOrg.Genotype, context)
+					if currCompat < context.CompatThreshold && currCompat < bestCompatValue {
+						bestCompatible = currSpecies
+						bestCompatValue = currCompat
 						done = true
 					}
 				}
 			}
-			if done {
-				neat.DebugLog(fmt.Sprintf("POPULATION: Compatible species [%d] found for baby organism [%d]",
-					best_compatible.Id, curr_org.Genotype.Id))
+			if bestCompatible != nil && done {
+				if neat.LogLevel == neat.LogLevelDebug {
+					neat.DebugLog(fmt.Sprintf("POPULATION: Compatible species [%d] found for baby organism [%d]",
+						bestCompatible.Id, currOrg.Genotype.Id))
+				}
 				// Found compatible species, so add current organism to it
-				best_compatible.addOrganism(curr_org);
+				bestCompatible.addOrganism(currOrg)
 				// Point organism to its species
-				curr_org.Species = best_compatible
+				currOrg.Species = bestCompatible
 			} else {
 				// If we didn't find a match, create a new species
-				createFirstSpecies(p, curr_org)
+				createFirstSpecies(p, currOrg)
 			}
 		}
 	}
@@ -347,22 +357,24 @@ func (p *Population) speciate(organisms []*Organism, context *neat.NeatContext) 
 func (p *Population) purgeZeroOffspringSpecies(generation int) {
 	// Used to compute average fitness over all Organisms
 	total := 0.0
-	total_organisms := len(p.Organisms)
+	totalOrganisms := len(p.Organisms)
 
 	// Go through the organisms and add up their fitnesses to compute the overall average
 	for _, o := range p.Organisms {
 		total += o.Fitness
 	}
 	// The average modified fitness among ALL organisms
-	overall_average := total / float64(total_organisms)
-	neat.DebugLog(fmt.Sprintf(
-		"POPULATION: Generation %d: overall average fitness = %.3f, # of organisms: %d, # of species: %d\n",
-		generation, overall_average, len(p.Organisms), len(p.Species)))
+	overallAverage := total / float64(totalOrganisms)
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog(fmt.Sprintf(
+			"POPULATION: Generation %d: overall average fitness = %.3f, # of organisms: %d, # of species: %d\n",
+			generation, overallAverage, len(p.Organisms), len(p.Species)))
+	}
 
 	// Now compute expected number of offspring for each individual organism
-	if overall_average != 0 {
+	if overallAverage != 0 {
 		for _, o := range p.Organisms {
-			o.ExpectedOffspring = o.Fitness / overall_average
+			o.ExpectedOffspring = o.Fitness / overallAverage
 		}
 	}
 
@@ -370,196 +382,206 @@ func (p *Population) purgeZeroOffspringSpecies(generation int) {
 	// of counting Offspring
 	skim := 0.0
 	// precision checking
-	total_expected := 0
+	totalExpected := 0
 
 	// Now add those offspring up within each Species to get the number of offspring per Species
 	for _, sp := range p.Species {
 		sp.ExpectedOffspring, skim = sp.countOffspring(skim)
-		total_expected += sp.ExpectedOffspring
+		totalExpected += sp.ExpectedOffspring
 	}
-	neat.DebugLog(fmt.Sprintf("POPULATION: Total expected offspring count: %d", total_expected))
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog(fmt.Sprintf("POPULATION: Total expected offspring count: %d", totalExpected))
+	}
 
 	// Need to make up for lost floating point precision in offspring assignment.
 	// If we lost precision, give an extra baby to the best Species
-	if total_expected < total_organisms {
+	if totalExpected < totalOrganisms {
 		// Find the Species expecting the most
-		var best_species *Species
-		max_expected := 0
-		final_expected := 0
+		var bestSpecies *Species
+		maxExpected := 0
+		finalExpected := 0
 		for _, sp := range p.Species {
-			if sp.ExpectedOffspring >= max_expected {
-				max_expected = sp.ExpectedOffspring
-				best_species = sp
+			if sp.ExpectedOffspring >= maxExpected {
+				maxExpected = sp.ExpectedOffspring
+				bestSpecies = sp
 			}
-			final_expected += sp.ExpectedOffspring
+			finalExpected += sp.ExpectedOffspring
 		}
 		// Give the extra offspring to the best species
-		best_species.ExpectedOffspring += 1
-		final_expected++
+		if bestSpecies != nil {
+			bestSpecies.ExpectedOffspring += 1
+		}
+		finalExpected++
 
 		// If we still aren't at total, there is a problem. Note that this can happen if a stagnant Species
 		// dominates the population and then gets killed off by its age. Then the whole population plummets in
 		// fitness. If the average fitness is allowed to hit 0, then we no longer have an average we can use to
 		// assign offspring.
-		if final_expected < total_organisms {
-			neat.DebugLog(
-				fmt.Sprintf("POPULATION: Population died !!! (expected/total) %d/%d",
-					final_expected, total_organisms))
+		if finalExpected < totalOrganisms {
+			if neat.LogLevel == neat.LogLevelDebug {
+				neat.DebugLog(fmt.Sprintf("POPULATION: Population died !!! (expected/total) %d/%d", finalExpected, totalOrganisms))
+			}
 			for _, sp := range p.Species {
 				sp.ExpectedOffspring = 0
 			}
-			best_species.ExpectedOffspring = total_organisms
+			if bestSpecies != nil {
+				bestSpecies.ExpectedOffspring = totalOrganisms
+			}
 		}
 	}
 
 	// Remove stagnated species which can not produce any offspring any more
-	species_to_keep := make([]*Species, 0)
+	speciesToKeep := make([]*Species, 0)
 	for _, sp := range p.Species {
 		if sp.ExpectedOffspring > 0 {
-			species_to_keep = append(species_to_keep, sp)
+			speciesToKeep = append(speciesToKeep, sp)
 		}
 	}
-	p.Species = species_to_keep
+	p.Species = speciesToKeep
 }
 
 // When population stagnation detected the delta coding will be performed in attempt to fix this
-func (p *Population) deltaCoding(sorted_species []*Species, context *neat.NeatContext) {
+func (p *Population) deltaCoding(sortedSpecies []*Species, context *neat.NeatContext) {
 	neat.DebugLog("POPULATION: PERFORMING DELTA CODING TO FIX STAGNATION")
 	p.EpochsHighestLastChanged = 0
-	half_pop := context.PopSize / 2
+	halfPop := context.PopSize / 2
 
-	neat.DebugLog(fmt.Sprintf("half_pop: [%d] (pop_size - halfpop): [%d]\n",
-		half_pop, context.PopSize - half_pop))
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog(fmt.Sprintf("half_pop: [%d] (pop_size - halfpop): [%d]\n",
+			halfPop, context.PopSize-halfPop))
+	}
 
-	curr_species := sorted_species[0]
-	if len(sorted_species) > 1 {
+	currSpecies := sortedSpecies[0]
+	if len(sortedSpecies) > 1 {
 		// Assign population to first two species
-		curr_species.Organisms[0].superChampOffspring = half_pop
-		curr_species.ExpectedOffspring = half_pop
-		curr_species.AgeOfLastImprovement = curr_species.Age
+		currSpecies.Organisms[0].superChampOffspring = halfPop
+		currSpecies.ExpectedOffspring = halfPop
+		currSpecies.AgeOfLastImprovement = currSpecies.Age
 
 		// process the second species
-		curr_species = sorted_species[1]
+		currSpecies = sortedSpecies[1]
 		// NOTE: PopSize can be odd. That's why we use subtraction below
-		curr_species.Organisms[0].superChampOffspring = context.PopSize - half_pop
-		curr_species.ExpectedOffspring = context.PopSize - half_pop
-		curr_species.AgeOfLastImprovement = curr_species.Age
+		currSpecies.Organisms[0].superChampOffspring = context.PopSize - halfPop
+		currSpecies.ExpectedOffspring = context.PopSize - halfPop
+		currSpecies.AgeOfLastImprovement = currSpecies.Age
 
 		// Get rid of all species after the first two
-		for i := 2; i < len(sorted_species); i++ {
-			sorted_species[i].ExpectedOffspring = 0
+		for i := 2; i < len(sortedSpecies); i++ {
+			sortedSpecies[i].ExpectedOffspring = 0
 		}
 	} else {
-		curr_species = sorted_species[0]
-		curr_species.Organisms[0].superChampOffspring = context.PopSize
-		curr_species.ExpectedOffspring = context.PopSize
-		curr_species.AgeOfLastImprovement = curr_species.Age
+		currSpecies = sortedSpecies[0]
+		currSpecies.Organisms[0].superChampOffspring = context.PopSize
+		currSpecies.ExpectedOffspring = context.PopSize
+		currSpecies.AgeOfLastImprovement = currSpecies.Age
 	}
 }
 
 // The system can take expected offspring away from worse species and give them
 // to superior species depending on the system parameter BabiesStolen (when BabiesStolen > 0)
-func (p *Population) giveBabiesToTheBest(sorted_species []*Species, context *neat.NeatContext) {
-	stolen_babies := 0 // Babies taken from the bad species and given to the champs
+func (p *Population) giveBabiesToTheBest(sortedSpecies []*Species, context *neat.NeatContext) {
+	stolenBabies := 0 // Babies taken from the bad species and given to the champs
 
-	curr_species := sorted_species[0] // the best species
+	currSpecies := sortedSpecies[0] // the best species
 	// Take away a constant number of expected offspring from the worst few species
-	for i := len(sorted_species) - 1; i >= 0 && stolen_babies < context.BabiesStolen; i-- {
-		curr_species = sorted_species[i]
-		if curr_species.Age > 5 && curr_species.ExpectedOffspring > 2 {
-			if curr_species.ExpectedOffspring - 1 >= context.BabiesStolen - stolen_babies {
+	for i := len(sortedSpecies) - 1; i >= 0 && stolenBabies < context.BabiesStolen; i-- {
+		currSpecies = sortedSpecies[i]
+		if currSpecies.Age > 5 && currSpecies.ExpectedOffspring > 2 {
+			if currSpecies.ExpectedOffspring-1 >= context.BabiesStolen-stolenBabies {
 				// This species has enough to finish off the stolen pool
-				curr_species.ExpectedOffspring -= context.BabiesStolen - stolen_babies
-				stolen_babies = context.BabiesStolen
+				currSpecies.ExpectedOffspring -= context.BabiesStolen - stolenBabies
+				stolenBabies = context.BabiesStolen
 			} else {
 				// Not enough here to complete the pool of stolen
-				stolen_babies += curr_species.ExpectedOffspring - 1
-				curr_species.ExpectedOffspring = 1
+				stolenBabies += currSpecies.ExpectedOffspring - 1
+				currSpecies.ExpectedOffspring = 1
 			}
 		}
 	}
 
-	neat.DebugLog(fmt.Sprintf("POPULATION: STOLEN BABIES: %d\n", stolen_babies))
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog(fmt.Sprintf("POPULATION: STOLEN BABIES: %d\n", stolenBabies))
+	}
 
 	// Mark the best champions of the top species to be the super champs who will take on the extra
 	// offspring for cloning or mutant cloning.
 	// Determine the exact number that will be given to the top three.
 	// They will get, in order, 1/5 1/5 and 1/10 of the stolen babies
-	stolen_blocks := []int{context.BabiesStolen / 5, context.BabiesStolen / 5, context.BabiesStolen / 10}
-	block_index := 0
-	for _, curr_species = range sorted_species {
-		if curr_species.lastImproved() > context.DropOffAge {
+	stolenBlocks := []int{context.BabiesStolen / 5, context.BabiesStolen / 5, context.BabiesStolen / 10}
+	blockIndex := 0
+	for _, currSpecies = range sortedSpecies {
+		if currSpecies.lastImproved() > context.DropOffAge {
 			// Don't give a chance to dying species even if they are champs
 			continue
 		}
 
-		if block_index < 3 && stolen_babies >= stolen_blocks[block_index] {
+		if blockIndex < 3 && stolenBabies >= stolenBlocks[blockIndex] {
 			// Give stolen babies to the top three in 1/5 1/5 and 1/10 ratios
-			curr_species.Organisms[0].superChampOffspring = stolen_blocks[block_index]
-			curr_species.ExpectedOffspring += stolen_blocks[block_index]
-			stolen_babies -= stolen_blocks[block_index]
-		} else if block_index >= 3 {
+			currSpecies.Organisms[0].superChampOffspring = stolenBlocks[blockIndex]
+			currSpecies.ExpectedOffspring += stolenBlocks[blockIndex]
+			stolenBabies -= stolenBlocks[blockIndex]
+		} else if blockIndex >= 3 {
 			// Give stolen to the rest in random ratios
 			if rand.Float64() > 0.1 {
 				// Randomize a little which species get boosted by a super champ
-				if stolen_babies > 3 {
-					curr_species.Organisms[0].superChampOffspring = 3
-					curr_species.ExpectedOffspring += 3
-					stolen_babies -= 3
+				if stolenBabies > 3 {
+					currSpecies.Organisms[0].superChampOffspring = 3
+					currSpecies.ExpectedOffspring += 3
+					stolenBabies -= 3
 				} else {
-					curr_species.Organisms[0].superChampOffspring = stolen_babies
-					curr_species.ExpectedOffspring += stolen_babies
-					stolen_babies = 0
+					currSpecies.Organisms[0].superChampOffspring = stolenBabies
+					currSpecies.ExpectedOffspring += stolenBabies
+					stolenBabies = 0
 				}
 			}
 		}
 
-		if stolen_babies <= 0 {
+		if stolenBabies <= 0 {
 			break
 		}
-		block_index++
+		blockIndex++
 	}
 	// If any stolen babies aren't taken, give them to species #1's champ
-	if stolen_babies > 0 {
-		curr_species = sorted_species[0]
-		curr_species.Organisms[0].superChampOffspring += stolen_babies
-		curr_species.ExpectedOffspring += stolen_babies
+	if stolenBabies > 0 {
+		currSpecies = sortedSpecies[0]
+		currSpecies.Organisms[0].superChampOffspring += stolenBabies
+		currSpecies.ExpectedOffspring += stolenBabies
 	}
 }
 
 // Purge from population all organisms marked to be eliminated
 func (p *Population) purgeOrganisms() error {
-	org_to_keep := make([]*Organism, 0)
-	for _, curr_org := range p.Organisms {
-		if curr_org.toEliminate {
+	orgToKeep := make([]*Organism, 0)
+	for _, org := range p.Organisms {
+		if org.toEliminate {
 			// Remove the organism from its Species
-			_, err := curr_org.Species.removeOrganism(curr_org)
+			_, err := org.Species.removeOrganism(org)
 			if err != nil {
 				return err
 			}
 		} else {
 			// Keep organism in population
-			org_to_keep = append(org_to_keep, curr_org)
+			orgToKeep = append(orgToKeep, org)
 		}
 	}
 	// Keep only remained organisms in the population
-	p.Organisms = org_to_keep
+	p.Organisms = orgToKeep
 
 	return nil
 }
 
 // Destroy and remove the old generation of the organisms and of the species
-func (p *Population) purgeOldGeneration(best_species_id int) error {
-	for _, curr_org := range p.Organisms {
+func (p *Population) purgeOldGeneration(bestSpeciesId int) error {
+	for _, org := range p.Organisms {
 		// Remove the organism from its Species
-		_, err := curr_org.Species.removeOrganism(curr_org)
+		_, err := org.Species.removeOrganism(org)
 		if err != nil {
 			return err
 		}
 
-		if neat.LogLevel == neat.LogLevelDebug && curr_org.Species.Id == best_species_id {
+		if neat.LogLevel == neat.LogLevelDebug && org.Species.Id == bestSpeciesId {
 			neat.DebugLog(fmt.Sprintf("POPULATION: Removed organism [%d] from best species [%d] - %d organisms remained",
-				curr_org.Genotype.Id, best_species_id, len(curr_org.Species.Organisms)))
+				org.Genotype.Id, bestSpeciesId, len(org.Species.Organisms)))
 		}
 	}
 	p.Organisms = make([]*Organism, 0)
@@ -570,32 +592,34 @@ func (p *Population) purgeOldGeneration(best_species_id int) error {
 // Removes all empty Species and age ones that survive.
 // As this happens, create master organism list for the new generation.
 func (p *Population) purgeOrAgeSpecies() {
-	org_count := 0
-	species_to_keep := make([]*Species, 0)
-	for _, curr_species := range p.Species {
-		if len(curr_species.Organisms) > 0 {
+	orgCount := 0
+	speciesToKeep := make([]*Species, 0)
+	for _, currSpecies := range p.Species {
+		if len(currSpecies.Organisms) > 0 {
 			// Age surviving Species
-			if curr_species.IsNovel {
-				curr_species.IsNovel = false
+			if currSpecies.IsNovel {
+				currSpecies.IsNovel = false
 			} else {
-				curr_species.Age += 1
+				currSpecies.Age += 1
 			}
 			// Rebuild master Organism list of population: NUMBER THEM as they are added to the list
-			for _, curr_org := range curr_species.Organisms {
-				curr_org.Genotype.Id = org_count
-				p.Organisms = append(p.Organisms, curr_org)
-				org_count++
+			for _, org := range currSpecies.Organisms {
+				org.Genotype.Id = orgCount
+				p.Organisms = append(p.Organisms, org)
+				orgCount++
 			}
 			// keep this species
-			species_to_keep = append(species_to_keep, curr_species)
+			speciesToKeep = append(speciesToKeep, currSpecies)
 		} else if neat.LogLevel == neat.LogLevelDebug {
 			neat.DebugLog(fmt.Sprintf("POPULATION: >> Species [%d] have not survived reproduction!",
-				curr_species.Id))
+				currSpecies.Id))
 		}
 	}
 	// Keep only survived species
-	p.Species = species_to_keep
+	p.Species = speciesToKeep
 
-	neat.DebugLog(fmt.Sprintf("POPULATION: # of species survived: %d, # of organisms survived: %d\n",
-		len(p.Species), len(p.Organisms)))
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog(fmt.Sprintf("POPULATION: # of species survived: %d, # of organisms survived: %d\n",
+			len(p.Species), len(p.Organisms)))
+	}
 }

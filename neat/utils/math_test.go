@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"testing"
 	"math/rand"
+	"testing"
 )
 
 func TestSingleRouletteThrow(t *testing.T) {

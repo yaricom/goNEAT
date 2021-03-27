@@ -1,15 +1,15 @@
 package neat
 
 import (
-	"fmt"
-	"math/rand"
 	"errors"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"math/rand"
 )
 
 // The number of parameters used in neurons that learn through habituation,
 // sensitization, or Hebbian-type processes
-const Num_trait_params = 8
+const NumTraitParams = 8
 
 var (
 	ErrTraitsParametersCountMismatch = errors.New("traits parameters number mismatch")
@@ -20,13 +20,13 @@ var (
 // and those traits can evolve on their own.
 type Trait struct {
 	// The trait ID
-	Id     int
+	Id int
 	// The learned trait parameters
 	Params []float64
 }
 
 func NewTrait() *Trait {
-	trait := newTrait(Num_trait_params)
+	trait := newTrait(NumTraitParams)
 	return trait
 }
 
@@ -56,15 +56,15 @@ func NewTraitAvrg(t1, t2 *Trait) (*Trait, error) {
 // The default private constructor
 func newTrait(lenght int) *Trait {
 	return &Trait{
-		Params:make([]float64, lenght),
+		Params: make([]float64, lenght),
 	}
 }
 
 // Perturb the trait parameters slightly
-func (t *Trait) Mutate(trait_mutation_power, trait_param_mut_prob float64) {
+func (t *Trait) Mutate(traitMutationPower, traitParamMutProb float64) {
 	for i := 0; i < len(t.Params); i++ {
-		if rand.Float64() > trait_param_mut_prob {
-			t.Params[i] += float64(utils.RandSign()) * rand.Float64() * trait_mutation_power
+		if rand.Float64() > traitParamMutProb {
+			t.Params[i] += float64(utils.RandSign()) * rand.Float64() * traitMutationPower
 			if t.Params[i] < 0 {
 				t.Params[i] = 0
 			}

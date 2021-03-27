@@ -2,7 +2,7 @@ package network
 
 import (
 	"fmt"
-	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/v2/neat"
 )
 
 // A LINK is a connection from one node to another with an associated weight.

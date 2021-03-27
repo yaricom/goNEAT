@@ -1,118 +1,84 @@
 package pole
 
 import (
-	"testing"
-	"os"
-	"github.com/yaricom/goNEAT/neat"
 	"fmt"
-	"github.com/yaricom/goNEAT/neat/genetics"
-	"github.com/yaricom/goNEAT/experiments"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/experiments"
+	"github.com/yaricom/goNEAT/v2/experiments/utils"
+	"github.com/yaricom/goNEAT/v2/neat"
 	"math/rand"
+	"testing"
 )
 
 // Run double pole-balancing experiment with Markov environment setup
 func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T) {
 	// to make sure we have predictable results
-	rand.Seed(3423)
+	rand.Seed(423)
 
-	out_dir_path, context_path, genome_path := "../../out/pole2_markov_test", "../../data/pole2_markov.neat", "../../data/pole2_markov_startgenes"
+	outDirPath, contextPath, genomePath := "../../out/pole2_markov_test", "../../data/pole2_markov.neat", "../../data/pole2_markov_startgenes"
 
-	// Load context configuration
-	configFile, err := os.Open(context_path)
-	if err != nil {
-		t.Error("Failed to load context", err)
-		return
-	}
-	context := neat.LoadContext(configFile)
-	neat.LogLevel = neat.LogLevelInfo
-
-	// Load Genome
 	fmt.Println("Loading start genome for POLE2 Markov experiment")
-	genomeFile, err := os.Open(genome_path)
-	if err != nil {
-		t.Error("Failed to open genome file")
-		return
-	}
-	start_genome, err := genetics.ReadGenome(genomeFile, 1)
-	if err != nil {
-		t.Error("Failed to read start genome")
-		return
-	}
+	// Load context configuration
+	context, startGenome, err := utils.LoadContextAndGenome(contextPath, genomePath)
+	neat.LogLevel = neat.LogLevelInfo
+	require.NoError(t, err)
 
 	// Check if output dir exists
-	if _, err := os.Stat(out_dir_path); err == nil {
-		// clear it
-		os.RemoveAll(out_dir_path)
-	}
-	// create output dir
-	err = os.MkdirAll(out_dir_path, os.ModePerm)
-	if err != nil {
-		t.Errorf("Failed to create output directory, reason: %s", err)
-		return
-	}
+	err = utils.CreateOutputDir(outDirPath)
+	require.NoError(t, err, "Failed to create output directory")
 
 	// The 10 runs POLE2 Markov experiment
 	context.NumRuns = 5
 	experiment := experiments.Experiment{
-		Id:0,
-		Trials:make(experiments.Trials, context.NumRuns),
+		Id:     0,
+		Trials: make(experiments.Trials, context.NumRuns),
 	}
-	err = experiment.Execute(context, start_genome, CartDoublePoleGenerationEvaluator{
-		OutputPath:out_dir_path,
-		Markov:true,
-		ActionType:experiments.ContinuousAction,
-	})
-	if err != nil {
-		t.Error("Failed to perform POLE2 Markov experiment:", err)
-		return
-	}
+	err = experiment.Execute(context, startGenome, NewCartDoublePoleGenerationEvaluator(outDirPath, true, experiments.ContinuousAction))
+	require.NoError(t, err, "Failed to perform POLE2 Markov experiment")
 
 	// Find winner statistics
-	avg_nodes, avg_genes, avg_evals, _ := experiment.AvgWinner()
+	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinner()
 
 	// check results
-	if avg_nodes < 8 {
-		t.Error("avg_nodes < 8", avg_nodes)
-	} else if avg_nodes > 40 {
-		t.Error("avg_nodes > 40", avg_nodes)
+	if avgNodes < 8 {
+		t.Error("avg_nodes < 8", avgNodes)
+	} else if avgNodes > 40 {
+		t.Error("avg_nodes > 40", avgNodes)
 	}
 
-	if avg_genes < 7 {
-		t.Error("avg_genes < 7", avg_genes)
-	} else if avg_genes > 50 {
-		t.Error("avg_genes > 50", avg_genes)
+	if avgGenes < 7 {
+		t.Error("avg_genes < 7", avgGenes)
+	} else if avgGenes > 50 {
+		t.Error("avg_genes > 50", avgGenes)
 	}
 
-	max_evals := float64(context.PopSize * context.NumGenerations)
-	if avg_evals > max_evals {
-		t.Error("avg_evals > max_evals", avg_evals, max_evals)
-	}
+	maxEvals := float64(context.PopSize * context.NumGenerations)
+	assert.True(t, avgEvals < maxEvals)
 
-	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
-	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
+	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)
+	meanComplexity, meanDiversity, meanAge := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		mean_complexity += t.BestComplexity().Mean()
-		mean_diversity += t.Diversity().Mean()
-		mean_age += t.BestAge().Mean()
+		meanComplexity += t.BestComplexity().Mean()
+		meanDiversity += t.Diversity().Mean()
+		meanAge += t.BestAge().Mean()
 	}
 	count := float64(len(experiment.Trials))
-	mean_complexity /= count
-	mean_diversity /= count
-	mean_age /= count
-	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
+	meanComplexity /= count
+	meanDiversity /= count
+	meanAge /= count
+	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f\n", meanComplexity, meanDiversity, meanAge)
 
-	solved_trials := 0
+	solvedTrials := 0
 	for _, tr := range experiment.Trials {
 		if tr.Solved() {
-			solved_trials++
+			solvedTrials++
 		}
 	}
 
-	t.Logf("Trials solved/run: %d/%d", solved_trials, len(experiment.Trials))
+	t.Logf("Trials solved/run: %d/%d", solvedTrials, len(experiment.Trials))
 
-	if solved_trials == 0 {
-		t.Error("Failed to solve at least one trial. Need to be checked what was going wrong")
-	}
+	assert.NotZero(t, solvedTrials, "Failed to solve at least one trial. Need to be checked what was going wrong")
 }
 
 // Run double pole-balancing experiment with Non-Markov environment setup
@@ -120,112 +86,77 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	// to make sure we have predictable results
 	rand.Seed(423)
 
-	out_dir_path, context_path, genome_path := "../../out/pole2_non-markov_test", "../../data/pole2_non-markov.neat", "../../data/pole2_non-markov_startgenes"
+	outDirPath, contextPath, genomePath := "../../out/pole2_non-markov_test", "../../data/pole2_non-markov.neat", "../../data/pole2_non-markov_startgenes"
 
-	// Load context configuration
-	configFile, err := os.Open(context_path)
-	if err != nil {
-		t.Error("Failed to load context", err)
-		return
-	}
-	context := neat.LoadContext(configFile)
-	neat.LogLevel = neat.LogLevelInfo
-
-	// Load Genome
 	fmt.Println("Loading start genome for POLE2 Non-Markov experiment")
-	genomeFile, err := os.Open(genome_path)
-	if err != nil {
-		t.Error("Failed to open genome file")
-		return
-	}
-	start_genome, err := genetics.ReadGenome(genomeFile, 1)
-	if err != nil {
-		t.Error("Failed to read start genome")
-		return
-	}
+	// Load context configuration
+	context, startGenome, err := utils.LoadContextAndGenome(contextPath, genomePath)
+	neat.LogLevel = neat.LogLevelInfo
+	require.NoError(t, err)
 
 	// Check if output dir exists
-	if _, err := os.Stat(out_dir_path); err == nil {
-		// clear it
-		os.RemoveAll(out_dir_path)
-	}
-	// create output dir
-	err = os.MkdirAll(out_dir_path, os.ModePerm)
-	if err != nil {
-		t.Errorf("Failed to create output directory, reason: %s", err)
-		return
-	}
+	err = utils.CreateOutputDir(outDirPath)
+	require.NoError(t, err, "Failed to create output directory")
 
 	// The 10 runs POLE2 Non-Markov experiment
 	context.NumRuns = 5
 	experiment := experiments.Experiment{
-		Id:0,
-		Trials:make(experiments.Trials, context.NumRuns),
+		Id:     0,
+		Trials: make(experiments.Trials, context.NumRuns),
 	}
-	err = experiment.Execute(context, start_genome, CartDoublePoleGenerationEvaluator{
-		OutputPath:out_dir_path,
-		Markov:false,
-		ActionType:experiments.ContinuousAction,
-	})
-	if err != nil {
-		t.Error("Failed to perform POLE2 Non-Markov experiment:", err)
-		return
-	}
+	err = experiment.Execute(context, startGenome, NewCartDoublePoleGenerationEvaluator(outDirPath, false, experiments.ContinuousAction))
+	require.NoError(t, err, "Failed to perform POLE2 Non-Markov experiment")
 
 	// Find winner statistics
-	avg_nodes, avg_genes, avg_evals, _ := experiment.AvgWinner()
+	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinner()
 
 	// check results
-	if avg_nodes < 5 {
-		t.Error("avg_nodes < 5", avg_nodes)
-	} else if avg_nodes > 40 {
-		t.Error("avg_nodes > 40", avg_nodes)
+	if avgNodes < 5 {
+		t.Error("avg_nodes < 5", avgNodes)
+	} else if avgNodes > 40 {
+		t.Error("avg_nodes > 40", avgNodes)
 	}
 
-	if avg_genes < 5 {
-		t.Error("avg_genes < 5", avg_genes)
-	} else if avg_genes > 50 {
-		t.Error("avg_genes > 50", avg_genes)
+	if avgGenes < 5 {
+		t.Error("avg_genes < 5", avgGenes)
+	} else if avgGenes > 50 {
+		t.Error("avg_genes > 50", avgGenes)
 	}
 
-	max_evals := float64(context.PopSize * context.NumGenerations)
-	if avg_evals > max_evals {
-		t.Error("avg_evals > max_evals", avg_evals, max_evals)
-	}
+	maxEvals := float64(context.PopSize * context.NumGenerations)
+	assert.True(t, avgEvals < maxEvals)
 
-	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avg_nodes, avg_genes, avg_evals)
-	mean_complexity, mean_diversity, mean_age := 0.0, 0.0, 0.0
+	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)
+	meanComplexity, meanDiversity, meanAge := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		mean_complexity += t.BestComplexity().Mean()
-		mean_diversity += t.Diversity().Mean()
-		mean_age += t.BestAge().Mean()
+		meanComplexity += t.BestComplexity().Mean()
+		meanDiversity += t.Diversity().Mean()
+		meanAge += t.BestAge().Mean()
 	}
 	count := float64(len(experiment.Trials))
-	mean_complexity /= count
-	mean_diversity /= count
-	mean_age /= count
-	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f\n", mean_complexity, mean_diversity, mean_age)
+	meanComplexity /= count
+	meanDiversity /= count
+	meanAge /= count
+	t.Logf("Mean best organisms: complexity=%.1f, diversity=%.1f, age=%.1f\n", meanComplexity, meanDiversity, meanAge)
 
-	solved_trials := 0
+	solvedTrials := 0
 	for _, tr := range experiment.Trials {
 		if tr.Solved() {
-			solved_trials++
+			solvedTrials++
 		}
 	}
-	t.Logf("Trials solved/run: %d/%d\n", solved_trials, len(experiment.Trials))
+	t.Logf("Trials solved/run: %d/%d\n", solvedTrials, len(experiment.Trials))
 
-	if solved_trials == 0 {
-		t.Error("Failed to solve at least one trial. Need to be checked what was going wrong")
-	}
+	require.NotZero(t, solvedTrials, "Failed to solve at least one trial. Need to be checked what was going wrong")
 
-	best_g_score := 0.0
+	bestGeneralizationScore := 0.0
 	for _, tr := range experiment.Trials {
 		if org, found := tr.BestOrganism(true); found {
-			best_org_score := org.Fitness
-			if best_org_score > best_g_score {
-				best_g_score = best_org_score
+			bestOrgScore := org.Fitness
+			if bestOrgScore > bestGeneralizationScore {
+				bestGeneralizationScore = bestOrgScore
 			}
 		}
 	}
-	t.Logf("Best Generalization Score: %.0f\n", best_g_score)
+	t.Logf("Best Generalization Score: %.0f\n", bestGeneralizationScore)
 }

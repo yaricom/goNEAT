@@ -3,14 +3,13 @@ package experiments
 import (
 	"bytes"
 	"encoding/gob"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"reflect"
 	"testing"
 	"time"
-	"reflect"
-
-	"github.com/yaricom/goNEAT/neat"
-	"github.com/yaricom/goNEAT/neat/utils"
-	"github.com/yaricom/goNEAT/neat/genetics"
-	"github.com/yaricom/goNEAT/neat/network"
 )
 
 // Tests encoding/decoding of generation
@@ -59,8 +58,8 @@ func deepCompareGenerations(first, second *Generation, t *testing.T) {
 	if !reflect.DeepEqual(first.Age, second.Age) {
 		t.Error("Age values mismatch")
 	}
-	if !reflect.DeepEqual(first.Compexity, second.Compexity) {
-		t.Error("Compexity values mismatch")
+	if !reflect.DeepEqual(first.Complexity, second.Complexity) {
+		t.Error("Complexity values mismatch")
 	}
 
 	if first.Diversity != second.Diversity {
@@ -108,14 +107,14 @@ func buildTestGeneration(gen_id int, fitness float64) *Generation {
 	epoch.Solved = true
 	epoch.Fitness = Floats{10.0, 30.0, 40.0, fitness}
 	epoch.Age = Floats{1.0, 3.0, 4.0, 10.0}
-	epoch.Compexity = Floats{34.0, 21.0, 56.0, 15.0}
+	epoch.Complexity = Floats{34.0, 21.0, 56.0, 15.0}
 	epoch.Diversity = 32
 	epoch.WinnerEvals = 12423
 	epoch.WinnerNodes = 7
 	epoch.WinnerGenes = 5
 
 	genome := buildTestGenome(gen_id)
-	org := genetics.Organism{Fitness:fitness, Genotype:genome, Generation:gen_id}
+	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: gen_id}
 	epoch.Best = &org
 
 	return &epoch
@@ -123,16 +122,16 @@ func buildTestGeneration(gen_id int, fitness float64) *Generation {
 
 func buildTestGenome(id int) *genetics.Genome {
 	traits := []*neat.Trait{
-		{Id:1, Params:[]float64{0.1, 0, 0, 0, 0, 0, 0, 0}},
-		{Id:3, Params:[]float64{0.3, 0, 0, 0, 0, 0, 0, 0}},
-		{Id:2, Params:[]float64{0.2, 0, 0, 0, 0, 0, 0, 0}},
+		{Id: 1, Params: []float64{0.1, 0, 0, 0, 0, 0, 0, 0}},
+		{Id: 3, Params: []float64{0.3, 0, 0, 0, 0, 0, 0, 0}},
+		{Id: 2, Params: []float64{0.2, 0, 0, 0, 0, 0, 0, 0}},
 	}
 
 	nodes := []*network.NNode{
-		{Id:1, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:3, NeuronType: network.BiasNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:4, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 1, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 3, NeuronType: network.BiasNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 4, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
 
 	genes := []*genetics.Gene{

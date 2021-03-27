@@ -1,20 +1,20 @@
 package genetics
 
 import (
-	"testing"
-	"github.com/yaricom/goNEAT/neat/network"
-	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"reflect"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"testing"
 )
 
 // Tests Gene WriteGene
 func TestNewGeneCopy(t *testing.T) {
 	nodes := []*network.NNode{
-		{Id:1, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:2, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 1, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 2, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
-	trait := &neat.Trait{Id:1, Params:[]float64{0.1, 0, 0, 0, 0, 0, 0, 0}}
+	trait := &neat.Trait{Id: 1, Params: []float64{0.1, 0, 0, 0, 0, 0, 0, 0}}
 	g1 := NewGeneWithTrait(trait, 3.2, nodes[0], nodes[1], true, 42, 5.2)
 
 	// test

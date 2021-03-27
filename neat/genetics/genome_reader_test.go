@@ -1,22 +1,21 @@
 package genetics
 
 import (
-	"testing"
-	"strings"
-	"github.com/yaricom/goNEAT/neat/network"
 	"fmt"
+	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"os"
-	"github.com/yaricom/goNEAT/neat"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"strings"
+	"testing"
 )
 
 func TestPlainGenomeReader_Read(t *testing.T) {
-	r, err := NewGenomeReader(strings.NewReader(gnome_str), PlainGenomeEncoding)
+	r, err := NewGenomeReader(strings.NewReader(gnomeStr), PlainGenomeEncoding)
+	require.NoError(t, err, "failed to create reader")
 	gnome, err := r.Read()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	require.NoError(t, err, "failed to read genome")
 	if gnome == nil {
 		t.Error("gnome == nil")
 		return
@@ -34,7 +33,7 @@ func TestPlainGenomeReader_Read(t *testing.T) {
 		if len(tr.Params) != 8 {
 			t.Error("Wrong Trait's parameters lenght", len(tr.Params))
 		}
-		if tr.Params[0] != float64(ids[i]) / 10.0 {
+		if tr.Params[0] != float64(ids[i])/10.0 {
 			t.Error("Wrong Trait params read", tr.Params[0], i)
 		}
 	}
@@ -44,7 +43,7 @@ func TestPlainGenomeReader_Read(t *testing.T) {
 		return
 	}
 	for i, n := range gnome.Nodes {
-		if n.Id != i + 1 {
+		if n.Id != i+1 {
 			t.Error("Wrong NNode Id", n.Id)
 		}
 		if i < 3 && !n.IsSensor() {
@@ -72,22 +71,22 @@ func TestPlainGenomeReader_Read(t *testing.T) {
 	}
 
 	for i, g := range gnome.Genes {
-		if g.Link.Trait.Id != i + 1 {
+		if g.Link.Trait.Id != i+1 {
 			t.Error("Gene Link Traid Id is wrong", g.Link.Trait.Id)
 		}
-		if g.Link.InNode.Id != i + 1 {
+		if g.Link.InNode.Id != i+1 {
 			t.Error("Gene link's input node Id is wrong", g.Link.InNode.Id)
 		}
 		if g.Link.OutNode.Id != 4 {
 			t.Error("Gene link's output node Id is wrong", g.Link.OutNode.Id)
 		}
-		if g.Link.Weight != float64(i) + 1.5 {
+		if g.Link.Weight != float64(i)+1.5 {
 			t.Error("Gene link's weight is wrong", g.Link.Weight)
 		}
 		if g.Link.IsRecurrent {
 			t.Error("Gene link's recurrent flag is wrong")
 		}
-		if g.InnovationNum != int64(i + 1) {
+		if g.InnovationNum != int64(i+1) {
 			t.Error("Gene's innovation number is wrong", g.InnovationNum)
 		}
 		if g.MutationNum != float64(0) {
@@ -225,7 +224,7 @@ func TestPlainGenomeReader_ReadFile(t *testing.T) {
 		return
 	}
 	for i, n := range genome.Nodes {
-		if n.Id != i + 1 {
+		if n.Id != i+1 {
 			t.Error("Wrong NNode Id", n.Id)
 		}
 		if i < 3 && !n.IsSensor() {
@@ -253,13 +252,13 @@ func TestPlainGenomeReader_ReadFile(t *testing.T) {
 		return
 	}
 	for i, tr := range genome.Traits {
-		if tr.Id != i + 1 {
+		if tr.Id != i+1 {
 			t.Error("Wrong Traint ID", tr.Id)
 		}
 		if len(tr.Params) != 8 {
 			t.Error("Wrong Trait's parameters lenght", len(tr.Params))
 		}
-		if tr.Params[0] != float64(i + 1) / 10.0 {
+		if tr.Params[0] != float64(i+1)/10.0 {
 			t.Error("Wrong Trait params read", tr.Params[0])
 		}
 	}
@@ -288,25 +287,25 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		t.Error("len(genome.Nodes) != 14", len(genome.Nodes))
 	}
 	nodes := []*network.NNode{
-		{Id:1, NeuronType: network.BiasNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 1, NeuronType: network.BiasNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 
-		{Id:2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:3, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:4, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:5, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 3, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 4, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 5, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 
-		{Id:6, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidBipolarActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:7, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidBipolarActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 6, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidBipolarActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 7, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidBipolarActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 
-		{Id:8, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:9, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:10, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 8, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 9, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 10, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 
-		{Id:11, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:12, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:13, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 11, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 12, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 13, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 
-		{Id:14, NeuronType: network.HiddenNeuron, ActivationType: utils.SignActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 14, NeuronType: network.HiddenNeuron, ActivationType: utils.SignActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
 	for i, n := range nodes {
 		if n.Id != genome.Nodes[i].Id {
@@ -325,10 +324,10 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		t.Error("len(genome.Traits) != 15", len(genome.Traits))
 	}
 	for i, tr := range genome.Traits {
-		if tr.Id != i + 1 {
+		if tr.Id != i+1 {
 			t.Error("tr.Id != i + 1 at", i)
 		}
-		if tr.Params[0] != float64(i + 1) / 10.0 {
+		if tr.Params[0] != float64(i+1)/10.0 {
 			t.Error("Wrong trait param at", i, tr.Params[0])
 		}
 	}
@@ -382,10 +381,10 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 	}
 	id_count := 8
 	for i, g := range genome.ControlGenes {
-		if g.InnovationNum != int64(i + 16) {
+		if g.InnovationNum != int64(i+16) {
 			t.Error("Wrong innovation number at: ", i, g.InnovationNum)
 		}
-		if g.MutationNum != 0.5 + float64(i) {
+		if g.MutationNum != 0.5+float64(i) {
 			t.Error("Wrong muttanion number at:", i, g.MutationNum)
 		}
 		if g.IsEnabled == false {
@@ -395,7 +394,7 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 			t.Error("g.ControlNode == nil at:", i)
 			return
 		}
-		if g.ControlNode.Id != i + 15 {
+		if g.ControlNode.Id != i+15 {
 			t.Error("Wrong control node ID at:", i, g.ControlNode.Id)
 		}
 		if g.ControlNode.ActivationType != utils.MultiplyModuleActivation {

@@ -4,13 +4,13 @@ package network
 import (
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"math"
 )
 
 var (
 	// The error to be raised when maximal number of network activation attempts exceeded
-	NetErrExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded.")
+	NetErrExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded")
 	// The error to be raised when unsupported sensors data array size provided
 	NetErrUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
 	// The error to be raised when depth calculation failed due to the loop in network

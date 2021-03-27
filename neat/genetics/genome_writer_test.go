@@ -1,14 +1,14 @@
 package genetics
 
 import (
-	"testing"
-	"bytes"
-	"github.com/yaricom/goNEAT/neat"
-	"fmt"
-	"strings"
 	"bufio"
-	"github.com/yaricom/goNEAT/neat/network"
+	"bytes"
+	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/network"
 	"reflect"
+	"strings"
+	"testing"
 )
 
 func TestPlainGenomeWriter_WriteTrait(t *testing.T) {
@@ -24,7 +24,7 @@ func TestPlainGenomeWriter_WriteTrait(t *testing.T) {
 		trait_id, params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7])
 
 	out_buffer := bytes.NewBufferString("")
-	wr := plainGenomeWriter{w:bufio.NewWriter(out_buffer)}
+	wr := plainGenomeWriter{w: bufio.NewWriter(out_buffer)}
 	err := wr.writeTrait(trait)
 	if err != nil {
 		t.Error(err)
@@ -49,7 +49,7 @@ func TestPlainGenomeWriter_WriteNetworkNode(t *testing.T) {
 	node.Trait = trait
 	out_buffer := bytes.NewBufferString("")
 
-	wr := plainGenomeWriter{w:bufio.NewWriter(out_buffer)}
+	wr := plainGenomeWriter{w: bufio.NewWriter(out_buffer)}
 	err := wr.writeNetworkNode(node)
 	if err != nil {
 		t.Error(err)
@@ -80,7 +80,7 @@ func TestPlainGenomeWriter_WriteConnectionGene(t *testing.T) {
 
 	out_buf := bytes.NewBufferString("")
 
-	wr := plainGenomeWriter{w:bufio.NewWriter(out_buf)}
+	wr := plainGenomeWriter{w: bufio.NewWriter(out_buf)}
 	err := wr.writeConnectionGene(gene)
 	if err != nil {
 		t.Error(err)
@@ -106,7 +106,7 @@ func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 		return
 	}
 
-	g_scanner := bufio.NewScanner(strings.NewReader(gnome_str))
+	g_scanner := bufio.NewScanner(strings.NewReader(gnomeStr))
 	g_scanner.Split(bufio.ScanLines)
 
 	o_scanner := bufio.NewScanner(out_buf)
@@ -119,7 +119,7 @@ func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 		g_text := g_scanner.Text()
 		o_text := o_scanner.Text()
 		if g_text != o_text {
-			t.Error(fmt.Sprintf("Lines mismatch [%s] != [%s]" , g_text, o_text))
+			t.Error(fmt.Sprintf("Lines mismatch [%s] != [%s]", g_text, o_text))
 		}
 	}
 }
@@ -140,7 +140,7 @@ func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
 	//t.Log(out_buf.String())
 
 	// decode genome and compare
-	enc := yamlGenomeReader{r:bufio.NewReader(bytes.NewBuffer(out_buf.Bytes()))}
+	enc := yamlGenomeReader{r: bufio.NewReader(bytes.NewBuffer(out_buf.Bytes()))}
 	gnome_enc, err := enc.Read()
 	if err != nil {
 		t.Error(err)
@@ -231,7 +231,7 @@ func checkLinks(left, right []*network.Link, t *testing.T) {
 			t.Error("l.InNode.Id != r.InNode.Id", l.InNode.Id, r.InNode.Id)
 		}
 		if l.OutNode.Id != r.OutNode.Id {
-			t.Error("l.OutNode.Id != r.OutNode.Id", l.OutNode.Id, r.OutNode.Id )
+			t.Error("l.OutNode.Id != r.OutNode.Id", l.OutNode.Id, r.OutNode.Id)
 		}
 		if l.Weight != r.Weight {
 			t.Error("l.Weight != r.Weight", l.Weight, r.Weight)

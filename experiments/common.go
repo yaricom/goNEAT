@@ -2,13 +2,13 @@
 package experiments
 
 import (
-	"github.com/yaricom/goNEAT/neat/genetics"
-	"github.com/yaricom/goNEAT/neat"
-	"fmt"
-	"time"
-	"os"
-	"log"
 	"errors"
+	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"log"
+	"os"
+	"time"
 )
 
 // The type of action to be applied to environment
@@ -43,19 +43,19 @@ func epochExecutorForContext(context *neat.NeatContext) (genetics.PopulationEpoc
 	case genetics.ParallelExecutorType:
 		return &genetics.ParallelPopulationEpochExecutor{}, nil
 	default:
-		return nil, errors.New("Unsupported epoch executor type requested")
+		return nil, errors.New("unsupported epoch executor type requested")
 	}
 }
 
 // The Experiment execution entry point
-func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.Genome, executor interface{}) (err error) {
-	if ex.Trials == nil {
-		ex.Trials = make(Trials, context.NumRuns)
+func (e *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.Genome, executor interface{}) (err error) {
+	if e.Trials == nil {
+		e.Trials = make(Trials, context.NumRuns)
 	}
 
 	var pop *genetics.Population
 	for run := 0; run < context.NumRuns; run++ {
-		trial_start_time := time.Now()
+		trialStartTime := time.Now()
 
 		neat.InfoLog("\n>>>>> Spawning new population ")
 		pop, err = genetics.NewPopulation(start_genome, context)
@@ -75,32 +75,32 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 		}
 
 		// create appropriate population's epoch executor
-		epoch_executor, err := epochExecutorForContext(context)
+		epochExecutor, err := epochExecutorForContext(context)
 		if err != nil {
 			return err
 		}
 
 		// start new trial
-		trial := Trial {
-			Id:run,
+		trial := Trial{
+			Id: run,
 		}
 
-		if trial_observer, ok := executor.(TrialRunObserver); ok {
-			trial_observer.TrialRunStarted(&trial) // optional
+		if trialObserver, ok := executor.(TrialRunObserver); ok {
+			trialObserver.TrialRunStarted(&trial) // optional
 		}
 
-		generation_evaluator := executor.(GenerationEvaluator) // mandatory
+		generationEvaluator := executor.(GenerationEvaluator) // mandatory
 
-		for generation_id := 0; generation_id < context.NumGenerations; generation_id++ {
-			neat.InfoLog(fmt.Sprintf(">>>>> Generation:%3d\tRun: %d\n", generation_id, run))
+		for generationId := 0; generationId < context.NumGenerations; generationId++ {
+			neat.InfoLog(fmt.Sprintf(">>>>> Generation:%3d\tRun: %d\n", generationId, run))
 			generation := Generation{
-				Id:generation_id,
-				TrialId:run,
+				Id:      generationId,
+				TrialId: run,
 			}
-			gen_start_time := time.Now()
-			err = generation_evaluator.GenerationEvaluate(pop, &generation, context)
+			genStartTime := time.Now()
+			err = generationEvaluator.GenerationEvaluate(pop, &generation, context)
 			if err != nil {
-				neat.InfoLog(fmt.Sprintf("!!!!! Generation [%d] evaluation failed !!!!!\n", generation_id))
+				neat.InfoLog(fmt.Sprintf("!!!!! Generation [%d] evaluation failed !!!!!\n", generationId))
 				return err
 			}
 			generation.Executed = time.Now()
@@ -108,30 +108,30 @@ func (ex *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.
 			// Turnover population of organisms to the next epoch if appropriate
 			if !generation.Solved {
 				neat.DebugLog(">>>>> start next generation")
-				err = epoch_executor.NextEpoch(generation_id, pop, context)
+				err = epochExecutor.NextEpoch(generationId, pop, context)
 				if err != nil {
-					neat.InfoLog(fmt.Sprintf("!!!!! Epoch execution failed in generation [%d] !!!!!\n", generation_id))
+					neat.InfoLog(fmt.Sprintf("!!!!! Epoch execution failed in generation [%d] !!!!!\n", generationId))
 					return err
 				}
 			}
 
 			// Set generation duration, which also includes preparation for the next epoch
-			generation.Duration = generation.Executed.Sub(gen_start_time)
+			generation.Duration = generation.Executed.Sub(genStartTime)
 			trial.Generations = append(trial.Generations, generation)
 
 			if generation.Solved {
 				// stop further evaluation if already solved
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation, fitness: %f <<<<<\n",
-					generation_id, generation.Best.Fitness))
+					generationId, generation.Best.Fitness))
 				break
 			}
 
 		}
 		// holds trial duration
-		trial.Duration = time.Now().Sub(trial_start_time)
+		trial.Duration = time.Now().Sub(trialStartTime)
 
 		// store trial into experiment
-		ex.Trials[run] = trial
+		e.Trials[run] = trial
 	}
 
 	return nil

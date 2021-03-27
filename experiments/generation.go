@@ -1,37 +1,38 @@
 package experiments
 
 import (
-	"time"
-	"github.com/yaricom/goNEAT/neat/genetics"
-	"math"
-	"encoding/gob"
 	"bytes"
+	"encoding/gob"
+	"github.com/pkg/errors"
+	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"math"
 	"reflect"
 	"sort"
+	"time"
 )
 
 // The structure to represent execution results of one generation
 type Generation struct {
 	// The generation ID for this epoch
-	Id          int
+	Id int
 	// The time when epoch was evaluated
-	Executed    time.Time
+	Executed time.Time
 	// The elapsed time between generation execution start and finish
-	Duration    time.Duration
+	Duration time.Duration
 	// The best organism of best species
-	Best        *genetics.Organism
+	Best *genetics.Organism
 	// The flag to indicate whether experiment was solved in this epoch
-	Solved      bool
+	Solved bool
 
 	// The list of organisms fitness values per species in population
-	Fitness     Floats
+	Fitness Floats
 	// The age of organisms per species in population
-	Age         Floats
+	Age Floats
 	// The list of organisms complexities per species in population
-	Compexity   Floats
+	Complexity Floats
 
 	// The number of species in population at the end of this epoch
-	Diversity   int
+	Diversity int
 
 	// The number of evaluations done before winner found
 	WinnerEvals int
@@ -41,61 +42,61 @@ type Generation struct {
 	WinnerGenes int
 
 	// The ID of Trial this Generation was evaluated in
-	TrialId     int
+	TrialId int
 }
 
 // Collects statistics about given population
-func (epoch *Generation) FillPopulationStatistics(pop *genetics.Population) {
-	max_fitness := float64(math.MinInt64)
-	epoch.Diversity = len(pop.Species)
-	epoch.Age = make(Floats, epoch.Diversity)
-	epoch.Compexity = make(Floats, epoch.Diversity)
-	epoch.Fitness = make(Floats, epoch.Diversity)
-	for i, curr_species := range pop.Species {
-		epoch.Age[i] = float64(curr_species.Age)
-		epoch.Compexity[i] = float64(curr_species.Organisms[0].Phenotype.Complexity())
-		epoch.Fitness[i] = curr_species.Organisms[0].Fitness
+func (g *Generation) FillPopulationStatistics(pop *genetics.Population) {
+	maxFitness := float64(math.MinInt64)
+	g.Diversity = len(pop.Species)
+	g.Age = make(Floats, g.Diversity)
+	g.Complexity = make(Floats, g.Diversity)
+	g.Fitness = make(Floats, g.Diversity)
+	for i, currSpecies := range pop.Species {
+		g.Age[i] = float64(currSpecies.Age)
+		g.Complexity[i] = float64(currSpecies.Organisms[0].Phenotype.Complexity())
+		g.Fitness[i] = currSpecies.Organisms[0].Fitness
 
 		// find best organism in epoch if not solved
-		if !epoch.Solved {
+		if !g.Solved {
 			// sort organisms from current species by fitness to have most fit first
-			sort.Sort(sort.Reverse(curr_species.Organisms))
-			if curr_species.Organisms[0].Fitness > max_fitness {
-				max_fitness = curr_species.Organisms[0].Fitness
-				epoch.Best = curr_species.Organisms[0]
+			sort.Sort(sort.Reverse(currSpecies.Organisms))
+			if currSpecies.Organisms[0].Fitness > maxFitness {
+				maxFitness = currSpecies.Organisms[0].Fitness
+				g.Best = currSpecies.Organisms[0]
 			}
 		}
 	}
 }
 
 // Returns average fitness, age, and complexity among all organisms from population at the end of this epoch
-func (epoch *Generation) Average() (fitness, age, complexity float64) {
-	fitness = epoch.Fitness.Mean()
-	age = epoch.Age.Mean()
-	complexity = epoch.Compexity.Mean()
+func (g *Generation) Average() (fitness, age, complexity float64) {
+	fitness = g.Fitness.Mean()
+	age = g.Age.Mean()
+	complexity = g.Complexity.Mean()
 	return fitness, age, complexity
 }
 
 // Encodes generation with provided GOB encoder
-func (epoch *Generation) Encode(enc *gob.Encoder) error {
-	err := enc.EncodeValue(reflect.ValueOf(epoch.Id))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.Executed))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.Solved))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.Fitness))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.Age))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.Compexity))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.Diversity))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.WinnerEvals))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.WinnerNodes))
-	err = enc.EncodeValue(reflect.ValueOf(epoch.WinnerGenes))
+func (g *Generation) Encode(enc *gob.Encoder) error {
+	err := enc.EncodeValue(reflect.ValueOf(g.Id))
+	err = enc.EncodeValue(reflect.ValueOf(g.Executed))
+	err = enc.EncodeValue(reflect.ValueOf(g.Solved))
+	err = enc.EncodeValue(reflect.ValueOf(g.Fitness))
+	err = enc.EncodeValue(reflect.ValueOf(g.Age))
+	err = enc.EncodeValue(reflect.ValueOf(g.Complexity))
+	err = enc.EncodeValue(reflect.ValueOf(g.Diversity))
+	err = enc.EncodeValue(reflect.ValueOf(g.WinnerEvals))
+	err = enc.EncodeValue(reflect.ValueOf(g.WinnerNodes))
+	err = enc.EncodeValue(reflect.ValueOf(g.WinnerGenes))
 
 	if err != nil {
 		return err
 	}
 
 	// encode best organism
-	if epoch.Best != nil {
-		err = encodeOrganism(enc, epoch.Best)
+	if g.Best != nil {
+		err = encodeOrganism(enc, g.Best)
 	}
 	return err
 }
@@ -114,59 +115,90 @@ func encodeOrganism(enc *gob.Encoder, org *genetics.Organism) error {
 	// encode organism genome
 	if org.Genotype != nil {
 		err = enc.Encode(org.Genotype.Id)
-		out_buf := bytes.NewBufferString("")
-		org.Genotype.Write(out_buf)
-		err = enc.Encode(out_buf.Bytes())
+		outBuf := bytes.NewBufferString("")
+		if err = org.Genotype.Write(outBuf); err != nil {
+			return err
+		}
+		err = enc.Encode(outBuf.Bytes())
 	}
 
 	return err
 }
 
-func (epoch *Generation) Decode(dec *gob.Decoder) error {
-	err := dec.Decode(&epoch.Id)
-	err = dec.Decode(&epoch.Executed)
-	err = dec.Decode(&epoch.Solved)
-	err = dec.Decode(&epoch.Fitness)
-	err = dec.Decode(&epoch.Age)
-	err = dec.Decode(&epoch.Compexity)
-	err = dec.Decode(&epoch.Diversity)
-	err = dec.Decode(&epoch.WinnerEvals)
-	err = dec.Decode(&epoch.WinnerNodes)
-	err = dec.Decode(&epoch.WinnerGenes)
-
-	if err != nil {
-		return err
+func (g *Generation) Decode(dec *gob.Decoder) error {
+	if err := dec.Decode(&g.Id); err != nil {
+		return errors.Wrap(err, "failed to decode Id")
+	}
+	if err := dec.Decode(&g.Executed); err != nil {
+		return errors.Wrap(err, "failed to decode Executed")
+	}
+	if err := dec.Decode(&g.Solved); err != nil {
+		return errors.Wrap(err, "failed to decode Solved")
+	}
+	if err := dec.Decode(&g.Fitness); err != nil {
+		return errors.Wrap(err, "failed to decode Fitness")
+	}
+	if err := dec.Decode(&g.Age); err != nil {
+		return errors.Wrap(err, "failed to decode Age")
+	}
+	if err := dec.Decode(&g.Complexity); err != nil {
+		return errors.Wrap(err, "failed to decode Complexity")
+	}
+	if err := dec.Decode(&g.Diversity); err != nil {
+		return errors.Wrap(err, "failed to decode Diversity")
+	}
+	if err := dec.Decode(&g.WinnerEvals); err != nil {
+		return errors.Wrap(err, "failed to decode WinnerEvals")
+	}
+	if err := dec.Decode(&g.WinnerNodes); err != nil {
+		return errors.Wrap(err, "failed to decode WinnerNodes")
+	}
+	if err := dec.Decode(&g.WinnerGenes); err != nil {
+		return errors.Wrap(err, "failed to decode WinnerNodes")
 	}
 
 	// decode organism
-	org, err := decodeOrganism(dec)
-	if err == nil {
-		epoch.Best = org
+	if org, err := decodeOrganism(dec); err != nil {
+		return err
+	} else {
+		g.Best = org
 	}
-	return err
+	return nil
 }
 
 func decodeOrganism(dec *gob.Decoder) (*genetics.Organism, error) {
 	org := genetics.Organism{}
-	err := dec.Decode(&org.Fitness)
-	err = dec.Decode(&org.IsWinner)
-	err = dec.Decode(&org.Generation)
-	err = dec.Decode(&org.ExpectedOffspring)
-	err = dec.Decode(&org.Error)
-
-	if err != nil {
-		return nil, err
+	if err := dec.Decode(&org.Fitness); err != nil {
+		return nil, errors.Wrap(err, "failed to decode Fitness")
+	}
+	if err := dec.Decode(&org.IsWinner); err != nil {
+		return nil, errors.Wrap(err, "failed to decode IsWinner")
+	}
+	if err := dec.Decode(&org.Generation); err != nil {
+		return nil, errors.Wrap(err, "failed to decode Generation")
+	}
+	if err := dec.Decode(&org.ExpectedOffspring); err != nil {
+		return nil, errors.Wrap(err, "failed to decode Generation")
+	}
+	if err := dec.Decode(&org.Error); err != nil {
+		return nil, errors.Wrap(err, "failed to decode Generation")
 	}
 
 	// decode organism genome
-	var gen_id int
-	err = dec.Decode(&gen_id)
+	var genId int
+	if err := dec.Decode(&genId); err != nil {
+		return nil, errors.Wrap(err, "failed to decode genId")
+	}
 	var data []byte
-	err = dec.Decode(&data)
-	gen, err := genetics.ReadGenome(bytes.NewBuffer(data), gen_id)
-	org.Genotype = gen
-
-	return &org, err
+	if err := dec.Decode(&data); err != nil {
+		return nil, errors.Wrap(err, "failed to decode organism's data")
+	}
+	if gen, err := genetics.ReadGenome(bytes.NewBuffer(data), genId); err != nil {
+		return nil, err
+	} else {
+		org.Genotype = gen
+	}
+	return &org, nil
 }
 
 // Generations is a sortable collection of generations by execution time and Id

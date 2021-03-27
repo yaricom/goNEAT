@@ -1,25 +1,25 @@
 package experiments
 
 import (
-	"time"
-	"sort"
-	"github.com/yaricom/goNEAT/neat/genetics"
-	"io"
 	"encoding/gob"
 	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"io"
 	"math"
+	"sort"
+	"time"
 )
 
 // An Experiment is a collection of trials for one experiment. It's useful for statistical analysis of a series of
 // experiments
 type Experiment struct {
-	Id              int
-	Name            string
+	Id   int
+	Name string
 	Trials
 	// The maximal allowed fitness score as defined by fitness function of experiment.
 	// It is used to normalize fitness score value used in efficiency score calculation. If this value
 	// is not set, than fitness score will not be normalized during efficiency score estimation.
-	MaxFintessScore float64
+	MaxFitnessScore float64
 }
 
 // Calculates average duration of experiment's trial
@@ -166,77 +166,77 @@ func (e *Experiment) SuccessRate() float64 {
 
 // Returns average number of nodes, genes, organisms evaluations, and species diversity of winner genomes among all
 // trials, i.e. for all trials where winning solution was found
-func (e *Experiment) AvgWinner() (avg_nodes, avg_genes, avg_evals, avg_diversity float64) {
-	total_nodes, total_genes, total_evals, total_diversity := 0, 0, 0, 0
+func (e *Experiment) AvgWinner() (avgNodes, avgGenes, avgEvals, avgDiversity float64) {
+	totalNodes, totalGenes, totalEvals, totalDiversity := 0, 0, 0, 0
 	count := 0
 	for i := 0; i < len(e.Trials); i++ {
 		t := e.Trials[i]
 		if t.Solved() {
 			nodes, genes, evals, diversity := t.Winner()
-			total_nodes += nodes
-			total_genes += genes
-			total_evals += evals
-			total_diversity += diversity
+			totalNodes += nodes
+			totalGenes += genes
+			totalEvals += evals
+			totalDiversity += diversity
 
 			count++
 		}
 	}
-	avg_nodes = float64(total_nodes) / float64(count)
-	avg_genes = float64(total_genes) / float64(count)
-	avg_evals = float64(total_evals) / float64(count)
-	avg_diversity = float64(total_diversity) / float64(count)
-	return avg_nodes, avg_genes, avg_evals, avg_diversity
+	avgNodes = float64(totalNodes) / float64(count)
+	avgGenes = float64(totalGenes) / float64(count)
+	avgEvals = float64(totalEvals) / float64(count)
+	avgDiversity = float64(totalDiversity) / float64(count)
+	return avgNodes, avgGenes, avgEvals, avgDiversity
 }
 
 // Calculates the efficiency score of the solution
 // We are interested in efficient solver search solution that take
 // less time per epoch, less generations per trial, and produce less complicated winner genomes.
 // At the same time it should have maximal fitness score and maximal success rate among trials.
-func (ex *Experiment) EfficiencyScore() float64 {
-	mean_complexity, mean_fitness := 0.0, 0.0
-	if len(ex.Trials) > 1 {
+func (e *Experiment) EfficiencyScore() float64 {
+	meanComplexity, meanFitness := 0.0, 0.0
+	if len(e.Trials) > 1 {
 		count := 0.0
-		for i := 0; i < len(ex.Trials); i++ {
-			t := ex.Trials[i]
+		for i := 0; i < len(e.Trials); i++ {
+			t := e.Trials[i]
 			if t.Solved() {
 				if t.WinnerGeneration == nil {
 					// find winner
 					t.Winner()
 				}
 
-				mean_complexity += float64(t.WinnerGeneration.Best.Phenotype.Complexity())
-				mean_fitness += t.WinnerGeneration.Best.Fitness
+				meanComplexity += float64(t.WinnerGeneration.Best.Phenotype.Complexity())
+				meanFitness += t.WinnerGeneration.Best.Fitness
 
 				count++
 			}
 		}
-		mean_complexity /= count
-		mean_fitness /= count
+		meanComplexity /= count
+		meanFitness /= count
 	}
 
 	// normalize and scale fitness score if appropriate
-	fitness_score := mean_fitness
-	if ex.MaxFintessScore > 0 {
-		fitness_score /= ex.MaxFintessScore
-		fitness_score *= 100
+	fitnessScore := meanFitness
+	if e.MaxFitnessScore > 0 {
+		fitnessScore /= e.MaxFitnessScore
+		fitnessScore *= 100
 	}
 
-	score := ex.AvgEpochDuration().Seconds() * 1000.0 * ex.AvgGenerationsPerTrial() * mean_complexity
+	score := e.AvgEpochDuration().Seconds() * 1000.0 * e.AvgGenerationsPerTrial() * meanComplexity
 	if score > 0 {
-		score = ex.SuccessRate() * fitness_score / math.Log(score)
+		score = e.SuccessRate() * fitnessScore / math.Log(score)
 	}
 
 	return score
 }
 
 // Prints experiment statistics
-func (ex *Experiment) PrintStatistics() {
-	fmt.Printf("\nSolved %d trials from %d, success rate: %f\n", ex.TrialsSolved(), len(ex.Trials), ex.SuccessRate())
+func (e *Experiment) PrintStatistics() {
+	fmt.Printf("\nSolved %d trials from %d, success rate: %f\n", e.TrialsSolved(), len(e.Trials), e.SuccessRate())
 	fmt.Printf("Average\n\tTrial duration:\t\t%s\n\tEpoch duration:\t\t%s\n\tGenerations/trial:\t%.1f\n",
-		ex.AvgTrialDuration(), ex.AvgEpochDuration(), ex.AvgGenerationsPerTrial())
+		e.AvgTrialDuration(), e.AvgEpochDuration(), e.AvgGenerationsPerTrial())
 	// Print absolute champion statistics
-	if org, trid, found := ex.BestOrganism(true); found {
-		nodes, genes, evals, divers := ex.Trials[trid].Winner()
+	if org, trid, found := e.BestOrganism(true); found {
+		nodes, genes, evals, divers := e.Trials[trid].Winner()
 		fmt.Printf("\nChampion found in %d trial run\n\tWinner Nodes:\t\t%d\n\tWinner Genes:\t\t%d\n\tWinner Evals:\t\t%d\n\n\tDiversity:\t\t%d",
 			trid, nodes, genes, evals, divers)
 		fmt.Printf("\n\tComplexity:\t\t%d\n\tAge:\t\t\t%d\n\tFitness:\t\t%f\n",
@@ -246,81 +246,81 @@ func (ex *Experiment) PrintStatistics() {
 	}
 
 	// Print average winner statistics
-	mean_complexity, mean_diversity, mean_age, mean_fitness := 0.0, 0.0, 0.0, 0.0
-	if len(ex.Trials) > 1 {
-		avg_nodes, avg_genes, avg_evals, avg_divers, avg_generations := 0.0, 0.0, 0.0, 0.0, 0.0
+	meanComplexity, meanDiversity, meanAge, meanFitness := 0.0, 0.0, 0.0, 0.0
+	if len(e.Trials) > 1 {
+		avgNodes, avgGenes, avgEvals, avgDivers, avgGenerations := 0.0, 0.0, 0.0, 0.0, 0.0
 		count := 0.0
-		for i := 0; i < len(ex.Trials); i++ {
-			t := ex.Trials[i]
+		for i := 0; i < len(e.Trials); i++ {
+			t := e.Trials[i]
 
 			if t.Solved() {
 				nodes, genes, evals, diversity := t.Winner()
-				avg_nodes += float64(nodes)
-				avg_genes += float64(genes)
-				avg_evals += float64(evals)
-				avg_divers += float64(diversity)
-				avg_generations += float64(len(t.Generations))
+				avgNodes += float64(nodes)
+				avgGenes += float64(genes)
+				avgEvals += float64(evals)
+				avgDivers += float64(diversity)
+				avgGenerations += float64(len(t.Generations))
 
-				mean_complexity += float64(t.WinnerGeneration.Best.Phenotype.Complexity())
-				mean_age += float64(t.WinnerGeneration.Best.Species.Age)
-				mean_fitness += t.WinnerGeneration.Best.Fitness
+				meanComplexity += float64(t.WinnerGeneration.Best.Phenotype.Complexity())
+				meanAge += float64(t.WinnerGeneration.Best.Species.Age)
+				meanFitness += t.WinnerGeneration.Best.Fitness
 
 				count++
 
 				// update trials array
-				ex.Trials[i] = t
+				e.Trials[i] = t
 			}
 		}
-		avg_nodes /= count
-		avg_genes /= count
-		avg_evals /= count
-		avg_divers /= count
-		avg_generations /= count
+		avgNodes /= count
+		avgGenes /= count
+		avgEvals /= count
+		avgDivers /= count
+		avgGenerations /= count
 		fmt.Printf("\nAverage among winners\n\tWinner Nodes:\t\t%.1f\n\tWinner Genes:\t\t%.1f\n\tWinner Evals:\t\t%.1f\n\tGenerations/trial:\t%.1f\n\n\tDiversity:\t\t%f\n",
-			avg_nodes, avg_genes, avg_evals, avg_generations, avg_divers)
+			avgNodes, avgGenes, avgEvals, avgGenerations, avgDivers)
 
-		mean_complexity /= count
-		mean_age /= count
-		mean_fitness /= count
+		meanComplexity /= count
+		meanAge /= count
+		meanFitness /= count
 		fmt.Printf("\tComplexity:\t\t%f\n\tAge:\t\t\t%f\n\tFitness:\t\t%f\n",
-			mean_complexity, mean_age, mean_fitness)
+			meanComplexity, meanAge, meanFitness)
 	}
 
 	// Print the average values for each population of organisms evaluated
-	count := float64(len(ex.Trials))
-	for _, t := range ex.Trials {
+	count := float64(len(e.Trials))
+	for _, t := range e.Trials {
 		fitness, age, complexity := t.Average()
 
-		mean_complexity += complexity.Mean()
-		mean_diversity += t.Diversity().Mean()
-		mean_age += age.Mean()
-		mean_fitness += fitness.Mean()
+		meanComplexity += complexity.Mean()
+		meanDiversity += t.Diversity().Mean()
+		meanAge += age.Mean()
+		meanFitness += fitness.Mean()
 	}
-	mean_complexity /= count
-	mean_diversity /= count
-	mean_age /= count
-	mean_fitness /= count
+	meanComplexity /= count
+	meanDiversity /= count
+	meanAge /= count
+	meanFitness /= count
 	fmt.Printf("\nAverages for all organisms evaluated during experiment\n\tDiversity:\t\t%f\n\tComplexity:\t\t%f\n\tAge:\t\t\t%f\n\tFitness:\t\t%f\n",
-		mean_diversity, mean_complexity, mean_age, mean_fitness)
+		meanDiversity, meanComplexity, meanAge, meanFitness)
 
-	score := ex.EfficiencyScore()
+	score := e.EfficiencyScore()
 	fmt.Printf("\nEfficiency score:\t\t%f\n\n", score)
 }
 
 // Encodes experiment and writes to provided writer
-func (ex *Experiment) Write(w io.Writer) error {
+func (e *Experiment) Write(w io.Writer) error {
 	enc := gob.NewEncoder(w)
-	return ex.Encode(enc)
+	return e.Encode(enc)
 }
 
 // Encodes experiment with GOB encoding
-func (ex *Experiment) Encode(enc *gob.Encoder) error {
-	err := enc.Encode(ex.Id)
-	err = enc.Encode(ex.Name)
+func (e *Experiment) Encode(enc *gob.Encoder) error {
+	err := enc.Encode(e.Id)
+	err = enc.Encode(e.Name)
 
 	// encode trials
-	err = enc.Encode(len(ex.Trials))
-	for _, t := range ex.Trials {
+	err = enc.Encode(len(e.Trials))
+	for _, t := range e.Trials {
 		err = t.Encode(enc)
 		if err != nil {
 			return err
@@ -330,28 +330,28 @@ func (ex *Experiment) Encode(enc *gob.Encoder) error {
 }
 
 // Reads experiment data from provided reader and decodes it
-func (ex *Experiment) Read(r io.Reader) error {
+func (e *Experiment) Read(r io.Reader) error {
 	dec := gob.NewDecoder(r)
-	return ex.Decode(dec)
+	return e.Decode(dec)
 }
 
 // Decodes experiment data
-func (ex *Experiment) Decode(dec *gob.Decoder) error {
-	err := dec.Decode(&ex.Id)
-	err = dec.Decode(&ex.Name)
+func (e *Experiment) Decode(dec *gob.Decoder) error {
+	err := dec.Decode(&e.Id)
+	err = dec.Decode(&e.Name)
 
 	// decode Trials
-	var t_num int
-	err = dec.Decode(&t_num)
+	var tNum int
+	err = dec.Decode(&tNum)
 	if err != nil {
 		return err
 	}
 
-	ex.Trials = make([]Trial, t_num)
-	for i := 0; i < t_num; i++ {
+	e.Trials = make([]Trial, tNum)
+	for i := 0; i < tNum; i++ {
 		trial := Trial{}
 		err = trial.Decode(dec)
-		ex.Trials[i] = trial
+		e.Trials[i] = trial
 	}
 	return err
 }

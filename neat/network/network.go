@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
 )
 
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.

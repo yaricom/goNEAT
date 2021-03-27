@@ -1,11 +1,13 @@
 package genetics
 
 import (
-	"math/rand"
-	"testing"
-	"github.com/yaricom/goNEAT/neat"
-	"sort"
 	"bytes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"math/rand"
+	"sort"
+	"testing"
 )
 
 func buildSpeciesWithOrganisms(id int) (*Species, error) {
@@ -13,7 +15,7 @@ func buildSpeciesWithOrganisms(id int) (*Species, error) {
 
 	sp := NewSpecies(id)
 	for i := 0; i < 3; i++ {
-		org, err := NewOrganism( float64(i + 1) * 5.0 * float64(id), gen, id)
+		org, err := NewOrganism(float64(i+1)*5.0*float64(id), gen, id)
 		if err != nil {
 			return nil, err
 		}
@@ -25,46 +27,31 @@ func buildSpeciesWithOrganisms(id int) (*Species, error) {
 
 func TestSpecies_Write(t *testing.T) {
 	sp, err := buildSpeciesWithOrganisms(1)
+	require.NoError(t, err)
 
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	out_buf := bytes.NewBufferString("")
-	sp.Write(out_buf)
+	outBuf := bytes.NewBufferString("")
+	err = sp.Write(outBuf)
+	require.NoError(t, err)
 }
 
 // Tests Species adjustFitness
-func TestSpecies_adjustFitness(t *testing.T)  {
+func TestSpecies_adjustFitness(t *testing.T) {
 	sp, err := buildSpeciesWithOrganisms(1)
-
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	require.NoError(t, err)
 
 	// Configuration
 	conf := neat.NeatContext{
-		DropOffAge:5,
-		SurvivalThresh:0.5,
-		AgeSignificance:0.5,
+		DropOffAge:      5,
+		SurvivalThresh:  0.5,
+		AgeSignificance: 0.5,
 	}
 	sp.adjustFitness(&conf)
 
 	// test results
-	if sp.Organisms[0].isChampion != true {
-		t.Error("sp.Organisms[0].IsChampion", true, sp.Organisms[0].isChampion)
-	}
-	if sp.AgeOfLastImprovement != 1 {
-		t.Error("sp.AgeOfLastImprovement", 1, sp.AgeOfLastImprovement)
-	}
-	if sp.MaxFitnessEver != 15.0 {
-		t.Error("sp.MaxFitnessEver", 15.0, sp.MaxFitnessEver)
-	}
-	if sp.Organisms[2].toEliminate != true {
-		t.Error("sp.Organisms[2].ToEliminate", true, sp.Organisms[2].toEliminate)
-	}
+	assert.True(t, sp.Organisms[0].isChampion)
+	assert.Equal(t, 1, sp.AgeOfLastImprovement)
+	assert.Equal(t, 15.0, sp.MaxFitnessEver)
+	assert.True(t, sp.Organisms[2].toEliminate)
 }
 
 // Tests Species countOffspring
@@ -119,7 +106,7 @@ func TestSpecies_computeMaxFitness(t *testing.T) {
 		return
 	}
 	avg_check := 0.0
-	for _, o := range sp.Organisms{
+	for _, o := range sp.Organisms {
 		avg_check += o.Fitness
 	}
 	avg_check /= float64(len(sp.Organisms))
@@ -163,8 +150,8 @@ func TestSpecies_removeOrganism(t *testing.T) {
 	if err != nil {
 		t.Error("err != nil", err)
 	}
-	if size - 1 != len(sp.Organisms) {
-		t.Error("size - 1 != len(sp.Organisms)", size - 1, len(sp.Organisms))
+	if size-1 != len(sp.Organisms) {
+		t.Error("size - 1 != len(sp.Organisms)", size-1, len(sp.Organisms))
 	}
 
 	// test fail to remove
@@ -210,12 +197,12 @@ func TestSpecies_reproduce(t *testing.T) {
 	link_prob := 0.8
 
 	// Configuration
-	conf := neat.NeatContext {
-		DropOffAge:5,
-		SurvivalThresh:0.5,
-		AgeSignificance:0.5,
-		PopSize:30,
-		CompatThreshold:0.6,
+	conf := neat.NeatContext{
+		DropOffAge:      5,
+		SurvivalThresh:  0.5,
+		AgeSignificance: 0.5,
+		PopSize:         30,
+		CompatThreshold: 0.6,
 	}
 	neat.LogLevel = neat.LogLevelInfo
 

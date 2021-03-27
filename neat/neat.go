@@ -3,15 +3,15 @@
 package neat
 
 import (
+	"errors"
 	"fmt"
+	"github.com/spf13/viper"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"io"
 	"log"
 	"os"
-	"github.com/spf13/viper"
-	"errors"
-	"github.com/yaricom/goNEAT/neat/utils"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 // LoggerLevel type to specify logger output level
@@ -32,10 +32,10 @@ var (
 	// The current log level of the context
 	LogLevel LoggerLevel
 
-	loggerDebug = log.New(os.Stdout, "DEBUG: ", log.Ltime | log.Lshortfile)
-	loggerInfo = log.New(os.Stdout, "INFO: ", log.Ltime | log.Lshortfile)
-	loggerWarn = log.New(os.Stdout, "ALERT: ", log.Ltime | log.Lshortfile)
-	loggerError = log.New(os.Stderr, "ERROR: ", log.Ltime | log.Lshortfile)
+	loggerDebug = log.New(os.Stdout, "DEBUG: ", log.Ltime|log.Lshortfile)
+	loggerInfo  = log.New(os.Stdout, "INFO: ", log.Ltime|log.Lshortfile)
+	loggerWarn  = log.New(os.Stdout, "ALERT: ", log.Ltime|log.Lshortfile)
+	loggerError = log.New(os.Stderr, "ERROR: ", log.Ltime|log.Lshortfile)
 
 	// The logger to output all messages
 	DebugLog = func(message string) {
@@ -63,40 +63,39 @@ var (
 	}
 )
 
-
 // The NEAT execution context holding common configuration parameters, etc.
 type NeatContext struct {
-				       // Probability of mutating a single trait param
-	TraitParamMutProb      float64
-				       // Power of mutation on a single trait param
-	TraitMutationPower     float64
-				       // The power of a link weight mutation
-	WeightMutPower         float64
+	// Probability of mutating a single trait param
+	TraitParamMutProb float64
+	// Power of mutation on a single trait param
+	TraitMutationPower float64
+	// The power of a link weight mutation
+	WeightMutPower float64
 
-				       // These 3 global coefficients are used to determine the formula for
-				       // computing the compatibility between 2 genomes.  The formula is:
-				       // disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg.
-				       // See the compatibility method in the Genome class for more info
-				       // They can be thought of as the importance of disjoint Genes,
-				       // excess Genes, and parametric difference between Genes of the
-				       // same function, respectively.
-	DisjointCoeff          float64
-	ExcessCoeff            float64
-	MutdiffCoeff           float64
+	// These 3 global coefficients are used to determine the formula for
+	// computing the compatibility between 2 genomes.  The formula is:
+	// disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg.
+	// See the compatibility method in the Genome class for more info
+	// They can be thought of as the importance of disjoint Genes,
+	// excess Genes, and parametric difference between Genes of the
+	// same function, respectively.
+	DisjointCoeff float64
+	ExcessCoeff   float64
+	MutdiffCoeff  float64
 
-				       // This global tells compatibility threshold under which
-				       // two Genomes are considered the same species
-	CompatThreshold        float64
+	// This global tells compatibility threshold under which
+	// two Genomes are considered the same species
+	CompatThreshold float64
 
-				       /* Globals involved in the epoch cycle - mating, reproduction, etc.. */
+	/* Globals involved in the epoch cycle - mating, reproduction, etc.. */
 
-				       // How much does age matter? Gives a fitness boost up to some young age (niching).
-				       // If it is 1, then young species get no fitness boost.
-	AgeSignificance        float64
-				       // Percent of average fitness for survival, how many get to reproduce based on survival_thresh * pop_size
-	SurvivalThresh         float64
+	// How much does age matter? Gives a fitness boost up to some young age (niching).
+	// If it is 1, then young species get no fitness boost.
+	AgeSignificance float64
+	// Percent of average fitness for survival, how many get to reproduce based on survival_thresh * pop_size
+	SurvivalThresh float64
 
-				       // Probabilities of a non-mating reproduction
+	// Probabilities of a non-mating reproduction
 	MutateOnlyProb         float64
 	MutateRandomTraitProb  float64
 	MutateLinkTraitProb    float64
@@ -108,44 +107,44 @@ type NeatContext struct {
 	MutateAddLinkProb      float64
 	MutateConnectSensors   float64 // probability of mutation involving disconnected inputs connection
 
-				       // Probabilities of a mate being outside species
-	InterspeciesMateRate   float64
-	MateMultipointProb     float64
-	MateMultipointAvgProb  float64
-	MateSinglepointProb    float64
+	// Probabilities of a mate being outside species
+	InterspeciesMateRate  float64
+	MateMultipointProb    float64
+	MateMultipointAvgProb float64
+	MateSinglepointProb   float64
 
-				       // Prob. of mating without mutation
-	MateOnlyProb           float64
-				       // Probability of forcing selection of ONLY links that are naturally recurrent
-	RecurOnlyProb          float64
+	// Prob. of mating without mutation
+	MateOnlyProb float64
+	// Probability of forcing selection of ONLY links that are naturally recurrent
+	RecurOnlyProb float64
 
-				       // Size of population
-	PopSize                int
-				       // Age when Species starts to be penalized
-	DropOffAge             int
-				       // Number of tries mutate_add_link will attempt to find an open link
-	NewLinkTries           int
+	// Size of population
+	PopSize int
+	// Age when Species starts to be penalized
+	DropOffAge int
+	// Number of tries mutate_add_link will attempt to find an open link
+	NewLinkTries int
 
-				       // Tells to print population to file every n generations
-	PrintEvery             int
+	// Tells to print population to file every n generations
+	PrintEvery int
 
-				       // The number of babies to stolen off to the champions
-	BabiesStolen           int
+	// The number of babies to stolen off to the champions
+	BabiesStolen int
 
-				       // The number of runs to average over in an experiment
-	NumRuns                int
+	// The number of runs to average over in an experiment
+	NumRuns int
 
-				       // The number of epochs (generations) to execute training
-	NumGenerations         int
-				       // The epoch's executor type to apply
-	EpochExecutorType      int
-				       // The genome compatibility testing method to use (0 - linear, 1 - fast (make sense for large genomes))
-	GenCompatMethod        int
+	// The number of epochs (generations) to execute training
+	NumGenerations int
+	// The epoch's executor type to apply
+	EpochExecutorType int
+	// The genome compatibility testing method to use (0 - linear, 1 - fast (make sense for large genomes))
+	GenCompatMethod int
 
-				       // The neuron nodes activation functions list to choose from
-	NodeActivators         []utils.NodeActivationType
-				       // The probabilities of selection of the specific node activator function
-	NodeActivatorsProb     []float64
+	// The neuron nodes activation functions list to choose from
+	NodeActivators []utils.NodeActivationType
+	// The probabilities of selection of the specific node activator function
+	NodeActivatorsProb []float64
 }
 
 // Creates new empty NEAT context
@@ -202,28 +201,28 @@ func (c *NeatContext) LoadContext(r io.Reader) error {
 	c.NumGenerations = v.GetInt("num_generations")
 
 	// read epoch executor type [sequential, parallel]
-	ep_exec := v.GetString("epoch_executor")
-	if ep_exec == "sequential" {
+	epExec := v.GetString("epoch_executor")
+	if epExec == "sequential" {
 		c.EpochExecutorType = 0 //genetics.SequentialExecutorType
-	} else if ep_exec == "parallel" {
+	} else if epExec == "parallel" {
 		c.EpochExecutorType = 1 //genetics.ParallelExecutorType
 	} else {
-		return errors.New(fmt.Sprintf("Unsupported epoch executor type: %s", ep_exec))
+		return fmt.Errorf("unsupported epoch executor type: %s", epExec)
 	}
 
 	// read genome compatibility method [linear, fast]
-	gen_compat := v.GetString("genome_compat_method")
-	if gen_compat == "" || gen_compat == "linear" {
+	genCompat := v.GetString("genome_compat_method")
+	if genCompat == "" || genCompat == "linear" {
 		c.GenCompatMethod = 0
-	} else if gen_compat == "fast" {
+	} else if genCompat == "fast" {
 		c.GenCompatMethod = 1
 	} else {
-		return errors.New(fmt.Sprintf("Unsupported genome compatibility method: %s", gen_compat))
+		return fmt.Errorf("unsupported genome compatibility method: %s", genCompat)
 	}
 
 	// read log level [Debug, Info, Warning, Error]
-	l_level := v.GetString("log_level")
-	switch l_level {
+	lLevel := v.GetString("log_level")
+	switch lLevel {
 	case "Debug":
 		LogLevel = LogLevelDebug
 	case "Info":
@@ -233,7 +232,7 @@ func (c *NeatContext) LoadContext(r io.Reader) error {
 	case "Error":
 		LogLevel = LogLevelError
 	default:
-		return errors.New(fmt.Sprintf("Usupported log level: %s", l_level))
+		return fmt.Errorf("unsupported log level: %s", lLevel)
 	}
 
 	// read node activators
@@ -268,7 +267,7 @@ func (c *NeatContext) RandomNodeActivationType() (utils.NodeActivationType, erro
 	}
 	// find next random
 	index := utils.SingleRouletteThrow(c.NodeActivatorsProb)
-	if index < 0 || index >= len(c.NodeActivators){
+	if index < 0 || index >= len(c.NodeActivators) {
 		return 0, errors.New(
 			fmt.Sprintf("unexpected error when trying to find random node activator, activator index: %d", index))
 	}
@@ -280,7 +279,7 @@ func LoadContext(r io.Reader) *NeatContext {
 	c := NeatContext{}
 	// read configuration
 	var name string
-	var param float64;
+	var param float64
 	for true {
 		_, err := fmt.Fscanf(r, "%s %f", &name, &param)
 		if err == io.EOF {

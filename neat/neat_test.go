@@ -1,17 +1,16 @@
 package neat
 
 import (
-	"testing"
-	"os"
 	"fmt"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"os"
+	"testing"
 )
 
 func TestLoadContext(t *testing.T) {
 	config, err := os.Open("../data/xor_test.neat")
-	if err != nil {
-		t.Error("Failed to open config file", err)
-	}
+	require.NoError(t, err)
 
 	// Load Neat Context
 	nc := LoadContext(config)
@@ -20,9 +19,7 @@ func TestLoadContext(t *testing.T) {
 
 func TestNeatContext_LoadContext(t *testing.T) {
 	config, err := os.Open("../data/xor_test.neat.yml")
-	if err != nil {
-		t.Error("Failed to open config file", err)
-	}
+	require.NoError(t, err)
 
 	// Load YAML context
 	nc := NewNeatContext()

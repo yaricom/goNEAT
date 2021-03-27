@@ -1,12 +1,12 @@
 package genetics
 
 import (
-	"testing"
-	"github.com/yaricom/goNEAT/neat"
+	"bufio"
+	"bytes"
+	"github.com/yaricom/goNEAT/v2/neat"
 	"math/rand"
 	"strings"
-	"bytes"
-	"bufio"
+	"testing"
 )
 
 func TestNewPopulationRandom(t *testing.T) {
@@ -15,8 +15,8 @@ func TestNewPopulationRandom(t *testing.T) {
 	recurrent := false
 	link_prob := 0.5
 	conf := neat.NeatContext{
-		CompatThreshold:0.5,
-		PopSize:10,
+		CompatThreshold: 0.5,
+		PopSize:         10,
 	}
 	pop, err := NewPopulationRandom(in, out, nmax, recurrent, link_prob, &conf)
 	if err != nil {
@@ -61,8 +61,8 @@ func TestNewPopulation(t *testing.T) {
 	recurrent := false
 	link_prob := 0.5
 	conf := neat.NeatContext{
-		CompatThreshold:0.5,
-		PopSize:10,
+		CompatThreshold: 0.5,
+		PopSize:         10,
 	}
 	gen := newGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
 
@@ -77,7 +77,7 @@ func TestNewPopulation(t *testing.T) {
 		t.Error("len(pop.Organisms) != conf.PopSize")
 	}
 	last_node_id, _ := gen.getLastNodeId()
-	if pop.nextNodeId != int32(last_node_id + 1) {
+	if pop.nextNodeId != int32(last_node_id+1) {
 		t.Error("pop.currNodeId != last_node_id")
 	}
 	last_gene_innov_num, _ := gen.getNextGeneInnovNum()
@@ -127,7 +127,7 @@ func TestReadPopulation(t *testing.T) {
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
 	conf := neat.NeatContext{
-		CompatThreshold:0.5,
+		CompatThreshold: 0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
 	if err != nil {
@@ -173,7 +173,7 @@ func TestPopulation_verify(t *testing.T) {
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
 	conf := neat.NeatContext{
-		CompatThreshold:0.5,
+		CompatThreshold: 0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
 	if err != nil {
@@ -221,7 +221,7 @@ func TestPopulation_Write(t *testing.T) {
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
 	conf := neat.NeatContext{
-		CompatThreshold:0.5,
+		CompatThreshold: 0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
 	if err != nil {

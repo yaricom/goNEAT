@@ -1,10 +1,10 @@
 package experiments
 
 import (
-	"testing"
-	"math"
 	"bytes"
 	"encoding/gob"
+	"math"
+	"testing"
 )
 
 func TestTrial_Encode_Decode(t *testing.T) {
@@ -24,15 +24,15 @@ func TestTrial_Encode_Decode(t *testing.T) {
 	data := buff.Bytes()
 	dec := gob.NewDecoder(bytes.NewBuffer(data))
 
-	dec_trial := Trial{}
-	err = dec_trial.Decode(dec)
+	decTrial := Trial{}
+	err = decTrial.Decode(dec)
 	if err != nil {
 		t.Error("failed to decode trial", err)
 		return
 	}
 
 	// do deep compare of Trail fields
-	deepCompareTrials(trial, &dec_trial, t)
+	deepCompareTrials(trial, &decTrial, t)
 }
 
 func deepCompareTrials(first, second *Trial, t *testing.T) {
@@ -50,9 +50,9 @@ func deepCompareTrials(first, second *Trial, t *testing.T) {
 }
 
 func buildTestTrial(id, num_generations int) *Trial {
-	trial := Trial{Id:id, Generations:make([]Generation, num_generations)}
+	trial := Trial{Id: id, Generations: make([]Generation, num_generations)}
 	for i := 0; i < num_generations; i++ {
-		trial.Generations[i] = *buildTestGeneration(i + 1, float64(i + 1) * math.E)
+		trial.Generations[i] = *buildTestGeneration(i+1, float64(i+1)*math.E)
 	}
 	return &trial
 }

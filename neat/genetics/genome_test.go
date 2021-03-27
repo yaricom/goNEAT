@@ -1,14 +1,14 @@
 package genetics
 
 import (
-	"testing"
-	"github.com/yaricom/goNEAT/neat/network"
-	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"math/rand"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"testing"
 )
 
-const gnome_str = "genomestart 1\n" +
+const gnomeStr = "genomestart 1\n" +
 	"trait 1 0.1 0 0 0 0 0 0 0\n" +
 	"trait 3 0.3 0 0 0 0 0 0 0\n" +
 	"trait 2 0.2 0 0 0 0 0 0 0\n" +
@@ -23,16 +23,16 @@ const gnome_str = "genomestart 1\n" +
 
 func buildTestGenome(id int) *Genome {
 	traits := []*neat.Trait{
-		{Id:1, Params:[]float64{0.1, 0, 0, 0, 0, 0, 0, 0}},
-		{Id:3, Params:[]float64{0.3, 0, 0, 0, 0, 0, 0, 0}},
-		{Id:2, Params:[]float64{0.2, 0, 0, 0, 0, 0, 0, 0}},
+		{Id: 1, Params: []float64{0.1, 0, 0, 0, 0, 0, 0, 0}},
+		{Id: 3, Params: []float64{0.3, 0, 0, 0, 0, 0, 0, 0}},
+		{Id: 2, Params: []float64{0.2, 0, 0, 0, 0, 0, 0, 0}},
 	}
 
 	nodes := []*network.NNode{
-		{Id:1, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:3, NeuronType: network.BiasNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:4, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 1, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 3, NeuronType: network.BiasNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 4, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
 
 	genes := []*Gene{
@@ -49,11 +49,11 @@ func buildTestModularGenome(id int) *Genome {
 
 	// append module with it's IO nodes
 	io_nodes := []*network.NNode{
-		{Id:5, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:6, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:7, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 6, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 7, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
-	gnome.Nodes = append(gnome.Nodes, io_nodes ...)
+	gnome.Nodes = append(gnome.Nodes, io_nodes...)
 
 	// connect added nodes
 	io_conn_genes := []*Gene{
@@ -61,19 +61,19 @@ func buildTestModularGenome(id int) *Genome {
 		newGene(network.NewLinkWithTrait(gnome.Traits[2], 2.5, gnome.Nodes[1], gnome.Nodes[5], false), 5, 0, true),
 		newGene(network.NewLinkWithTrait(gnome.Traits[1], 3.5, gnome.Nodes[6], gnome.Nodes[3], false), 6, 0, true),
 	}
-	gnome.Genes = append(gnome.Genes, io_conn_genes ...)
+	gnome.Genes = append(gnome.Genes, io_conn_genes...)
 
 	// add control gene
 	c_node := &network.NNode{
-		Id:8, NeuronType: network.HiddenNeuron,
+		Id: 8, NeuronType: network.HiddenNeuron,
 		ActivationType: utils.MultiplyModuleActivation,
 	}
 	c_node.Incoming = []*network.Link{
-		{Weight:1.0, InNode:io_nodes[0], OutNode:c_node},
-		{Weight:1.0, InNode:io_nodes[1], OutNode:c_node},
+		{Weight: 1.0, InNode: io_nodes[0], OutNode: c_node},
+		{Weight: 1.0, InNode: io_nodes[1], OutNode: c_node},
 	}
 	c_node.Outgoing = []*network.Link{
-		{Weight:1.0, InNode:c_node, OutNode:io_nodes[2]},
+		{Weight: 1.0, InNode: c_node, OutNode: io_nodes[2]},
 	}
 	gnome.ControlGenes = []*MIMOControlGene{NewMIMOGene(c_node, int64(7), 5.5, true)}
 	return gnome
@@ -91,10 +91,10 @@ func TestGenome_NewGenomeRand(t *testing.T) {
 	if gnome == nil {
 		t.Error("Failed to create random genome")
 	}
-	if len(gnome.Nodes) != in + n + out {
-		t.Error("len(gnome.Nodes) != in + nmax + out", len(gnome.Nodes), in + n + out)
+	if len(gnome.Nodes) != in+n+out {
+		t.Error("len(gnome.Nodes) != in + nmax + out", len(gnome.Nodes), in+n+out)
 	}
-	if len(gnome.Genes) < in + n + out {
+	if len(gnome.Genes) < in+n+out {
 		t.Error("Failed to create genes", len(gnome.Genes))
 	}
 
@@ -292,10 +292,10 @@ func TestGenome_Compatibility_Linear(t *testing.T) {
 
 	// Configuration
 	conf := neat.NeatContext{
-		DisjointCoeff:0.5,
-		ExcessCoeff:0.5,
-		MutdiffCoeff:0.5,
-		GenCompatMethod:0,
+		DisjointCoeff:   0.5,
+		ExcessCoeff:     0.5,
+		MutdiffCoeff:    0.5,
+		GenCompatMethod: 0,
 	}
 
 	// Test fully compatible
@@ -333,10 +333,10 @@ func TestGenome_Compatibility_Fast(t *testing.T) {
 
 	// Configuration
 	conf := neat.NeatContext{
-		DisjointCoeff:0.5,
-		ExcessCoeff:0.5,
-		MutdiffCoeff:0.5,
-		GenCompatMethod:1,
+		DisjointCoeff:   0.5,
+		ExcessCoeff:     0.5,
+		MutdiffCoeff:    0.5,
+		GenCompatMethod: 1,
 	}
 
 	// Test fully compatible
@@ -378,9 +378,9 @@ func TestGenome_Compatibility_Duplicate(t *testing.T) {
 
 	// Configuration
 	conf := neat.NeatContext{
-		DisjointCoeff:0.5,
-		ExcessCoeff:0.5,
-		MutdiffCoeff:0.5,
+		DisjointCoeff: 0.5,
+		ExcessCoeff:   0.5,
+		MutdiffCoeff:  0.5,
 	}
 
 	// Test fully compatible
@@ -395,9 +395,9 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	gnome1 := buildTestGenome(1)
 	// Configuration
 	conf := neat.NeatContext{
-		RecurOnlyProb:0.5,
-		NewLinkTries:10,
-		CompatThreshold:0.5,
+		RecurOnlyProb:   0.5,
+		NewLinkTries:    10,
+		CompatThreshold: 0.5,
 	}
 	// The population (DUMMY)
 	pop := newPopulation()
@@ -432,8 +432,8 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	// add more NEURONs
 	conf.RecurOnlyProb = 0.0
 	nodes := []*network.NNode{
-		{Id:5, NeuronType: network.HiddenNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
-		{Id:6, NeuronType: network.InputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming:make([]*network.Link, 0), Outgoing:make([]*network.Link, 0)},
+		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 6, NeuronType: network.InputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
 	gnome1.Nodes = append(gnome1.Nodes, nodes...)
 	gnome1.Genesis(1) // do network genesis with new nodes added
@@ -481,11 +481,11 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 
 	// adding disconnected input
 	node := &network.NNode{
-		Id:5,
-		NeuronType: network.InputNeuron,
+		Id:             5,
+		NeuronType:     network.InputNeuron,
 		ActivationType: utils.SigmoidSteepenedActivation,
-		Incoming:make([]*network.Link, 0),
-		Outgoing:make([]*network.Link, 0)}
+		Incoming:       make([]*network.Link, 0),
+		Outgoing:       make([]*network.Link, 0)}
 	gnome1.Nodes = append(gnome1.Nodes, node)
 	// Create gnome phenotype
 	gnome1.Genesis(1)
@@ -544,7 +544,7 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 	gnome1 := buildTestGenome(1)
 	// Configuration
 	conf := neat.NeatContext{
-		WeightMutPower:0.5,
+		WeightMutPower: 0.5,
 	}
 
 	res, err := gnome1.mutateLinkWeights(conf.WeightMutPower, 1.0, gaussianMutator)
@@ -552,7 +552,7 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 		t.Error("Failed to mutate link weights")
 	}
 	for i, gn := range gnome1.Genes {
-		if gn.Link.Weight == float64(i) + 1.5 {
+		if gn.Link.Weight == float64(i)+1.5 {
 			t.Error("Found not mutrated gene:", gn)
 		}
 	}
@@ -563,8 +563,8 @@ func TestGenome_mutateRandomTrait(t *testing.T) {
 	gnome1 := buildTestGenome(1)
 	// Configuration
 	conf := neat.NeatContext{
-		TraitMutationPower:0.3,
-		TraitParamMutProb:0.5,
+		TraitMutationPower: 0.3,
+		TraitParamMutProb:  0.5,
 	}
 	res, err := gnome1.mutateRandomTrait(&conf)
 	if !res || err != nil {
@@ -573,7 +573,7 @@ func TestGenome_mutateRandomTrait(t *testing.T) {
 	mutation_found := false
 	for _, tr := range gnome1.Traits {
 		for pi, p := range tr.Params {
-			if pi == 0 && p != float64(tr.Id) / 10.0 {
+			if pi == 0 && p != float64(tr.Id)/10.0 {
 				mutation_found = true
 				break
 			} else if pi > 0 && p != 0 {
@@ -600,7 +600,7 @@ func TestGenome_mutateLinkTrait(t *testing.T) {
 	}
 	mutation_found := false
 	for i, gn := range gnome1.Genes {
-		if gn.Link.Trait.Id != i + 1 {
+		if gn.Link.Trait.Id != i+1 {
 			mutation_found = true
 			break
 		}
@@ -620,7 +620,7 @@ func TestGenome_mutateNodeTrait(t *testing.T) {
 			nd.Trait = gnome1.Traits[i]
 		}
 	}
-	gnome1.Nodes[3].Trait = &neat.Trait{Id:4, Params: []float64{0.4, 0, 0, 0, 0, 0, 0, 0}}
+	gnome1.Nodes[3].Trait = &neat.Trait{Id: 4, Params: []float64{0.4, 0, 0, 0, 0, 0, 0, 0}}
 
 	res, err := gnome1.mutateNodeTrait(2)
 	if !res || err != nil {
@@ -628,7 +628,7 @@ func TestGenome_mutateNodeTrait(t *testing.T) {
 	}
 	mutation_found := false
 	for i, nd := range gnome1.Nodes {
-		if nd.Trait.Id != i + 1 {
+		if nd.Trait.Id != i+1 {
 			mutation_found = true
 			break
 		}
@@ -940,8 +940,8 @@ func TestGenome_geneInsert(t *testing.T) {
 	}
 
 	for i, g := range genes {
-		if g.InnovationNum != int64(i + 1) {
-			t.Error("(g.InnovationNum != i + 1)", g.InnovationNum, i + 1)
+		if g.InnovationNum != int64(i+1) {
+			t.Error("(g.InnovationNum != i + 1)", g.InnovationNum, i+1)
 		}
 	}
 }

@@ -1,14 +1,14 @@
 package experiments
 
 import (
-	"testing"
 	"bytes"
+	"testing"
 )
 
 func TestExperiment_Write_Read(t *testing.T) {
-	ex := Experiment{Id:1, Name:"Test Encode Decode", Trials:make(Trials, 3)}
+	ex := Experiment{Id: 1, Name: "Test Encode Decode", Trials: make(Trials, 3)}
 	for i := 0; i < len(ex.Trials); i++ {
-		ex.Trials[i] = *buildTestTrial(i + 1, 10)
+		ex.Trials[i] = *buildTestTrial(i+1, 10)
 	}
 
 	// Write experiment

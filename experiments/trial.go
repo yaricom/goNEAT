@@ -1,23 +1,23 @@
 package experiments
 
 import (
-	"time"
-	"github.com/yaricom/goNEAT/neat/genetics"
-	"sort"
 	"encoding/gob"
+	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"sort"
+	"time"
 )
 
 // The structure to hold statistics about one experiment run (trial)
 type Trial struct {
 	// The trial number
-	Id               int
+	Id int
 	// The results per generation in this trial
-	Generations      Generations
+	Generations Generations
 	// The winner generation
 	WinnerGeneration *Generation
 
 	// The elapsed time between trial start and finish
-	Duration         time.Duration
+	Duration time.Duration
 }
 
 // Calculates average duration of evaluations among all generations of organism populations in this trial
@@ -96,7 +96,6 @@ func (t *Trial) BestComplexity() Floats {
 	}
 	return x
 }
-
 
 // Diversity returns number of species for each epoch
 func (t *Trial) Diversity() Floats {

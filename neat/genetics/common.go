@@ -3,12 +3,13 @@ package genetics
 
 import (
 	"errors"
-	"github.com/yaricom/goNEAT/neat"
-	"github.com/yaricom/goNEAT/neat/network"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
 // The innovation method type to be applied
 type innovationType byte
+
 // Available innovation types
 const (
 	// The novelty will be introduced by new NN node
@@ -17,9 +18,9 @@ const (
 	newLinkInnType
 )
 
-
 // The mutator type that specifies a kind of mutation of connection weights between NN nodes
 type mutatorType byte
+
 // Available mutator types
 const (
 	//This adds Gaussian noise to the weights
@@ -43,10 +44,10 @@ var (
 )
 
 // Utility to select trait with given ID from provided Traits array
-func traitWithId(trait_id int, traits []*neat.Trait) *neat.Trait {
-	if trait_id != 0 && traits != nil {
+func traitWithId(traitId int, traits []*neat.Trait) *neat.Trait {
+	if traitId != 0 && traits != nil {
 		for _, tr := range traits {
-			if tr.Id == trait_id {
+			if tr.Id == traitId {
 				return tr
 			}
 		}
@@ -55,14 +56,13 @@ func traitWithId(trait_id int, traits []*neat.Trait) *neat.Trait {
 }
 
 // Utility to select NNode with given ID from provided NNodes array
-func nodeWithId(node_id int, nodes []*network.NNode) *network.NNode {
-	if node_id != 0 && nodes != nil {
+func nodeWithId(nodeId int, nodes []*network.NNode) *network.NNode {
+	if nodeId != 0 && nodes != nil {
 		for _, n := range nodes {
-			if n.Id == node_id {
+			if n.Id == nodeId {
 				return n
 			}
 		}
 	}
 	return nil
 }
-

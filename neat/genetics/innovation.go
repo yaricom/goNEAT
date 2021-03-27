@@ -9,66 +9,64 @@ package genetics
 type Innovation struct {
 
 	// Two nodes specify where the innovation took place
-	InNodeId       int
-	OutNodeId      int
+	InNodeId  int
+	OutNodeId int
 	// The number assigned to the innovation
-	InnovationNum  int64
+	InnovationNum int64
 	// If this is a new node innovation, then there are 2 innovations (links) added for the new node
 	InnovationNum2 int64
 
 	// If a link is added, this is its weight
-	NewWeight      float64
+	NewWeight float64
 	// If a link is added, this is its connected trait index
-	NewTraitNum    int
+	NewTraitNum int
 	// If a new node was created, this is its node_id
-	NewNodeId      int
+	NewNodeId int
 
 	// If a new node was created, this is the innovation number of the gene's link it is being stuck inside
-	OldInnovNum    int64
+	OldInnovNum int64
 
 	// Flag to indicate whether its innovation for recurrent link
-	IsRecurrent    bool
+	IsRecurrent bool
 
 	// Either NEWNODE or NEWLINK
 	innovationType innovationType
 }
 
 // Constructor for the new node case
-func NewInnovationForNode(node_in_id, node_out_id int, innovation_num1, innovation_num2 int64,
-				newnode_id int, old_innov_num int64) *Innovation {
-	return &Innovation {
-		innovationType:newNodeInnType,
-		InNodeId:node_in_id,
-		OutNodeId:node_out_id,
-		InnovationNum:innovation_num1,
-		InnovationNum2:innovation_num2,
-		NewNodeId:newnode_id,
-		OldInnovNum:old_innov_num,
+func NewInnovationForNode(nodeInId, nodeOutId int, innovationNum1, innovationNum2 int64, newNodeId int, oldInnovNum int64) *Innovation {
+	return &Innovation{
+		innovationType: newNodeInnType,
+		InNodeId:       nodeInId,
+		OutNodeId:      nodeOutId,
+		InnovationNum:  innovationNum1,
+		InnovationNum2: innovationNum2,
+		NewNodeId:      newNodeId,
+		OldInnovNum:    oldInnovNum,
 	}
 }
 
 // Constructor for new link case
-func NewInnovationForLink(node_in_id, node_out_id int, innovation_num int64, weight float64, trait_id int) *Innovation {
-	return &Innovation {
-		innovationType:newLinkInnType,
-		InNodeId:node_in_id,
-		OutNodeId:node_out_id,
-		InnovationNum:innovation_num,
-		NewWeight:weight,
-		NewTraitNum:trait_id,
+func NewInnovationForLink(nodeInId, nodeOutId int, innovationNum int64, weight float64, traitId int) *Innovation {
+	return &Innovation{
+		innovationType: newLinkInnType,
+		InNodeId:       nodeInId,
+		OutNodeId:      nodeOutId,
+		InnovationNum:  innovationNum,
+		NewWeight:      weight,
+		NewTraitNum:    traitId,
 	}
 }
 
 //Constructor for a recur link
-func NewInnovationForRecurrentLink(node_in_id, node_out_id int, innovation_num int64, weight float64,
-					trait_id int, recur bool) *Innovation {
+func NewInnovationForRecurrentLink(nodeInId, nodeOutId int, innovationNum int64, weight float64, traitId int, recur bool) *Innovation {
 	return &Innovation{
-		innovationType:newLinkInnType,
-		InNodeId:node_in_id,
-		OutNodeId:node_out_id,
-		InnovationNum:innovation_num,
-		NewWeight:weight,
-		NewTraitNum:trait_id,
-		IsRecurrent:recur,
+		innovationType: newLinkInnType,
+		InNodeId:       nodeInId,
+		OutNodeId:      nodeOutId,
+		InnovationNum:  innovationNum,
+		NewWeight:      weight,
+		NewTraitNum:    traitId,
+		IsRecurrent:    recur,
 	}
 }
