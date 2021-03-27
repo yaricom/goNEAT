@@ -9,41 +9,41 @@ import (
 // It can be marked as recurrent.
 type Link struct {
 	// Weight of connection
-	Weight        float64
+	Weight float64
 	// NNode inputting into the link
-	InNode        *NNode
+	InNode *NNode
 	// NNode that the link affects
-	OutNode       *NNode
+	OutNode *NNode
 	// If TRUE the link is recurrent
-	IsRecurrent   bool
+	IsRecurrent bool
 	// If TRUE the link is time delayed
 	IsTimeDelayed bool
 
 	// Points to a trait of parameters for genetic creation
-	Trait         *neat.Trait
+	Trait *neat.Trait
 
 	/* ************ LEARNING PARAMETERS *********** */
 	// The following parameters are for use in neurons that learn through habituation,
 	// sensitization, or Hebbian-type processes
-	Params        []float64
+	Params []float64
 	// The amount of weight adjustment
-	AddedWeight   float64
+	AddedWeight float64
 }
 
-// Creates new link with specified weight, input and output neurons connected reccurently or not.
-func NewLink(weight float64, innode, outnode *NNode, recurrent bool) *Link {
+// Creates new link with specified weight, input and output neurons connected recurrently or not.
+func NewLink(weight float64, inputNode, outNode *NNode, recurrent bool) *Link {
 	link := newLink(weight)
-	link.InNode = innode
-	link.OutNode = outnode
+	link.InNode = inputNode
+	link.OutNode = outNode
 	link.IsRecurrent = recurrent
 	return link
 }
 
 // Creates new Link with specified Trait
-func NewLinkWithTrait(trait *neat.Trait, weight float64, innode, outnode *NNode, recurrent bool) *Link {
+func NewLinkWithTrait(trait *neat.Trait, weight float64, inputNode, outNode *NNode, recurrent bool) *Link {
 	link := newLink(weight)
-	link.InNode = innode
-	link.OutNode = outnode
+	link.InNode = inputNode
+	link.OutNode = outNode
 	link.IsRecurrent = recurrent
 	link.Trait = trait
 	link.deriveTrait(trait)
@@ -51,10 +51,10 @@ func NewLinkWithTrait(trait *neat.Trait, weight float64, innode, outnode *NNode,
 }
 
 // The copy constructor to create new link with parameters taken from provided ones and connecting specified nodes
-func NewLinkCopy(l *Link, innode, outnode *NNode) *Link {
+func NewLinkCopy(l *Link, inputNode, outNode *NNode) *Link {
 	link := newLink(l.Weight)
-	link.InNode = innode
-	link.OutNode = outnode
+	link.InNode = inputNode
+	link.OutNode = outNode
 	link.Trait = l.Trait
 	link.deriveTrait(l.Trait)
 	link.IsRecurrent = l.IsRecurrent
@@ -64,18 +64,18 @@ func NewLinkCopy(l *Link, innode, outnode *NNode) *Link {
 // The private default constructor
 func newLink(weight float64) *Link {
 	return &Link{
-		Weight:weight,
+		Weight: weight,
 	}
 }
 
 // Checks if this link is genetically equal to provided one, i.e. connects nodes with the same IDs and has equal
 // recurrent flag. I.e. if both links represent the same Gene.
 func (l *Link) IsEqualGenetically(ol *Link) bool {
-	same_in_node := (l.InNode.Id == ol.InNode.Id)
-	same_out_node := (l.OutNode.Id == ol.OutNode.Id)
-	same_recurrent := (l.IsRecurrent == ol.IsRecurrent)
+	sameInNode := l.InNode.Id == ol.InNode.Id
+	sameOutNode := l.OutNode.Id == ol.OutNode.Id
+	sameRecurrent := l.IsRecurrent == ol.IsRecurrent
 
-	return same_in_node && same_out_node && same_recurrent
+	return sameInNode && sameOutNode && sameRecurrent
 }
 
 // The Link methods implementation
