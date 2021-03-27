@@ -2,10 +2,10 @@
 package network
 
 import (
-	"math"
-	"fmt"
 	"errors"
+	"fmt"
 	"github.com/yaricom/goNEAT/neat/utils"
+	"math"
 )
 
 var (
@@ -60,8 +60,8 @@ const (
 )
 
 // Returns human readable NNode type name for given constant value
-func NodeTypeName(ntype NodeType) string {
-	switch ntype {
+func NodeTypeName(nType NodeType) string {
+	switch nType {
 	case NeuronNode:
 		return "NEURON"
 	case SensorNode:
@@ -120,14 +120,13 @@ func NeuronTypeByName(name string) (NodeNeuronType, error) {
 
 // Method to calculate activation for specified neuron node based on it's ActivationType field value.
 // Will return error and set -0.0 activation if unsupported activation type requested.
-func ActivateNode(node *NNode, a *utils.NodeActivatorsFactory) (err error) {
+func ActivateNode(node *NNode, a *utils.NodeActivatorsFactory) error {
 	out, err := a.ActivateByType(node.ActivationSum, node.Params, node.ActivationType)
 	if err == nil {
 		node.setActivation(out)
 	}
 	return err
 }
-
 
 // Method to activate neuron module presented by provided node. As a result of execution the activation values of all
 // input nodes will be processed by corresponding activation function and corresponding activation values of output nodes
@@ -143,9 +142,9 @@ func ActivateModule(module *NNode, a *utils.NodeActivatorsFactory) error {
 		return err
 	}
 	if len(outputs) != len(module.Outgoing) {
-		return errors.New(fmt.Sprintf(
-			"The number of output parameters [%d] returned by module activator doesn't match " +
-				"the number of output neurons of the module [%d]", len(outputs), len(module.Outgoing)))
+		return fmt.Errorf(
+			"number of output parameters [%d] returned by module activator doesn't match "+
+				"the number of output neurons of the module [%d]", len(outputs), len(module.Outgoing))
 	}
 	// set outputs
 	for i, out := range outputs {
@@ -154,4 +153,3 @@ func ActivateModule(module *NNode, a *utils.NodeActivatorsFactory) error {
 	}
 	return nil
 }
-

@@ -1,218 +1,168 @@
 package network
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"testing"
+)
 
 func TestFastModularNetworkSolver_RecursiveSteps(t *testing.T) {
-	netw := buildNetwork()
+	net := buildNetwork()
 
 	// Create network solver
-	data := []float64{0.0, 1.0} // BIAS is 1.0 by definition
-	fmm, err := netw.FastNetworkSolver()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if err := fmm.LoadSensors(data); err != nil {
-		t.Error(err)
-		return
-	}
+	data := []float64{0.5, 1.1} // BIAS is 1.0 by definition
+	fmm, err := net.FastNetworkSolver()
+	require.NoError(t, err, "failed to create fast network solver")
+	err = fmm.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
 
 	// Activate objective network
+	//
 	data = append(data, 1.0) // BIAS is a third object
-	if err := netw.LoadSensors(data); err != nil {
-		t.Error(err)
-		return
-	}
-	depth, err := netw.MaxDepth()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	err = net.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
+	depth, err := net.MaxDepth()
+	require.NoError(t, err, "failed to calculate max depth")
 	for i := 0; i < depth; i++ {
-		if res, err := netw.Activate(); err != nil {
-			t.Error(err)
-			return
-		} else if !res {
-			t.Error("failed to activate")
-			return
-		}
+		res, err := net.Activate()
+		require.NoError(t, err, "error when trying to activate at: %d", i)
+		require.True(t, res, "failed to activate at: %d", i)
 	}
 
-	// do recursive activation
-	if res, err := fmm.RecursiveSteps(); err != nil {
-		t.Error(err)
-	} else if !res {
-		t.Error("recursive acctivation retruned false")
-	} else {
-		outputs := fmm.ReadOutputs()
-		// check results
-		for i, out := range outputs {
-			if out != netw.Outputs[i].Activation {
-				t.Error("out != netw.Outputs[i].Activation at: ", i)
-			}
-		}
+	// Do recursive activation of the Fast Network Solver
+	//
+	res, err := fmm.RecursiveSteps()
+	require.NoError(t, err, "error when trying to activate Fast Network Solver")
+	require.True(t, res, "recursive activation failed")
+
+	// Compare activations of objective network and Fast Network Solver
+	//
+	fmmOutputs := fmm.ReadOutputs()
+	require.Equal(t, len(net.Outputs), len(fmmOutputs))
+
+	for i, out := range fmmOutputs {
+		assert.Equal(t, net.Outputs[i].Activation, out, "wrong activation at: %d", i)
 	}
 }
 
 func TestFastModularNetworkSolver_ForwardSteps(t *testing.T) {
-	netw := buildModularNetwork()
+	net := buildModularNetwork()
 
 	// create network solver
 	data := []float64{1.0, 2.0} // bias inherent
-	fmm, err := netw.FastNetworkSolver()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if err := fmm.LoadSensors(data); err != nil {
-		t.Error(err)
-		return
-	}
+	fmm, err := net.FastNetworkSolver()
+	require.NoError(t, err, "failed to create fast network solver")
+	err = fmm.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
 
 	steps := 5
 
 	// activate objective network
+	//
 	data = append(data, 1.0) // BIAS is third object
-	if err := netw.LoadSensors(data); err != nil {
-		t.Error(err)
-		return
-	}
+	err = net.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
 	for i := 0; i < steps; i++ {
-		if res, err := netw.Activate(); err != nil {
-			t.Error(err)
-			return
-		} else if !res {
-			t.Error("failed to activate")
-			return
-		}
+		res, err := net.Activate()
+		require.NoError(t, err, "error when trying to activate at: %d", i)
+		require.True(t, res, "failed to activate at: %d", i)
 	}
 
 	// do forward steps through the solver and test results
-	if res, err := fmm.ForwardSteps(steps); err != nil {
-		t.Error(err)
-	} else if !res {
-		t.Error("forward steps retruned false")
-	} else {
-		outputs := fmm.ReadOutputs()
-		// check results
-		for i, out := range outputs {
-			if out != netw.Outputs[i].Activation {
-				t.Error("out != netw.Outputs[i].Activation at: ", i, out, "!=", netw.Outputs[i].Activation)
-			}
-		}
+	//
+	res, err := fmm.ForwardSteps(steps)
+	require.NoError(t, err, "error while do forward steps")
+	require.True(t, res, "forward steps returned false")
+
+	// check results by comparing activations of objective network and fast network solver
+	//
+	outputs := fmm.ReadOutputs()
+	for i, out := range outputs {
+		assert.Equal(t, net.Outputs[i].Activation, out, "wrong activation at: %d", i)
 	}
 }
 
 func TestFastModularNetworkSolver_Relax(t *testing.T) {
-	netw := buildModularNetwork()
+	net := buildModularNetwork()
 
 	// create network solver
 	data := []float64{1.5, 2.0} // bias inherent
-	fmm, err := netw.FastNetworkSolver()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if err := fmm.LoadSensors(data); err != nil {
-		t.Error(err)
-		return
-	}
+	fmm, err := net.FastNetworkSolver()
+	require.NoError(t, err, "failed to create fast network solver")
+	err = fmm.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
 
 	steps := 5
 
 	// activate objective network
+	//
 	data = append(data, 1.0) // BIAS is third object
-	if err := netw.LoadSensors(data); err != nil {
-		t.Error(err)
-		return
-	}
+	err = net.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
 	for i := 0; i < steps; i++ {
-		if res, err := netw.Activate(); err != nil {
-			t.Error(err)
-			return
-		} else if !res {
-			t.Error("failed to activate")
-			return
-		}
+		res, err := net.Activate()
+		require.NoError(t, err, "error when trying to activate at: %d", i)
+		require.True(t, res, "failed to activate at: %d", i)
 	}
 
-	// do relaxation
-	if res, err := fmm.Relax(steps, 1); err != nil {
-		t.Error(err)
-	} else if !res {
-		t.Error("failed to relax within given maximal steps number")
-	} else {
-		outputs := fmm.ReadOutputs()
-		// check results
-		for i, out := range outputs {
-			if out != netw.Outputs[i].Activation {
-				t.Error("out != netw.Outputs[i].Activation at: ", i, out, "!=", netw.Outputs[i].Activation)
-			}
-		}
+	// do relaxation of fast network solver
+	//
+	res, err := fmm.Relax(steps, 1)
+	require.NoError(t, err)
+	require.True(t, res, "failed to relax within given maximal steps number")
+
+	// check results by comparing activations of objective network and fast network solver
+	//
+	outputs := fmm.ReadOutputs()
+	for i, out := range outputs {
+		assert.Equal(t, net.Outputs[i].Activation, out, "wrong activation at: %d", i)
 	}
 }
 
 func TestFastModularNetworkSolver_Flush(t *testing.T) {
-	netw := buildModularNetwork()
+	net := buildModularNetwork()
 
 	// create network solver
 	data := []float64{1.5, 2.0} // bias inherent
-	fmm, err := netw.FastNetworkSolver()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if err := fmm.LoadSensors(data); err != nil {
-		t.Error(err)
-		return
-	}
+	fmm, err := net.FastNetworkSolver()
+	require.NoError(t, err, "failed to create fast network solver")
+	err = fmm.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
 
-	fmm_impl := fmm.(*FastModularNetworkSolver)
-	// test has active signals
-	active := countActiveSignals(fmm_impl)
-	if active == 0 {
-		t.Error("no active signal found")
-	}
+	fmmImpl := fmm.(*FastModularNetworkSolver)
+	// test that network has active signals
+	active := countActiveSignals(fmmImpl)
+	assert.NotZero(t, active, "no active signal found")
 
 	// flush and test
-	if res, err := fmm.Flush(); err != nil {
-		t.Error(err)
-	} else if !res {
-		t.Error("failed to flush network")
-	} else {
-		active = countActiveSignals(fmm_impl)
-		if active != 0 {
-			t.Error("after flush the active signal still present", active)
-		}
-	}
+	res, err := fmm.Flush()
+	require.NoError(t, err)
+	require.True(t, res, "failed to flush network")
+
+	active = countActiveSignals(fmmImpl)
+	assert.Zero(t, active, "after flush the active signal still present")
 }
 
 func TestFastModularNetworkSolver_NodeCount(t *testing.T) {
-	netw := buildModularNetwork()
+	net := buildModularNetwork()
 
-	// create network solver
-	if fmm, err := netw.FastNetworkSolver(); err != nil {
-		t.Error(err)
-	} else if fmm.NodeCount() != 9 {
-		t.Error("fmm.NodeCount() != 9", fmm.NodeCount())
-	}
+	fmm, err := net.FastNetworkSolver()
+	require.NoError(t, err, "failed to create fast network solver")
+	assert.Equal(t, 9, fmm.NodeCount())
 }
 
 func TestFastModularNetworkSolver_LinkCount(t *testing.T) {
-	netw := buildModularNetwork()
+	net := buildModularNetwork()
 
-	// create network solver
-	if fmm, err := netw.FastNetworkSolver(); err != nil {
-		t.Error(err)
-	} else if fmm.LinkCount() != 9 {
-		t.Error("fmm.LinkCount() != 9", fmm.LinkCount())
-	}
+	fmm, err := net.FastNetworkSolver()
+	require.NoError(t, err, "failed to create fast network solver")
+	assert.Equal(t, 9, fmm.LinkCount())
 }
 
-func countActiveSignals(fmm_impl *FastModularNetworkSolver) int {
+func countActiveSignals(impl *FastModularNetworkSolver) int {
 	active := 0
-	for i := fmm_impl.biasNeuronCount; i < fmm_impl.totalNeuronCount; i++ {
-		if fmm_impl.neuronSignals[i] != 0.0 {
+	for i := impl.biasNeuronCount; i < impl.totalNeuronCount; i++ {
+		if impl.neuronSignals[i] != 0.0 {
 			active++
 		}
 	}

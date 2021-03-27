@@ -1,96 +1,97 @@
 package network
 
 import (
-	"fmt"
-	"math"
 	"errors"
+	"fmt"
 	"github.com/yaricom/goNEAT/neat/utils"
+	"math"
 )
 
 // The connection descriptor for fast network
 type FastNetworkLink struct {
 	// The index of source neuron
-	SourceIndx int
+	SourceIndex int
 	// The index of target neuron
-	TargetIndx int
+	TargetIndex int
 	// The weight of this link
-	Weight     float64
+	Weight float64
 	// The signal relayed by this link
-	Signal     float64
+	Signal float64
 }
+
 // The module relay (control node) descriptor for fast network
 type FastControlNode struct {
 	// The activation function for control node
 	ActivationType utils.NodeActivationType
 	// The indexes of the input nodes
-	InputIndxs     []int
+	InputIndexes []int
 	// The indexes of the output nodes
-	OutputIndxs    []int
+	OutputIndexes []int
 }
 
 // The fast modular network solver implementation to be used for big neural networks simulation.
 type FastModularNetworkSolver struct {
 	// A network id
-	Id                          int
+	Id int
 	// Is a name of this network */
-	Name                        string
+	Name string
 
 	// The current activation values per each neuron
-	neuronSignals               []float64
+	neuronSignals []float64
 	// This array is a parallel of neuronSignals and used to test network relaxation
 	neuronSignalsBeingProcessed []float64
 
 	// The activation functions per neuron, must be in the same order as neuronSignals. Has nil entries for
 	// neurons that are inputs or outputs of a module.
-	activationFunctions         []utils.NodeActivationType
+	activationFunctions []utils.NodeActivationType
 	// The bias values associated with neurons
-	biasList                    []float64
+	biasList []float64
 	// The control nodes relaying between network modules
-	modules                     []*FastControlNode
+	modules []*FastControlNode
 	// The connections
-	connections                 []*FastNetworkLink
+	connections []*FastNetworkLink
 
 	// The number of input neurons
-	inputNeuronCount            int
+	inputNeuronCount int
 	// The total number of sensors in the network (input + bias). This is also the index of the first output neuron in the neuron signals.
-	sensorNeuronCount           int
+	sensorNeuronCount int
 	// The number of output neurons
-	outputNeuronCount           int
+	outputNeuronCount int
 	// The bias neuron count (usually one). This is also the index of the first input neuron in the neuron signals.
-	biasNeuronCount             int
+	biasNeuronCount int
 	// The total number of neurons in network
-	totalNeuronCount            int
+	totalNeuronCount int
 
 	// For recursive activation, marks whether we have finished this node yet
-	activated                   []bool
+	activated []bool
 	// For recursive activation, makes whether a node is currently being calculated (recurrent connections processing)
-	inActivation                []bool
+	inActivation []bool
 	// For recursive activation, the previous activation values of recurrent connections (recurrent connections processing)
-	lastActivation              []float64
+	lastActivation []float64
 
 	// The adjacent list to hold IDs of outgoing nodes for each network node
-	adjacentList                [][]int
+	adjacentList [][]int
 	// The adjacent list to hold IDs of incoming nodes for each network node
-	reverseAdjacentList         [][]int
+	reverseAdjacentList [][]int
 	// The adjacent matrix to hold connection weights between all connected nodes
-	adjacentMatrix              [][]float64
+	adjacentMatrix [][]float64
 }
 
 // Creates new fast modular network solver
 func NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount int,
-activationFunctions []utils.NodeActivationType, connections []*FastNetworkLink,
-biasList []float64, modules []*FastControlNode) *FastModularNetworkSolver {
+	activationFunctions []utils.NodeActivationType, connections []*FastNetworkLink,
+	biasList []float64, modules []*FastControlNode) *FastModularNetworkSolver {
 
 	fmm := FastModularNetworkSolver{
-		biasNeuronCount:biasNeuronCount,
-		inputNeuronCount:inputNeuronCount,
-		sensorNeuronCount:biasNeuronCount + inputNeuronCount,
-		outputNeuronCount:outputNeuronCount,
-		totalNeuronCount:totalNeuronCount,
-		activationFunctions:activationFunctions,
-		biasList:biasList,
-		modules:modules,
-		connections:connections,
+		biasNeuronCount:     biasNeuronCount,
+		inputNeuronCount:    inputNeuronCount,
+		sensorNeuronCount:   biasNeuronCount + inputNeuronCount,
+		outputNeuronCount:   outputNeuronCount,
+		totalNeuronCount:    totalNeuronCount,
+		activationFunctions: activationFunctions,
+		biasList:            biasList,
+		modules:             modules,
+		connections:         connections,
 	}
 
 	// Allocate the arrays that store the states at different points in the neural network.
@@ -118,8 +119,8 @@ biasList []float64, modules []*FastControlNode) *FastModularNetworkSolver {
 	}
 
 	for i := 0; i < len(connections); i++ {
-		crs := connections[i].SourceIndx
-		crt := connections[i].TargetIndx
+		crs := connections[i].SourceIndex
+		crt := connections[i].TargetIndex
 		// Holds outgoing nodes
 		fmm.adjacentList[crs] = append(fmm.adjacentList[crs], crt)
 		// Holds incoming nodes
@@ -164,12 +165,15 @@ func (fmm *FastModularNetworkSolver) RecursiveSteps() (res bool, err error) {
 
 	// Get each output node activation recursively
 	for i := 0; i < fmm.outputNeuronCount; i++ {
-		if res, err = fmm.recursiveActivateNode(fmm.sensorNeuronCount + i); err != nil {
+		index := fmm.sensorNeuronCount + i
+		if res, err = fmm.recursiveActivateNode(index); err != nil {
 			return false, err
+		} else if !res {
+			return false, fmt.Errorf("failed to recursively activate the output neuron at %d", index)
 		}
 	}
 
-	return true, nil
+	return res, nil
 }
 
 // Propagate activation wave by recursively looking for input signals graph for a given output neuron
@@ -187,25 +191,27 @@ func (fmm *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res
 
 	// Adjacency list in reverse holds incoming connections, go through each one and activate it
 	for i := 0; i < len(fmm.reverseAdjacentList[currentNode]); i++ {
-		crntAdjNode := fmm.reverseAdjacentList[currentNode][i]
+		currentAdjNode := fmm.reverseAdjacentList[currentNode][i]
 
 		// If this node is currently being activated then we have reached a cycle, or recurrent connection.
 		// Use the previous activation in this case
-		if fmm.inActivation[crntAdjNode] {
-			fmm.neuronSignalsBeingProcessed[currentNode] += fmm.lastActivation[crntAdjNode] * fmm.adjacentMatrix[crntAdjNode][currentNode]
+		if fmm.inActivation[currentAdjNode] {
+			fmm.neuronSignalsBeingProcessed[currentNode] += fmm.lastActivation[currentAdjNode] * fmm.adjacentMatrix[currentAdjNode][currentNode]
 		} else {
 			// Otherwise proceed as normal
 			// Recurse if this neuron has not been activated yet
-			if !fmm.activated[crntAdjNode] {
-				res, err = fmm.recursiveActivateNode(crntAdjNode)
+			if !fmm.activated[currentAdjNode] {
+				res, err = fmm.recursiveActivateNode(currentAdjNode)
 				if err != nil {
 					// recursive activation failed
 					return false, err
+				} else if !res {
+					return false, fmt.Errorf("failed to recursively activate neuron at %d", currentAdjNode)
 				}
 			}
 
 			// Add it to the new activation
-			fmm.neuronSignalsBeingProcessed[currentNode] += fmm.neuronSignals[crntAdjNode] * fmm.adjacentMatrix[crntAdjNode][currentNode]
+			fmm.neuronSignalsBeingProcessed[currentNode] += fmm.neuronSignals[currentAdjNode] * fmm.adjacentMatrix[currentAdjNode][currentNode]
 		}
 	}
 
@@ -221,6 +227,8 @@ func (fmm *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res
 		fmm.activationFunctions[currentNode]); err != nil {
 		// failed to activate
 		res = false
+	} else {
+		res = true
 	}
 	return res, err
 }
@@ -246,7 +254,7 @@ func (fmm *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) 
 
 	// Calculate output signal per each connection and add the signals to the target neurons
 	for _, conn := range fmm.connections {
-		fmm.neuronSignalsBeingProcessed[conn.TargetIndx] += fmm.neuronSignals[conn.SourceIndx] * conn.Weight
+		fmm.neuronSignalsBeingProcessed[conn.TargetIndex] += fmm.neuronSignals[conn.SourceIndex] * conn.Weight
 	}
 
 	// Pass the signals through the single-valued activation functions
@@ -265,14 +273,14 @@ func (fmm *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) 
 
 	// Pass the signals through each module (activation function with more than one input or output)
 	for _, module := range fmm.modules {
-		inputs := make([]float64, len(module.InputIndxs))
-		for i, in_index := range module.InputIndxs {
-			inputs[i] = fmm.neuronSignalsBeingProcessed[in_index]
+		inputs := make([]float64, len(module.InputIndexes))
+		for i, inIndex := range module.InputIndexes {
+			inputs[i] = fmm.neuronSignalsBeingProcessed[inIndex]
 		}
 		if outputs, err := utils.NodeActivators.ActivateModuleByType(inputs, nil, module.ActivationType); err == nil {
 			// save outputs
-			for i, out_index := range module.OutputIndxs {
-				fmm.neuronSignalsBeingProcessed[out_index] = outputs[i]
+			for i, outIndex := range module.OutputIndexes {
+				fmm.neuronSignalsBeingProcessed[outIndex] = outputs[i]
 			}
 		} else {
 			return false, err
@@ -289,7 +297,7 @@ func (fmm *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) 
 	} else {
 		for i := fmm.sensorNeuronCount; i < fmm.totalNeuronCount; i++ {
 			// First check whether any location in the network has changed by more than a small amount.
-			isRelaxed = isRelaxed && !(math.Abs(fmm.neuronSignals[i] - fmm.neuronSignalsBeingProcessed[i]) > maxAllowedSignalDelta)
+			isRelaxed = isRelaxed && !(math.Abs(fmm.neuronSignals[i]-fmm.neuronSignalsBeingProcessed[i]) > maxAllowedSignalDelta)
 
 			fmm.neuronSignals[i] = fmm.neuronSignalsBeingProcessed[i]
 			fmm.neuronSignalsBeingProcessed[i] = 0
@@ -298,7 +306,6 @@ func (fmm *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) 
 
 	return isRelaxed, err
 }
-
 
 // Flushes network state by removing all current activations. Returns true if network flushed successfully or
 // false in case of error.
@@ -314,7 +321,7 @@ func (fmm *FastModularNetworkSolver) LoadSensors(inputs []float64) error {
 	if len(inputs) == fmm.inputNeuronCount {
 		// only inputs should be provided
 		for i := 0; i < fmm.inputNeuronCount; i++ {
-			fmm.neuronSignals[fmm.biasNeuronCount + i] = inputs[i]
+			fmm.neuronSignals[fmm.biasNeuronCount+i] = inputs[i]
 		}
 	} else {
 		return NetErrUnsupportedSensorsArraySize
@@ -324,23 +331,24 @@ func (fmm *FastModularNetworkSolver) LoadSensors(inputs []float64) error {
 
 // Read output values from the output nodes of the network
 func (fmm *FastModularNetworkSolver) ReadOutputs() []float64 {
-	return fmm.neuronSignals[fmm.sensorNeuronCount:fmm.sensorNeuronCount + fmm.outputNeuronCount]
+	return fmm.neuronSignals[fmm.sensorNeuronCount : fmm.sensorNeuronCount+fmm.outputNeuronCount]
 }
 
 // Returns the total number of neural units in the network
 func (fmm *FastModularNetworkSolver) NodeCount() int {
 	return fmm.totalNeuronCount + len(fmm.modules)
 }
+
 // Returns the total number of links between nodes in the network
 func (fmm *FastModularNetworkSolver) LinkCount() int {
 	// count all connections
-	num_links := len(fmm.connections)
+	numLinks := len(fmm.connections)
 
 	// count all bias links if any
 	if fmm.biasNeuronCount > 0 {
 		for _, b := range fmm.biasList {
 			if b != 0 {
-				num_links++
+				numLinks++
 			}
 		}
 	}
@@ -348,16 +356,16 @@ func (fmm *FastModularNetworkSolver) LinkCount() int {
 	// count all modules links
 	if len(fmm.modules) != 0 {
 		for _, module := range fmm.modules {
-			num_links += len(module.InputIndxs) + len(module.OutputIndxs)
+			numLinks += len(module.InputIndexes) + len(module.OutputIndexes)
 		}
 	}
-	return num_links
+	return numLinks
 }
 
 // Stringer
 func (fmm *FastModularNetworkSolver) String() string {
 	str := fmt.Sprintf("FastModularNetwork, id: %d, name: [%s], neurons: %d,\n\tinputs: %d,\tbias: %d,\toutputs:%d,\t hidden: %d",
 		fmm.Id, fmm.Name, fmm.totalNeuronCount, fmm.inputNeuronCount, fmm.biasNeuronCount, fmm.outputNeuronCount,
-		fmm.totalNeuronCount - fmm.sensorNeuronCount - fmm.outputNeuronCount)
+		fmm.totalNeuronCount-fmm.sensorNeuronCount-fmm.outputNeuronCount)
 	return str
 }

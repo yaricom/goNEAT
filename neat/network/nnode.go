@@ -1,9 +1,8 @@
 package network
 
 import (
-	"fmt"
-	"errors"
 	"bytes"
+	"fmt"
 	"github.com/yaricom/goNEAT/neat"
 	"github.com/yaricom/goNEAT/neat/utils"
 )
@@ -14,53 +13,53 @@ import (
 // Use an activation count to avoid flushing
 type NNode struct {
 	// The ID of the node
-	Id                int
+	Id int
 
 	// The type of node activation function (SIGMOID, ...)
-	ActivationType    utils.NodeActivationType
+	ActivationType utils.NodeActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
-	NeuronType        NodeNeuronType
+	NeuronType NodeNeuronType
 
 	// The node's activation value
-	Activation        float64
+	Activation float64
 	// The number of activations for current node
-	ActivationsCount  int32
+	ActivationsCount int32
 	// The activation sum
-	ActivationSum     float64
+	ActivationSum float64
 
 	// The list of all incoming connections
-	Incoming          []*Link
+	Incoming []*Link
 	// The list of all outgoing connections
-	Outgoing          []*Link
+	Outgoing []*Link
 	// The trait linked to the node
-	Trait             *neat.Trait
+	Trait *neat.Trait
 
 	// Used for Gene decoding by referencing analogue to this node in organism phenotype
 	PhenotypeAnalogue *NNode
 
 	// the flag to use for loop detection
-	visited           bool
+	visited bool
 
 	/* ************ LEARNING PARAMETERS *********** */
 	// The following parameters are for use in neurons that learn through habituation,
 	// sensitization, or Hebbian-type processes  */
-	Params            []float64
+	Params []float64
 
 	// Activation value of node at time t-1; Holds the previous step's activation for recurrency
-	lastActivation    float64
+	lastActivation float64
 	// Activation value of node at time t-2 Holds the activation before  the previous step's
 	// This is necessary for a special recurrent case when the innode of a recurrent link is one time step ahead of the outnode.
 	// The innode then needs to send from TWO time steps ago
-	lastActivation2   float64
+	lastActivation2 float64
 
 	// If true the node is active - used during node activation
-	isActive          bool
+	isActive bool
 }
 
 // Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
-func NewNNode(nodeid int, neuronType NodeNeuronType) *NNode {
+func NewNNode(nodeId int, neuronType NodeNeuronType) *NNode {
 	n := NewNetworkNode()
-	n.Id = nodeid
+	n.Id = nodeId
 	n.NeuronType = neuronType
 	return n
 }
@@ -78,10 +77,10 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 // The default constructor
 func NewNetworkNode() *NNode {
 	return &NNode{
-		NeuronType:HiddenNeuron,
-		ActivationType:utils.SigmoidSteepenedActivation,
-		Incoming:make([]*Link, 0),
-		Outgoing:make([]*Link, 0),
+		NeuronType:     HiddenNeuron,
+		ActivationType: utils.SigmoidSteepenedActivation,
+		Incoming:       make([]*Link, 0),
+		Outgoing:       make([]*Link, 0),
 	}
 }
 
@@ -165,19 +164,19 @@ func (n *NNode) Flushback() {
 	n.visited = false
 }
 
-// Verify flushing for debuging
+// Verify flushing for debugging
 func (n *NNode) FlushbackCheck() error {
 	if n.ActivationsCount > 0 {
-		return errors.New(fmt.Sprintf("NNODE: %s has activation count %d", n, n.ActivationsCount))
+		return fmt.Errorf("NNODE: %s has activation count %d", n, n.ActivationsCount)
 	}
 	if n.Activation > 0 {
-		return errors.New(fmt.Sprintf("NNODE: %s has activation %f", n, n.Activation))
+		return fmt.Errorf("NNODE: %s has activation %f", n, n.Activation)
 	}
 	if n.lastActivation > 0 {
-		return errors.New(fmt.Sprintf("NNODE: %s has last_activation %f", n, n.lastActivation))
+		return fmt.Errorf("NNODE: %s has last_activation %f", n, n.lastActivation)
 	}
 	if n.lastActivation2 > 0 {
-		return errors.New(fmt.Sprintf("NNODE: %s has last_activation2 %f", n, n.lastActivation2))
+		return fmt.Errorf("NNODE: %s has last_activation2 %f", n, n.lastActivation2)
 	}
 	return nil
 }
@@ -200,12 +199,12 @@ func (n *NNode) Depth(d int) (int, error) {
 				// was already visited (loop detected) - skipping
 				continue
 			}
-			cur_depth, err := l.InNode.Depth(d + 1)
+			curDepth, err := l.InNode.Depth(d + 1)
 			if err != nil {
-				return cur_depth, err
+				return curDepth, err
 			}
-			if cur_depth > max {
-				max = cur_depth
+			if curDepth > max {
+				max = curDepth
 			}
 		}
 		return max, nil
@@ -236,23 +235,21 @@ func (n *NNode) String() string {
 func (n *NNode) Print() string {
 	str := "NNode fields\n"
 	b := bytes.NewBufferString(str)
-	fmt.Fprintf(b, "\tId: %d\n", n.Id)
-	fmt.Fprintf(b, "\tIsActive: %t\n", n.isActive)
-	fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
+	_, _ = fmt.Fprintf(b, "\tId: %d\n", n.Id)
+	_, _ = fmt.Fprintf(b, "\tIsActive: %t\n", n.isActive)
+	_, _ = fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
 	activation, _ := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
-	fmt.Fprintf(b, "\tActivation Type: %s\n", activation)
-	fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
-	fmt.Fprintf(b, "\tActivationsCount: %d\n", n.ActivationsCount)
-	fmt.Fprintf(b, "\tActivationSum: %f\n", n.ActivationSum)
-	fmt.Fprintf(b, "\tIncoming: %s\n", n.Incoming)
-	fmt.Fprintf(b, "\tOutgoing: %s\n", n.Outgoing)
-	fmt.Fprintf(b, "\tTrait: %s\n", n.Trait)
-	fmt.Fprintf(b, "\tPhenotypeAnalogue: %s\n", n.PhenotypeAnalogue)
-	fmt.Fprintf(b, "\tParams: %f\n", n.Params)
-	fmt.Fprintf(b, "\tlastActivation: %f\n", n.lastActivation)
-	fmt.Fprintf(b, "\tlastActivation2: %f\n", n.lastActivation2)
+	_, _ = fmt.Fprintf(b, "\tActivation Type: %s\n", activation)
+	_, _ = fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
+	_, _ = fmt.Fprintf(b, "\tActivationsCount: %d\n", n.ActivationsCount)
+	_, _ = fmt.Fprintf(b, "\tActivationSum: %f\n", n.ActivationSum)
+	_, _ = fmt.Fprintf(b, "\tIncoming: %s\n", n.Incoming)
+	_, _ = fmt.Fprintf(b, "\tOutgoing: %s\n", n.Outgoing)
+	_, _ = fmt.Fprintf(b, "\tTrait: %s\n", n.Trait)
+	_, _ = fmt.Fprintf(b, "\tPhenotypeAnalogue: %s\n", n.PhenotypeAnalogue)
+	_, _ = fmt.Fprintf(b, "\tParams: %f\n", n.Params)
+	_, _ = fmt.Fprintf(b, "\tlastActivation: %f\n", n.lastActivation)
+	_, _ = fmt.Fprintf(b, "\tlastActivation2: %f\n", n.lastActivation2)
 
 	return b.String()
 }
-
-
