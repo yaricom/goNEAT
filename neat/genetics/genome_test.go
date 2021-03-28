@@ -12,10 +12,10 @@ const gnomeStr = "genomestart 1\n" +
 	"trait 1 0.1 0 0 0 0 0 0 0\n" +
 	"trait 3 0.3 0 0 0 0 0 0 0\n" +
 	"trait 2 0.2 0 0 0 0 0 0 0\n" +
-	"node 1 0 1 1 NullActivation\n" +
-	"node 2 0 1 1 NullActivation\n" +
-	"node 3 0 1 3 SigmoidSteepenedActivation\n" +
-	"node 4 0 0 2 SigmoidSteepenedActivation\n" +
+	"node 1 0 1 1 NullActivation\n" + // SENSOR
+	"node 2 0 1 1 NullActivation\n" + // SENSOR
+	"node 3 0 1 3 SigmoidSteepenedActivation\n" + // BIAS
+	"node 4 0 0 2 SigmoidSteepenedActivation\n" + // OUTPUT
 	"gene 1 1 4 1.5 false 1 0 true\n" +
 	"gene 2 2 4 2.5 false 2 0 true\n" +
 	"gene 3 3 4 3.5 false 3 0 true\n" +

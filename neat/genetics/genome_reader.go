@@ -83,11 +83,11 @@ func (r *plainGenomeReader) Read() (*Genome, error) {
 
 		case "gene":
 			// Read a Gene
-			newGene, err := readPlainConnectionGene(lr, gnome.Traits, gnome.Nodes)
+			gene, err := readPlainConnectionGene(lr, gnome.Traits, gnome.Nodes)
 			if err != nil {
 				return nil, err
 			}
-			gnome.Genes = append(gnome.Genes, newGene)
+			gnome.Genes = append(gnome.Genes, gene)
 
 		case "genomeend":
 			// Read Genome ID

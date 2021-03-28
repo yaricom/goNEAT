@@ -54,9 +54,9 @@ func NewTraitAvrg(t1, t2 *Trait) (*Trait, error) {
 }
 
 // The default private constructor
-func newTrait(lenght int) *Trait {
+func newTrait(length int) *Trait {
 	return &Trait{
-		Params: make([]float64, lenght),
+		Params: make([]float64, length),
 	}
 }
 
