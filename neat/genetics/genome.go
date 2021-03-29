@@ -187,7 +187,7 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 	return &gnome
 }
 
-// Reads Genome from reader
+// ReadGenome reads Genome from reader
 func ReadGenome(ir io.Reader, id int) (*Genome, error) {
 	// stub for backward compatibility
 	// the new implementations should use GenomeReader to decode genome data in variety of formats
@@ -195,8 +195,12 @@ func ReadGenome(ir io.Reader, id int) (*Genome, error) {
 	if err != nil {
 		return nil, err
 	}
-	gnome, err := r.Read()
-	return gnome, err
+	if gnome, err := r.Read(); err != nil {
+		return nil, err
+	} else {
+		gnome.Id = id
+		return gnome, err
+	}
 }
 
 // Writes this genome into provided writer
@@ -255,46 +259,42 @@ func (g *Genome) Extrons() int {
 // If mismatch detected the error will be returned with mismatch details.
 func (g *Genome) IsEqual(og *Genome) (bool, error) {
 	if len(g.Traits) != len(og.Traits) {
-		return false, errors.New(fmt.Sprintf("traits count mismatch: %d != %d",
-			len(g.Traits), len(og.Traits)))
+		return false, fmt.Errorf("traits count mismatch: %d != %d",
+			len(g.Traits), len(og.Traits))
 	}
 	for i, tr := range og.Traits {
 		if !reflect.DeepEqual(tr, g.Traits[i]) {
-			return false, errors.New(
-				fmt.Sprintf("traits mismatch, expected: %s, but found: %s", tr, g.Traits[i]))
+			return false, fmt.Errorf("traits mismatch, expected: %s, but found: %s", tr, g.Traits[i])
 		}
 	}
 
 	if len(g.Nodes) != len(og.Nodes) {
-		return false, errors.New(fmt.Sprintf("nodes count mismatch: %d != %d",
-			len(g.Nodes), len(og.Nodes)))
+		return false, fmt.Errorf("nodes count mismatch: %d != %d",
+			len(g.Nodes), len(og.Nodes))
 	}
 	for i, nd := range og.Nodes {
 		if !reflect.DeepEqual(nd, g.Nodes[i]) {
-			return false, errors.New(
-				fmt.Sprintf("node mismatch, expected: %s\nfound: %s", nd, g.Nodes[i]))
+			return false, fmt.Errorf("node mismatch, expected: %s\nfound: %s", nd, g.Nodes[i])
 		}
 	}
 
 	if len(g.Genes) != len(og.Genes) {
-		return false, errors.New(fmt.Sprintf("genes count mismatch: %d != %d",
-			len(g.Genes), len(og.Genes)))
+		return false, fmt.Errorf("genes count mismatch: %d != %d",
+			len(g.Genes), len(og.Genes))
 	}
 	for i, gen := range og.Genes {
 		if !reflect.DeepEqual(gen, g.Genes[i]) {
-			return false, errors.New(
-				fmt.Sprintf("gene mismatch, expected: %s\nfound: %s", gen, g.Genes[i]))
+			return false, fmt.Errorf("gene mismatch, expected: %s\nfound: %s", gen, g.Genes[i])
 		}
 	}
 
 	if len(g.ControlGenes) != len(og.ControlGenes) {
-		return false, errors.New(fmt.Sprintf("control genes count mismatch: %d != %d",
-			len(g.ControlGenes), len(og.ControlGenes)))
+		return false, fmt.Errorf("control genes count mismatch: %d != %d",
+			len(g.ControlGenes), len(og.ControlGenes))
 	}
 	for i, cg := range og.ControlGenes {
 		if !reflect.DeepEqual(cg, g.ControlGenes[i]) {
-			return false, errors.New(
-				fmt.Sprintf("control gene mismatch, expected: %s\nfound: %s", cg, g.ControlGenes[i]))
+			return false, fmt.Errorf("control gene mismatch, expected: %s\nfound: %s", cg, g.ControlGenes[i])
 		}
 	}
 
@@ -470,28 +470,25 @@ func (g *Genome) Genesis(netId int) (*network.Network, error) {
 func (g *Genome) duplicate(newId int) (*Genome, error) {
 
 	// Duplicate the traits
-	traitsDup := make([]*neat.Trait, 0)
-	for _, tr := range g.Traits {
-		newTrait := neat.NewTraitCopy(tr)
-		traitsDup = append(traitsDup, newTrait)
+	traitsDup := make([]*neat.Trait, len(g.Traits))
+	for i, tr := range g.Traits {
+		traitsDup[i] = neat.NewTraitCopy(tr)
 	}
 
 	// Duplicate NNodes
-	nodesDup := make([]*network.NNode, 0)
-	for _, nd := range g.Nodes {
+	nodesDup := make([]*network.NNode, len(g.Nodes))
+	for i, nd := range g.Nodes {
 		// First, find the duplicate of the trait that this node points to
 		assocTrait := nd.Trait
 		if assocTrait != nil {
 			assocTrait = traitWithId(assocTrait.Id, traitsDup)
 		}
-		newNode := network.NewNNodeCopy(nd, assocTrait)
-
-		nodesDup = append(nodesDup, newNode)
+		nodesDup[i] = network.NewNNodeCopy(nd, assocTrait)
 	}
 
 	// Duplicate Genes
-	genesDup := make([]*Gene, 0)
-	for _, gn := range g.Genes {
+	genesDup := make([]*Gene, len(g.Genes))
+	for i, gn := range g.Genes {
 		// First find the nodes connected by the gene's link
 		inNode := nodeWithId(gn.Link.InNode.Id, nodesDup)
 		if inNode == nil {
@@ -512,8 +509,7 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 			assocTrait = traitWithId(assocTrait.Id, traitsDup)
 		}
 
-		gene := NewGeneCopy(gn, assocTrait, inNode, outNode)
-		genesDup = append(genesDup, gene)
+		genesDup[i] = NewGeneCopy(gn, assocTrait, inNode, outNode)
 	}
 
 	if len(g.ControlGenes) == 0 {
@@ -521,8 +517,8 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 		return NewGenome(newId, traitsDup, nodesDup, genesDup), nil
 	} else {
 		// Duplicate MIMO Control Genes and build modular genome
-		controlGenesDup := make([]*MIMOControlGene, 0)
-		for _, cg := range g.ControlGenes {
+		controlGenesDup := make([]*MIMOControlGene, len(g.ControlGenes))
+		for i, cg := range g.ControlGenes {
 			// duplicate control node
 			controlNode := cg.ControlNode
 			// find duplicate of trait associated with control node
@@ -554,8 +550,7 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 			}
 
 			// add MIMO control gene
-			geneCopy := NewMIMOGeneCopy(cg, nodeCopy)
-			controlGenesDup = append(controlGenesDup, geneCopy)
+			controlGenesDup[i] = NewMIMOGeneCopy(cg, nodeCopy)
 		}
 
 		return NewModularGenome(newId, traitsDup, nodesDup, genesDup, controlGenesDup), nil
@@ -591,10 +586,10 @@ func (g *Genome) verify() (bool, error) {
 
 		// check results
 		if !inputFound {
-			return false, errors.New("missing input node of gene in the genome nodes")
+			return false, errors.New("missing input node of gene in the genome nodes list")
 		}
 		if !outFound {
-			return false, errors.New("missing output node of gene in the genome nodes")
+			return false, errors.New("missing output node of gene in the genome nodes list")
 		}
 	}
 
@@ -611,7 +606,7 @@ func (g *Genome) verify() (bool, error) {
 	for _, gn := range g.Genes {
 		for _, gn2 := range g.Genes {
 			if gn != gn2 && gn.Link.IsEqualGenetically(gn2.Link) {
-				return false, fmt.Errorf("duplicate genes found. %s == %s", gn, gn2)
+				return false, fmt.Errorf("duplicate genes found: %s == %s", gn, gn2)
 			}
 		}
 	}
@@ -1274,7 +1269,7 @@ func (g *Genome) mutateToggleEnable(times int) (bool, error) {
 }
 
 // Finds first disabled gene and enable it
-func (g *Genome) mutateGeneReenable() (bool, error) {
+func (g *Genome) mutateGeneReEnable() (bool, error) {
 	if len(g.Genes) == 0 {
 		return false, errors.New("genome has no genes to re-enable")
 	}
@@ -1318,7 +1313,7 @@ func (g *Genome) mutateAllNonstructural(context *neat.NeatContext) (bool, error)
 
 	if err == nil && rand.Float64() < context.MutateGeneReenableProb {
 		// mutate gene reenable
-		res, err = g.mutateGeneReenable()
+		res, err = g.mutateGeneReEnable()
 	}
 	return res, err
 }
@@ -2017,7 +2012,9 @@ func (g *Genome) mateTraits(og *Genome) ([]*neat.Trait, error) {
 // PERCENT EXCESS GENES, MUTATIONAL DIFFERENCE WITHIN MATCHING GENES. So the formula for compatibility
 // is:  disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // The three coefficients are global system parameters.
-// The bigger returned value the less compatible the genomes. Fully compatible genomes has 0.0 returned.
+// The bigger returned value the less compatible the genomes.
+//
+// Fully compatible genomes has 0.0 returned.
 func (g *Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
 	if context.GenCompatMethod == 0 {
 		return g.compatLinear(og, context)
@@ -2030,6 +2027,8 @@ func (g *Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
 // When genomes are small this method is compatible in performance with Genome#compatFast method.
 // The compatibility formula remains the same: disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // where: pdg - PERCENT DISJOINT GENES, peg - PERCENT EXCESS GENES, and mdmg - MUTATIONAL DIFFERENCE WITHIN MATCHING GENES
+//
+// Fully compatible genomes has 0.0 returned.
 func (g *Genome) compatLinear(og *Genome, context *neat.NeatContext) float64 {
 	numDisjoint, numExcess, mutDiffTotal, numMatching := 0.0, 0.0, 0.0, 0.0
 	size1, size2 := len(g.Genes), len(og.Genes)
@@ -2089,6 +2088,8 @@ func (g *Genome) compatLinear(og *Genome, context *neat.NeatContext) float64 {
 //
 // The compatibility formula remains the same: disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg
 // where: pdg - PERCENT DISJOINT GENES, peg - PERCENT EXCESS GENES, and mdmg - MUTATIONAL DIFFERENCE WITHIN MATCHING GENES
+//
+// Fully compatible genomes has 0.0 returned.
 func (g *Genome) compatFast(og *Genome, context *neat.NeatContext) float64 {
 	list1Count, list2Count := len(g.Genes), len(og.Genes)
 	// First test edge cases
