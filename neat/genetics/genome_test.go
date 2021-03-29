@@ -1,6 +1,8 @@
 package genetics
 
 import (
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/network"
 	"github.com/yaricom/goNEAT/v2/neat/utils"
@@ -48,108 +50,73 @@ func buildTestModularGenome(id int) *Genome {
 	gnome := buildTestGenome(id)
 
 	// append module with it's IO nodes
-	io_nodes := []*network.NNode{
+	ioNodes := []*network.NNode{
 		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 		{Id: 6, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 		{Id: 7, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
-	gnome.Nodes = append(gnome.Nodes, io_nodes...)
+	gnome.Nodes = append(gnome.Nodes, ioNodes...)
 
 	// connect added nodes
-	io_conn_genes := []*Gene{
+	ioConnGenes := []*Gene{
 		newGene(network.NewLinkWithTrait(gnome.Traits[0], 1.5, gnome.Nodes[0], gnome.Nodes[4], false), 4, 0, true),
 		newGene(network.NewLinkWithTrait(gnome.Traits[2], 2.5, gnome.Nodes[1], gnome.Nodes[5], false), 5, 0, true),
 		newGene(network.NewLinkWithTrait(gnome.Traits[1], 3.5, gnome.Nodes[6], gnome.Nodes[3], false), 6, 0, true),
 	}
-	gnome.Genes = append(gnome.Genes, io_conn_genes...)
+	gnome.Genes = append(gnome.Genes, ioConnGenes...)
 
 	// add control gene
-	c_node := &network.NNode{
+	controlNode := &network.NNode{
 		Id: 8, NeuronType: network.HiddenNeuron,
 		ActivationType: utils.MultiplyModuleActivation,
 	}
-	c_node.Incoming = []*network.Link{
-		{Weight: 1.0, InNode: io_nodes[0], OutNode: c_node},
-		{Weight: 1.0, InNode: io_nodes[1], OutNode: c_node},
+	controlNode.Incoming = []*network.Link{
+		{Weight: 1.0, InNode: ioNodes[0], OutNode: controlNode},
+		{Weight: 1.0, InNode: ioNodes[1], OutNode: controlNode},
 	}
-	c_node.Outgoing = []*network.Link{
-		{Weight: 1.0, InNode: c_node, OutNode: io_nodes[2]},
+	controlNode.Outgoing = []*network.Link{
+		{Weight: 1.0, InNode: controlNode, OutNode: ioNodes[2]},
 	}
-	gnome.ControlGenes = []*MIMOControlGene{NewMIMOGene(c_node, int64(7), 5.5, true)}
+	gnome.ControlGenes = []*MIMOControlGene{NewMIMOGene(controlNode, int64(7), 5.5, true)}
 	return gnome
 }
 
 // Test create random genome
 func TestGenome_NewGenomeRand(t *testing.T) {
 	rand.Seed(42)
-	new_id, in, out, n, nmax := 1, 3, 2, 2, 5
-	recurrent := false
-	link_prob := 0.5
+	newId, in, out, n := 1, 3, 2, 2
 
-	gnome := newGenomeRand(new_id, in, out, n, nmax, recurrent, link_prob)
-
-	if gnome == nil {
-		t.Error("Failed to create random genome")
-	}
-	if len(gnome.Nodes) != in+n+out {
-		t.Error("len(gnome.Nodes) != in + nmax + out", len(gnome.Nodes), in+n+out)
-	}
-	if len(gnome.Genes) < in+n+out {
-		t.Error("Failed to create genes", len(gnome.Genes))
-	}
-
-	//for _, g := range gnome.Genes {
-	//	t.Log(g)
-	//}
+	gnome := newGenomeRand(newId, in, out, n, 5, false, 0.5)
+	require.NotNil(t, gnome, "Failed to create random genome")
+	assert.Len(t, gnome.Nodes, in+n+out, "failed to create nodes")
+	assert.True(t, len(gnome.Genes) >= in+n+out, "Failed to create genes")
 }
 
 // Test genesis
 func TestGenome_Genesis(t *testing.T) {
 	gnome := buildTestGenome(1)
+	netId := 10
 
-	net_id := 10
-
-	net, err := gnome.Genesis(net_id)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if net == nil {
-		t.Error("Failed to do network genesis")
-	}
-	if net.Id != net_id {
-		t.Error("net.Id != net_id", net.Id)
-	}
-	if net.NodeCount() != len(gnome.Nodes) {
-		t.Error("net.NodeCount() != len(nodes)", net.NodeCount(), len(gnome.Nodes))
-	}
-	if net.LinkCount() != len(gnome.Genes) {
-		t.Error("net.LinkCount() != len(genes)", net.LinkCount(), len(gnome.Genes))
-	}
+	net, err := gnome.Genesis(netId)
+	require.NoError(t, err, "genesis failed")
+	require.NotNil(t, net, "network expected")
+	assert.Equal(t, netId, net.Id, "wrong network ID")
+	assert.Equal(t, len(gnome.Nodes), net.NodeCount(), "wrong nodes count")
+	assert.Equal(t, len(gnome.Genes), net.LinkCount(), "wrong links count")
 }
 
 func TestGenome_GenesisModular(t *testing.T) {
 	gnome := buildTestModularGenome(1)
+	netId := 10
 
-	net_id := 10
-
-	net, err := gnome.Genesis(net_id)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if net == nil {
-		t.Error("Failed to do modular network genesis")
-	}
-	if net.Id != net_id {
-		t.Error("net.Id != net_id", net.Id)
-	}
+	net, err := gnome.Genesis(netId)
+	require.NoError(t, err, "genesis failed")
+	require.NotNil(t, net, "network expected")
+	assert.Equal(t, netId, net.Id, "wrong network ID")
 
 	// check plain neuron nodes
-	neuron_nodes_count := len(gnome.Nodes) + len(gnome.ControlGenes)
-	if net.NodeCount() != neuron_nodes_count {
-		t.Error("net.NodeCount() != neuron_nodes_count", net.NodeCount(), neuron_nodes_count)
-	}
+	neuronNodesCount := len(gnome.Nodes) + len(gnome.ControlGenes)
+	assert.Equal(t, neuronNodesCount, net.NodeCount(), "wrong nodes count")
 
 	// find extra nodes and links due to MIMO control genes
 	incoming, outgoing := 0, 0
@@ -158,135 +125,100 @@ func TestGenome_GenesisModular(t *testing.T) {
 		outgoing += len(cg.ControlNode.Outgoing)
 	}
 	// check connection genes
-	conn_genes_count := len(gnome.Genes) + incoming + outgoing
-	if net.LinkCount() != conn_genes_count {
-		t.Error("net.LinkCount() != conn_genes_count", net.LinkCount(), conn_genes_count)
-	}
+	connGenesCount := len(gnome.Genes) + incoming + outgoing
+	assert.Equal(t, connGenesCount, net.LinkCount(), "wrong links count")
 }
 
 // Test duplicate
 func TestGenome_Duplicate(t *testing.T) {
 	gnome := buildTestGenome(1)
 
-	new_gnome, err := gnome.duplicate(2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if new_gnome.Id != 2 {
-		t.Error("new_gnome.Id != 2", new_gnome.Id)
-	}
+	newGnome, err := gnome.duplicate(2)
+	require.NoError(t, err, "failed to duplicate")
+	assert.Equal(t, 2, newGnome.Id)
+	assert.Equal(t, len(gnome.Traits), len(newGnome.Traits), "wrong traits number")
+	assert.Equal(t, len(gnome.Nodes), len(newGnome.Nodes), "wrong nodes number")
+	assert.Equal(t, len(gnome.Genes), len(newGnome.Genes), "wrong genes number")
 
-	if len(new_gnome.Traits) != len(gnome.Traits) {
-		t.Error("len(new_gnome.Traits) != len(gnome.Traits)", len(new_gnome.Traits), len(gnome.Traits))
-	}
-	if len(new_gnome.Nodes) != len(gnome.Nodes) {
-		t.Error("len(new_gnome.Nodes) != len(gnome.Nodes)", len(new_gnome.Nodes), len(gnome.Nodes))
-	}
-	if len(new_gnome.Genes) != len(gnome.Genes) {
-		t.Error("len(new_gnome.Genes) != len(gnome.Genes)", len(new_gnome.Genes), len(gnome.Genes))
-	}
-
-	equal, err := gnome.IsEqual(new_gnome)
-	if !equal {
-		t.Error(err)
-	}
+	equal, err := gnome.IsEqual(newGnome)
+	assert.NoError(t, err)
+	assert.True(t, equal, "equal genomes expected")
 }
 
 func TestGenome_DuplicateModular(t *testing.T) {
 	gnome := buildTestModularGenome(1)
 
-	new_gnome, err := gnome.duplicate(2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if new_gnome.Id != 2 {
-		t.Error("new_gnome.Id != 2", new_gnome.Id)
-	}
+	newGnome, err := gnome.duplicate(2)
+	require.NoError(t, err, "failed to duplicate")
+	assert.Equal(t, 2, newGnome.Id)
+	assert.Equal(t, len(gnome.Traits), len(newGnome.Traits), "wrong traits number")
+	assert.Equal(t, len(gnome.Nodes), len(newGnome.Nodes), "wrong nodes number")
+	assert.Equal(t, len(gnome.Genes), len(newGnome.Genes), "wrong genes number")
+	assert.Equal(t, len(gnome.ControlGenes), len(newGnome.ControlGenes), "wrong control genes number")
 
-	if len(new_gnome.Traits) != len(gnome.Traits) {
-		t.Error("len(new_gnome.Traits) != len(gnome.Traits)", len(new_gnome.Traits), len(gnome.Traits))
-	}
-	if len(new_gnome.Nodes) != len(gnome.Nodes) {
-		t.Error("len(new_gnome.Nodes) != len(gnome.Nodes)", len(new_gnome.Nodes), len(gnome.Nodes))
-	}
-	if len(new_gnome.Genes) != len(gnome.Genes) {
-		t.Error("len(new_gnome.Genes) != len(gnome.Genes)", len(new_gnome.Genes), len(gnome.Genes))
-	}
-	if len(new_gnome.ControlGenes) != len(gnome.ControlGenes) {
-		t.Error("len(new_gnome.ControlGenes) != len(gnome.ControlGenes", len(new_gnome.ControlGenes), len(gnome.ControlGenes))
-	}
-	for i, cg := range new_gnome.ControlGenes {
+	for i, cg := range newGnome.ControlGenes {
 		ocg := gnome.ControlGenes[i]
-		if len(cg.ControlNode.Incoming) != len(ocg.ControlNode.Incoming) {
-			t.Error("len(cg.ControlNode.Incoming) != len(ocg.ControlNode.Incoming) at:", cg.String())
+		// check incoming connection genes
+		assert.Equal(t, len(ocg.ControlNode.Incoming), len(cg.ControlNode.Incoming))
+		for j, l := range cg.ControlNode.Incoming {
+			ol := ocg.ControlNode.Incoming[j]
+			assert.True(t, l.IsEqualGenetically(ol), "incoming are not equal genetically at: %d, id: %d",
+				j, cg.ControlNode.Id)
 		}
-		for i, l := range cg.ControlNode.Incoming {
-			ol := ocg.ControlNode.Incoming[i]
-			if !l.IsEqualGenetically(ol) {
-				t.Error("!l.IsEqualGenetically(ol) incoming at: ", cg.ControlNode.Id)
-			}
-		}
-		if len(cg.ControlNode.Outgoing) != len(ocg.ControlNode.Outgoing) {
-			t.Error("len(cg.ControlNode.Outgoing) != len(ocg.ControlNode.Outgoing) at:", cg.String())
-		}
-		for i, l := range cg.ControlNode.Outgoing {
-			ol := ocg.ControlNode.Outgoing[i]
-			if !l.IsEqualGenetically(ol) {
-				t.Error("!l.IsEqualGenetically(ol) outgoing at: ", cg.ControlNode.Id)
-			}
+		// check outgoing connection genes
+		assert.Equal(t, len(ocg.ControlNode.Outgoing), len(cg.ControlNode.Outgoing))
+		for j, l := range cg.ControlNode.Outgoing {
+			ol := ocg.ControlNode.Outgoing[j]
+			assert.True(t, l.IsEqualGenetically(ol), "outgoing are not equal genetically at: %d, id: %d",
+				j, cg.ControlNode.Id)
 		}
 	}
-	equal, err := gnome.IsEqual(new_gnome)
-	if !equal {
-		t.Error(err)
-	}
+	equal, err := gnome.IsEqual(newGnome)
+	assert.NoError(t, err)
+	assert.True(t, equal, "equal genomes expected")
 }
 
 func TestGene_Verify(t *testing.T) {
 	gnome := buildTestGenome(1)
 
 	res, err := gnome.verify()
+	require.NoError(t, err, "failed to verify")
+	assert.True(t, res, "Verification failed")
 
-	if !res {
-		t.Error("Verification failed", err)
-	}
-
-	if err != nil {
-		t.Error("err != nil", err)
-	}
-
-	// Test gene error
-	new_gene := NewGene(1.0, network.NewNNode(100, network.InputNeuron),
-		network.NewNNode(101, network.OutputNeuron), false, 1, 1.0)
-	gnome.Genes = append(gnome.Genes, new_gene)
+	// Check gene missing input node failure
+	//
+	gene := NewGene(1.0, network.NewNNode(100, network.InputNeuron),
+		network.NewNNode(4, network.OutputNeuron), false, 1, 1.0)
+	gnome.Genes = append(gnome.Genes, gene)
 	res, err = gnome.verify()
-	if res {
-		t.Error("Validation should fail")
-	}
-	if err == nil {
-		t.Error("Error is missing")
-	}
+	require.EqualError(t, err, "missing input node of gene in the genome nodes list")
+	assert.False(t, res, "Validation should fail")
 
-	// Test duplicate genes
+	// Check gene missing output node failure
+	//
+	gnome = buildTestGenome(1)
+	gene = NewGene(1.0, network.NewNNode(4, network.InputNeuron),
+		network.NewNNode(400, network.OutputNeuron), false, 1, 1.0)
+	gnome.Genes = append(gnome.Genes, gene)
+	res, err = gnome.verify()
+	require.EqualError(t, err, "missing output node of gene in the genome nodes list")
+	assert.False(t, res, "Validation should fail")
+
+	// Test duplicate genes failure
+	//
 	gnome = buildTestGenome(1)
 	gnome.Genes = append(gnome.Genes, NewGene(1.0, network.NewNNode(1, network.InputNeuron),
 		network.NewNNode(1, network.OutputNeuron), false, 1, 1.0))
 	gnome.Genes = append(gnome.Genes, NewGene(1.0, network.NewNNode(1, network.InputNeuron),
 		network.NewNNode(1, network.OutputNeuron), false, 1, 1.0))
 	res, err = gnome.verify()
-	if res {
-		t.Error("Validation should fail")
-	}
-	if err == nil {
-		t.Error("Error is missing")
-	}
-
+	require.Error(t, err, "error expected")
+	assert.Contains(t, err.Error(), "duplicate genes found", "wrong error returned")
+	assert.False(t, res, "Validation should fail")
 }
 
 func TestGenome_Compatibility_Linear(t *testing.T) {
-	rand.Seed(42)
+	//rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome2 := buildTestGenome(2)
 
@@ -300,34 +232,26 @@ func TestGenome_Compatibility_Linear(t *testing.T) {
 
 	// Test fully compatible
 	comp := gnome1.compatibility(gnome2, &conf)
-	if comp != 0 {
-		t.Error("comp != 0 ", comp)
-	}
+	assert.Equal(t, 0.0, comp, "not fully compatible")
 
 	// Test incompatible
 	gnome2.Genes = append(gnome2.Genes, NewGene(1.0, network.NewNNode(1, network.InputNeuron),
 		network.NewNNode(1, network.OutputNeuron), false, 10, 1.0))
 	comp = gnome1.compatibility(gnome2, &conf)
-	if comp != 0.5 {
-		t.Error("comp != 0.5", comp)
-	}
+	assert.Equal(t, 0.5, comp)
 
 	gnome2.Genes = append(gnome2.Genes, NewGene(2.0, network.NewNNode(1, network.InputNeuron),
 		network.NewNNode(1, network.OutputNeuron), false, 5, 1.0))
 	comp = gnome1.compatibility(gnome2, &conf)
-	if comp != 1 {
-		t.Error("comp != 1", comp)
-	}
+	assert.Equal(t, 1.0, comp)
 
 	gnome2.Genes[1].MutationNum = 6.0
 	comp = gnome1.compatibility(gnome2, &conf)
-	if comp != 2 {
-		t.Error("comp != 2", comp)
-	}
+	assert.Equal(t, 2.0, comp)
 }
 
 func TestGenome_Compatibility_Fast(t *testing.T) {
-	rand.Seed(42)
+	//rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome2 := buildTestGenome(2)
 
@@ -341,40 +265,29 @@ func TestGenome_Compatibility_Fast(t *testing.T) {
 
 	// Test fully compatible
 	comp := gnome1.compatibility(gnome2, &conf)
-	if comp != 0 {
-		t.Error("comp != 0 ", comp)
-	}
+	assert.Equal(t, 0.0, comp, "not fully compatible")
 
 	// Test incompatible
 	gnome2.Genes = append(gnome2.Genes, NewGene(1.0, network.NewNNode(1, network.InputNeuron),
 		network.NewNNode(1, network.OutputNeuron), false, 10, 1.0))
 	comp = gnome1.compatibility(gnome2, &conf)
-	if comp != 0.5 {
-		t.Error("comp != 0.5", comp)
-	}
+	assert.Equal(t, 0.5, comp)
 
 	gnome2.Genes = append(gnome2.Genes, NewGene(2.0, network.NewNNode(1, network.InputNeuron),
 		network.NewNNode(1, network.OutputNeuron), false, 5, 1.0))
 	comp = gnome1.compatibility(gnome2, &conf)
-	if comp != 1 {
-		t.Error("comp != 1", comp)
-	}
+	assert.Equal(t, 1.0, comp)
 
 	gnome2.Genes[1].MutationNum = 6.0
 	comp = gnome1.compatibility(gnome2, &conf)
-	if comp != 2 {
-		t.Error("comp != 2", comp)
-	}
+	assert.Equal(t, 2.0, comp)
 }
 
 func TestGenome_Compatibility_Duplicate(t *testing.T) {
-	rand.Seed(42)
+	//rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	gnome2, err := gnome1.duplicate(2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	require.NoError(t, err, "duplication failed")
 
 	// Configuration
 	conf := neat.NeatContext{
@@ -385,9 +298,7 @@ func TestGenome_Compatibility_Duplicate(t *testing.T) {
 
 	// Test fully compatible
 	comp := gnome1.compatibility(gnome2, &conf)
-	if comp != 0 {
-		t.Error("comp != 0 ", comp)
-	}
+	assert.Equal(t, 0.0, comp, "not fully compatible")
 }
 
 func TestGenome_mutateAddLink(t *testing.T) {
@@ -403,31 +314,20 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	pop := newPopulation()
 	pop.nextInnovNum = int64(4)
 	// Create gnome phenotype
-	gnome1.Genesis(1)
+	_, err := gnome1.Genesis(1)
+	require.NoError(t, err, "ganesis failed")
 
 	res, err := gnome1.mutateAddLink(pop, &conf)
-	if !res {
-		t.Error("New link not added:", err)
-		return
-	}
-	if err != nil {
-		t.Error("err != nil", err)
-	}
-	if pop.nextInnovNum != 5 {
-		t.Error("pop.currInnovNum != 5", pop.nextInnovNum)
-	}
-	if len(pop.Innovations) != 1 {
-		t.Error("len(pop.Innovations) != 1", len(pop.Innovations))
-	}
-	if len(gnome1.Genes) != 4 {
-		t.Error("No new gene was added")
-	}
-	if gnome1.Genes[3].InnovationNum != 5 {
-		t.Error("gnome1.Genes[3].InnovationNum != 5", gnome1.Genes[3].InnovationNum)
-	}
-	if !gnome1.Genes[3].Link.IsRecurrent {
-		t.Error("New gene must be recurrent, because only one NEURON node exists")
-	}
+	require.NoError(t, err, "failed to add link")
+	require.True(t, res, "New link not added")
+
+	assert.EqualValues(t, 5, pop.nextInnovNum, "wrong next innovation number of the population")
+	assert.Len(t, pop.Innovations, 1, "wrong number of innovations in population")
+	assert.Len(t, gnome1.Genes, 4, "No new gene was added")
+	gene := gnome1.Genes[3]
+	assert.EqualValues(t, 5, gene.InnovationNum, "wrong innovation number of added gene")
+	require.NotNil(t, gene.Link, "gene has no link")
+	assert.True(t, gene.Link.IsRecurrent, "New gene must be recurrent, because only one NEURON node exists")
 
 	// add more NEURONs
 	conf.RecurOnlyProb = 0.0
@@ -436,28 +336,20 @@ func TestGenome_mutateAddLink(t *testing.T) {
 		{Id: 6, NeuronType: network.InputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
 	gnome1.Nodes = append(gnome1.Nodes, nodes...)
-	gnome1.Genesis(1) // do network genesis with new nodes added
+	_, err = gnome1.Genesis(1) // do network genesis with new nodes added
+	require.NoError(t, err, "genesis failed")
 
 	res, err = gnome1.mutateAddLink(pop, &conf)
-	if !res {
-		t.Error("New link not added:", err)
-	}
-	if err != nil {
-		t.Error("err != nil", err)
-	}
-	if pop.nextInnovNum != 6 {
-		t.Error("pop.currInnovNum != 6", pop.nextInnovNum)
-	}
-	if len(pop.Innovations) != 2 {
-		t.Error("len(pop.Innovations) != 2", len(pop.Innovations))
-	}
-	if len(gnome1.Genes) != 5 {
-		t.Error("No new gene was added")
-	}
-	if gnome1.Genes[4].Link.IsRecurrent {
-		t.Error("New gene must not be recurrent, because conf.RecurOnlyProb = 0.0")
-	}
-	//t.Log(gnome1.Genes[4])
+	require.NoError(t, err, "failed to add link")
+	require.True(t, res, "New link not added")
+	assert.EqualValues(t, 6, pop.nextInnovNum, "wrong next innovation number of the population")
+	assert.Len(t, pop.Innovations, 2, "wrong number of innovations in population")
+	assert.Len(t, gnome1.Genes, 5, "No new gene was added")
+
+	gene = gnome1.Genes[4]
+	assert.EqualValues(t, 6, gene.InnovationNum, "wrong innovation number of added gene")
+	require.NotNil(t, gene.Link, "gene has no link")
+	assert.False(t, gene.Link.IsRecurrent, "New gene must not be recurrent, because conf.RecurOnlyProb = 0.0")
 }
 
 func TestGenome_mutateConnectSensors(t *testing.T) {
@@ -666,7 +558,7 @@ func TestGenome_mutateGeneReenable(t *testing.T) {
 	gnome1.Genes = append(gnome1.Genes, gene)
 
 	gnome1.Genes[1].IsEnabled = false
-	res, err := gnome1.mutateGeneReenable()
+	res, err := gnome1.mutateGeneReEnable()
 	if !res || err != nil {
 		t.Error("Failed to mutate toggle genes")
 	}
