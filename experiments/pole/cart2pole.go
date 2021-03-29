@@ -2,7 +2,7 @@ package pole
 
 import (
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/experiments"
+	"github.com/yaricom/goNEAT/v2/experiment"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 	"github.com/yaricom/goNEAT/v2/neat/network"
@@ -30,14 +30,14 @@ type cartDoublePoleGenerationEvaluator struct {
 	Markov bool
 
 	// The flag to indicate whether to use continuous activation or discrete
-	ActionType experiments.ActionType
+	ActionType ActionType
 }
 
-func NewCartDoublePoleGenerationEvaluator(outDir string, markov bool, activType experiments.ActionType) experiments.GenerationEvaluator {
+func NewCartDoublePoleGenerationEvaluator(outDir string, markov bool, actionType ActionType) experiment.GenerationEvaluator {
 	return &cartDoublePoleGenerationEvaluator{
 		OutputPath: outDir,
 		Markov:     markov,
-		ActionType: activType,
+		ActionType: actionType,
 	}
 }
 
@@ -66,7 +66,7 @@ type CartPole struct {
 }
 
 // Perform evaluation of one epoch on double pole balancing
-func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiments.Generation, context *neat.NeatContext) (err error) {
+func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.NeatContext) (err error) {
 	cartPole := newCartPole(e.Markov)
 
 	cartPole.nonMarkovLong = false
@@ -219,7 +219,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 
 	// Only print to file every print_every generations
 	if epoch.Solved || epoch.Id%context.PrintEvery == 0 {
-		popPath := fmt.Sprintf("%s/gen_%d", experiments.OutDirForTrial(e.OutputPath, epoch.TrialId), epoch.Id)
+		popPath := fmt.Sprintf("%s/gen_%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId), epoch.Id)
 		if file, err := os.Create(popPath); err != nil {
 			return err
 		} else if err = pop.WriteBySpecies(file); err != nil {
@@ -233,7 +233,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				orgPath := fmt.Sprintf("%s/%s_%.1f_%d-%d", experiments.OutDirForTrial(e.OutputPath, epoch.TrialId),
+				orgPath := fmt.Sprintf("%s/%s_%.1f_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
 					"pole2_winner", org.Fitness, org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(orgPath); err != nil {
 					return err
@@ -301,7 +301,7 @@ func newCartPole(markov bool) *CartPole {
 	}
 }
 
-func (p *CartPole) evalNet(net *network.Network, actionType experiments.ActionType) (steps float64, err error) {
+func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps float64, err error) {
 	nonMarkovMax := nonMarkovGeneralizationMaxSteps
 	if p.nonMarkovLong {
 		nonMarkovMax = nonMarkovLongMaxSteps
@@ -333,7 +333,7 @@ func (p *CartPole) evalNet(net *network.Network, actionType experiments.ActionTy
 				return 1.0, nil
 			}
 			action := net.Outputs[0].Activation
-			if actionType == experiments.DiscreteAction {
+			if actionType == DiscreteAction {
 				// make action values discrete
 				if action < 0.5 {
 					action = 0
@@ -375,7 +375,7 @@ func (p *CartPole) evalNet(net *network.Network, actionType experiments.ActionTy
 			}
 
 			action := net.Outputs[0].Activation
-			if actionType == experiments.DiscreteAction {
+			if actionType == DiscreteAction {
 				// make action values discrete
 				if action < 0.5 {
 					action = 0

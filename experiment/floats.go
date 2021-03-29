@@ -1,8 +1,8 @@
-package experiments
+package experiment
 
 import (
-	"sort"
 	"math"
+	"sort"
 )
 
 // Floats provides descriptive statistics on a slice of float64 values

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v2/experiments"
+	experiment2 "github.com/yaricom/goNEAT/v2/experiment"
 	"github.com/yaricom/goNEAT/v2/experiments/utils"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"math/rand"
@@ -31,9 +31,9 @@ func TestXOR(t *testing.T) {
 
 	// The 100 runs XOR experiment
 	context.NumRuns = 100
-	experiment := experiments.Experiment{
+	experiment := experiment2.Experiment{
 		Id:     0,
-		Trials: make(experiments.Trials, context.NumRuns),
+		Trials: make(experiment2.Trials, context.NumRuns),
 	}
 	err = experiment.Execute(context, startGenome, NewXORGenerationEvaluator(outDirPath))
 	require.NoError(t, err, "Failed to perform XOR experiment")
@@ -89,9 +89,9 @@ func TestXOR_disconnected(t *testing.T) {
 
 	// The 100 runs XOR experiment
 	context.NumRuns = 40 //100 reduce to shorten test time
-	experiment := experiments.Experiment{
+	experiment := experiment2.Experiment{
 		Id:     0,
-		Trials: make(experiments.Trials, context.NumRuns),
+		Trials: make(experiment2.Trials, context.NumRuns),
 	}
 	err = experiment.Execute(context, startGenome, NewXORGenerationEvaluator(outDirPath))
 	require.NoError(t, err, "Failed to perform XOR disconnected experiment")

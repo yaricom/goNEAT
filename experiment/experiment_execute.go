@@ -1,54 +1,14 @@
-// The experiments package holds various experiments with NEAT.
-package experiments
+package experiment
 
 import (
-	"errors"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
-	"log"
-	"os"
 	"time"
 )
 
-// The type of action to be applied to environment
-type ActionType byte
-
-// The supported action types
-const (
-	// The continuous action type meaning continuous values to be applied to environment
-	ContinuousAction ActionType = iota
-	// The discrete action assumes that there are only discrete values of action (e.g. 0, 1)
-	DiscreteAction
-)
-
-// The interface describing evaluator for one generation of evolution.
-type GenerationEvaluator interface {
-	// Invoked to evaluate one generation of population of organisms within given
-	// execution context.
-	GenerationEvaluate(pop *genetics.Population, epoch *Generation, context *neat.NeatContext) (err error)
-}
-
-// The interface to describe trial lifecycle observer interested to receive lifecycle notifications
-type TrialRunObserver interface {
-	// Invoked to notify that new trial run just started before any epoch evaluation in that trial run
-	TrialRunStarted(trial *Trial)
-}
-
-// Returns appropriate executor type from given context
-func epochExecutorForContext(context *neat.NeatContext) (genetics.PopulationEpochExecutor, error) {
-	switch genetics.EpochExecutorType(context.EpochExecutorType) {
-	case genetics.SequentialExecutorType:
-		return &genetics.SequentialPopulationEpochExecutor{}, nil
-	case genetics.ParallelExecutorType:
-		return &genetics.ParallelPopulationEpochExecutor{}, nil
-	default:
-		return nil, errors.New("unsupported epoch executor type requested")
-	}
-}
-
 // The Experiment execution entry point
-func (e *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.Genome, executor interface{}) (err error) {
+func (e *Experiment) Execute(context *neat.NeatContext, startGenome *genetics.Genome, executor interface{}) (err error) {
 	if e.Trials == nil {
 		e.Trials = make(Trials, context.NumRuns)
 	}
@@ -58,7 +18,7 @@ func (e *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.G
 		trialStartTime := time.Now()
 
 		neat.InfoLog("\n>>>>> Spawning new population ")
-		pop, err = genetics.NewPopulation(start_genome, context)
+		pop, err = genetics.NewPopulation(startGenome, context)
 		if err != nil {
 			neat.InfoLog("Failed to spawn new population from start genome")
 			return err
@@ -135,18 +95,4 @@ func (e *Experiment) Execute(context *neat.NeatContext, start_genome *genetics.G
 	}
 
 	return nil
-}
-
-// To provide standard output directory syntax based on current trial
-// Method checks if directory should be created
-func OutDirForTrial(outDir string, trialID int) string {
-	dir := fmt.Sprintf("%s/%d", outDir, trialID)
-	if _, err := os.Stat(dir); err != nil {
-		// create output dir
-		err := os.MkdirAll(dir, os.ModePerm)
-		if err != nil {
-			log.Fatal("Failed to create output directory: ", err)
-		}
-	}
-	return dir
 }

@@ -2,7 +2,7 @@ package pole
 
 import (
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/experiments"
+	"github.com/yaricom/goNEAT/v2/experiment"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 	"github.com/yaricom/goNEAT/v2/neat/network"
@@ -24,7 +24,7 @@ type cartPoleGenerationEvaluator struct {
 	WinBalancingSteps int
 }
 
-func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceSteps int) experiments.GenerationEvaluator {
+func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceSteps int) experiment.GenerationEvaluator {
 	return &cartPoleGenerationEvaluator{
 		OutputPath:        outDir,
 		RandomStart:       randomStart,
@@ -33,7 +33,7 @@ func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceS
 }
 
 // This method evaluates one epoch for given population and prints results into output directory if any.
-func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiments.Generation, context *neat.NeatContext) (err error) {
+func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
 		res, err := e.orgEvaluate(org)
@@ -49,7 +49,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 			epoch.Best = org
 			if epoch.WinnerNodes == 7 {
 				// You could dump out optimal genomes here if desired
-				optPath := fmt.Sprintf("%s/%s_%d-%d", experiments.OutDirForTrial(e.OutputPath, epoch.TrialId),
+				optPath := fmt.Sprintf("%s/%s_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
 					"pole1_optimal", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(optPath); err != nil {
 					return err
@@ -68,7 +68,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 
 	// Only print to file every print_every generations
 	if epoch.Solved || epoch.Id%context.PrintEvery == 0 {
-		popPath := fmt.Sprintf("%s/gen_%d", experiments.OutDirForTrial(e.OutputPath, epoch.TrialId), epoch.Id)
+		popPath := fmt.Sprintf("%s/gen_%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId), epoch.Id)
 		if file, err := os.Create(popPath); err != nil {
 			return err
 		} else if err = pop.WriteBySpecies(file); err != nil {
@@ -82,7 +82,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
 				// Prints the winner organism to file!
-				orgPath := fmt.Sprintf("%s/%s_%d-%d", experiments.OutDirForTrial(e.OutputPath, epoch.TrialId),
+				orgPath := fmt.Sprintf("%s/%s_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
 					"pole1_winner", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(orgPath); err != nil {
 					return err

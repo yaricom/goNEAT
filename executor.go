@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/experiments"
+	"github.com/yaricom/goNEAT/v2/experiment"
 	"github.com/yaricom/goNEAT/v2/experiments/pole"
 	"github.com/yaricom/goNEAT/v2/experiments/xor"
 	"github.com/yaricom/goNEAT/v2/neat"
@@ -74,33 +74,33 @@ func main() {
 	}
 
 	// The 100 generation XOR experiment
-	experiment := experiments.Experiment{
+	expt := experiment.Experiment{
 		Id:     0,
-		Trials: make(experiments.Trials, context.NumRuns),
+		Trials: make(experiment.Trials, context.NumRuns),
 	}
-	var generationEvaluator experiments.GenerationEvaluator
+	var generationEvaluator experiment.GenerationEvaluator
 	switch *experimentName {
 	case "XOR":
-		experiment.MaxFitnessScore = 16.0 // as given by fitness function definition
+		expt.MaxFitnessScore = 16.0 // as given by fitness function definition
 		generationEvaluator = xor.NewXORGenerationEvaluator(outDir)
 	case "cart_pole":
-		experiment.MaxFitnessScore = 1.0 // as given by fitness function definition
+		expt.MaxFitnessScore = 1.0 // as given by fitness function definition
 		generationEvaluator = pole.NewCartPoleGenerationEvaluator(outDir, true, 500000)
 	case "cart_2pole_markov":
-		experiment.MaxFitnessScore = 1.0 // as given by fitness function definition
-		generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, true, experiments.ContinuousAction)
+		expt.MaxFitnessScore = 1.0 // as given by fitness function definition
+		generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, true, pole.ContinuousAction)
 	case "cart_2pole_non-markov":
-		generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, false, experiments.ContinuousAction)
+		generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, false, pole.ContinuousAction)
 	default:
 		log.Fatalf("Unsupported experiment: %s", *experimentName)
 	}
 
-	if err = experiment.Execute(context, startGenome, generationEvaluator); err != nil {
+	if err = expt.Execute(context, startGenome, generationEvaluator); err != nil {
 		log.Fatal("Failed to perform XOR experiment: ", err)
 	}
 
 	// Print statistics
-	experiment.PrintStatistics()
+	expt.PrintStatistics()
 
 	fmt.Printf(">>> Start genome file:  %s\n", *genomePath)
 	fmt.Printf(">>> Configuration file: %s\n", *contextPath)
@@ -109,7 +109,7 @@ func main() {
 	expResPath := fmt.Sprintf("%s/%s.dat", outDir, *experimentName)
 	if expResFile, err := os.Create(expResPath); err == nil {
 		log.Fatal("Failed to create file for experiment results", err)
-	} else if err = experiment.Write(expResFile); err != nil {
+	} else if err = expt.Write(expResFile); err != nil {
 		log.Fatal("Failed to save experiment results", err)
 	}
 }
