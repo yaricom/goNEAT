@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 )
 
 // A NODE is either a NEURON or a SENSOR.
@@ -16,7 +16,7 @@ type NNode struct {
 	Id int
 
 	// The type of node activation function (SIGMOID, ...)
-	ActivationType utils.NodeActivationType
+	ActivationType math.NodeActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
 	NeuronType NodeNeuronType
 
@@ -78,7 +78,7 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 func NewNetworkNode() *NNode {
 	return &NNode{
 		NeuronType:     HiddenNeuron,
-		ActivationType: utils.SigmoidSteepenedActivation,
+		ActivationType: math.SigmoidSteepenedActivation,
 		Incoming:       make([]*Link, 0),
 		Outgoing:       make([]*Link, 0),
 	}
@@ -221,7 +221,7 @@ func (n *NNode) NodeType() NodeType {
 }
 
 func (n *NNode) String() string {
-	activation, _ := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
+	activation, _ := math.NodeActivators.ActivationNameFromType(n.ActivationType)
 	active := "active"
 	if !n.isActive {
 		active = "inactive"
@@ -238,7 +238,7 @@ func (n *NNode) Print() string {
 	_, _ = fmt.Fprintf(b, "\tId: %d\n", n.Id)
 	_, _ = fmt.Fprintf(b, "\tIsActive: %t\n", n.isActive)
 	_, _ = fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
-	activation, _ := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
+	activation, _ := math.NodeActivators.ActivationNameFromType(n.ActivationType)
 	_, _ = fmt.Fprintf(b, "\tActivation Type: %s\n", activation)
 	_, _ = fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
 	_, _ = fmt.Fprintf(b, "\tActivationsCount: %d\n", n.ActivationsCount)

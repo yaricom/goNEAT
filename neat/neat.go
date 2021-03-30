@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/viper"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"io"
 	"log"
 	"os"
@@ -142,7 +142,7 @@ type NeatContext struct {
 	GenCompatMethod int
 
 	// The neuron nodes activation functions list to choose from
-	NodeActivators []utils.NodeActivationType
+	NodeActivators []math.NodeActivationType
 	// The probabilities of selection of the specific node activator function
 	NodeActivatorsProb []float64
 }
@@ -238,11 +238,11 @@ func (c *NeatContext) LoadContext(r io.Reader) error {
 	// read node activators
 	actFns := v.GetStringSlice("node_activators")
 	if actFns != nil {
-		c.NodeActivators = make([]utils.NodeActivationType, len(actFns))
+		c.NodeActivators = make([]math.NodeActivationType, len(actFns))
 		c.NodeActivatorsProb = make([]float64, len(actFns))
 		for i, line := range actFns {
 			fields := strings.Fields(line)
-			if c.NodeActivators[i], err = utils.NodeActivators.ActivationTypeFromName(fields[0]); err != nil {
+			if c.NodeActivators[i], err = math.NodeActivators.ActivationTypeFromName(fields[0]); err != nil {
 				return err
 			}
 			if prob, err := strconv.ParseFloat(fields[1], 64); err != nil {
@@ -260,13 +260,13 @@ func (c *NeatContext) LoadContext(r io.Reader) error {
 }
 
 // Returns next random node activation type among registered with this context
-func (c *NeatContext) RandomNodeActivationType() (utils.NodeActivationType, error) {
+func (c *NeatContext) RandomNodeActivationType() (math.NodeActivationType, error) {
 	// quick check for the most cases
 	if len(c.NodeActivators) == 1 {
 		return c.NodeActivators[0], nil
 	}
 	// find next random
-	index := utils.SingleRouletteThrow(c.NodeActivatorsProb)
+	index := math.SingleRouletteThrow(c.NodeActivatorsProb)
 	if index < 0 || index >= len(c.NodeActivators) {
 		return 0, errors.New(
 			fmt.Sprintf("unexpected error when trying to find random node activator, activator index: %d", index))
@@ -368,6 +368,6 @@ func LoadContext(r io.Reader) *NeatContext {
 
 // set default values for activator type and its probability of selection
 func (c *NeatContext) initDefaultNodeActivators() {
-	c.NodeActivators = []utils.NodeActivationType{utils.SigmoidSteepenedActivation}
+	c.NodeActivators = []math.NodeActivationType{math.SigmoidSteepenedActivation}
 	c.NodeActivatorsProb = []float64{1.0}
 }

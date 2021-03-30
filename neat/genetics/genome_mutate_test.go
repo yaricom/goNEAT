@@ -4,8 +4,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"math/rand"
 	"testing"
 )
@@ -45,8 +45,8 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	// add more NEURONs
 	context.RecurOnlyProb = 0.0
 	nodes := []*network.NNode{
-		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
-		{Id: 6, NeuronType: network.InputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: math.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 6, NeuronType: network.InputNeuron, ActivationType: math.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
 	gnome1.Nodes = append(gnome1.Nodes, nodes...)
 	_, err = gnome1.Genesis(1) // do network genesis with new nodes added
@@ -90,7 +90,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 	node := &network.NNode{
 		Id:             5,
 		NeuronType:     network.InputNeuron,
-		ActivationType: utils.SigmoidSteepenedActivation,
+		ActivationType: math.SigmoidSteepenedActivation,
 		Incoming:       make([]*network.Link, 0),
 		Outgoing:       make([]*network.Link, 0)}
 	gnome1.Nodes = append(gnome1.Nodes, node)
@@ -132,7 +132,7 @@ func TestGenome_mutateAddNode(t *testing.T) {
 
 	addedNode := gnome1.Nodes[4]
 	assert.Equal(t, 6, addedNode.Id, "New node has wrong ID")
-	assert.Equal(t, utils.SigmoidSteepenedActivation, addedNode.ActivationType, "wrong activation type")
+	assert.Equal(t, math.SigmoidSteepenedActivation, addedNode.ActivationType, "wrong activation type")
 }
 
 func TestGenome_mutateLinkWeights(t *testing.T) {

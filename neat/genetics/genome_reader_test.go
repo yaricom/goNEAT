@@ -5,8 +5,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"os"
 	"strings"
 	"testing"
@@ -192,25 +192,25 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 	//
 	require.Len(t, genome.Nodes, 14, "wrong number of nodes")
 	nodes := []*network.NNode{
-		{Id: 1, NeuronType: network.BiasNeuron, ActivationType: utils.NullActivation},
+		{Id: 1, NeuronType: network.BiasNeuron, ActivationType: math.NullActivation},
 
-		{Id: 2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation},
-		{Id: 3, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation},
-		{Id: 4, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation},
-		{Id: 5, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation},
+		{Id: 2, NeuronType: network.InputNeuron, ActivationType: math.NullActivation},
+		{Id: 3, NeuronType: network.InputNeuron, ActivationType: math.NullActivation},
+		{Id: 4, NeuronType: network.InputNeuron, ActivationType: math.NullActivation},
+		{Id: 5, NeuronType: network.InputNeuron, ActivationType: math.NullActivation},
 
-		{Id: 6, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidBipolarActivation},
-		{Id: 7, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidBipolarActivation},
+		{Id: 6, NeuronType: network.OutputNeuron, ActivationType: math.SigmoidBipolarActivation},
+		{Id: 7, NeuronType: network.OutputNeuron, ActivationType: math.SigmoidBipolarActivation},
 
-		{Id: 8, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation},
-		{Id: 9, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation},
-		{Id: 10, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation},
+		{Id: 8, NeuronType: network.HiddenNeuron, ActivationType: math.LinearActivation},
+		{Id: 9, NeuronType: network.HiddenNeuron, ActivationType: math.LinearActivation},
+		{Id: 10, NeuronType: network.HiddenNeuron, ActivationType: math.NullActivation},
 
-		{Id: 11, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation},
-		{Id: 12, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation},
-		{Id: 13, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation},
+		{Id: 11, NeuronType: network.HiddenNeuron, ActivationType: math.LinearActivation},
+		{Id: 12, NeuronType: network.HiddenNeuron, ActivationType: math.LinearActivation},
+		{Id: 13, NeuronType: network.HiddenNeuron, ActivationType: math.NullActivation},
 
-		{Id: 14, NeuronType: network.HiddenNeuron, ActivationType: utils.SignActivation},
+		{Id: 14, NeuronType: network.HiddenNeuron, ActivationType: math.SignActivation},
 	}
 	for i, n := range nodes {
 		assert.Equal(t, n.Id, genome.Nodes[i].Id, "at: %d", i)
@@ -272,7 +272,7 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		require.NotNil(t, g.ControlNode, "at: %d", i)
 
 		assert.Equal(t, i+15, g.ControlNode.Id, "Wrong control node ID at: %d", i)
-		assert.Equal(t, utils.MultiplyModuleActivation, g.ControlNode.ActivationType, "at: %d", i)
+		assert.Equal(t, math.MultiplyModuleActivation, g.ControlNode.ActivationType, "at: %d", i)
 		assert.Equal(t, network.HiddenNeuron, g.ControlNode.NeuronType, "at: %d", i)
 
 		require.Len(t, g.ControlNode.Incoming, 2, "at: %d", i)

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/spf13/cast"
 	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"gopkg.in/yaml.v2"
 	"io"
 )
@@ -108,7 +108,7 @@ func (wr *plainGenomeWriter) writeNetworkNode(n *network.NNode) error {
 	if n.Trait != nil {
 		traitId = n.Trait.Id
 	}
-	actStr, err := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
+	actStr, err := math.NodeActivators.ActivationNameFromType(n.ActivationType)
 	if err == nil {
 		_, err = fmt.Fprintf(wr.w, "%d %d %d %d %s", n.Id, traitId, n.NodeType(),
 			n.NeuronType, actStr)
@@ -207,7 +207,7 @@ func (wr *yamlGenomeWriter) encodeControlGene(gene *MIMOControlGene) (gMap map[s
 	gMap["innov_num"] = gene.InnovationNum
 	gMap["mut_num"] = gene.MutationNum
 	gMap["enabled"] = gene.IsEnabled
-	gMap["activation"], err = utils.NodeActivators.ActivationNameFromType(gene.ControlNode.ActivationType)
+	gMap["activation"], err = math.NodeActivators.ActivationNameFromType(gene.ControlNode.ActivationType)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func (wr *yamlGenomeWriter) encodeNetworkNode(node *network.NNode) (nMap map[str
 		nMap["trait_id"] = 0
 	}
 	nMap["type"] = network.NeuronTypeName(node.NeuronType)
-	nMap["activation"], err = utils.NodeActivators.ActivationNameFromType(node.ActivationType)
+	nMap["activation"], err = math.NodeActivators.ActivationNameFromType(node.ActivationType)
 	return nMap, err
 }
 

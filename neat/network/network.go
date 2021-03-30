@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 )
 
 // A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
@@ -72,7 +72,7 @@ func (n *Network) FastNetworkSolver() (NetworkSolver, error) {
 	totalNeuronCount := len(n.allNodes)
 
 	// create activation functions array
-	activations := make([]utils.NodeActivationType, totalNeuronCount)
+	activations := make([]math.NodeActivationType, totalNeuronCount)
 	neuronLookup := make(map[int]int) // id:index
 	neuronIndex := 0
 
@@ -135,7 +135,7 @@ func (n *Network) FastNetworkSolver() (NetworkSolver, error) {
 		activations, connections, biases, modules), nil
 }
 
-func processList(startIndex int, nList []*NNode, activations []utils.NodeActivationType, neuronLookup map[int]int) int {
+func processList(startIndex int, nList []*NNode, activations []math.NodeActivationType, neuronLookup map[int]int) int {
 	for _, ne := range nList {
 		activations[startIndex] = ne.ActivationType
 		neuronLookup[ne.Id] = startIndex
@@ -269,7 +269,7 @@ func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 				// Only activate if some active input came in
 				if np.isActive {
 					// Now run the net activation through an activation function
-					err := ActivateNode(np, utils.NodeActivators)
+					err := ActivateNode(np, math.NodeActivators)
 					if err != nil {
 						return false, err
 					}
@@ -281,7 +281,7 @@ func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 		for _, cn := range n.controlNodes {
 			cn.isActive = false
 			// Activate control MIMO node as control module
-			err := ActivateModule(cn, utils.NodeActivators)
+			err := ActivateModule(cn, math.NodeActivators)
 			if err != nil {
 				return false, err
 			}

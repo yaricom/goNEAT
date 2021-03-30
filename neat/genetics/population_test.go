@@ -81,7 +81,7 @@ func TestNewPopulation(t *testing.T) {
 		t.Error("pop.currNodeId != last_node_id")
 	}
 	last_gene_innov_num, _ := gen.getNextGeneInnovNum()
-	if pop.nextInnovNum != last_gene_innov_num {
+	if pop.nextInnovNum != last_gene_innov_num-1 {
 		t.Error("pop.currInnovNum != last_gene_innov_num")
 	}
 

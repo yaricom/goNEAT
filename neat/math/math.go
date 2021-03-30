@@ -1,4 +1,5 @@
-package utils
+// Package math provides definition of common mathematical primitives used by NEAT as well as utiltiy functions
+package math
 
 import (
 	"math/rand"
@@ -17,7 +18,7 @@ func RandSign() int32 {
 // Performs a single thrown onto a roulette wheel where the wheel's space is unevenly divided.
 // The probability that a segment will be selected is given by that segment's value in the probabilities array.
 // Returns segment index or -1 if something goes awfully wrong
-func SingleRouletteThrow(probabilities []float64) int  {
+func SingleRouletteThrow(probabilities []float64) int {
 	total := 0.0
 
 	// collect all probabilities

@@ -3,7 +3,7 @@ package network
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"testing"
 )
 
@@ -51,29 +51,29 @@ func buildModularNetwork() *Network {
 		NewNNode(6, HiddenNeuron),
 	}
 	// HIDDEN 6
-	controlNodes[0].ActivationType = utils.MultiplyModuleActivation
+	controlNodes[0].ActivationType = math.MultiplyModuleActivation
 	controlNodes[0].addIncoming(allNodes[3], 1.0)
 	controlNodes[0].addIncoming(allNodes[4], 1.0)
 	controlNodes[0].addOutgoing(allNodes[5], 1.0)
 
 	// HIDDEN 4
-	allNodes[3].ActivationType = utils.LinearActivation
+	allNodes[3].ActivationType = math.LinearActivation
 	allNodes[3].addIncoming(allNodes[0], 15.0)
 	allNodes[3].addIncoming(allNodes[2], 10.0)
 	// HIDDEN 5
-	allNodes[4].ActivationType = utils.LinearActivation
+	allNodes[4].ActivationType = math.LinearActivation
 	allNodes[4].addIncoming(allNodes[1], 5.0)
 	allNodes[4].addIncoming(allNodes[2], 1.0)
 
 	// HIDDEN 7
-	allNodes[5].ActivationType = utils.NullActivation
+	allNodes[5].ActivationType = math.NullActivation
 
 	// OUTPUT 8
 	allNodes[6].addIncoming(allNodes[5], 4.5)
-	allNodes[6].ActivationType = utils.LinearActivation
+	allNodes[6].ActivationType = math.LinearActivation
 	// OUTPUT 9
 	allNodes[7].addIncoming(allNodes[5], 13.0)
-	allNodes[7].ActivationType = utils.LinearActivation
+	allNodes[7].ActivationType = math.LinearActivation
 
 	return NewModularNetwork(allNodes[0:3], allNodes[6:8], allNodes, controlNodes, 0)
 }

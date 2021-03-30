@@ -3,7 +3,7 @@ package neat
 import (
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"math/rand"
 )
 
@@ -64,7 +64,7 @@ func newTrait(length int) *Trait {
 func (t *Trait) Mutate(traitMutationPower, traitParamMutProb float64) {
 	for i := 0; i < len(t.Params); i++ {
 		if rand.Float64() > traitParamMutProb {
-			t.Params[i] += float64(utils.RandSign()) * rand.Float64() * traitMutationPower
+			t.Params[i] += float64(math.RandSign()) * rand.Float64() * traitMutationPower
 			if t.Params[i] < 0 {
 				t.Params[i] = 0
 			}

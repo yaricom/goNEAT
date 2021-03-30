@@ -4,8 +4,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"math/rand"
 	"testing"
 )
@@ -31,10 +31,10 @@ func buildTestGenome(id int) *Genome {
 	}
 
 	nodes := []*network.NNode{
-		{Id: 1, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
-		{Id: 2, NeuronType: network.InputNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
-		{Id: 3, NeuronType: network.BiasNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
-		{Id: 4, NeuronType: network.OutputNeuron, ActivationType: utils.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 1, NeuronType: network.InputNeuron, ActivationType: math.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 2, NeuronType: network.InputNeuron, ActivationType: math.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 3, NeuronType: network.BiasNeuron, ActivationType: math.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 4, NeuronType: network.OutputNeuron, ActivationType: math.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
 
 	genes := []*Gene{
@@ -51,9 +51,9 @@ func buildTestModularGenome(id int) *Genome {
 
 	// append module with it's IO nodes
 	ioNodes := []*network.NNode{
-		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
-		{Id: 6, NeuronType: network.HiddenNeuron, ActivationType: utils.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
-		{Id: 7, NeuronType: network.HiddenNeuron, ActivationType: utils.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: math.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 6, NeuronType: network.HiddenNeuron, ActivationType: math.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
+		{Id: 7, NeuronType: network.HiddenNeuron, ActivationType: math.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
 	gnome.Nodes = append(gnome.Nodes, ioNodes...)
 
@@ -68,7 +68,7 @@ func buildTestModularGenome(id int) *Genome {
 	// add control gene
 	controlNode := &network.NNode{
 		Id: 8, NeuronType: network.HiddenNeuron,
-		ActivationType: utils.MultiplyModuleActivation,
+		ActivationType: math.MultiplyModuleActivation,
 	}
 	controlNode.Incoming = []*network.Link{
 		{Weight: 1.0, InNode: ioNodes[0], OutNode: controlNode},

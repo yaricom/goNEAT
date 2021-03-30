@@ -4,7 +4,7 @@ package network
 import (
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
+	neatmath "github.com/yaricom/goNEAT/v2/neat/math"
 	"math"
 )
 
@@ -120,7 +120,7 @@ func NeuronTypeByName(name string) (NodeNeuronType, error) {
 
 // Method to calculate activation for specified neuron node based on it's ActivationType field value.
 // Will return error and set -0.0 activation if unsupported activation type requested.
-func ActivateNode(node *NNode, a *utils.NodeActivatorsFactory) error {
+func ActivateNode(node *NNode, a *neatmath.NodeActivatorsFactory) error {
 	out, err := a.ActivateByType(node.ActivationSum, node.Params, node.ActivationType)
 	if err == nil {
 		node.setActivation(out)
@@ -131,7 +131,7 @@ func ActivateNode(node *NNode, a *utils.NodeActivatorsFactory) error {
 // Method to activate neuron module presented by provided node. As a result of execution the activation values of all
 // input nodes will be processed by corresponding activation function and corresponding activation values of output nodes
 // will be set. Will panic if unsupported activation type requested.
-func ActivateModule(module *NNode, a *utils.NodeActivatorsFactory) error {
+func ActivateModule(module *NNode, a *neatmath.NodeActivatorsFactory) error {
 	inputs := make([]float64, len(module.Incoming))
 	for i, v := range module.Incoming {
 		inputs[i] = v.InNode.GetActiveOut()

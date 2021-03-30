@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"io"
 	"math/rand"
 	"reflect"
@@ -169,7 +169,7 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 					}
 
 					// Create the gene
-					weight := float64(utils.RandSign()) * rand.Float64()
+					weight := float64(math.RandSign()) * rand.Float64()
 					gene := NewGeneWithTrait(newTrait, weight, inNode, outNode, flagRecurrent, int64(count), weight)
 
 					//Add the gene to the genome

@@ -3,7 +3,7 @@ package neat
 import (
 	"fmt"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"os"
 	"testing"
 )
@@ -35,8 +35,8 @@ func TestNeatContext_LoadContext(t *testing.T) {
 		t.Error(fmt.Sprintf("len(nc.NodeActivators) != 4, but: %d", len(nc.NodeActivators)))
 		return
 	}
-	activators := []utils.NodeActivationType{utils.SigmoidBipolarActivation,
-		utils.GaussianBipolarActivation, utils.LinearAbsActivation, utils.SineActivation}
+	activators := []math.NodeActivationType{math.SigmoidBipolarActivation,
+		math.GaussianBipolarActivation, math.LinearAbsActivation, math.SineActivation}
 	probs := []float64{0.25, 0.35, 0.15, 0.25}
 	for i, a := range activators {
 		if nc.NodeActivators[i] != a {

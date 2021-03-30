@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/spf13/cast"
 	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"gopkg.in/yaml.v2"
 	"io"
 	"strconv"
@@ -152,7 +152,7 @@ func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, er
 	}
 
 	if len(parts) == 5 {
-		n.ActivationType, err = utils.NodeActivators.ActivationTypeFromName(parts[4])
+		n.ActivationType, err = math.NodeActivators.ActivationTypeFromName(parts[4])
 	}
 
 	return n, err
@@ -326,7 +326,7 @@ func readMIMOControlGene(conf map[interface{}]interface{}, traits []*neat.Trait,
 	controlNode.NeuronType = network.HiddenNeuron
 	// set activation function
 	activation := conf["activation"].(string)
-	controlNode.ActivationType, err = utils.NodeActivators.ActivationTypeFromName(activation)
+	controlNode.ActivationType, err = math.NodeActivators.ActivationTypeFromName(activation)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +410,7 @@ func readNNode(conf map[interface{}]interface{}, traits []*neat.Trait) (*network
 		return nil, err
 	}
 	activation := conf["activation"].(string)
-	nd.ActivationType, err = utils.NodeActivators.ActivationTypeFromName(activation)
+	nd.ActivationType, err = math.NodeActivators.ActivationTypeFromName(activation)
 	return nd, err
 }
 

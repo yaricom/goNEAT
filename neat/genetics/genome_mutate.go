@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"github.com/yaricom/goNEAT/v2/neat/utils"
 	"math/rand"
 )
 
@@ -95,7 +95,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, _ *neat.NeatContext) (boo
 				// Choose a random trait
 				traitNum := rand.Intn(len(g.Traits))
 				// Choose the new weight
-				newWeight := float64(utils.RandSign()) * rand.Float64() * 10.0
+				newWeight := float64(math.RandSign()) * rand.Float64() * 10.0
 				// read next innovation id
 				nextInnovId := pop.getNextInnovationNumberAndIncrement()
 
@@ -263,7 +263,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			// Choose a random trait
 			traitNum := rand.Intn(len(g.Traits))
 			// Choose the new weight
-			newWeight := float64(utils.RandSign()) * rand.Float64() * 10.0
+			newWeight := float64(math.RandSign()) * rand.Float64() * 10.0
 			// read next innovation id
 			nextInnovId := pop.getNextInnovationNumberAndIncrement()
 
@@ -484,7 +484,7 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutationType mutatorType
 			}
 		}
 
-		random := float64(utils.RandSign()) * rand.Float64() * power
+		random := float64(math.RandSign()) * rand.Float64() * power
 		if mutationType == gaussianMutator {
 			randChoice := rand.Float64()
 			if randChoice > gaussPoint {
