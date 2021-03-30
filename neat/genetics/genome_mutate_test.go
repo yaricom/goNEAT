@@ -195,7 +195,6 @@ func TestGenome_mutateLinkTrait(t *testing.T) {
 }
 
 func TestGenome_mutateNodeTrait(t *testing.T) {
-	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 
 	// Add traits to nodes
@@ -207,57 +206,55 @@ func TestGenome_mutateNodeTrait(t *testing.T) {
 	gnome1.Nodes[3].Trait = &neat.Trait{Id: 4, Params: []float64{0.4, 0, 0, 0, 0, 0, 0, 0}}
 
 	res, err := gnome1.mutateNodeTrait(2)
-	if !res || err != nil {
-		t.Error("Failed to mutate node trait")
-	}
-	mutation_found := false
+	require.NoError(t, err, "failed to mutate")
+	require.True(t, res, "mutation failed")
+
+	mutationFound := false
 	for i, nd := range gnome1.Nodes {
 		if nd.Trait.Id != i+1 {
-			mutation_found = true
+			mutationFound = true
 			break
 		}
 	}
-	if !mutation_found {
-		t.Error("No mutation found in nodes traits")
-	}
+	assert.True(t, mutationFound, "No mutation found in nodes traits")
 }
 
 func TestGenome_mutateToggleEnable(t *testing.T) {
-	rand.Seed(41)
 	gnome1 := buildTestGenome(1)
+	// add extra connection gene from BIAS to OUT
 	gene := newGene(network.NewLinkWithTrait(gnome1.Traits[2], 5.5, gnome1.Nodes[2], gnome1.Nodes[3], false), 4, 0, true)
 	gnome1.Genes = append(gnome1.Genes, gene)
 
-	res, err := gnome1.mutateToggleEnable(5)
-	if !res || err != nil {
-		t.Error("Failed to mutate toggle genes")
-	}
-	mut_count := 0
+	res, err := gnome1.mutateToggleEnable(50)
+	require.NoError(t, err, "failed to mutate")
+	require.True(t, res, "mutation failed")
+
+	mutCount := 0
 	for _, gn := range gnome1.Genes {
 		if !gn.IsEnabled {
-			mut_count++
+			mutCount++
 		}
 	}
-	if mut_count != 1 {
-		t.Errorf("Wrong number of mutations found: %d", mut_count)
-	}
+
+	// in our genome only one connection gene can be disabled to not break the network (BIAS -> OUT) because
+	// we added extra connection gene to link BIAS and OUT
+	assert.Equal(t, 1, mutCount, "Wrong number of mutations found")
 }
 
-func TestGenome_mutateGeneReenable(t *testing.T) {
+func TestGenome_mutateGeneReEnable(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
+	// add disabled extra connection gene from BIAS to OUT
 	gene := newGene(network.NewLinkWithTrait(gnome1.Traits[2], 5.5, gnome1.Nodes[2], gnome1.Nodes[3], false), 4, 0, false)
 	gnome1.Genes = append(gnome1.Genes, gene)
-
+	// disable one more gene
 	gnome1.Genes[1].IsEnabled = false
+
 	res, err := gnome1.mutateGeneReEnable()
-	if !res || err != nil {
-		t.Error("Failed to mutate toggle genes")
-	}
-	if !gnome1.Genes[1].IsEnabled {
-		t.Error("The first gene should be enabled")
-	}
-	if gnome1.Genes[3].IsEnabled {
-		t.Error("The second gen should be still disabled")
-	}
+	require.NoError(t, err, "failed to mutate")
+	require.True(t, res, "mutation failed")
+
+	// check that first encountered disabled gene was enabled and second disabled gene remain unchanged
+	assert.True(t, gnome1.Genes[1].IsEnabled, "The first encountered gene should be enabled")
+	assert.False(t, gnome1.Genes[3].IsEnabled, "The second disabled gene should still be disabled")
 }
