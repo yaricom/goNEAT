@@ -6,13 +6,16 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
+// Organisms is sortable list of organisms by fitness
+type Organisms []*Organism
+
 // The object to associate implementation specific data with particular organism for various algorithm implementations
 type OrganismData struct {
 	// The implementation specific data object to be associated with organism
 	Value interface{}
 }
 
-// Organisms are Genotypes (Genomes) and Phenotypes (Networks) with fitness information,
+// Organism is Genotypes (Genomes) and Phenotypes (Networks) with fitness information,
 // i.e. the genotype and phenotype together.
 type Organism struct {
 	// A measure of fitness for the Organism
@@ -132,12 +135,12 @@ func (o *Organism) String() string {
 	if o.isChampion {
 		champStr = " - CHAMPION - "
 	}
-	eliminStr := ""
+	eliminateStr := ""
 	if o.toEliminate {
-		eliminStr = " - TO BE ELIMINATED - "
+		eliminateStr = " - TO BE ELIMINATED - "
 	}
 	return fmt.Sprintf("[Organism generation: %d, fitness: %.3f, original fitness: %.3f%s%s]",
-		o.Generation, o.Fitness, o.originalFitness, champStr, eliminStr)
+		o.Generation, o.Fitness, o.originalFitness, champStr, eliminateStr)
 }
 
 // Dumps all organism's fields into string
@@ -166,9 +169,8 @@ func (o *Organism) Dump() string {
 	return b.String()
 }
 
-// Organisms is sortable list of organisms by fitness
-type Organisms []*Organism
-
+// The Organisms sort interface implementation
+//
 func (f Organisms) Len() int {
 	return len(f)
 }

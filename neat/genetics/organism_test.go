@@ -48,41 +48,27 @@ func TestOrganisms(t *testing.T) {
 func TestOrganism_MarshalBinary(t *testing.T) {
 	gnome := buildTestGenome(1)
 	org, err := NewOrganism(rand.Float64(), gnome, 1)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	require.NoError(t, err, "failed to create organism")
 
 	// Marshal to binary
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err = enc.Encode(org)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	require.NoError(t, err, "failed to encode")
 
 	// Unmarshal and check if the same
 	dec := gob.NewDecoder(&buf)
-	dec_org := Organism{}
-	err = dec.Decode(&dec_org)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	decOrg := Organism{}
+	err = dec.Decode(&decOrg)
+	require.NoError(t, err, "failed to decode")
 
 	// check results
-	if org.Fitness != dec_org.Fitness {
-		t.Error("org.Fitness != dec_org.Fitness")
-	}
+	assert.Equal(t, org.Fitness, decOrg.Fitness)
 
-	decGnome := dec_org.Genotype
-	if gnome.Id != decGnome.Id {
-		t.Error("gnome.Id != dec_gnome.Id")
-	}
+	decGnome := decOrg.Genotype
+	assert.Equal(t, gnome.Id, decGnome.Id)
 
 	equals, err := gnome.IsEqual(decGnome)
-	if !equals {
-		t.Error(err)
-	}
+	require.NoError(t, err, "failed to check equality")
+	assert.True(t, equals)
 }
