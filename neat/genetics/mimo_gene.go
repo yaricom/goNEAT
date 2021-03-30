@@ -67,6 +67,6 @@ func (g *MIMOControlGene) String() string {
 	if !g.IsEnabled {
 		enabledStr = " -DISABLED-"
 	}
-	return fmt.Sprintf("[MIMO Gene INNOV (%4d, % .3f) %s control node: %s]",
+	return fmt.Sprintf("[MIMO Gene INNOV (%5d, %2.3f) %s control node: %s]",
 		g.InnovationNum, g.MutationNum, enabledStr, g.ControlNode.String())
 }
