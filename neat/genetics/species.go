@@ -453,9 +453,9 @@ func (s Species) reproduce(generation int, pop *Population, sortedSpecies []*Spe
 					return nil, err
 				}
 			} else {
-				neat.DebugLog("SPECIES: ------> mateSinglepoint")
+				neat.DebugLog("SPECIES: ------> mateSinglePoint")
 
-				newGenome, err = mom.Genotype.mateSinglepoint(dad.Genotype, count)
+				newGenome, err = mom.Genotype.mateSinglePoint(dad.Genotype, count)
 				if err != nil {
 					return nil, err
 				}

@@ -238,7 +238,7 @@ func (p *Population) addInnovationSynced(i *Innovation) {
 	p.mutex.Unlock()
 }
 
-// Create a population of size size off of Genome g. The new Population will have the same topology as g
+// Create a population from Genome g. The new Population will have the same topology as g
 // with link weights slightly perturbed from g's
 func (p *Population) spawn(g *Genome, context *neat.NeatContext) (err error) {
 	for count := 0; count < context.PopSize; count++ {
@@ -266,6 +266,9 @@ func (p *Population) spawn(g *Genome, context *neat.NeatContext) (err error) {
 	}
 	if p.nextInnovNum, err = g.getNextGeneInnovNum(); err != nil {
 		return err
+	} else {
+		// to compensate +1 in gene next innovation
+		p.nextInnovNum -= 1
 	}
 
 	// Separate the new Population into species

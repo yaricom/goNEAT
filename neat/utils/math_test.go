@@ -7,13 +7,13 @@ import (
 
 func TestSingleRouletteThrow(t *testing.T) {
 	rand.Seed(42)
-	probs := []float64{.1, .2, .4, .15, .15}
+	probabilities := []float64{.1, .2, .4, .15, .15}
 
-	hist := make([]float64, len(probs))
+	hist := make([]float64, len(probabilities))
 	runs := 10000
 	for i := 0; i < runs; i++ {
-		index := SingleRouletteThrow(probs)
-		if index < 0 || index >= len(probs) {
+		index := SingleRouletteThrow(probabilities)
+		if index < 0 || index >= len(probabilities) {
 			t.Error("invalid segment index", index)
 			return
 		}
