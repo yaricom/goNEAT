@@ -14,6 +14,10 @@ import (
 
 // The integration test running over multiple iterations in order to detect if any random errors occur.
 func TestXOR(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short Unit Test mode.")
+	}
+
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 
@@ -73,6 +77,10 @@ func TestXOR(t *testing.T) {
 
 // The XOR integration test for disconnected inputs running over multiple iterations in order to detect if any random errors occur.
 func TestXOR_disconnected(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short Unit Test mode.")
+	}
+
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 

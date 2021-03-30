@@ -14,6 +14,10 @@ import (
 
 // The integration test running running over multiple iterations
 func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short Unit Test mode.")
+	}
+
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 
