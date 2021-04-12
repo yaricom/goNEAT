@@ -1,7 +1,7 @@
 package neat
 
 import (
-	"fmt"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v2/neat/math"
 	"os"
@@ -24,131 +24,55 @@ func TestNeatContext_LoadContext(t *testing.T) {
 	// Load YAML context
 	nc := NewNeatContext()
 	err = nc.LoadContext(config)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err, "failed to load context")
 
 	checkNeatContext(nc, t)
 
 	// check activators
-	if len(nc.NodeActivators) != 4 {
-		t.Error(fmt.Sprintf("len(nc.NodeActivators) != 4, but: %d", len(nc.NodeActivators)))
-		return
-	}
+	require.Len(t, nc.NodeActivators, 4, "wrong node activators size")
 	activators := []math.NodeActivationType{math.SigmoidBipolarActivation,
 		math.GaussianBipolarActivation, math.LinearAbsActivation, math.SineActivation}
 	probs := []float64{0.25, 0.35, 0.15, 0.25}
 	for i, a := range activators {
-		if nc.NodeActivators[i] != a {
-			t.Error(fmt.Sprintf("Wrong CPPN activator type at: %d", i))
-		}
-		if nc.NodeActivatorsProb[i] != probs[i] {
-			t.Error("nc.NodeActivatorsProb[i] != probs[i]", nc.NodeActivatorsProb[i], probs[i])
-		}
+		assert.Equal(t, a, nc.NodeActivators[i], "wrong node activator type at: %d", i)
+		assert.Equal(t, probs[i], nc.NodeActivatorsProb[i], "wrong probability at: %d", i)
+
 	}
 }
 
 func checkNeatContext(nc *NeatContext, t *testing.T) {
-	if nc.TraitParamMutProb != 0.5 {
-		t.Error("nc.TraitParamMutProb != 0.5", nc.TraitParamMutProb)
-	}
-	if nc.TraitMutationPower != 1.0 {
-		t.Error("nc.TraitMutationPower != 1.0", nc.TraitMutationPower)
-	}
-	if nc.WeightMutPower != 2.5 {
-		t.Error("nc.WeightMutPower != 2.5", nc.WeightMutPower != 2.5)
-	}
-	if nc.DisjointCoeff != 1.0 {
-		t.Error("nc.DisjointCoeff != 1.0", nc.DisjointCoeff)
-	}
-	if nc.ExcessCoeff != 1.0 {
-		t.Error("nc.ExcessCoeff != 1.0", nc.ExcessCoeff)
-	}
-	if nc.MutdiffCoeff != 0.4 {
-		t.Error("nc.MutdiffCoeff", nc.MutdiffCoeff)
-	}
-	if nc.CompatThreshold != 3.0 {
-		t.Error("CompatThreshold", nc.CompatThreshold)
-	}
-	if nc.AgeSignificance != 1.0 {
-		t.Error("AgeSignificance", nc.AgeSignificance)
-	}
-	if nc.SurvivalThresh != 0.2 {
-		t.Error("SurvivalThresh", nc.SurvivalThresh)
-	}
-	if nc.MutateOnlyProb != 0.25 {
-		t.Error("MutateOnlyProb", nc.MutateOnlyProb)
-	}
-	if nc.MutateRandomTraitProb != 0.1 {
-		t.Error("MutateRandomTraitProb", nc.MutateRandomTraitProb)
-	}
-	if nc.MutateLinkTraitProb != 0.1 {
-		t.Error("MutateLinkTraitProb", nc.MutateLinkTraitProb)
-	}
-	if nc.MutateNodeTraitProb != 0.1 {
-		t.Error("MutateNodeTraitProb", nc.MutateNodeTraitProb)
-	}
-	if nc.MutateLinkWeightsProb != 0.9 {
-		t.Error("MutateLinkWeightsProb", nc.MutateLinkWeightsProb)
-	}
-	if nc.MutateToggleEnableProb != 0.0 {
-		t.Error("MutateToggleEnableProb", nc.MutateToggleEnableProb)
-	}
-	if nc.MutateGeneReenableProb != 0.0 {
-		t.Error("MutateGeneReenableProb", nc.MutateGeneReenableProb)
-	}
-	if nc.MutateAddNodeProb != 0.03 {
-		t.Error("MutateAddNodeProb", nc.MutateAddNodeProb)
-	}
-	if nc.MutateAddLinkProb != 0.08 {
-		t.Error("MutateAddLinkProb", nc.MutateAddLinkProb)
-	}
-	if nc.MutateConnectSensors != 0.5 {
-		t.Error("MutateConnectSensors", nc.MutateConnectSensors)
-	}
-	if nc.InterspeciesMateRate != 0.001 {
-		t.Error("InterspeciesMateRate", nc.InterspeciesMateRate)
-	}
-	if nc.MateMultipointProb != 0.3 {
-		t.Error("MateMultipointProb", nc.MateMultipointProb)
-	}
-	if nc.MateMultipointAvgProb != 0.3 {
-		t.Error("MateMultipointAvgProb", nc.MateMultipointAvgProb)
-	}
-	if nc.MateSinglepointProb != 0.3 {
-		t.Error("MateSinglepointProb", nc.MateSinglepointProb)
-	}
-	if nc.MateOnlyProb != 0.2 {
-		t.Error("MateOnlyProb", nc.MateOnlyProb)
-	}
-	if nc.RecurOnlyProb != 0.0 {
-		t.Error("RecurOnlyProb", nc.RecurOnlyProb)
-	}
-	if nc.PopSize != 200 {
-		t.Error("PopSize", nc.PopSize)
-	}
-	if nc.DropOffAge != 50 {
-		t.Error("DropOffAge", nc.DropOffAge)
-	}
-	if nc.NewLinkTries != 50 {
-		t.Error("NewLinkTries", nc.NewLinkTries)
-	}
-	if nc.PrintEvery != 10 {
-		t.Error("PrintEvery", nc.PrintEvery)
-	}
-	if nc.BabiesStolen != 0 {
-		t.Error("BabiesStolen", nc.BabiesStolen)
-	}
-	if nc.NumRuns != 100 {
-		t.Error("NumRuns", nc.NumRuns)
-	}
-	if nc.NumGenerations != 100 {
-		t.Error("NumGenerations", nc.NumGenerations)
-	}
-	if nc.EpochExecutorType != 0 {
-		t.Error("EpochExecutorType", nc.EpochExecutorType)
-	}
-	if nc.GenCompatMethod != 1 {
-		t.Error("GenCompatMethod", nc.GenCompatMethod)
-	}
+	assert.Equal(t, 0.5, nc.TraitParamMutProb)
+	assert.Equal(t, 1.0, nc.TraitMutationPower)
+	assert.Equal(t, 2.5, nc.WeightMutPower)
+	assert.Equal(t, 1.0, nc.DisjointCoeff)
+	assert.Equal(t, 1.0, nc.ExcessCoeff)
+	assert.Equal(t, 0.4, nc.MutdiffCoeff)
+	assert.Equal(t, 3.0, nc.CompatThreshold)
+	assert.Equal(t, 1.0, nc.AgeSignificance)
+	assert.Equal(t, 0.2, nc.SurvivalThresh)
+	assert.Equal(t, 0.25, nc.MutateOnlyProb)
+	assert.Equal(t, 0.1, nc.MutateRandomTraitProb)
+	assert.Equal(t, 0.1, nc.MutateLinkTraitProb)
+	assert.Equal(t, 0.1, nc.MutateNodeTraitProb)
+	assert.Equal(t, 0.9, nc.MutateLinkWeightsProb)
+	assert.Equal(t, 0.0, nc.MutateToggleEnableProb)
+	assert.Equal(t, 0.0, nc.MutateGeneReenableProb)
+	assert.Equal(t, 0.03, nc.MutateAddNodeProb)
+	assert.Equal(t, 0.08, nc.MutateAddLinkProb)
+	assert.Equal(t, 0.5, nc.MutateConnectSensors)
+	assert.Equal(t, 0.001, nc.InterspeciesMateRate)
+	assert.Equal(t, 0.3, nc.MateMultipointProb)
+	assert.Equal(t, 0.3, nc.MateMultipointAvgProb)
+	assert.Equal(t, 0.3, nc.MateSinglepointProb)
+	assert.Equal(t, 0.2, nc.MateOnlyProb)
+	assert.Equal(t, 0.0, nc.RecurOnlyProb)
+	assert.Equal(t, 200, nc.PopSize)
+	assert.Equal(t, 50, nc.DropOffAge)
+	assert.Equal(t, 50, nc.NewLinkTries)
+	assert.Equal(t, 10, nc.PrintEvery)
+	assert.Equal(t, 0, nc.BabiesStolen)
+	assert.Equal(t, 100, nc.NumRuns)
+	assert.Equal(t, 100, nc.NumGenerations)
+	assert.Equal(t, 0, nc.EpochExecutorType)
+	assert.Equal(t, 1, nc.GenCompatMethod)
 }
