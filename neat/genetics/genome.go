@@ -42,7 +42,7 @@ type Genome struct {
 	Phenotype *network.Network
 }
 
-// Constructor which takes full genome specs and puts them into the new one
+// NewGenome Constructor which takes full genome specs and puts them into the new one
 func NewGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene) *Genome {
 	return &Genome{
 		Id:     id,
@@ -52,7 +52,7 @@ func NewGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene) *Genome {
 	}
 }
 
-// Constructs new modular genome
+// NewModularGenome Constructs new modular genome
 func NewModularGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene, mimoG []*MIMOControlGene) *Genome {
 	return &Genome{
 		Id:           id,
@@ -243,7 +243,7 @@ func (g *Genome) String() string {
 	return str
 }
 
-// Return # of non-disabled genes
+// Extrons Return # of non-disabled genes
 func (g *Genome) Extrons() int {
 	total := 0
 	for _, gene := range g.Genes {
@@ -254,7 +254,8 @@ func (g *Genome) Extrons() int {
 	return total
 }
 
-// Tests if given genome is equal to this one genetically and phenotypically. This method will check that both genomes has the same traits, nodes and genes.
+// IsEqual Tests if given genome is equal to this one genetically and phenotypically. This method will check that both
+// genomes has the same traits, nodes and genes.
 // If mismatch detected the error will be returned with mismatch details.
 func (g *Genome) IsEqual(og *Genome) (bool, error) {
 	if len(g.Traits) != len(og.Traits) {
@@ -367,7 +368,7 @@ func (g *Genome) hasGene(gene *Gene) bool {
 	return false
 }
 
-// Generate a Network phenotype from this Genome with specified id
+// Genesis generates a Network phenotype from this Genome with specified id
 func (g *Genome) Genesis(netId int) (*network.Network, error) {
 	// Inputs and outputs will be collected here for the network.
 	// All nodes are collected in an all_list -
