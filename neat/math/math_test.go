@@ -14,7 +14,7 @@ func TestSingleRouletteThrow(t *testing.T) {
 	for i := 0; i < runs; i++ {
 		index := SingleRouletteThrow(probabilities)
 		if index < 0 || index >= len(probabilities) {
-			t.Error("invalid segment index", index)
+			t.Errorf("invalid segment index: %d at %d", index, i)
 			return
 		}
 		// increment histogram to check distribution quality
