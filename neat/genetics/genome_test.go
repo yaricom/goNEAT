@@ -38,9 +38,9 @@ func buildTestGenome(id int) *Genome {
 	}
 
 	genes := []*Gene{
-		newGene(network.NewLinkWithTrait(traits[0], 1.5, nodes[0], nodes[3], false), 1, 0, true),
-		newGene(network.NewLinkWithTrait(traits[2], 2.5, nodes[1], nodes[3], false), 2, 0, true),
-		newGene(network.NewLinkWithTrait(traits[1], 3.5, nodes[2], nodes[3], false), 3, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(traits[0], 1.5, nodes[0], nodes[3], false), 1, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(traits[2], 2.5, nodes[1], nodes[3], false), 2, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(traits[1], 3.5, nodes[2], nodes[3], false), 3, 0, true),
 	}
 
 	return NewGenome(id, traits, nodes, genes)
@@ -59,9 +59,9 @@ func buildTestModularGenome(id int) *Genome {
 
 	// connect added nodes
 	ioConnGenes := []*Gene{
-		newGene(network.NewLinkWithTrait(gnome.Traits[0], 1.5, gnome.Nodes[0], gnome.Nodes[4], false), 4, 0, true),
-		newGene(network.NewLinkWithTrait(gnome.Traits[2], 2.5, gnome.Nodes[1], gnome.Nodes[5], false), 5, 0, true),
-		newGene(network.NewLinkWithTrait(gnome.Traits[1], 3.5, gnome.Nodes[6], gnome.Nodes[3], false), 6, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(gnome.Traits[0], 1.5, gnome.Nodes[0], gnome.Nodes[4], false), 4, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(gnome.Traits[2], 2.5, gnome.Nodes[1], gnome.Nodes[5], false), 5, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(gnome.Traits[1], 3.5, gnome.Nodes[6], gnome.Nodes[3], false), 6, 0, true),
 	}
 	gnome.Genes = append(gnome.Genes, ioConnGenes...)
 
@@ -219,8 +219,8 @@ func TestGene_Verify(t *testing.T) {
 
 func TestGenome_geneInsert(t *testing.T) {
 	gnome := buildTestGenome(1)
-	gnome.Genes = append(gnome.Genes, newGene(network.NewLinkWithTrait(gnome.Traits[2], 5.5, gnome.Nodes[2], gnome.Nodes[3], false), 5, 0, false))
-	genes := geneInsert(gnome.Genes, newGene(network.NewLinkWithTrait(gnome.Traits[2], 5.5, gnome.Nodes[2], gnome.Nodes[3], false), 4, 0, false))
+	gnome.Genes = append(gnome.Genes, NewConnectionGene(network.NewLinkWithTrait(gnome.Traits[2], 5.5, gnome.Nodes[2], gnome.Nodes[3], false), 5, 0, false))
+	genes := geneInsert(gnome.Genes, NewConnectionGene(network.NewLinkWithTrait(gnome.Traits[2], 5.5, gnome.Nodes[2], gnome.Nodes[3], false), 4, 0, false))
 	if len(genes) != 5 {
 		t.Error("len(genes) != 5", len(genes))
 		return

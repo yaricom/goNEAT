@@ -19,9 +19,9 @@ var (
 // and those traits can evolve on their own.
 type Trait struct {
 	// The trait ID
-	Id int
+	Id int `yaml:"id"`
 	// The learned trait parameters
-	Params []float64
+	Params []float64 `yaml:"params"`
 }
 
 // NewTrait is to create empty trait with default parameters number (see: NumTraitParams above)

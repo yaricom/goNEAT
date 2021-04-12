@@ -28,18 +28,18 @@ import (
 // population, and the list of Genes provide an evolutionary history of innovation and link-building.
 type Genome struct {
 	// The genome ID
-	Id int
+	Id int `yaml:"id"`
 	// The parameters conglomerations
-	Traits []*neat.Trait
+	Traits []*neat.Trait `yaml:"traits"`
 	// List of NNodes for the Network
-	Nodes []*network.NNode
+	Nodes []*network.NNode `yaml:"nodes"`
 	// List of innovation-tracking genes
-	Genes []*Gene
+	Genes []*Gene `yaml:"genes"`
 	// List of MIMO control genes
-	ControlGenes []*MIMOControlGene
+	ControlGenes []*MIMOControlGene `yaml:"modules"`
 
 	// Allows Genome to be matched with its Network
-	Phenotype *network.Network
+	Phenotype *network.Network `yaml:""`
 }
 
 // NewGenome Constructor which takes full genome specs and puts them into the new one
@@ -483,7 +483,7 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 		// First, find the duplicate of the trait that this node points to
 		assocTrait := nd.Trait
 		if assocTrait != nil {
-			assocTrait = traitWithId(assocTrait.Id, traitsDup)
+			assocTrait = TraitWithId(assocTrait.Id, traitsDup)
 		}
 		nodesDup[i] = network.NewNNodeCopy(nd, assocTrait)
 	}
@@ -492,13 +492,13 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 	genesDup := make([]*Gene, len(g.Genes))
 	for i, gn := range g.Genes {
 		// First find the nodes connected by the gene's link
-		inNode := nodeWithId(gn.Link.InNode.Id, nodesDup)
+		inNode := NodeWithId(gn.Link.InNode.Id, nodesDup)
 		if inNode == nil {
 			return nil, errors.New(
 				fmt.Sprintf("incoming node: %d not found for gene %s",
 					gn.Link.InNode.Id, gn.String()))
 		}
-		outNode := nodeWithId(gn.Link.OutNode.Id, nodesDup)
+		outNode := NodeWithId(gn.Link.OutNode.Id, nodesDup)
 		if outNode == nil {
 			return nil, errors.New(
 				fmt.Sprintf("outgoing node: %d not found for gene %s",
@@ -508,7 +508,7 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 		// Find the duplicate of trait associated with this gene
 		assocTrait := gn.Link.Trait
 		if assocTrait != nil {
-			assocTrait = traitWithId(assocTrait.Id, traitsDup)
+			assocTrait = TraitWithId(assocTrait.Id, traitsDup)
 		}
 
 		genesDup[i] = NewGeneCopy(gn, assocTrait, inNode, outNode)
@@ -526,12 +526,12 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 			// find duplicate of trait associated with control node
 			assocTrait := controlNode.Trait
 			if assocTrait != nil {
-				assocTrait = traitWithId(assocTrait.Id, traitsDup)
+				assocTrait = TraitWithId(assocTrait.Id, traitsDup)
 			}
 			nodeCopy := network.NewNNodeCopy(controlNode, assocTrait)
 			// add incoming links
 			for _, l := range controlNode.Incoming {
-				inNode := nodeWithId(l.InNode.Id, nodesDup)
+				inNode := NodeWithId(l.InNode.Id, nodesDup)
 				if inNode == nil {
 					return nil, fmt.Errorf("incoming node: %d not found for control node: %d",
 						l.InNode.Id, controlNode.Id)
@@ -542,7 +542,7 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 
 			// add outgoing links
 			for _, l := range controlNode.Outgoing {
-				outNode := nodeWithId(l.OutNode.Id, nodesDup)
+				outNode := NodeWithId(l.OutNode.Id, nodesDup)
 				if outNode == nil {
 					return nil, fmt.Errorf("outgoing node: %d not found for control node: %d",
 						l.InNode.Id, controlNode.Id)

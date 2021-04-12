@@ -1,6 +1,6 @@
 package genetics
 
-// This Innovation class serves as a way to record innovations specifically, so that an innovation in one genome can be
+// Innovation serves as a way to record innovations specifically, so that an innovation in one genome can be
 // compared with other innovations in the same epoch, and if they are the same innovation, they can both be assigned the
 // same innovation number.
 //
@@ -33,7 +33,7 @@ type Innovation struct {
 	innovationType innovationType
 }
 
-// Constructor for the new node case
+// NewInnovationForNode is a constructor for the new node case
 func NewInnovationForNode(nodeInId, nodeOutId int, innovationNum1, innovationNum2 int64, newNodeId int, oldInnovNum int64) *Innovation {
 	return &Innovation{
 		innovationType: newNodeInnType,
@@ -46,7 +46,7 @@ func NewInnovationForNode(nodeInId, nodeOutId int, innovationNum1, innovationNum
 	}
 }
 
-// Constructor for new link case
+// NewInnovationForLink is a constructor for new link case
 func NewInnovationForLink(nodeInId, nodeOutId int, innovationNum int64, weight float64, traitId int) *Innovation {
 	return &Innovation{
 		innovationType: newLinkInnType,
@@ -58,7 +58,7 @@ func NewInnovationForLink(nodeInId, nodeOutId int, innovationNum int64, weight f
 	}
 }
 
-//Constructor for a recur link
+// NewInnovationForRecurrentLink is a constructor for a recurrent link
 func NewInnovationForRecurrentLink(nodeInId, nodeOutId int, innovationNum int64, weight float64, traitId int, recur bool) *Innovation {
 	return &Innovation{
 		innovationType: newLinkInnType,

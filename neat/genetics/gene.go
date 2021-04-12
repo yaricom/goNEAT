@@ -26,24 +26,25 @@ type Gene struct {
 	IsEnabled bool
 }
 
-// Creates new Gene
+// NewGene Creates new Gene
 func NewGene(weight float64, inNode, outNode *network.NNode, recurrent bool, innovationNum int64, mutationNum float64) *Gene {
-	return newGene(network.NewLink(weight, inNode, outNode, recurrent), innovationNum, mutationNum, true)
+	return NewConnectionGene(network.NewLink(weight, inNode, outNode, recurrent), innovationNum, mutationNum, true)
 }
 
-// Creates new Gene with Trait
+// NewGeneWithTrait Creates new Gene with Trait
 func NewGeneWithTrait(trait *neat.Trait, weight float64, inNode, outNode *network.NNode,
 	recurrent bool, innovationNum int64, mutationNum float64) *Gene {
-	return newGene(network.NewLinkWithTrait(trait, weight, inNode, outNode, recurrent), innovationNum, mutationNum, true)
+	return NewConnectionGene(network.NewLinkWithTrait(trait, weight, inNode, outNode, recurrent), innovationNum, mutationNum, true)
 }
 
-// Construct a gene off of another gene as a duplicate
+// NewGeneCopy Construct a gene off of another gene as a duplicate
 func NewGeneCopy(g *Gene, trait *neat.Trait, inNode, outNode *network.NNode) *Gene {
-	return newGene(network.NewLinkWithTrait(trait, g.Link.Weight, inNode, outNode, g.Link.IsRecurrent),
+	return NewConnectionGene(network.NewLinkWithTrait(trait, g.Link.Weight, inNode, outNode, g.Link.IsRecurrent),
 		g.InnovationNum, g.MutationNum, true)
 }
 
-func newGene(link *network.Link, innovationNum int64, mutationNum float64, enabled bool) *Gene {
+// NewConnectionGene is to create new connection gene with provided link
+func NewConnectionGene(link *network.Link, innovationNum int64, mutationNum float64, enabled bool) *Gene {
 	return &Gene{
 		Link:          link,
 		InnovationNum: innovationNum,

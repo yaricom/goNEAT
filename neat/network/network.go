@@ -7,7 +7,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/math"
 )
 
-// A NETWORK is a LIST of input NODEs and a LIST of output NODEs.
+// Network is a LIST of input NODEs and a LIST of output NODEs.
 // The point of the network is to define a single entity which can evolve
 // or learn on its own, even though it may be part of a larger framework.
 type Network struct {
@@ -28,7 +28,7 @@ type Network struct {
 	controlNodes []*NNode
 }
 
-// Creates new network
+// NewNetwork Creates new network
 func NewNetwork(in, out, all []*NNode, netId int) *Network {
 	n := Network{
 		Id:       netId,
@@ -40,15 +40,15 @@ func NewNetwork(in, out, all []*NNode, netId int) *Network {
 	return &n
 }
 
-// Creates new modular network with control nodes
+// NewModularNetwork Creates new modular network with control nodes
 func NewModularNetwork(in, out, all, control []*NNode, netId int) *Network {
 	n := NewNetwork(in, out, all, netId)
 	n.controlNodes = control
 	return n
 }
 
-// Creates fast network solver based on the architecture of this network. It's primarily aimed for big networks to improve
-// processing speed.
+// FastNetworkSolver Creates fast network solver based on the architecture of this network. It's primarily aimed for
+// big networks to improve processing speed.
 func (n *Network) FastNetworkSolver() (NetworkSolver, error) {
 	// calculate neurons per layer
 	outputNeuronCount := len(n.Outputs)
@@ -178,7 +178,6 @@ func processIncomingConnections(nList []*NNode, biases []float64, neuronLookup m
 	return connections, err
 }
 
-// Puts the network back into an initial state
 func (n *Network) Flush() (res bool, err error) {
 	res = true
 	// Flush back recursively
@@ -194,7 +193,7 @@ func (n *Network) Flush() (res bool, err error) {
 	return res, err
 }
 
-// Prints the values of network outputs to the console
+// PrintActivation Prints the values of network outputs to the console
 func (n *Network) PrintActivation() string {
 	out := bytes.NewBufferString(fmt.Sprintf("Network %s with id %d outputs: (", n.Name, n.Id))
 	for i, node := range n.Outputs {
@@ -204,7 +203,7 @@ func (n *Network) PrintActivation() string {
 	return out.String()
 }
 
-// Print the values of network inputs to the console
+// PrintInput Print the values of network inputs to the console
 func (n *Network) PrintInput() string {
 	out := bytes.NewBufferString(fmt.Sprintf("Network %s with id %d inputs: (", n.Name, n.Id))
 	for i, node := range n.inputs {
@@ -214,7 +213,7 @@ func (n *Network) PrintInput() string {
 	return out.String()
 }
 
-// If at least one output is not active then return true
+// OutputIsOff If at least one output is not active then return true
 func (n *Network) OutputIsOff() bool {
 	for _, node := range n.Outputs {
 		if node.ActivationsCount == 0 {
@@ -225,7 +224,7 @@ func (n *Network) OutputIsOff() bool {
 	return false
 }
 
-// Attempts to activate the network given number of steps before returning error.
+// ActivateSteps Attempts to activate the network given number of steps before returning error.
 func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 	// For adding to the active sum
 	addAmount := 0.0
@@ -295,13 +294,11 @@ func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 	return true, nil
 }
 
-// Activates the net such that all outputs are active
+// Activate Activates the net such that all outputs are active
 func (n *Network) Activate() (bool, error) {
 	return n.ActivateSteps(20)
 }
 
-// Propagates activation wave through all network nodes provided number of steps in forward direction.
-// Returns true if activation wave passed from all inputs to outputs.
 func (n *Network) ForwardSteps(steps int) (res bool, err error) {
 	for i := 0; i < steps; i++ {
 		res, err = n.Activate()
@@ -313,20 +310,14 @@ func (n *Network) ForwardSteps(steps int) (res bool, err error) {
 	return res, err
 }
 
-// Propagates activation wave through all network nodes provided number of steps by recursion from output nodes
-// Returns true if activation wave passed from all inputs to outputs.
 func (n *Network) RecursiveSteps() (bool, error) {
 	return false, errors.New("RecursiveSteps is not implemented")
 }
 
-// Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute
-// value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
-// If maxAllowedSignalDelta value is less than or equal to 0, the method will return true without checking for relaxation.
 func (n *Network) Relax(_ int, _ float64) (bool, error) {
-	return false, errors.New("Relax is not implemented")
+	return false, errors.New("relax is not implemented")
 }
 
-// Takes an array of sensor values and loads it into SENSOR inputs ONLY
 func (n *Network) LoadSensors(sensors []float64) error {
 	counter := 0
 	if len(sensors) == len(n.inputs) {
@@ -352,7 +343,6 @@ func (n *Network) LoadSensors(sensors []float64) error {
 	return nil
 }
 
-// Read output values from the output nodes of the network
 func (n *Network) ReadOutputs() []float64 {
 	outs := make([]float64, len(n.Outputs))
 	for i, o := range n.Outputs {
@@ -361,7 +351,6 @@ func (n *Network) ReadOutputs() []float64 {
 	return outs
 }
 
-// Counts the number of nodes in the net
 func (n *Network) NodeCount() int {
 	if len(n.controlNodes) == 0 {
 		return len(n.allNodes)
@@ -370,7 +359,6 @@ func (n *Network) NodeCount() int {
 	}
 }
 
-// Counts the number of links in the net
 func (n *Network) LinkCount() int {
 	n.numLinks = 0
 	for _, node := range n.allNodes {
@@ -385,12 +373,12 @@ func (n *Network) LinkCount() int {
 	return n.numLinks
 }
 
-// Returns complexity of this network which is sum of nodes count and links count
+// Complexity Returns complexity of this network which is sum of nodes count and links count
 func (n *Network) Complexity() int {
 	return n.NodeCount() + n.LinkCount()
 }
 
-// This checks a POTENTIAL link between a potential in_node
+// IsRecurrent This checks a POTENTIAL link between a potential in_node
 // and potential out_node to see if it must be recurrent.
 // Use count and thresh to jump out in the case of an infinite loop.
 func (n *Network) IsRecurrent(inNode, outNode *NNode, count *int, thresh int) bool {
@@ -418,7 +406,7 @@ func (n *Network) IsRecurrent(inNode, outNode *NNode, count *int, thresh int) bo
 	return false
 }
 
-// Find the maximum number of neurons between an output and an input
+// MaxDepth Find the maximum number of neurons between an output and an input
 func (n *Network) MaxDepth() (int, error) {
 	if len(n.controlNodes) > 0 {
 		return -1, errors.New("unsupported for modular networks")
@@ -442,7 +430,7 @@ func (n *Network) MaxDepth() (int, error) {
 	return max, nil
 }
 
-// Returns all nodes in the network
+// AllNodes Returns all nodes in the network
 func (n *Network) AllNodes() []*NNode {
 	return n.allNodes
 }

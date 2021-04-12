@@ -222,7 +222,7 @@ func TestGenome_mutateNodeTrait(t *testing.T) {
 func TestGenome_mutateToggleEnable(t *testing.T) {
 	gnome1 := buildTestGenome(1)
 	// add extra connection gene from BIAS to OUT
-	gene := newGene(network.NewLinkWithTrait(gnome1.Traits[2], 5.5, gnome1.Nodes[2], gnome1.Nodes[3], false), 4, 0, true)
+	gene := NewConnectionGene(network.NewLinkWithTrait(gnome1.Traits[2], 5.5, gnome1.Nodes[2], gnome1.Nodes[3], false), 4, 0, true)
 	gnome1.Genes = append(gnome1.Genes, gene)
 
 	res, err := gnome1.mutateToggleEnable(50)
@@ -245,7 +245,7 @@ func TestGenome_mutateGeneReEnable(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	// add disabled extra connection gene from BIAS to OUT
-	gene := newGene(network.NewLinkWithTrait(gnome1.Traits[2], 5.5, gnome1.Nodes[2], gnome1.Nodes[3], false), 4, 0, false)
+	gene := NewConnectionGene(network.NewLinkWithTrait(gnome1.Traits[2], 5.5, gnome1.Nodes[2], gnome1.Nodes[3], false), 4, 0, false)
 	gnome1.Genes = append(gnome1.Genes, gene)
 	// disable one more gene
 	gnome1.Genes[1].IsEnabled = false

@@ -18,18 +18,18 @@ import (
 type LoggerLevel byte
 
 const (
-	// The Debug log level
+	// LogLevelDebug The Debug log level
 	LogLevelDebug LoggerLevel = iota
-	// The Info log level
+	// LogLevelInfo The Info log level
 	LogLevelInfo
-	// The Warning log level
+	// LogLevelWarning The Warning log level
 	LogLevelWarning
-	// The Error log level
+	// LogLevelError The Error log level
 	LogLevelError
 )
 
 var (
-	// The current log level of the context
+	// LogLevel The current log level of the context
 	LogLevel LoggerLevel
 
 	loggerDebug = log.New(os.Stdout, "DEBUG: ", log.Ltime|log.Lshortfile)
@@ -37,33 +37,33 @@ var (
 	loggerWarn  = log.New(os.Stdout, "ALERT: ", log.Ltime|log.Lshortfile)
 	loggerError = log.New(os.Stderr, "ERROR: ", log.Ltime|log.Lshortfile)
 
-	// The logger to output all messages
+	// DebugLog The logger to output all messages
 	DebugLog = func(message string) {
 		if LogLevel <= LogLevelDebug {
-			loggerDebug.Output(2, message)
+			_ = loggerDebug.Output(2, message)
 		}
 	}
-	// The logger to output messages with Info and up level
+	// InfoLog The logger to output messages with Info and up level
 	InfoLog = func(message string) {
 		if LogLevel <= LogLevelInfo {
-			loggerInfo.Output(2, message)
+			_ = loggerInfo.Output(2, message)
 		}
 	}
-	// The logger to output messages with Warn and up level
+	// WarnLog The logger to output messages with Warn and up level
 	WarnLog = func(message string) {
 		if LogLevel <= LogLevelWarning {
-			loggerWarn.Output(2, message)
+			_ = loggerWarn.Output(2, message)
 		}
 	}
-	// The logger to output messages with Error and up level
+	// ErrorLog The logger to output messages with Error and up level
 	ErrorLog = func(message string) {
 		if LogLevel <= LogLevelError {
-			loggerError.Output(2, message)
+			_ = loggerError.Output(2, message)
 		}
 	}
 )
 
-// The NEAT execution context holding common configuration parameters, etc.
+// NeatContext The NEAT execution context holding common configuration parameters, etc.
 type NeatContext struct {
 	// Probability of mutating a single trait param
 	TraitParamMutProb float64
@@ -147,14 +147,14 @@ type NeatContext struct {
 	NodeActivatorsProb []float64
 }
 
-// Creates new empty NEAT context
+// NewNeatContext Creates new empty NEAT context
 func NewNeatContext() *NeatContext {
 	nc := &NeatContext{}
 	nc.initDefaultNodeActivators()
 	return nc
 }
 
-// Loads context configuration from provided reader as YAML
+// LoadContext Loads context configuration from provided reader as YAML
 func (c *NeatContext) LoadContext(r io.Reader) error {
 	viper.SetConfigType("YAML")
 	err := viper.ReadConfig(r)
@@ -259,7 +259,7 @@ func (c *NeatContext) LoadContext(r io.Reader) error {
 	return nil
 }
 
-// Returns next random node activation type among registered with this context
+// RandomNodeActivationType Returns next random node activation type among registered with this context
 func (c *NeatContext) RandomNodeActivationType() (math.NodeActivationType, error) {
 	// quick check for the most cases
 	if len(c.NodeActivators) == 1 {
@@ -274,7 +274,7 @@ func (c *NeatContext) RandomNodeActivationType() (math.NodeActivationType, error
 	return c.NodeActivators[index], nil
 }
 
-// Loads context configuration from provided reader
+// LoadContext Loads context configuration from provided reader
 func LoadContext(r io.Reader) *NeatContext {
 	c := NeatContext{}
 	// read configuration

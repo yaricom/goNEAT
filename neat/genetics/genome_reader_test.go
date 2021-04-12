@@ -232,21 +232,21 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 	//
 	require.Len(t, genome.Genes, 15, "wrong number of connection genes")
 	genes := []*Gene{
-		newGene(network.NewLinkWithTrait(genome.Traits[1], 0.0, nodes[0], nodes[5], false), 1, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[2], 0.0, nodes[1], nodes[5], false), 2, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[4], nodes[5], false), 3, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[4], 1.0, nodes[5], nodes[13], false), 4, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[4], 1.0, nodes[13], nodes[7], false), 5, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[1], nodes[8], false), 6, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[9], nodes[5], false), 7, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[3], nodes[11], false), 8, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 1.0, nodes[13], nodes[10], false), 9, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[12], nodes[5], false), 10, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[0], nodes[6], false), 11, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[2], nodes[6], false), 12, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[4], nodes[6], false), 13, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[9], nodes[6], false), 14, 0, true),
-		newGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[12], nodes[6], false), 15, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[1], 0.0, nodes[0], nodes[5], false), 1, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[2], 0.0, nodes[1], nodes[5], false), 2, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[4], nodes[5], false), 3, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[4], 1.0, nodes[5], nodes[13], false), 4, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[4], 1.0, nodes[13], nodes[7], false), 5, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[1], nodes[8], false), 6, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[9], nodes[5], false), 7, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[3], nodes[11], false), 8, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 1.0, nodes[13], nodes[10], false), 9, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[12], nodes[5], false), 10, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[0], nodes[6], false), 11, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[2], nodes[6], false), 12, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[4], nodes[6], false), 13, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[9], nodes[6], false), 14, 0, true),
+		NewConnectionGene(network.NewLinkWithTrait(genome.Traits[3], 0.0, nodes[12], nodes[6], false), 15, 0, true),
 	}
 	for i, g := range genes {
 		assert.Equal(t, g.InnovationNum, genome.Genes[i].InnovationNum, "at: %d", i)

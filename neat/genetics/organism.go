@@ -9,7 +9,7 @@ import (
 // Organisms is sortable list of organisms by fitness
 type Organisms []*Organism
 
-// The object to associate implementation specific data with particular organism for various algorithm implementations
+// OrganismData is the object to associate implementation specific data with particular organism for various algorithm implementations
 type OrganismData struct {
 	// The implementation specific data object to be associated with organism
 	Value interface{}
@@ -67,7 +67,7 @@ type Organism struct {
 	Flag int
 }
 
-// Creates new organism with specified genome, fitness and given generation number
+// NewOrganism Creates new organism with specified genome, fitness and given generation number
 func NewOrganism(fit float64, g *Genome, generation int) (org *Organism, err error) {
 	phenotype := g.Phenotype
 	if phenotype == nil {
@@ -85,7 +85,7 @@ func NewOrganism(fit float64, g *Genome, generation int) (org *Organism, err err
 	return org, nil
 }
 
-// Regenerate the network based on a change in the genotype
+// UpdatePhenotype Regenerate the underlying network graph based on a change in the genotype
 func (o *Organism) UpdatePhenotype() (err error) {
 	// First, delete the old phenotype (net)
 	o.Phenotype = nil
@@ -95,7 +95,7 @@ func (o *Organism) UpdatePhenotype() (err error) {
 	return err
 }
 
-// Method to check if this algorithm is champion child and if so than if it's damaged
+// CheckChampionChildDamaged Method to check if this algorithm is champion child and if so than if it's damaged
 func (o *Organism) CheckChampionChildDamaged() bool {
 	if o.isPopulationChampionChild && o.highestFitness > o.Fitness {
 		return true
@@ -103,7 +103,7 @@ func (o *Organism) CheckChampionChildDamaged() bool {
 	return false
 }
 
-// Encodes this organism for wired transmission during parallel reproduction cycle
+// MarshalBinary Encodes this organism for wired transmission during parallel reproduction cycle
 func (o *Organism) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 	if _, err := fmt.Fprintln(&buf, o.Fitness, o.Generation, o.highestFitness, o.isPopulationChampionChild, o.Genotype.Id); err != nil {
@@ -114,7 +114,7 @@ func (o *Organism) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Decodes organism received over the wire during parallel reproduction cycle
+// UnmarshalBinary Decodes organism received over the wire during parallel reproduction cycle
 func (o *Organism) UnmarshalBinary(data []byte) error {
 	// A simple encoding: plain text.
 	b := bytes.NewBuffer(data)
@@ -143,7 +143,7 @@ func (o *Organism) String() string {
 		o.Generation, o.Fitness, o.originalFitness, champStr, eliminateStr)
 }
 
-// Dumps all organism's fields into string
+// Dump is to dump all organism's fields into string
 func (o *Organism) Dump() string {
 	b := bytes.NewBufferString("Organism:")
 	_, _ = fmt.Fprintln(b, "Fitness: ", o.Fitness)
@@ -170,7 +170,7 @@ func (o *Organism) Dump() string {
 }
 
 // The Organisms sort interface implementation
-//
+
 func (f Organisms) Len() int {
 	return len(f)
 }

@@ -3,21 +3,20 @@ package genetics
 import (
 	"bufio"
 	"fmt"
-	"github.com/spf13/cast"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/math"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io"
 )
 
-// The interface to define genome writer
+// GenomeWriter is the interface to define genome writer
 type GenomeWriter interface {
-	// Writes Genome record
+	// WriteGenome writes Genome record into underlying writer
 	WriteGenome(genome *Genome) error
 }
 
-// Creates genome writer with specified data encoding format
+// NewGenomeWriter creates genome writer with specified data encoding format
 func NewGenomeWriter(w io.Writer, encoding GenomeEncoding) (GenomeWriter, error) {
 	switch encoding {
 	case PlainGenomeEncoding:
@@ -34,7 +33,6 @@ type plainGenomeWriter struct {
 	w *bufio.Writer
 }
 
-// Writes genome in Plain Text format
 func (wr *plainGenomeWriter) WriteGenome(g *Genome) error {
 	if _, err := fmt.Fprintf(wr.w, "genomestart %d\n", g.Id); err != nil {
 		return err
@@ -247,8 +245,8 @@ func (wr *yamlGenomeWriter) encodeConnectionGene(gene *Gene) map[string]interfac
 	gMap["innov_num"] = gene.InnovationNum
 	gMap["weight"] = gene.Link.Weight
 	gMap["mut_num"] = gene.MutationNum
-	gMap["recurrent"] = cast.ToString(gene.Link.IsRecurrent)
-	gMap["enabled"] = cast.ToString(gene.IsEnabled)
+	gMap["recurrent"] = gene.Link.IsRecurrent
+	gMap["enabled"] = gene.IsEnabled
 	return gMap
 }
 

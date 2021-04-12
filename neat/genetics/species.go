@@ -34,12 +34,12 @@ type Species struct {
 	IsChecked bool
 }
 
-// Construct new species with specified ID
+// NewSpecies Construct new species with specified ID
 func NewSpecies(id int) *Species {
 	return newSpecies(id)
 }
 
-// Allows the creation of a Species that won't age (a novel one). This protects new Species from aging
+// NewSpeciesNovel Allows the creation of a Species that won't age (a novel one). This protects new Species from aging
 // inside their first generation
 func NewSpeciesNovel(id int, novel bool) *Species {
 	s := newSpecies(id)
@@ -165,7 +165,7 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 	}
 }
 
-// Computes maximal and average fitness of species
+// ComputeMaxAndAvgFitness Computes maximal and average fitness of species
 func (s Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 	total := 0.0
 	for _, o := range s.Organisms {
@@ -180,7 +180,7 @@ func (s Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 	return max, avg
 }
 
-// Returns most fit organism for this species
+// FindChampion Returns most fit organism for this species
 func (s Species) FindChampion() *Organism {
 	champFitness := -1.0
 	var champion *Organism
@@ -581,7 +581,7 @@ func (f byOrganismOrigFitness) Less(i, j int) bool {
 	return false
 }
 
-// This is used for list sorting of species by maximal fitness
+// ByOrganismFitness is used for list sorting of species by maximal fitness
 type ByOrganismFitness []*Species
 
 func (f ByOrganismFitness) Len() int {

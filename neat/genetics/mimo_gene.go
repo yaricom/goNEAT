@@ -5,7 +5,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
-// The Multiple-Input Multiple-Output (MIMO) control Gene allows to create modular genomes, in which several groups of genes
+// MIMOControlGene The Multiple-Input Multiple-Output (MIMO) control Gene allows to create modular genomes, in which several groups of genes
 // connected through single MIMO Gene and corresponding control function is applied to all inputs in order to produce
 // outputs. This allows to build modular hierarchical genomes which can be considered as sum of constituent components
 // and evolved as a whole and as a concrete parts simultaneously.
@@ -24,7 +24,7 @@ type MIMOControlGene struct {
 	ioNodes []*network.NNode
 }
 
-// Creates new MIMO gene
+// NewMIMOGene Creates new MIMO gene
 func NewMIMOGene(controlNode *network.NNode, innovNum int64, mutNum float64, enabled bool) *MIMOControlGene {
 	gene := &MIMOControlGene{
 		ControlNode:   controlNode,
@@ -44,7 +44,7 @@ func NewMIMOGene(controlNode *network.NNode, innovNum int64, mutNum float64, ena
 	return gene
 }
 
-// The copy constructor taking parameters from provided control gene for given control node
+// NewMIMOGeneCopy The copy constructor taking parameters from provided control gene for given control node
 func NewMIMOGeneCopy(g *MIMOControlGene, controlNode *network.NNode) *MIMOControlGene {
 	cg := NewMIMOGene(controlNode, g.InnovationNum, g.MutationNum, g.IsEnabled)
 	return cg

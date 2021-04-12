@@ -52,13 +52,13 @@ type Population struct {
 
 // The auxiliary data type to hold results of parallel reproduction sent over the wires
 type reproductionResult struct {
-	babiesStored int
-	babies       []byte
-	err          error
-	speciesId    int
+	babiesStored int    // the number of offsprings saved
+	babies       []byte // the encoded offsprings
+	err          error  // error occurred during reproduction if any
+	speciesId    int    // the ID of species used for reproduction
 }
 
-// Construct off of a single spawning Genome
+// NewPopulation constructs off of a single spawning Genome
 func NewPopulation(g *Genome, context *neat.NeatContext) (*Population, error) {
 	if context.PopSize <= 0 {
 		return nil, fmt.Errorf("wrong population size in the context: %d", context.PopSize)
@@ -72,7 +72,7 @@ func NewPopulation(g *Genome, context *neat.NeatContext) (*Population, error) {
 	return pop, nil
 }
 
-// Special constructor to create a population of random topologies uses
+// NewPopulationRandom is a special constructor to create a population of random topologies uses
 // NewGenomeRand(new_id, in, out, n, maxHidden int, recurrent bool, link_prob float64)
 // See the Genome constructor above for the argument specifications
 func NewPopulationRandom(in, out, maxHidden int, recurrent bool, linkProb float64, context *neat.NeatContext) (*Population, error) {
@@ -100,7 +100,7 @@ func NewPopulationRandom(in, out, maxHidden int, recurrent bool, linkProb float6
 	return pop, nil
 }
 
-// Reads population from provided reader
+// ReadPopulation reads population from provided reader
 func ReadPopulation(ir io.Reader, context *neat.NeatContext) (pop *Population, err error) {
 	pop = newPopulation()
 
@@ -184,7 +184,7 @@ func (p *Population) Write(w io.Writer) error {
 	return nil
 }
 
-// Writes given population by species
+// WriteBySpecies Writes given population by species
 func (p *Population) WriteBySpecies(w io.Writer) error {
 	// Step through the Species and write them
 	for _, sp := range p.Species {
@@ -195,7 +195,7 @@ func (p *Population) WriteBySpecies(w io.Writer) error {
 	return nil
 }
 
-// Run verify on all Genomes in this Population (Debugging)
+// Verify is to run verification on all Genomes in this Population (Debugging)
 func (p *Population) Verify() (bool, error) {
 	res := true
 	var err error
