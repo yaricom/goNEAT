@@ -58,7 +58,7 @@ func newSpecies(id int) *Species {
 }
 
 // Writes species to the specified writer
-func (s Species) Write(w io.Writer) error {
+func (s *Species) Write(w io.Writer) error {
 	_, avg := s.ComputeMaxAndAvgFitness()
 	// Print a comment on the Species info
 	if _, err := fmt.Fprintf(w, "/* Species #%d : (Size %d) (AF %.3f) (Age %d)  */\n",
@@ -166,7 +166,7 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 }
 
 // ComputeMaxAndAvgFitness Computes maximal and average fitness of species
-func (s Species) ComputeMaxAndAvgFitness() (max, avg float64) {
+func (s *Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 	total := 0.0
 	for _, o := range s.Organisms {
 		total += o.Fitness
@@ -181,7 +181,7 @@ func (s Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 }
 
 // FindChampion Returns most fit organism for this species
-func (s Species) FindChampion() *Organism {
+func (s *Species) FindChampion() *Organism {
 	champFitness := -1.0
 	var champion *Organism
 	for _, org := range s.Organisms {
@@ -194,7 +194,7 @@ func (s Species) FindChampion() *Organism {
 }
 
 // Returns first organism or nil
-func (s Species) firstOrganism() *Organism {
+func (s *Species) firstOrganism() *Organism {
 	if len(s.Organisms) > 0 {
 		return s.Organisms[0]
 	} else {
@@ -206,7 +206,7 @@ func (s Species) firstOrganism() *Organism {
 // The skim is fractional offspring left over from a previous species that was counted. These fractional parts are
 // kept until they add up to 1.
 // Returns the whole offspring count for this species as well as fractional offspring left after computation (skim).
-func (s Species) countOffspring(skim float64) (int, float64) {
+func (s *Species) countOffspring(skim float64) (int, float64) {
 	var orgOffIntPart int      // The floor of an organism's expected offspring
 	var orgOffFracPart float64 // Expected offspring fractional part
 	var skimIntPart float64    // The whole offspring in the skim
@@ -231,24 +231,24 @@ func (s Species) countOffspring(skim float64) (int, float64) {
 }
 
 // Compute generations since last improvement
-func (s Species) lastImproved() int {
+func (s *Species) lastImproved() int {
 	return s.Age - s.AgeOfLastImprovement
 }
 
 // Returns size of this Species, i.e. number of Organisms belonging to it
-func (s Species) size() int {
+func (s *Species) size() int {
 	return len(s.Organisms)
 }
 
 // Returns Organism - champion among others (best fitness)
-func (s Species) findChampion() *Organism {
+func (s *Species) findChampion() *Organism {
 	sort.Sort(sort.Reverse(s.Organisms))
 	return s.Organisms[0]
 }
 
 // Perform mating and mutation to form next generation. The sorted_species is ordered to have best species in the beginning.
 // Returns list of baby organisms as a result of reproduction of all organisms in this species.
-func (s Species) reproduce(generation int, pop *Population, sortedSpecies []*Species, context *neat.NeatContext) ([]*Organism, error) {
+func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Species, context *neat.NeatContext) ([]*Organism, error) {
 	//Check for a mistake
 	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
 		return nil, errors.New("attempt to reproduce out of empty species")
@@ -426,7 +426,7 @@ func (s Species) reproduce(generation int, pop *Population, sortedSpecies []*Spe
 					randMult := rand.Float64() / 4.0
 					// This tends to select better species
 					randSpeciesNum := int(math.Floor(randMult * float64(len(sortedSpecies))))
-					randSpecies = *sortedSpecies[randSpeciesNum]
+					randSpecies = sortedSpecies[randSpeciesNum]
 
 					giveup++
 				}
@@ -501,7 +501,7 @@ func (s Species) reproduce(generation int, pop *Population, sortedSpecies []*Spe
 					neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 					// If we didn't do a structural mutation, we do the other kinds
-					if _, err := newGenome.mutateAllNonstructural(context); err != nil {
+					if _, err = newGenome.mutateAllNonstructural(context); err != nil {
 						return nil, err
 					}
 				}
@@ -539,7 +539,7 @@ func createFirstSpecies(pop *Population, baby *Organism) {
 	}
 }
 
-func (s Species) String() string {
+func (s *Species) String() string {
 	max, avg := s.ComputeMaxAndAvgFitness()
 	str := fmt.Sprintf("Species #%d, age=%d, avg_fitness=%.3f, max_fitness=%.3f, max_fitness_ever=%.3f, expected_offspring=%d, age_of_last_improvement=%d\n",
 		s.Id, s.Age, avg, max, s.MaxFitnessEver, s.ExpectedOffspring, s.AgeOfLastImprovement)
