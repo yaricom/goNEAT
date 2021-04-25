@@ -14,7 +14,7 @@ import (
 type GenerationEvaluator interface {
 	// GenerationEvaluate Invoked to evaluate one generation of population of organisms within given
 	// execution context.
-	GenerationEvaluate(pop *genetics.Population, epoch *Generation, context *neat.NeatContext) (err error)
+	GenerationEvaluate(pop *genetics.Population, epoch *Generation, context *neat.Options) (err error)
 }
 
 // TrialRunObserver The interface to describe trial lifecycle observer interested to receive lifecycle notifications
@@ -24,11 +24,11 @@ type TrialRunObserver interface {
 }
 
 // Returns appropriate executor type from given context
-func epochExecutorForContext(context *neat.NeatContext) (genetics.PopulationEpochExecutor, error) {
-	switch genetics.EpochExecutorType(context.EpochExecutorType) {
-	case genetics.SequentialExecutorType:
+func epochExecutorForContext(context *neat.Options) (genetics.PopulationEpochExecutor, error) {
+	switch context.EpochExecutorType {
+	case neat.EpochExecutorTypeSequential:
 		return &genetics.SequentialPopulationEpochExecutor{}, nil
-	case genetics.ParallelExecutorType:
+	case neat.EpochExecutorTypeParallel:
 		return &genetics.ParallelPopulationEpochExecutor{}, nil
 	default:
 		return nil, errors.New("unsupported epoch executor type requested")

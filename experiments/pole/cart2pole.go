@@ -66,7 +66,7 @@ type CartPole struct {
 }
 
 // GenerationEvaluate Perform evaluation of one epoch on double pole balancing
-func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.NeatContext) (err error) {
+func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.Options) (err error) {
 	cartPole := newCartPole(e.Markov)
 
 	cartPole.nonMarkovLong = false

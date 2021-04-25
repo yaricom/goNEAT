@@ -9,16 +9,6 @@ import (
 	"sync"
 )
 
-// EpochExecutorType The epoch executor type definition
-type EpochExecutorType int
-
-const (
-	// SequentialExecutorType The sequential executor
-	SequentialExecutorType EpochExecutorType = 0
-	// ParallelExecutorType The parallel executor to perform reproduction cycle in parallel threads
-	ParallelExecutorType = 1
-)
-
 // PopulationEpochExecutor Executes epoch's turnover for a population of the organisms
 type PopulationEpochExecutor interface {
 	// NextEpoch Turnover the population to a new generation

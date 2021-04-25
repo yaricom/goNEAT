@@ -18,7 +18,7 @@ func TestGenome_Compatibility_Linear(t *testing.T) {
 		DisjointCoeff:   0.5,
 		ExcessCoeff:     0.5,
 		MutdiffCoeff:    0.5,
-		GenCompatMethod: 0,
+		GenCompatMethod: neat.GenomeCompatibilityMethodLinear,
 	}
 
 	// Test fully compatible
@@ -51,7 +51,7 @@ func TestGenome_Compatibility_Fast(t *testing.T) {
 		DisjointCoeff:   0.5,
 		ExcessCoeff:     0.5,
 		MutdiffCoeff:    0.5,
-		GenCompatMethod: 1,
+		GenCompatMethod: neat.GenomeCompatibilityMethodFast,
 	}
 
 	// Test fully compatible

@@ -37,7 +37,7 @@ func NewXORGenerationEvaluator(outputPath string) experiment.GenerationEvaluator
 }
 
 // GenerationEvaluate This method evaluates one epoch for given population and prints results into output directory if any.
-func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.NeatContext) (err error) {
+func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.Options) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
 		res, err := e.orgEvaluate(org)

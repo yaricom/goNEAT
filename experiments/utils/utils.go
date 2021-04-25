@@ -19,13 +19,16 @@ func CreateOutputDir(outDirPath string) error {
 	return os.MkdirAll(outDirPath, os.ModePerm)
 }
 
-func LoadContextAndGenome(contextPath, genomePath string) (*neat.NeatContext, *genetics.Genome, error) {
+func LoadContextAndGenome(contextPath, genomePath string) (*neat.Options, *genetics.Genome, error) {
 	// Load context configuration
 	configFile, err := os.Open(contextPath)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to open context file")
 	}
-	context := neat.LoadContext(configFile)
+	context, err := neat.LoadNeatOptions(configFile)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to load NEAT options")
+	}
 
 	// Load start Genome
 	genomeFile, err := os.Open(genomePath)

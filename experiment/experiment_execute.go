@@ -8,7 +8,7 @@ import (
 )
 
 // Execute The Experiment execution entry point
-func (e *Experiment) Execute(context *neat.NeatContext, startGenome *genetics.Genome, executor interface{}) (err error) {
+func (e *Experiment) Execute(context *neat.Options, startGenome *genetics.Genome, executor interface{}) (err error) {
 	if e.Trials == nil {
 		e.Trials = make(Trials, context.NumRuns)
 	}

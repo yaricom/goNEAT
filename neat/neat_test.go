@@ -8,39 +8,39 @@ import (
 	"testing"
 )
 
-func TestLoadContext(t *testing.T) {
+func TestLoadNeatOptions(t *testing.T) {
 	config, err := os.Open("../data/xor_test.neat")
 	require.NoError(t, err)
 
 	// Load Neat Context
-	nc := LoadContext(config)
-	checkNeatContext(nc, t)
+	opts, err := LoadNeatOptions(config)
+	require.NoError(t, err)
+	checkNeatOptions(opts, t)
 }
 
-func TestNeatContext_LoadContext(t *testing.T) {
+func TestLoadYAMLOptions(t *testing.T) {
 	config, err := os.Open("../data/xor_test.neat.yml")
 	require.NoError(t, err)
 
 	// Load YAML context
-	nc := NewNeatContext()
-	err = nc.LoadContext(config)
-	require.NoError(t, err, "failed to load context")
+	opts, err := LoadYAMLOptions(config)
+	require.NoError(t, err, "failed to load options")
 
-	checkNeatContext(nc, t)
+	checkNeatOptions(opts, t)
 
 	// check activators
-	require.Len(t, nc.NodeActivators, 4, "wrong node activators size")
+	require.Len(t, opts.NodeActivators, 4, "wrong node activators size")
 	activators := []math.NodeActivationType{math.SigmoidBipolarActivation,
 		math.GaussianBipolarActivation, math.LinearAbsActivation, math.SineActivation}
 	probs := []float64{0.25, 0.35, 0.15, 0.25}
 	for i, a := range activators {
-		assert.Equal(t, a, nc.NodeActivators[i], "wrong node activator type at: %d", i)
-		assert.Equal(t, probs[i], nc.NodeActivatorsProb[i], "wrong probability at: %d", i)
+		assert.Equal(t, a, opts.NodeActivators[i], "wrong node activator type at: %d", i)
+		assert.Equal(t, probs[i], opts.NodeActivatorsProb[i], "wrong probability at: %d", i)
 
 	}
 }
 
-func checkNeatContext(nc *NeatContext, t *testing.T) {
+func checkNeatOptions(nc *Options, t *testing.T) {
 	assert.Equal(t, 0.5, nc.TraitParamMutProb)
 	assert.Equal(t, 1.0, nc.TraitMutationPower)
 	assert.Equal(t, 2.5, nc.WeightMutPower)
@@ -73,6 +73,6 @@ func checkNeatContext(nc *NeatContext, t *testing.T) {
 	assert.Equal(t, 0, nc.BabiesStolen)
 	assert.Equal(t, 100, nc.NumRuns)
 	assert.Equal(t, 100, nc.NumGenerations)
-	assert.Equal(t, 0, nc.EpochExecutorType)
-	assert.Equal(t, 1, nc.GenCompatMethod)
+	assert.Equal(t, EpochExecutorTypeSequential, nc.EpochExecutorType)
+	assert.Equal(t, GenomeCompatibilityMethodFast, nc.GenCompatMethod)
 }

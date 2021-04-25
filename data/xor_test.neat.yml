@@ -1,97 +1,98 @@
+#############################
 # The XOR experiment context
-neat:
-  # Probability of mutating a single trait param
-  trait_param_mut_prob:  0.5
-  # Power of mutation on a single trait param
-  trait_mutation_power:  1.0
-  # The power of a link weight mutation
-  weight_mut_power:  2.5
+#############################
+# Probability of mutating a single trait param
+trait_param_mut_prob:  0.5
+# Power of mutation on a single trait param
+trait_mutation_power:  1.0
+# The power of a link weight mutation
+weight_mut_power:  2.5
 
-  # 3 global coefficients are used to determine the formula for computing the compatibility between 2 genomes.
-  # The formula is: disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg.
-  # See the Compatibility method in the Genome class for more info
-  # They can be thought of as the importance of disjoint Genes, excess Genes, and parametric difference between Genes of
-  # the same function, respectively.
-  disjoint_coeff:  1.0
-  excess_coeff:  1.0
-  mutdiff_coeff:  0.4
+# 3 global coefficients are used to determine the formula for computing the compatibility between 2 genomes.
+# The formula is: disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg.
+# See the Compatibility method in the Genome class for more info
+# They can be thought of as the importance of disjoint Genes, excess Genes, and parametric difference between Genes of
+# the same function, respectively.
+disjoint_coeff:  1.0
+excess_coeff:  1.0
+mutdiff_coeff:  0.4
 
-  # This global tells compatibility threshold under which two Genomes are considered the same species
-  compat_threshold:  3.0
-  # How much does age matter? Gives a fitness boost up to some young age (niching). If it is 1, then young species get no fitness boost.
-  age_significance:  1.0
-  # Percent of average fitness for survival, how many get to reproduce based on survival_thresh * pop_size
-  survival_thresh:  0.2
+# This global tells compatibility threshold under which two Genomes are considered the same species
+compat_threshold:  3.0
+# How much does age matter? Gives a fitness boost up to some young age (niching). If it is 1, then young species get no fitness boost.
+age_significance:  1.0
+# Percent of average fitness for survival, how many get to reproduce based on survival_thresh * pop_size
+survival_thresh:  0.2
 
-  # Probabilities of a non-mating reproduction
-  mutate_only_prob:  0.25
-  # Probability of genome trait mutation
-  mutate_random_trait_prob:  0.1
-  # Probability  of link trait mutation
-  mutate_link_trait_prob:  0.1
-  # Probability of node trait mutation
-  mutate_node_trait_prob:  0.1
-  # Probability of link weight value mutation
-  mutate_link_weights_prob:  0.9
-  # Probability of enabling/disabling of specific link/gene
-  mutate_toggle_enable_prob:  0.0
-  # Probability of finding the first disabled gene and re-enabling it
-  mutate_gene_reenable_prob:  0.0
-  # Probability of adding new node
-  mutate_add_node_prob:  0.03
-  # Probability of adding new link between nodes
-  mutate_add_link_prob:  0.08
-  # Probability of making connections from disconnected sensors (input, bias type neurons)
-  mutate_connect_sensors: 0.5
+# Probabilities of a non-mating reproduction
+mutate_only_prob:  0.25
+# Probability of genome trait mutation
+mutate_random_trait_prob:  0.1
+# Probability  of link trait mutation
+mutate_link_trait_prob:  0.1
+# Probability of node trait mutation
+mutate_node_trait_prob:  0.1
+# Probability of link weight value mutation
+mutate_link_weights_prob:  0.9
+# Probability of enabling/disabling of specific link/gene
+mutate_toggle_enable_prob:  0.0
+# Probability of finding the first disabled gene and re-enabling it
+mutate_gene_reenable_prob:  0.0
+# Probability of adding new node
+mutate_add_node_prob:  0.03
+# Probability of adding new link between nodes
+mutate_add_link_prob:  0.08
+# Probability of making connections from disconnected sensors (input, bias type neurons)
+mutate_connect_sensors: 0.5
 
-  # Probability of mating between different species
-  interspecies_mate_rate:  0.001
-  # Probability of mating this Genome with another Genome g. For every point in each Genome, where each Genome shares
-  # the innovation number, the Gene is chosen randomly from either parent.  If one parent has an innovation absent in
-  # the other, the baby may inherit the innovation if it is from the more fit parent.
-  mate_multipoint_prob:  0.3
-  # Probability of mating like in multipoint, but instead of selecting one or the other when the innovation numbers match,
-  # it averages their weights.
-  mate_multipoint_avg_prob:  0.3
-  # Probability of mating similar to a standard single point CROSSOVER operator. Traits are averaged as in the previous two
-  # mating methods. A Gene is chosen in the smaller Genome for splitting. When the Gene is reached, it is averaged with
-  # the matching Gene from the larger Genome, if one exists. Then every other Gene is taken from the larger Genome.
-  mate_singlepoint_prob:  0.3
+# Probability of mating between different species
+interspecies_mate_rate:  0.001
+# Probability of mating this Genome with another Genome g. For every point in each Genome, where each Genome shares
+# the innovation number, the Gene is chosen randomly from either parent.  If one parent has an innovation absent in
+# the other, the baby may inherit the innovation if it is from the more fit parent.
+mate_multipoint_prob:  0.3
+# Probability of mating like in multipoint, but instead of selecting one or the other when the innovation numbers match,
+# it averages their weights.
+mate_multipoint_avg_prob:  0.3
+# Probability of mating similar to a standard single point CROSSOVER operator. Traits are averaged as in the previous two
+# mating methods. A Gene is chosen in the smaller Genome for splitting. When the Gene is reached, it is averaged with
+# the matching Gene from the larger Genome, if one exists. Then every other Gene is taken from the larger Genome.
+mate_singlepoint_prob:  0.3
 
-  # Probability of mating without mutation
-  mate_only_prob:  0.2
+# Probability of mating without mutation
+mate_only_prob:  0.2
 
-  # Probability of forcing selection of ONLY links that are naturally recurrent
-  recur_only_prob:  0.0
+# Probability of forcing selection of ONLY links that are naturally recurrent
+recur_only_prob:  0.0
 
-  # The number of babies to stolen off to the champions
-  babies_stolen:  0
-  # The population size as a number of organisms
-  pop_size:  200
-  # Age when Species starts to be penalized
-  dropoff_age:  50
-  # Number of tries mutate_add_link will attempt to find an open link
-  newlink_tries:  50
-  # Tells to print population to file every n generations
-  print_every:  10
+# The number of babies to stolen off to the champions
+babies_stolen:  0
+# The population size as a number of organisms
+pop_size:  200
+# Age when Species starts to be penalized
+dropoff_age:  50
+# Number of tries mutate_add_link will attempt to find an open link
+newlink_tries:  50
+# Tells to print population to file every n generations
+print_every:  10
 
-  # The number of runs to average over in an experiment
-  num_runs:  100
-  # The number of epochs (generations) to execute training
-  num_generations: 100
+# The number of runs to average over in an experiment
+num_runs:  100
+# The number of epochs (generations) to execute training
+num_generations: 100
 
-  # The epoch's executor type to apply [sequential, parallel]
-  epoch_executor: sequential
+# The epoch's executor type to apply [sequential, parallel]
+epoch_executor: sequential
 
-  # The genome compatibility method to use [linear, fast]. The later is best for bigger genomes
-  genome_compat_method: fast
+# The genome compatibility method to use [linear, fast]. The later is best for bigger genomes
+genome_compat_method: fast
 
-  # The log level
-  log_level: Info
+# The log level
+log_level: info
 
-  # The nodes activation functions list to choose from (activation function -> it's selection probability)
-  node_activators:
-    - SigmoidBipolarActivation 0.25
-    - GaussianBipolarActivation 0.35
-    - LinearAbsActivation 0.15
-    - SineActivation 0.25
+# The nodes activation functions list to choose from (activation function -> it's selection probability)
+node_activators:
+  - SigmoidBipolarActivation 0.25
+  - GaussianBipolarActivation 0.35
+  - LinearAbsActivation 0.15
+  - SineActivation 0.25

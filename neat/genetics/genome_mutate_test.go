@@ -74,7 +74,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 	// Create gnome phenotype
 	_, err := gnome1.Genesis(1)
 	require.NoError(t, err, "genesis failed")
-	context := neat.NewNeatOptions()
+	context := &neat.Options{}
 	context.PopSize = 1
 	// The population with one organism
 	pop := newPopulation()
@@ -113,7 +113,10 @@ func TestGenome_mutateAddNode(t *testing.T) {
 	// Create gnome phenotype
 	_, err := gnome1.Genesis(1)
 	require.NoError(t, err, "genesis failed")
-	context := neat.NewNeatOptions()
+	context := &neat.Options{
+		NodeActivators:     []math.NodeActivationType{math.SigmoidSteepenedActivation},
+		NodeActivatorsProb: []float64{1.0},
+	}
 	context.PopSize = 1
 	// The population with one organism
 	pop := newPopulation()

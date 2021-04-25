@@ -30,4 +30,6 @@ print_every 60
 babies_stolen 0
 num_runs 10
 num_generations 100
-log_level 1
+log_level info
+epoch_executor sequential
+genome_compat_method linear

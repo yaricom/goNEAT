@@ -16,7 +16,7 @@ import (
 //
 // Fully compatible genomes has 0.0 returned.
 func (g *Genome) compatibility(og *Genome, context *neat.Options) float64 {
-	if context.GenCompatMethod == 0 {
+	if context.GenCompatMethod == neat.GenomeCompatibilityMethodLinear {
 		return g.compatLinear(og, context)
 	} else {
 		return g.compatFast(og, context)

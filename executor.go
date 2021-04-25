@@ -21,7 +21,7 @@ func main() {
 	var genomePath = flag.String("genome", "./data/xorstartgenes", "The seed genome to start with.")
 	var experimentName = flag.String("experiment", "XOR", "The name of experiment to run. [XOR, cart_pole, cart_2pole_markov, cart_2pole_non-markov]")
 	var trialsCount = flag.Int("trials", 0, "The numbar of trials for experiment. Overrides the one set in configuration.")
-	var logLevel = flag.Int("log_level", -1, "The logger level to be used. Overrides the one set in configuration.")
+	var logLevel = flag.String("log_level", "", "The logger level to be used. Overrides the one set in configuration.")
 
 	flag.Parse()
 
@@ -29,12 +29,15 @@ func main() {
 	// the numbers will be different every time we run.
 	rand.Seed(time.Now().Unix())
 
-	// Load context configuration
+	// Load neatOptions configuration
 	configFile, err := os.Open(*contextPath)
 	if err != nil {
 		log.Fatal("Failed to open context configuration file: ", err)
 	}
-	context := neat.LoadContext(configFile)
+	neatOptions, err := neat.LoadNeatOptions(configFile)
+	if err != nil {
+		log.Fatal("Failed to load NEAT options: ", err)
+	}
 
 	// Load Genome
 	log.Printf("Loading start genome for %s experiment\n", *experimentName)
@@ -65,18 +68,18 @@ func main() {
 		log.Fatal("Failed to create output directory: ", err)
 	}
 
-	// Override context configuration parameters with ones set from command line
+	// Override neatOptions configuration parameters with ones set from command line
 	if *trialsCount > 0 {
-		context.NumRuns = *trialsCount
+		neatOptions.NumRuns = *trialsCount
 	}
-	if *logLevel >= 0 {
+	if len(*logLevel) > 0 {
 		neat.LogLevel = neat.LoggerLevel(*logLevel)
 	}
 
 	// The 100 generation XOR experiment
 	expt := experiment.Experiment{
 		Id:     0,
-		Trials: make(experiment.Trials, context.NumRuns),
+		Trials: make(experiment.Trials, neatOptions.NumRuns),
 	}
 	var generationEvaluator experiment.GenerationEvaluator
 	switch *experimentName {
@@ -95,7 +98,7 @@ func main() {
 		log.Fatalf("Unsupported experiment: %s", *experimentName)
 	}
 
-	if err = expt.Execute(context, startGenome, generationEvaluator); err != nil {
+	if err = expt.Execute(neatOptions, startGenome, generationEvaluator); err != nil {
 		log.Fatal("Failed to perform XOR experiment: ", err)
 	}
 
