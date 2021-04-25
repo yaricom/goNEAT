@@ -33,7 +33,7 @@ type SequentialPopulationEpochExecutor struct {
 }
 
 func (s *SequentialPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.NeatContext) error {
-	err := s.prepare(generation, population, context)
+	err := s.prepareForReproduction(generation, population, context)
 	if err != nil {
 		return err
 	}
@@ -41,14 +41,15 @@ func (s *SequentialPopulationEpochExecutor) NextEpoch(generation int, population
 	if err != nil {
 		return err
 	}
-	err = s.finalize(generation, population, context)
+	err = s.finalizeReproduction(population, context)
 
 	neat.DebugLog(fmt.Sprintf("POPULATION: >>>>> Epoch %d complete\n", generation))
 
 	return err
 }
 
-func (s *SequentialPopulationEpochExecutor) prepare(generation int, p *Population, context *neat.NeatContext) error {
+// prepareForReproduction is to prepareForReproduction population for reproduction
+func (s *SequentialPopulationEpochExecutor) prepareForReproduction(generation int, p *Population, context *neat.NeatContext) error {
 	// clear executor state from previous run
 	s.sortedSpecies = nil
 
@@ -116,7 +117,7 @@ func (s *SequentialPopulationEpochExecutor) prepare(generation int, p *Populatio
 	return err
 }
 
-// Do sequential reproduction cycle
+// reproduce is to run the reproduction cycle
 func (s *SequentialPopulationEpochExecutor) reproduce(generation int, p *Population, context *neat.NeatContext) error {
 	neat.DebugLog("POPULATION: Start Sequential Reproduction Cycle >>>>>")
 
@@ -152,7 +153,8 @@ func (s *SequentialPopulationEpochExecutor) reproduce(generation int, p *Populat
 	return err
 }
 
-func (s *SequentialPopulationEpochExecutor) finalize(generation int, pop *Population, _ *neat.NeatContext) error {
+// finalizeReproduction is to finalizeReproduction reproduction cycle
+func (s *SequentialPopulationEpochExecutor) finalizeReproduction(pop *Population, _ *neat.NeatContext) error {
 	// Destroy and remove the old generation from the organisms and species
 	err := pop.purgeOldGeneration(s.bestSpeciesId)
 	if err != nil {
@@ -189,7 +191,7 @@ type ParallelPopulationEpochExecutor struct {
 
 func (p *ParallelPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.NeatContext) error {
 	p.sequential = &SequentialPopulationEpochExecutor{}
-	err := p.sequential.prepare(generation, population, context)
+	err := p.sequential.prepareForReproduction(generation, population, context)
 	if err != nil {
 		return err
 	}
@@ -200,7 +202,7 @@ func (p *ParallelPopulationEpochExecutor) NextEpoch(generation int, population *
 		return err
 	}
 
-	err = p.sequential.finalize(generation, population, context)
+	err = p.sequential.finalizeReproduction(population, context)
 
 	neat.DebugLog(fmt.Sprintf("POPULATION: >>>>> Epoch %d complete\n", generation))
 
