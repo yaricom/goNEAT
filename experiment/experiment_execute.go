@@ -1,6 +1,7 @@
 package experiment
 
 import (
+	"context"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
@@ -8,17 +9,22 @@ import (
 )
 
 // Execute The Experiment execution entry point
-func (e *Experiment) Execute(context *neat.Options, startGenome *genetics.Genome, executor interface{}) (err error) {
+func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, executor interface{}) (err error) {
+	opts, found := neat.FromContext(ctx)
+	if !found {
+		return neat.ErrNEATOptionsNotFound
+	}
+
 	if e.Trials == nil {
-		e.Trials = make(Trials, context.NumRuns)
+		e.Trials = make(Trials, opts.NumRuns)
 	}
 
 	var pop *genetics.Population
-	for run := 0; run < context.NumRuns; run++ {
+	for run := 0; run < opts.NumRuns; run++ {
 		trialStartTime := time.Now()
 
 		neat.InfoLog("\n>>>>> Spawning new population ")
-		pop, err = genetics.NewPopulation(startGenome, context)
+		pop, err = genetics.NewPopulation(startGenome, opts)
 		if err != nil {
 			neat.InfoLog("Failed to spawn new population from start genome")
 			return err
@@ -35,7 +41,7 @@ func (e *Experiment) Execute(context *neat.Options, startGenome *genetics.Genome
 		}
 
 		// create appropriate population's epoch executor
-		epochExecutor, err := epochExecutorForContext(context)
+		epochExecutor, err := epochExecutorForContext(opts)
 		if err != nil {
 			return err
 		}
@@ -51,14 +57,21 @@ func (e *Experiment) Execute(context *neat.Options, startGenome *genetics.Genome
 
 		generationEvaluator := executor.(GenerationEvaluator) // mandatory
 
-		for generationId := 0; generationId < context.NumGenerations; generationId++ {
+		for generationId := 0; generationId < opts.NumGenerations; generationId++ {
+			// check if context was canceled
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
 			neat.InfoLog(fmt.Sprintf(">>>>> Generation:%3d\tRun: %d\n", generationId, run))
 			generation := Generation{
 				Id:      generationId,
 				TrialId: run,
 			}
 			genStartTime := time.Now()
-			err = generationEvaluator.GenerationEvaluate(pop, &generation, context)
+			err = generationEvaluator.GenerationEvaluate(pop, &generation, opts)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Generation [%d] evaluation failed !!!!!\n", generationId))
 				return err
@@ -68,7 +81,7 @@ func (e *Experiment) Execute(context *neat.Options, startGenome *genetics.Genome
 			// Turnover population of organisms to the next epoch if appropriate
 			if !generation.Solved {
 				neat.DebugLog(">>>>> start next generation")
-				err = epochExecutor.NextEpoch(generationId, pop, context)
+				err = epochExecutor.NextEpoch(ctx, generationId, pop)
 				if err != nil {
 					neat.InfoLog(fmt.Sprintf("!!!!! Epoch execution failed in generation [%d] !!!!!\n", generationId))
 					return err

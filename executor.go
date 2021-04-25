@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/experiment"
@@ -11,6 +12,8 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -98,19 +101,54 @@ func main() {
 		log.Fatalf("Unsupported experiment: %s", *experimentName)
 	}
 
-	if err = expt.Execute(neatOptions, startGenome, generationEvaluator); err != nil {
-		log.Fatal("Failed to perform XOR experiment: ", err)
+	// prepare to execute
+	errChan := make(chan error)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// run experiment in the separate GO routine
+	go func() {
+		if err = expt.Execute(neat.NewContext(ctx, neatOptions), startGenome, generationEvaluator); err != nil {
+			errChan <- err
+		} else {
+			errChan <- nil
+		}
+	}()
+
+	// register handler to wait for termination signals
+	//
+	go func(cancel context.CancelFunc) {
+		fmt.Println("\nPress Ctrl+C to stop")
+
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+		select {
+		case <-signals:
+			// signal to stop test fixture
+			cancel()
+		case err = <-errChan:
+			// stop waiting
+		}
+	}(cancel)
+
+	// Wait for experiment completion
+	//
+	err = <-errChan
+	if err != nil {
+		// error during execution
+		log.Fatalf("Experiment execution failed: %s", err)
 	}
 
-	// Print statistics
+	// Print experiment results statistics
+	//
 	expt.PrintStatistics()
 
 	fmt.Printf(">>> Start genome file:  %s\n", *genomePath)
 	fmt.Printf(">>> Configuration file: %s\n", *contextPath)
 
 	// Save experiment data
+	//
 	expResPath := fmt.Sprintf("%s/%s.dat", outDir, *experimentName)
-	if expResFile, err := os.Create(expResPath); err == nil {
+	if expResFile, err := os.Create(expResPath); err != nil {
 		log.Fatal("Failed to create file for experiment results", err)
 	} else if err = expt.Write(expResFile); err != nil {
 		log.Fatal("Failed to save experiment results", err)

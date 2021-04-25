@@ -186,7 +186,9 @@ func TestSpecies_reproduce_fail(t *testing.T) {
 
 	sp.ExpectedOffspring = 1
 
-	babies, err := sp.reproduce(1, nil, nil, nil)
+	opts := neat.Options{}
+
+	babies, err := sp.reproduce(opts.NeatContext(), 1, nil, nil)
 	assert.Empty(t, babies, "no offsprings expected")
 	assert.EqualError(t, err, "attempt to reproduce out of empty species")
 }
@@ -198,7 +200,7 @@ func TestSpecies_reproduce(t *testing.T) {
 	linkProb := 0.8
 
 	// Configuration
-	conf := neat.Options{
+	opts := neat.Options{
 		DropOffAge:      5,
 		SurvivalThresh:  0.5,
 		AgeSignificance: 0.5,
@@ -208,7 +210,7 @@ func TestSpecies_reproduce(t *testing.T) {
 	neat.LogLevel = neat.LogLevelInfo
 
 	gen := newGenomeRand(1, in, out, n, nmax, false, linkProb)
-	pop, err := NewPopulation(gen, &conf)
+	pop, err := NewPopulation(gen, &opts)
 	require.NoError(t, err, "failed to create population")
 	require.NotNil(t, pop, "population expected")
 
@@ -221,7 +223,7 @@ func TestSpecies_reproduce(t *testing.T) {
 
 	pop.Species[0].ExpectedOffspring = 11
 
-	babies, err := pop.Species[0].reproduce(1, pop, sortedSpecies, &conf)
+	babies, err := pop.Species[0].reproduce(opts.NeatContext(), 1, pop, sortedSpecies)
 	require.NoError(t, err, "failed to reproduce")
 	require.NotEmpty(t, babies, "offsprings expected")
 

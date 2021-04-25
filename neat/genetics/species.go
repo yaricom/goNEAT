@@ -1,6 +1,7 @@
 package genetics
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/neat"
@@ -113,8 +114,8 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 // Can change the fitness of the organisms in the Species to be higher for very new species (to protect them).
 // Divides the fitness by the size of the Species, so that fitness is "shared" by the species.
 // NOTE: Invocation of this method will result of species organisms sorted by fitness in descending order, i.e. most fit will be first.
-func (s *Species) adjustFitness(context *neat.Options) {
-	ageDebt := (s.Age - s.AgeOfLastImprovement + 1) - context.DropOffAge
+func (s *Species) adjustFitness(opts *neat.Options) {
+	ageDebt := (s.Age - s.AgeOfLastImprovement + 1) - opts.DropOffAge
 	if ageDebt == 0 {
 		ageDebt = 1
 	}
@@ -134,7 +135,7 @@ func (s *Species) adjustFitness(context *neat.Options) {
 		// The age_significance parameter is a system parameter
 		// if it is 1, then young species get no fitness boost
 		if s.Age <= 10 {
-			org.Fitness = org.Fitness * context.AgeSignificance
+			org.Fitness = org.Fitness * opts.AgeSignificance
 		}
 		// Do not allow negative fitness
 		if org.Fitness < 0.0 {
@@ -156,7 +157,7 @@ func (s *Species) adjustFitness(context *neat.Options) {
 
 	// Decide how many get to reproduce based on survival_thresh * pop_size
 	// Adding 1.0 ensures that at least one will survive
-	numParents := int(math.Floor(context.SurvivalThresh*float64(len(s.Organisms)) + 1.0))
+	numParents := int(math.Floor(opts.SurvivalThresh*float64(len(s.Organisms)) + 1.0))
 
 	// Mark for death those who are ranked too low to be parents
 	s.Organisms[0].isChampion = true // Mark the champ as such
@@ -248,7 +249,11 @@ func (s *Species) findChampion() *Organism {
 
 // Perform mating and mutation to form next generation. The sorted_species is ordered to have best species in the beginning.
 // Returns list of baby organisms as a result of reproduction of all organisms in this species.
-func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Species, context *neat.Options) ([]*Organism, error) {
+func (s *Species) reproduce(ctx context.Context, generation int, pop *Population, sortedSpecies []*Species) ([]*Organism, error) {
+	opts, found := neat.FromContext(ctx)
+	if !found {
+		return nil, neat.ErrNEATOptionsNotFound
+	}
 	//Check for a mistake
 	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
 		return nil, errors.New("attempt to reproduce out of empty species")
@@ -267,6 +272,13 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
+		// check if execution was canceled and exit
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
 		if neat.LogLevel == neat.LogLevelDebug {
 			neat.DebugLog(fmt.Sprintf("SPECIES: Offspring #%d from %d, (species: %d)",
 				count, s.ExpectedOffspring, s.Id))
@@ -274,9 +286,9 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 		mutStructBaby, mateBaby := false, false
 
 		// Debug Trap
-		if s.ExpectedOffspring > context.PopSize {
+		if s.ExpectedOffspring > opts.PopSize {
 			neat.WarnLog(fmt.Sprintf("SPECIES: Species [%d] expected offspring: %d exceeds population size limit: %d\n",
-				s.Id, s.ExpectedOffspring, context.PopSize))
+				s.Id, s.ExpectedOffspring, opts.PopSize))
 		}
 
 		var baby *Organism
@@ -295,9 +307,9 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 			// Note: Superchamp offspring only occur with stolen babies!
 			//      Settings used for published experiments did not use this
 			if theChamp.superChampOffspring > 1 {
-				if rand.Float64() < 0.8 || context.MutateAddLinkProb == 0.0 {
+				if rand.Float64() < 0.8 || opts.MutateAddLinkProb == 0.0 {
 					// Make sure no links get added when the system has link adding disabled
-					if _, err = newGenome.mutateLinkWeights(context.WeightMutPower, 1.0, gaussianMutator); err != nil {
+					if _, err = newGenome.mutateLinkWeights(opts.WeightMutPower, 1.0, gaussianMutator); err != nil {
 						return nil, err
 					}
 				} else {
@@ -305,7 +317,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 					if _, err = newGenome.Genesis(generation); err != nil {
 						return nil, err
 					}
-					if _, err = newGenome.mutateAddLink(pop, context); err != nil {
+					if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
 						return nil, err
 					}
 					mutStructBaby = true
@@ -344,7 +356,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 				return nil, err
 			}
 
-		} else if rand.Float64() < context.MutateOnlyProb || poolSize == 1 {
+		} else if rand.Float64() < opts.MutateOnlyProb || poolSize == 1 {
 			neat.DebugLog("SPECIES: Reproduce by applying random mutation:")
 
 			// Apply mutations
@@ -356,28 +368,28 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 			}
 
 			// Do the mutation depending on probabilities of various mutations
-			if rand.Float64() < context.MutateAddNodeProb {
+			if rand.Float64() < opts.MutateAddNodeProb {
 				neat.DebugLog("SPECIES: ---> mutateAddNode")
 
 				// Mutate add node
-				if _, err = newGenome.mutateAddNode(pop, pop, context); err != nil {
+				if _, err = newGenome.mutateAddNode(pop, pop, opts); err != nil {
 					return nil, err
 				}
 				mutStructBaby = true
-			} else if rand.Float64() < context.MutateAddLinkProb {
+			} else if rand.Float64() < opts.MutateAddLinkProb {
 				neat.DebugLog("SPECIES: ---> mutateAddLink")
 
 				// Mutate add link
 				if _, err = newGenome.Genesis(generation); err != nil {
 					return nil, err
 				}
-				if _, err = newGenome.mutateAddLink(pop, context); err != nil {
+				if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
 					return nil, err
 				}
 				mutStructBaby = true
-			} else if rand.Float64() < context.MutateConnectSensors {
+			} else if rand.Float64() < opts.MutateConnectSensors {
 				neat.DebugLog("SPECIES: ---> mutateConnectSensors")
-				if linkAdded, err := newGenome.mutateConnectSensors(pop, context); err != nil {
+				if linkAdded, err := newGenome.mutateConnectSensors(pop, opts); err != nil {
 					return nil, err
 				} else {
 					mutStructBaby = linkAdded
@@ -388,7 +400,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 				neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 				// If we didn't do a structural mutation, we do the other kinds
-				if _, err = newGenome.mutateAllNonstructural(context); err != nil {
+				if _, err = newGenome.mutateAllNonstructural(opts); err != nil {
 					return nil, err
 				}
 			}
@@ -407,7 +419,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 
 			// Choose random dad
 			var dad *Organism
-			if rand.Float64() > context.InterspeciesMateRate {
+			if rand.Float64() > opts.InterspeciesMateRate {
 				neat.DebugLog("SPECIES: ---> mate within species")
 
 				// Mate within Species
@@ -436,7 +448,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 			// Perform mating based on probabilities of different mating types
 			var newGenome *Genome
 			var err error
-			if rand.Float64() < context.MateMultipointProb {
+			if rand.Float64() < opts.MateMultipointProb {
 				neat.DebugLog("SPECIES: ------> mateMultipoint")
 
 				// mate multipoint baby
@@ -444,7 +456,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 				if err != nil {
 					return nil, err
 				}
-			} else if rand.Float64() < context.MateMultipointAvgProb/(context.MateMultipointAvgProb+context.MateSinglepointProb) {
+			} else if rand.Float64() < opts.MateMultipointAvgProb/(opts.MateMultipointAvgProb+opts.MateSinglepointProb) {
 				neat.DebugLog("SPECIES: ------> mateMultipointAvg")
 
 				// mate multipoint_avg baby
@@ -465,34 +477,34 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 
 			// Determine whether to mutate the baby's Genome
 			// This is done randomly or if the mom and dad are the same organism
-			if rand.Float64() > context.MateOnlyProb ||
+			if rand.Float64() > opts.MateOnlyProb ||
 				dad.Genotype.Id == mom.Genotype.Id ||
-				dad.Genotype.compatibility(mom.Genotype, context) == 0.0 {
+				dad.Genotype.compatibility(mom.Genotype, opts) == 0.0 {
 				neat.DebugLog("SPECIES: ------> Mutatte baby genome:")
 
 				// Do the mutation depending on probabilities of  various mutations
-				if rand.Float64() < context.MutateAddNodeProb {
+				if rand.Float64() < opts.MutateAddNodeProb {
 					neat.DebugLog("SPECIES: ---------> mutateAddNode")
 
 					// mutate_add_node
-					if _, err = newGenome.mutateAddNode(pop, pop, context); err != nil {
+					if _, err = newGenome.mutateAddNode(pop, pop, opts); err != nil {
 						return nil, err
 					}
 					mutStructBaby = true
-				} else if rand.Float64() < context.MutateAddLinkProb {
+				} else if rand.Float64() < opts.MutateAddLinkProb {
 					neat.DebugLog("SPECIES: ---------> mutateAddLink")
 
 					// mutate_add_link
 					if _, err = newGenome.Genesis(generation); err != nil {
 						return nil, err
 					}
-					if _, err = newGenome.mutateAddLink(pop, context); err != nil {
+					if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
 						return nil, err
 					}
 					mutStructBaby = true
-				} else if rand.Float64() < context.MutateConnectSensors {
+				} else if rand.Float64() < opts.MutateConnectSensors {
 					neat.DebugLog("SPECIES: ---> mutateConnectSensors")
-					if mutStructBaby, err = newGenome.mutateConnectSensors(pop, context); err != nil {
+					if mutStructBaby, err = newGenome.mutateConnectSensors(pop, opts); err != nil {
 						return nil, err
 					}
 				}
@@ -501,7 +513,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 					neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 					// If we didn't do a structural mutation, we do the other kinds
-					if _, err = newGenome.mutateAllNonstructural(context); err != nil {
+					if _, err = newGenome.mutateAllNonstructural(opts); err != nil {
 						return nil, err
 					}
 				}

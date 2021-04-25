@@ -23,8 +23,8 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	outDirPath, contextPath, genomePath := "../../out/pole2_markov_test", "../../data/pole2_markov.neat", "../../data/pole2_markov_startgenes"
 
 	fmt.Println("Loading start genome for POLE2 Markov experiment")
-	// Load context configuration
-	context, startGenome, err := utils.LoadContextAndGenome(contextPath, genomePath)
+	// Load NEAT options and initial genome
+	opts, startGenome, err := utils.LoadOptionsAndGenome(contextPath, genomePath)
 	neat.LogLevel = neat.LogLevelInfo
 	require.NoError(t, err)
 
@@ -33,12 +33,12 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	require.NoError(t, err, "Failed to create output directory")
 
 	// The 10 runs POLE2 Markov experiment
-	context.NumRuns = 5
+	opts.NumRuns = 5
 	experiment := experiment2.Experiment{
 		Id:     0,
-		Trials: make(experiment2.Trials, context.NumRuns),
+		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(context, startGenome, NewCartDoublePoleGenerationEvaluator(outDirPath, true, ContinuousAction))
+	err = experiment.Execute(opts.NeatContext(), startGenome, NewCartDoublePoleGenerationEvaluator(outDirPath, true, ContinuousAction))
 	require.NoError(t, err, "Failed to perform POLE2 Markov experiment")
 
 	// Find winner statistics
@@ -57,7 +57,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 		t.Error("avg_genes > 50", avgGenes)
 	}
 
-	maxEvals := float64(context.PopSize * context.NumGenerations)
+	maxEvals := float64(opts.PopSize * opts.NumGenerations)
 	assert.True(t, avgEvals < maxEvals)
 
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)
@@ -97,8 +97,8 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	outDirPath, contextPath, genomePath := "../../out/pole2_non-markov_test", "../../data/pole2_non-markov.neat", "../../data/pole2_non-markov_startgenes"
 
 	fmt.Println("Loading start genome for POLE2 Non-Markov experiment")
-	// Load context configuration
-	context, startGenome, err := utils.LoadContextAndGenome(contextPath, genomePath)
+	// Load NEAT options and initial genome
+	opts, startGenome, err := utils.LoadOptionsAndGenome(contextPath, genomePath)
 	neat.LogLevel = neat.LogLevelInfo
 	require.NoError(t, err)
 
@@ -107,12 +107,12 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	require.NoError(t, err, "Failed to create output directory")
 
 	// The 10 runs POLE2 Non-Markov experiment
-	context.NumRuns = 5
+	opts.NumRuns = 5
 	experiment := experiment2.Experiment{
 		Id:     0,
-		Trials: make(experiment2.Trials, context.NumRuns),
+		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(context, startGenome, NewCartDoublePoleGenerationEvaluator(outDirPath, false, ContinuousAction))
+	err = experiment.Execute(opts.NeatContext(), startGenome, NewCartDoublePoleGenerationEvaluator(outDirPath, false, ContinuousAction))
 	require.NoError(t, err, "Failed to perform POLE2 Non-Markov experiment")
 
 	// Find winner statistics
@@ -131,7 +131,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 		t.Error("avg_genes > 50", avgGenes)
 	}
 
-	maxEvals := float64(context.PopSize * context.NumGenerations)
+	maxEvals := float64(opts.PopSize * opts.NumGenerations)
 	assert.True(t, avgEvals < maxEvals)
 
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)

@@ -25,7 +25,7 @@ func TestXOR(t *testing.T) {
 
 	// Load Genome
 	fmt.Println("Loading start genome for XOR experiment")
-	context, startGenome, err := utils.LoadContextAndGenome(contextPath, genomePath)
+	opts, startGenome, err := utils.LoadOptionsAndGenome(contextPath, genomePath)
 	neat.LogLevel = neat.LogLevelInfo
 	require.NoError(t, err)
 
@@ -34,12 +34,12 @@ func TestXOR(t *testing.T) {
 	require.NoError(t, err, "Failed to create output directory")
 
 	// The 100 runs XOR experiment
-	context.NumRuns = 100
+	opts.NumRuns = 100
 	experiment := experiment2.Experiment{
 		Id:     0,
-		Trials: make(experiment2.Trials, context.NumRuns),
+		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(context, startGenome, NewXORGenerationEvaluator(outDirPath))
+	err = experiment.Execute(opts.NeatContext(), startGenome, NewXORGenerationEvaluator(outDirPath))
 	require.NoError(t, err, "Failed to perform XOR experiment")
 
 	// Find winner statistics
@@ -58,7 +58,7 @@ func TestXOR(t *testing.T) {
 		t.Error("avg_genes > 20", avgGenes)
 	}
 
-	maxEvals := float64(context.PopSize * context.NumGenerations)
+	maxEvals := float64(opts.PopSize * opts.NumGenerations)
 	assert.True(t, avgEvals < maxEvals)
 
 	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %.1f\n", avgNodes, avgGenes, avgEvals)
@@ -87,7 +87,7 @@ func TestXOR_disconnected(t *testing.T) {
 	outDirPath, contextPath, genomePath := "../../out/XOR_disconnected_test", "../../data/xor.neat", "../../data/xordisconnectedstartgenes"
 
 	fmt.Println("Loading start genome for XOR disconnected experiment")
-	context, startGenome, err := utils.LoadContextAndGenome(contextPath, genomePath)
+	opts, startGenome, err := utils.LoadOptionsAndGenome(contextPath, genomePath)
 	neat.LogLevel = neat.LogLevelInfo
 	require.NoError(t, err)
 
@@ -96,12 +96,12 @@ func TestXOR_disconnected(t *testing.T) {
 	require.NoError(t, err, "Failed to create output directory")
 
 	// The 100 runs XOR experiment
-	context.NumRuns = 40 //100 reduce to shorten test time
+	opts.NumRuns = 40 //100 reduce to shorten test time
 	experiment := experiment2.Experiment{
 		Id:     0,
-		Trials: make(experiment2.Trials, context.NumRuns),
+		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(context, startGenome, NewXORGenerationEvaluator(outDirPath))
+	err = experiment.Execute(opts.NeatContext(), startGenome, NewXORGenerationEvaluator(outDirPath))
 	require.NoError(t, err, "Failed to perform XOR disconnected experiment")
 
 	// Find winner statistics
@@ -120,7 +120,7 @@ func TestXOR_disconnected(t *testing.T) {
 		t.Error("avg_genes > 20", avgGenes)
 	}
 
-	maxEvals := float64(context.PopSize * context.NumGenerations)
+	maxEvals := float64(opts.PopSize * opts.NumGenerations)
 	assert.True(t, avgEvals < maxEvals)
 
 	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %.1f\n", avgNodes, avgGenes, avgEvals)

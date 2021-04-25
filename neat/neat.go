@@ -3,6 +3,7 @@
 package neat
 
 import (
+	"context"
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
@@ -188,6 +189,11 @@ func (c *Options) Validate() error {
 		return err
 	}
 	return nil
+}
+
+// NeatContext is to get Context which carries NEAT options inside to be propagated
+func (c *Options) NeatContext() context.Context {
+	return NewContext(context.Background(), c)
 }
 
 // LoadYAMLOptions is to load NEAT options encoded as YAML file

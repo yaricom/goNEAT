@@ -129,7 +129,7 @@ func (g *Genome) mutateConnectSensors(innovations InnovationsObserver, _ *neat.O
 
 // Mutate the genome by adding a new link between two random NNodes,
 // if NNodes are already connected, keep trying conf.NewLinkTries times
-func (g *Genome) mutateAddLink(innovations InnovationsObserver, context *neat.Options) (bool, error) {
+func (g *Genome) mutateAddLink(innovations InnovationsObserver, opts *neat.Options) (bool, error) {
 	// If the phenotype does not exist, exit on false, print error
 	// Note: This should never happen - if it does there is a bug
 	if g.Phenotype == nil {
@@ -142,7 +142,7 @@ func (g *Genome) mutateAddLink(innovations InnovationsObserver, context *neat.Op
 
 	// Decide whether to make link recurrent
 	doRecur := false
-	if rand.Float64() < context.RecurOnlyProb {
+	if rand.Float64() < opts.RecurOnlyProb {
 		doRecur = true
 	}
 
@@ -162,7 +162,7 @@ func (g *Genome) mutateAddLink(innovations InnovationsObserver, context *neat.Op
 	// Iterate over nodes and try to add new link
 	var node1, node2 *network.NNode
 	found := false
-	for tryCount < context.NewLinkTries {
+	for tryCount < opts.NewLinkTries {
 		nodeNum1, nodeNum2 := 0, 0
 		if doRecur {
 			// 50% of prob to decide create a recurrent link (node X to node X)
@@ -231,7 +231,7 @@ func (g *Genome) mutateAddLink(innovations InnovationsObserver, context *neat.Op
 				tryCount++
 			} else {
 				// The open link found
-				tryCount = context.NewLinkTries
+				tryCount = opts.NewLinkTries
 				found = true
 			}
 		} else {
@@ -305,7 +305,7 @@ func (g *Genome) mutateAddLink(innovations InnovationsObserver, context *neat.Op
 // The innovations list from population is used to compare the innovation with other innovations in the list and see
 // whether they match. If they do, the same innovation numbers will be assigned to the new genes. If a disabled link
 // is chosen, then the method just exits with false.
-func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator network.NodeIdGenerator, context *neat.Options) (bool, error) {
+func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator network.NodeIdGenerator, opts *neat.Options) (bool, error) {
 	if len(g.Genes) == 0 {
 		return false, nil // it's possible to have such a network without any link
 	}
@@ -354,7 +354,7 @@ func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator 
 	// Extract the nodes
 	inNode, outNode := link.InNode, link.OutNode
 	if inNode == nil || outNode == nil {
-		return false, fmt.Errorf("Genome:mutateAddNode: Anomalous link found with either IN or OUT node not set. %s", link)
+		return false, fmt.Errorf("mutateAddNode: Anomalous link found with either IN or OUT node not set. %s", link)
 	}
 
 	var gene1, gene2 *Gene
@@ -398,8 +398,8 @@ func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator 
 		node = network.NewNNode(newNodeId, network.HiddenNeuron)
 		// By convention, it will point to the first trait
 		node.Trait = g.Traits[0]
-		// Set node activation function as random from a list of types registered with context
-		if activationType, err := context.RandomNodeActivationType(); err != nil {
+		// Set node activation function as random from a list of types registered with opts
+		if activationType, err := opts.RandomNodeActivationType(); err != nil {
 			return false, err
 		} else {
 			node.ActivationType = activationType

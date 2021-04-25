@@ -9,11 +9,11 @@ import (
 	"testing"
 )
 
-func sequentialExecutorNextEpoch(pop *Population, conf *neat.Options) error {
+func sequentialExecutorNextEpoch(pop *Population, opts *neat.Options) error {
 	ex := SequentialPopulationEpochExecutor{}
 
 	for i := 0; i < 100; i++ {
-		err := ex.NextEpoch(i+1, pop, conf)
+		err := ex.NextEpoch(opts.NeatContext(), i+1, pop)
 		if err != nil {
 			return errors.Wrapf(err, "failed at: %d epoch", i)
 		}
@@ -22,11 +22,11 @@ func sequentialExecutorNextEpoch(pop *Population, conf *neat.Options) error {
 
 }
 
-func parallelExecutorNextEpoch(pop *Population, conf *neat.Options) error {
+func parallelExecutorNextEpoch(pop *Population, opts *neat.Options) error {
 	ex := ParallelPopulationEpochExecutor{}
 
 	for i := 0; i < 100; i++ {
-		err := ex.NextEpoch(i+1, pop, conf)
+		err := ex.NextEpoch(opts.NeatContext(), i+1, pop)
 		if err != nil {
 			return errors.Wrapf(err, "failed at: %d epoch", i)
 		}

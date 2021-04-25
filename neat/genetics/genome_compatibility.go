@@ -15,11 +15,11 @@ import (
 // The bigger returned value the less compatible the genomes.
 //
 // Fully compatible genomes has 0.0 returned.
-func (g *Genome) compatibility(og *Genome, context *neat.Options) float64 {
-	if context.GenCompatMethod == neat.GenomeCompatibilityMethodLinear {
-		return g.compatLinear(og, context)
+func (g *Genome) compatibility(og *Genome, opts *neat.Options) float64 {
+	if opts.GenCompatMethod == neat.GenomeCompatibilityMethodLinear {
+		return g.compatLinear(og, opts)
 	} else {
-		return g.compatFast(og, context)
+		return g.compatFast(og, opts)
 	}
 }
 
@@ -29,7 +29,7 @@ func (g *Genome) compatibility(og *Genome, context *neat.Options) float64 {
 // where: pdg - PERCENT DISJOINT GENES, peg - PERCENT EXCESS GENES, and mdmg - MUTATIONAL DIFFERENCE WITHIN MATCHING GENES
 //
 // Fully compatible genomes has 0.0 returned.
-func (g *Genome) compatLinear(og *Genome, context *neat.Options) float64 {
+func (g *Genome) compatLinear(og *Genome, opts *neat.Options) float64 {
 	numDisjoint, numExcess, mutDiffTotal, numMatching := 0.0, 0.0, 0.0, 0.0
 	size1, size2 := len(g.Genes), len(og.Genes)
 	maxGenomeSize := size2
@@ -71,8 +71,8 @@ func (g *Genome) compatLinear(og *Genome, context *neat.Options) float64 {
 	// Return the compatibility number using compatibility formula
 	// Note that mut_diff_total/num_matching gives the AVERAGE difference between mutation_nums for any two matching
 	// Genes in the Genome. Look at disjointedness and excess in the absolute (ignoring size)
-	comp := context.DisjointCoeff*numDisjoint + context.ExcessCoeff*numExcess +
-		context.MutdiffCoeff*(mutDiffTotal/numMatching)
+	comp := opts.DisjointCoeff*numDisjoint + opts.ExcessCoeff*numExcess +
+		opts.MutdiffCoeff*(mutDiffTotal/numMatching)
 
 	return comp
 }
@@ -90,7 +90,7 @@ func (g *Genome) compatLinear(og *Genome, context *neat.Options) float64 {
 // where: pdg - PERCENT DISJOINT GENES, peg - PERCENT EXCESS GENES, and mdmg - MUTATIONAL DIFFERENCE WITHIN MATCHING GENES
 //
 // Fully compatible genomes has 0.0 returned.
-func (g *Genome) compatFast(og *Genome, context *neat.Options) float64 {
+func (g *Genome) compatFast(og *Genome, opts *neat.Options) float64 {
 	list1Count, list2Count := len(g.Genes), len(og.Genes)
 	// First test edge cases
 	if list1Count == 0 && list2Count == 0 {
@@ -99,12 +99,12 @@ func (g *Genome) compatFast(og *Genome, context *neat.Options) float64 {
 	}
 	if list1Count == 0 {
 		// All list2 genes are excess.
-		return float64(list2Count) * context.ExcessCoeff
+		return float64(list2Count) * opts.ExcessCoeff
 	}
 
 	if list2Count == 0 {
 		// All list1 genes are excess.
-		return float64(list1Count) * context.ExcessCoeff
+		return float64(list1Count) * opts.ExcessCoeff
 	}
 
 	excessGenesSwitch, numMatching := 0, 0
@@ -117,18 +117,18 @@ func (g *Genome) compatFast(og *Genome, context *neat.Options) float64 {
 			// Most common test case(s) at top for efficiency.
 			if excessGenesSwitch == 3 {
 				// No more excess genes. Therefore this mismatch is disjoint.
-				compatibility += context.DisjointCoeff
+				compatibility += opts.DisjointCoeff
 			} else if excessGenesSwitch == 2 {
 				// Another excess gene on genome 2.
-				compatibility += context.ExcessCoeff
+				compatibility += opts.ExcessCoeff
 			} else if excessGenesSwitch == 1 {
 				// We have found the first non-excess gene.
 				excessGenesSwitch = 3
-				compatibility += context.DisjointCoeff
+				compatibility += opts.DisjointCoeff
 			} else {
 				// First gene is excess, and is on genome 2.
 				excessGenesSwitch = 2
-				compatibility += context.ExcessCoeff
+				compatibility += opts.ExcessCoeff
 			}
 
 			// Move to the next gene in list2.
@@ -148,18 +148,18 @@ func (g *Genome) compatFast(og *Genome, context *neat.Options) float64 {
 			// Most common test case(s) at top for efficiency.
 			if excessGenesSwitch == 3 {
 				// No more excess genes. Therefore this mismatch is disjoint.
-				compatibility += context.DisjointCoeff
+				compatibility += opts.DisjointCoeff
 			} else if excessGenesSwitch == 1 {
 				// Another excess gene on genome 1.
-				compatibility += context.ExcessCoeff
+				compatibility += opts.ExcessCoeff
 			} else if excessGenesSwitch == 2 {
 				// We have found the first non-excess gene.
 				excessGenesSwitch = 3
-				compatibility += context.DisjointCoeff
+				compatibility += opts.DisjointCoeff
 			} else {
 				// First gene is excess, and is on genome 1.
 				excessGenesSwitch = 1
-				compatibility += context.ExcessCoeff
+				compatibility += opts.ExcessCoeff
 			}
 
 			// Move to the next gene in list1.
@@ -171,21 +171,21 @@ func (g *Genome) compatFast(og *Genome, context *neat.Options) float64 {
 		// been exhausted.
 		if list1Idx < 0 {
 			// All remaining list2 genes are disjoint.
-			compatibility += float64(list2Idx+1) * context.DisjointCoeff
+			compatibility += float64(list2Idx+1) * opts.DisjointCoeff
 			break
 
 		}
 
 		if list2Idx < 0 {
 			// All remaining list1 genes are disjoint.
-			compatibility += float64(list1Idx+1) * context.DisjointCoeff
+			compatibility += float64(list1Idx+1) * opts.DisjointCoeff
 			break
 		}
 
 		gene1, gene2 = g.Genes[list1Idx], og.Genes[list2Idx]
 	}
 	if numMatching > 0 {
-		compatibility += mutDiff * context.MutdiffCoeff / float64(numMatching)
+		compatibility += mutDiff * opts.MutdiffCoeff / float64(numMatching)
 	}
 	return compatibility
 }

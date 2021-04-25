@@ -40,6 +40,22 @@ func TestLoadYAMLOptions(t *testing.T) {
 	}
 }
 
+func TestOptions_NeatContext(t *testing.T) {
+	config, err := os.Open("../data/xor_test.neat.yml")
+	require.NoError(t, err)
+
+	// Load YAML context
+	opts, err := LoadYAMLOptions(config)
+	require.NoError(t, err, "failed to load options")
+
+	// check that NEAT context has options inside
+	ctx := opts.NeatContext()
+
+	nOpts, ok := FromContext(ctx)
+	require.True(t, ok, "options not found")
+	assert.NotNil(t, nOpts)
+}
+
 func checkNeatOptions(nc *Options, t *testing.T) {
 	assert.Equal(t, 0.5, nc.TraitParamMutProb)
 	assert.Equal(t, 1.0, nc.TraitMutationPower)

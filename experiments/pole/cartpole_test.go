@@ -25,8 +25,8 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 
 	fmt.Println("Loading start genome for POLE1 experiment")
 
-	// Load context configuration
-	context, startGenome, err := utils.LoadContextAndGenome(contextPath, genomePath)
+	// Load NEAT options and initial genome
+	opts, startGenome, err := utils.LoadOptionsAndGenome(contextPath, genomePath)
 	neat.LogLevel = neat.LogLevelInfo
 	require.NoError(t, err)
 
@@ -35,12 +35,12 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	require.NoError(t, err, "Failed to create output directory")
 
 	// The 100 runs POLE1 experiment
-	context.NumRuns = 100
+	opts.NumRuns = 100
 	experiment := experiment2.Experiment{
 		Id:     0,
-		Trials: make(experiment2.Trials, context.NumRuns),
+		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(context, startGenome, NewCartPoleGenerationEvaluator(outDirPath, true, 500000))
+	err = experiment.Execute(opts.NeatContext(), startGenome, NewCartPoleGenerationEvaluator(outDirPath, true, 500000))
 	require.NoError(t, err, "Failed to perform POLE1 experiment")
 
 	// Find winner statistics
@@ -59,7 +59,7 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 		t.Error("avg_genes > 20", avgGenes)
 	}
 
-	maxEvals := float64(context.PopSize * context.NumGenerations)
+	maxEvals := float64(opts.PopSize * opts.NumGenerations)
 	assert.True(t, avgEvals < maxEvals)
 
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)

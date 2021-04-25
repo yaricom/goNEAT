@@ -19,7 +19,7 @@ func CreateOutputDir(outDirPath string) error {
 	return os.MkdirAll(outDirPath, os.ModePerm)
 }
 
-func LoadContextAndGenome(contextPath, genomePath string) (*neat.Options, *genetics.Genome, error) {
+func LoadOptionsAndGenome(contextPath, genomePath string) (*neat.Options, *genetics.Genome, error) {
 	// Load context configuration
 	configFile, err := os.Open(contextPath)
 	if err != nil {
