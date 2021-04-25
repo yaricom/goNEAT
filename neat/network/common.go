@@ -17,37 +17,6 @@ var (
 	NetErrDepthCalculationFailedLoopDetected = errors.New("depth can not be determined for network with loop")
 )
 
-// NetworkSolver Defines network solver interface which describes neural network structures with methods to run activation waves through
-// them.
-type NetworkSolver interface {
-	// ForwardSteps Propagates activation wave through all network nodes provided number of steps in forward direction.
-	// Returns true if activation wave passed from all inputs to outputs.
-	ForwardSteps(steps int) (bool, error)
-
-	// RecursiveSteps Propagates activation wave through all network nodes provided number of steps by recursion from output nodes
-	// Returns true if activation wave passed from all inputs to outputs.
-	RecursiveSteps() (bool, error)
-
-	// Relax Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute
-	// value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
-	// If maxAllowedSignalDelta value is less than or equal to 0, the method will return true without checking for relaxation.
-	Relax(maxSteps int, maxAllowedSignalDelta float64) (bool, error)
-
-	// Flush Flushes network state by removing all current activations. Returns true if network flushed successfully or
-	// false in case of error.
-	Flush() (bool, error)
-
-	// LoadSensors Set sensors values to the input nodes of the network
-	LoadSensors(inputs []float64) error
-	// ReadOutputs Read output values from the output nodes of the network
-	ReadOutputs() []float64
-
-	// NodeCount Returns the total number of neural units in the network
-	NodeCount() int
-	// LinkCount Returns the total number of links between nodes in the network
-	LinkCount() int
-}
-
 // NodeType NNodeType defines the type of NNode to create
 type NodeType byte
 
@@ -152,4 +121,10 @@ func ActivateModule(module *NNode, a *neatmath.NodeActivatorsFactory) error {
 		module.Outgoing[i].OutNode.isActive = true // activate output node
 	}
 	return nil
+}
+
+// NodeIdGenerator definition of the unique IDs generator for network nodes.
+type NodeIdGenerator interface {
+	// NextNodeId is to get next unique node ID
+	NextNodeId() int
 }

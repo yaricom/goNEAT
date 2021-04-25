@@ -14,7 +14,7 @@ func TestGenome_Compatibility_Linear(t *testing.T) {
 	gnome2 := buildTestGenome(2)
 
 	// Configuration
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		DisjointCoeff:   0.5,
 		ExcessCoeff:     0.5,
 		MutdiffCoeff:    0.5,
@@ -47,7 +47,7 @@ func TestGenome_Compatibility_Fast(t *testing.T) {
 	gnome2 := buildTestGenome(2)
 
 	// Configuration
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		DisjointCoeff:   0.5,
 		ExcessCoeff:     0.5,
 		MutdiffCoeff:    0.5,
@@ -81,7 +81,7 @@ func TestGenome_Compatibility_Duplicate(t *testing.T) {
 	require.NoError(t, err, "duplication failed")
 
 	// Configuration
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		DisjointCoeff: 0.5,
 		ExcessCoeff:   0.5,
 		MutdiffCoeff:  0.5,

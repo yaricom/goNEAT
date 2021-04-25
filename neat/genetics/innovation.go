@@ -1,5 +1,15 @@
 package genetics
 
+// InnovationsObserver the definition of component able to manage records of innovations
+type InnovationsObserver interface {
+	// StoreInnovation is to store specific innovation
+	StoreInnovation(innovation Innovation)
+	// Innovations is to get list of known innovations
+	Innovations() []Innovation
+	// NextInnovationNumber is to get next unique global innovation number
+	NextInnovationNumber() int64
+}
+
 // Innovation serves as a way to record innovations specifically, so that an innovation in one genome can be
 // compared with other innovations in the same epoch, and if they are the same innovation, they can both be assigned the
 // same innovation number.

@@ -14,7 +14,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	rand.Seed(42)
 	gnome1 := buildTestGenome(1)
 	// Configuration
-	context := &neat.NeatContext{
+	context := &neat.Options{
 		RecurOnlyProb:   0.5,
 		NewLinkTries:    10,
 		CompatThreshold: 0.5,
@@ -35,7 +35,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 
 	// one gene was added innovNum = 3 + 1
 	assert.EqualValues(t, 4, pop.nextInnovNum, "wrong next innovation number of the population")
-	assert.Len(t, pop.Innovations, 1, "wrong number of innovations in population")
+	assert.Len(t, pop.Innovations(), 1, "wrong number of innovations in population")
 	assert.Len(t, gnome1.Genes, 4, "No new gene was added")
 	gene := gnome1.Genes[3]
 	assert.EqualValues(t, 4, gene.InnovationNum, "wrong innovation number of added gene")
@@ -58,7 +58,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 
 	// one gene was added innovNum = 4 + 1
 	assert.EqualValues(t, 5, pop.nextInnovNum, "wrong next innovation number of the population")
-	assert.Len(t, pop.Innovations, 2, "wrong number of innovations in population")
+	assert.Len(t, pop.Innovations(), 2, "wrong number of innovations in population")
 	assert.Len(t, gnome1.Genes, 5, "No new gene was added")
 
 	gene = gnome1.Genes[4]
@@ -74,7 +74,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 	// Create gnome phenotype
 	_, err := gnome1.Genesis(1)
 	require.NoError(t, err, "genesis failed")
-	context := neat.NewNeatContext()
+	context := neat.NewNeatOptions()
 	context.PopSize = 1
 	// The population with one organism
 	pop := newPopulation()
@@ -101,7 +101,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 	require.NoError(t, err, "failed to mutate")
 	assert.True(t, res, "Its expected for disconnected sensor to be connected now")
 	assert.Len(t, gnome1.Genes, 4, "wrong number of genome genes")
-	assert.Len(t, pop.Innovations, 1, "wrong number of innovations")
+	assert.Len(t, pop.Innovations(), 1, "wrong number of innovations")
 	// one gene was added, expecting innovation + 1 (3+1)
 	assert.EqualValues(t, 4, pop.nextInnovNum, "wrong innovation in population")
 }
@@ -113,20 +113,20 @@ func TestGenome_mutateAddNode(t *testing.T) {
 	// Create gnome phenotype
 	_, err := gnome1.Genesis(1)
 	require.NoError(t, err, "genesis failed")
-	context := neat.NewNeatContext()
+	context := neat.NewNeatOptions()
 	context.PopSize = 1
 	// The population with one organism
 	pop := newPopulation()
 	err = pop.spawn(gnome1, context)
 	require.NoError(t, err, "failed to spawn population")
 
-	res, err := gnome1.mutateAddNode(pop, context)
+	res, err := gnome1.mutateAddNode(pop, pop, context)
 	require.NoError(t, err, "failed to mutate")
 	require.True(t, res, "mutation failed")
 
 	// two genes was added, expecting innovation + 2 (3+2)
 	assert.EqualValues(t, 5, pop.nextInnovNum, "wrong next innovation number set for population")
-	assert.Len(t, pop.Innovations, 1, "wrong number of innovations")
+	assert.Len(t, pop.Innovations(), 1, "wrong number of innovations")
 	assert.Len(t, gnome1.Genes, 5, "wrong number of genes")
 	require.Len(t, gnome1.Nodes, 5, "wrong number of nodes")
 
@@ -151,7 +151,7 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 func TestGenome_mutateRandomTrait(t *testing.T) {
 	gnome1 := buildTestGenome(1)
 	// Configuration
-	context := neat.NeatContext{
+	context := neat.Options{
 		TraitMutationPower: 0.3,
 		TraitParamMutProb:  0.5,
 	}

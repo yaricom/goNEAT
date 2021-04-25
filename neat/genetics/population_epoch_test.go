@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func sequentialExecutorNextEpoch(pop *Population, conf *neat.NeatContext) error {
+func sequentialExecutorNextEpoch(pop *Population, conf *neat.Options) error {
 	ex := SequentialPopulationEpochExecutor{}
 
 	for i := 0; i < 100; i++ {
@@ -22,7 +22,7 @@ func sequentialExecutorNextEpoch(pop *Population, conf *neat.NeatContext) error 
 
 }
 
-func parallelExecutorNextEpoch(pop *Population, conf *neat.NeatContext) error {
+func parallelExecutorNextEpoch(pop *Population, conf *neat.Options) error {
 	ex := ParallelPopulationEpochExecutor{}
 
 	for i := 0; i < 100; i++ {
@@ -38,7 +38,7 @@ func TestPopulationEpochExecutor_NextEpoch(t *testing.T) {
 	rand.Seed(42)
 	in, out, nmax, n := 3, 2, 15, 3
 	linkProb := 0.8
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		CompatThreshold: 0.5,
 		DropOffAge:      1,
 		PopSize:         30,

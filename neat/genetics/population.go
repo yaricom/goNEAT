@@ -23,8 +23,6 @@ type Population struct {
 	Organisms []*Organism
 	// The highest species number
 	LastSpecies int
-	// For holding the genetic innovations of the newest generation
-	Innovations []*Innovation
 	// An integer that when above zero tells when the first winner appeared
 	WinnerGen int
 	// The last generation played
@@ -41,6 +39,8 @@ type Population struct {
 	Variance    float64
 	StandardDev float64
 
+	// For holding the genetic innovations of the newest generation
+	innovations []Innovation
 	// The next innovation number for population
 	nextInnovNum int64
 	// The next ID for new node in population
@@ -59,7 +59,7 @@ type reproductionResult struct {
 }
 
 // NewPopulation constructs off of a single spawning Genome
-func NewPopulation(g *Genome, context *neat.NeatContext) (*Population, error) {
+func NewPopulation(g *Genome, context *neat.Options) (*Population, error) {
 	if context.PopSize <= 0 {
 		return nil, fmt.Errorf("wrong population size in the context: %d", context.PopSize)
 	}
@@ -75,7 +75,7 @@ func NewPopulation(g *Genome, context *neat.NeatContext) (*Population, error) {
 // NewPopulationRandom is a special constructor to create a population of random topologies uses
 // NewGenomeRand(new_id, in, out, n, maxHidden int, recurrent bool, link_prob float64)
 // See the Genome constructor above for the argument specifications
-func NewPopulationRandom(in, out, maxHidden int, recurrent bool, linkProb float64, context *neat.NeatContext) (*Population, error) {
+func NewPopulationRandom(in, out, maxHidden int, recurrent bool, linkProb float64, context *neat.Options) (*Population, error) {
 	if context.PopSize <= 0 {
 		return nil, fmt.Errorf("wrong population size in the context: %d", context.PopSize)
 	}
@@ -101,7 +101,7 @@ func NewPopulationRandom(in, out, maxHidden int, recurrent bool, linkProb float6
 }
 
 // ReadPopulation reads population from provided reader
-func ReadPopulation(ir io.Reader, context *neat.NeatContext) (pop *Population, err error) {
+func ReadPopulation(ir io.Reader, context *neat.Options) (pop *Population, err error) {
 	pop = newPopulation()
 
 	// Loop until file is finished, parsing each line
@@ -216,31 +216,31 @@ func newPopulation() *Population {
 		EpochsHighestLastChanged: 0,
 		Species:                  make([]*Species, 0),
 		Organisms:                make([]*Organism, 0),
-		Innovations:              make([]*Innovation, 0),
 		mutex:                    &sync.Mutex{},
 	}
 }
 
-// Returns current innovation number and increment innovations number counter after that
-func (p *Population) getNextInnovationNumberAndIncrement() int64 {
+func (p *Population) NextNodeId() int {
+	return int(atomic.AddInt32(&p.nextNodeId, 1))
+}
+
+func (p *Population) NextInnovationNumber() int64 {
 	return atomic.AddInt64(&p.nextInnovNum, 1)
 }
 
-// Returns the next node ID which can be used to create new node in population
-func (p *Population) getNextNodeIdAndIncrement() int32 {
-	return atomic.AddInt32(&p.nextNodeId, 1)
+func (p *Population) StoreInnovation(innovation Innovation) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	p.innovations = append(p.innovations, innovation)
 }
 
-// Appends given innovation to the list of known innovations in thread safe manner
-func (p *Population) addInnovationSynced(i *Innovation) {
-	p.mutex.Lock()
-	p.Innovations = append(p.Innovations, i)
-	p.mutex.Unlock()
+func (p *Population) Innovations() []Innovation {
+	return p.innovations
 }
 
 // Create a population from Genome g. The new Population will have the same topology as g
 // with link weights slightly perturbed from g's
-func (p *Population) spawn(g *Genome, context *neat.NeatContext) (err error) {
+func (p *Population) spawn(g *Genome, context *neat.Options) (err error) {
 	for count := 0; count < context.PopSize; count++ {
 		// make genome duplicate for new organism
 		newGenome, err := g.duplicate(count)
@@ -306,7 +306,7 @@ func (p *Population) checkBestSpeciesAlive(bestSpeciesId int, bestSpeciesReprodu
 
 // Speciate separates given organisms into species of this population by checking compatibilities against a threshold.
 // Any organism that does is not compatible with the first organism in any existing species becomes a new species.
-func (p *Population) speciate(organisms []*Organism, context *neat.NeatContext) error {
+func (p *Population) speciate(organisms []*Organism, context *neat.Options) error {
 	if len(organisms) == 0 {
 		return errors.New("no organisms to speciate from")
 	}
@@ -444,7 +444,7 @@ func (p *Population) purgeZeroOffspringSpecies(generation int) {
 }
 
 // When population stagnation detected the delta coding will be performed in attempt to fix this
-func (p *Population) deltaCoding(sortedSpecies []*Species, context *neat.NeatContext) {
+func (p *Population) deltaCoding(sortedSpecies []*Species, context *neat.Options) {
 	neat.DebugLog("POPULATION: PERFORMING DELTA CODING TO FIX STAGNATION")
 	p.EpochsHighestLastChanged = 0
 	halfPop := context.PopSize / 2
@@ -482,7 +482,7 @@ func (p *Population) deltaCoding(sortedSpecies []*Species, context *neat.NeatCon
 
 // The system can take expected offspring away from worse species and give them
 // to superior species depending on the system parameter BabiesStolen (when BabiesStolen > 0)
-func (p *Population) giveBabiesToTheBest(sortedSpecies []*Species, context *neat.NeatContext) {
+func (p *Population) giveBabiesToTheBest(sortedSpecies []*Species, context *neat.Options) {
 	stolenBabies := 0 // Babies taken from the bad species and given to the champs
 
 	currSpecies := sortedSpecies[0] // the best species

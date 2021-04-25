@@ -113,7 +113,7 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 // Can change the fitness of the organisms in the Species to be higher for very new species (to protect them).
 // Divides the fitness by the size of the Species, so that fitness is "shared" by the species.
 // NOTE: Invocation of this method will result of species organisms sorted by fitness in descending order, i.e. most fit will be first.
-func (s *Species) adjustFitness(context *neat.NeatContext) {
+func (s *Species) adjustFitness(context *neat.Options) {
 	ageDebt := (s.Age - s.AgeOfLastImprovement + 1) - context.DropOffAge
 	if ageDebt == 0 {
 		ageDebt = 1
@@ -248,7 +248,7 @@ func (s *Species) findChampion() *Organism {
 
 // Perform mating and mutation to form next generation. The sorted_species is ordered to have best species in the beginning.
 // Returns list of baby organisms as a result of reproduction of all organisms in this species.
-func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Species, context *neat.NeatContext) ([]*Organism, error) {
+func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Species, context *neat.Options) ([]*Organism, error) {
 	//Check for a mistake
 	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
 		return nil, errors.New("attempt to reproduce out of empty species")
@@ -360,7 +360,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 				neat.DebugLog("SPECIES: ---> mutateAddNode")
 
 				// Mutate add node
-				if _, err = newGenome.mutateAddNode(pop, context); err != nil {
+				if _, err = newGenome.mutateAddNode(pop, pop, context); err != nil {
 					return nil, err
 				}
 				mutStructBaby = true
@@ -475,7 +475,7 @@ func (s *Species) reproduce(generation int, pop *Population, sortedSpecies []*Sp
 					neat.DebugLog("SPECIES: ---------> mutateAddNode")
 
 					// mutate_add_node
-					if _, err = newGenome.mutateAddNode(pop, context); err != nil {
+					if _, err = newGenome.mutateAddNode(pop, pop, context); err != nil {
 						return nil, err
 					}
 					mutStructBaby = true

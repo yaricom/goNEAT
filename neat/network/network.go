@@ -49,7 +49,7 @@ func NewModularNetwork(in, out, all, control []*NNode, netId int) *Network {
 
 // FastNetworkSolver Creates fast network solver based on the architecture of this network. It's primarily aimed for
 // big networks to improve processing speed.
-func (n *Network) FastNetworkSolver() (NetworkSolver, error) {
+func (n *Network) FastNetworkSolver() (Solver, error) {
 	// calculate neurons per layer
 	outputNeuronCount := len(n.Outputs)
 	// build bias, input and hidden neurons lists

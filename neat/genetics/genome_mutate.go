@@ -18,7 +18,7 @@ import (
 // 	(1) You can start minimally even in problems with many inputs and
 // 	(2) you don't need to know a priori what the important features of the domain are.
 // If all sensors already connected than do nothing.
-func (g *Genome) mutateConnectSensors(pop *Population, _ *neat.NeatContext) (bool, error) {
+func (g *Genome) mutateConnectSensors(innovations InnovationsObserver, _ *neat.Options) (bool, error) {
 
 	if len(g.Genes) == 0 {
 		return false, errors.New("genome has no genes")
@@ -76,7 +76,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, _ *neat.NeatContext) (boo
 			var gene *Gene
 			// Check to see if this innovation already occurred in the population
 			innovationFound := false
-			for _, inn := range pop.Innovations {
+			for _, inn := range innovations.Innovations() {
 				if inn.innovationType == newLinkInnType &&
 					inn.InNodeId == sensor.Id &&
 					inn.OutNodeId == output.Id &&
@@ -97,7 +97,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, _ *neat.NeatContext) (boo
 				// Choose the new weight
 				newWeight := float64(math.RandSign()) * rand.Float64() * 10.0
 				// read next innovation id
-				nextInnovId := pop.getNextInnovationNumberAndIncrement()
+				nextInnovId := innovations.NextInnovationNumber()
 
 				// Create the new gene
 				gene = NewGeneWithTrait(g.Traits[traitNum], newWeight, sensor, output,
@@ -106,7 +106,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, _ *neat.NeatContext) (boo
 				// Add the innovation for created link
 				newInnovation := NewInnovationForLink(sensor.Id, output.Id, nextInnovId,
 					newWeight, traitNum)
-				pop.addInnovationSynced(newInnovation)
+				innovations.StoreInnovation(*newInnovation)
 			} else if gene != nil && g.hasGene(gene) {
 				// The gene for already occurred innovation already in this genome.
 				// This may happen as result of parent genome mutation in current epoch which is
@@ -129,7 +129,7 @@ func (g *Genome) mutateConnectSensors(pop *Population, _ *neat.NeatContext) (boo
 
 // Mutate the genome by adding a new link between two random NNodes,
 // if NNodes are already connected, keep trying conf.NewLinkTries times
-func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool, error) {
+func (g *Genome) mutateAddLink(innovations InnovationsObserver, context *neat.Options) (bool, error) {
 	// If the phenotype does not exist, exit on false, print error
 	// Note: This should never happen - if it does there is a bug
 	if g.Phenotype == nil {
@@ -244,7 +244,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 		var gene *Gene
 		// Check to see if this innovation already occurred in the population
 		innovationFound := false
-		for _, inn := range pop.Innovations {
+		for _, inn := range innovations.Innovations() {
 			// match the innovation in the innovations list
 			if inn.innovationType == newLinkInnType &&
 				inn.InNodeId == node1.Id &&
@@ -265,7 +265,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			// Choose the new weight
 			newWeight := float64(math.RandSign()) * rand.Float64() * 10.0
 			// read next innovation id
-			nextInnovId := pop.getNextInnovationNumberAndIncrement()
+			nextInnovId := innovations.NextInnovationNumber()
 
 			// Create the new gene
 			gene = NewGeneWithTrait(g.Traits[traitNum], newWeight, node1, node2,
@@ -274,7 +274,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 			// Add the innovation
 			innovation := NewInnovationForRecurrentLink(node1.Id, node2.Id, nextInnovId,
 				newWeight, traitNum, doRecur)
-			pop.addInnovationSynced(innovation)
+			innovations.StoreInnovation(*innovation)
 		} else if gene != nil && g.hasGene(gene) {
 			// The gene for already occurred innovation already in this genome.
 			// This may happen as result of parent genome mutation in current epoch which is
@@ -305,7 +305,7 @@ func (g *Genome) mutateAddLink(pop *Population, context *neat.NeatContext) (bool
 // The innovations list from population is used to compare the innovation with other innovations in the list and see
 // whether they match. If they do, the same innovation numbers will be assigned to the new genes. If a disabled link
 // is chosen, then the method just exits with false.
-func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool, error) {
+func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator network.NodeIdGenerator, context *neat.Options) (bool, error) {
 	if len(g.Genes) == 0 {
 		return false, nil // it's possible to have such a network without any link
 	}
@@ -362,7 +362,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 
 	// Check to see if this innovation already occurred in the population
 	innovationFound := false
-	for _, inn := range pop.Innovations {
+	for _, inn := range innovations.Innovations() {
 		/* We check to see if an innovation already occurred that was:
 			-A new node
 			-Stuck between the same nodes as were chosen for this mutation
@@ -392,7 +392,7 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 	// The innovation is totally novel
 	if !innovationFound {
 		// Get the current node id with post increment
-		newNodeId := int(pop.getNextNodeIdAndIncrement())
+		newNodeId := int(nodeIdGenerator.NextNodeId())
 
 		// Create the new NNode
 		node = network.NewNNode(newNodeId, network.HiddenNeuron)
@@ -406,18 +406,18 @@ func (g *Genome) mutateAddNode(pop *Population, context *neat.NeatContext) (bool
 		}
 
 		// get the next innovation id for gene 1
-		gene1Innovation := pop.getNextInnovationNumberAndIncrement()
+		gene1Innovation := innovations.NextInnovationNumber()
 		// create gene with the current gene innovation
 		gene1 = NewGeneWithTrait(trait, 1.0, inNode, node, link.IsRecurrent, gene1Innovation, 0)
 
 		// get the next innovation id for gene 2
-		gene2Innovation := pop.getNextInnovationNumberAndIncrement()
+		gene2Innovation := innovations.NextInnovationNumber()
 		// create the second gene with this innovation incremented
 		gene2 = NewGeneWithTrait(trait, oldWeight, node, outNode, false, gene2Innovation, 0)
 
 		// Store innovation
 		innovation := NewInnovationForNode(inNode.Id, outNode.Id, gene1Innovation, gene2Innovation, node.Id, gene.InnovationNum)
-		pop.addInnovationSynced(innovation)
+		innovations.StoreInnovation(*innovation)
 	} else if node != nil && g.hasNode(node) {
 		// The same add node innovation occurred in the same genome (parent) - just skip.
 		// This may happen when parent of this organism experienced the same mutation in current epoch earlier
@@ -506,7 +506,7 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutationType mutatorType
 }
 
 // Perturb params in one trait
-func (g *Genome) mutateRandomTrait(context *neat.NeatContext) (bool, error) {
+func (g *Genome) mutateRandomTrait(context *neat.Options) (bool, error) {
 	if len(g.Traits) == 0 {
 		return false, errors.New("genome has no traits")
 	}
@@ -596,7 +596,7 @@ func (g *Genome) mutateGeneReEnable() (bool, error) {
 }
 
 // Applies all non-structural mutations to this genome
-func (g *Genome) mutateAllNonstructural(context *neat.NeatContext) (bool, error) {
+func (g *Genome) mutateAllNonstructural(context *neat.Options) (bool, error) {
 	res := false
 	var err error
 	if rand.Float64() < context.MutateRandomTraitProb {

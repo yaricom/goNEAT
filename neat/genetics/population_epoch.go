@@ -19,10 +19,10 @@ const (
 	ParallelExecutorType = 1
 )
 
-// PopulationEpochExecutor Executes epoch's turnover for population of organisms
+// PopulationEpochExecutor Executes epoch's turnover for a population of the organisms
 type PopulationEpochExecutor interface {
 	// NextEpoch Turnover the population to a new generation
-	NextEpoch(generation int, population *Population, context *neat.NeatContext) error
+	NextEpoch(generation int, population *Population, context *neat.Options) error
 }
 
 // SequentialPopulationEpochExecutor The epoch executor that runs execution sequentially in single thread for all species and organisms
@@ -32,7 +32,7 @@ type SequentialPopulationEpochExecutor struct {
 	bestSpeciesId         int
 }
 
-func (s *SequentialPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.NeatContext) error {
+func (s *SequentialPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.Options) error {
 	err := s.prepareForReproduction(generation, population, context)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (s *SequentialPopulationEpochExecutor) NextEpoch(generation int, population
 }
 
 // prepareForReproduction is to prepareForReproduction population for reproduction
-func (s *SequentialPopulationEpochExecutor) prepareForReproduction(generation int, p *Population, context *neat.NeatContext) error {
+func (s *SequentialPopulationEpochExecutor) prepareForReproduction(generation int, p *Population, context *neat.Options) error {
 	// clear executor state from previous run
 	s.sortedSpecies = nil
 
@@ -118,7 +118,7 @@ func (s *SequentialPopulationEpochExecutor) prepareForReproduction(generation in
 }
 
 // reproduce is to run the reproduction cycle
-func (s *SequentialPopulationEpochExecutor) reproduce(generation int, p *Population, context *neat.NeatContext) error {
+func (s *SequentialPopulationEpochExecutor) reproduce(generation int, p *Population, context *neat.Options) error {
 	neat.DebugLog("POPULATION: Start Sequential Reproduction Cycle >>>>>")
 
 	// Perform reproduction. Reproduction is done on a per-Species basis
@@ -154,7 +154,7 @@ func (s *SequentialPopulationEpochExecutor) reproduce(generation int, p *Populat
 }
 
 // finalizeReproduction is to finalizeReproduction reproduction cycle
-func (s *SequentialPopulationEpochExecutor) finalizeReproduction(pop *Population, _ *neat.NeatContext) error {
+func (s *SequentialPopulationEpochExecutor) finalizeReproduction(pop *Population, _ *neat.Options) error {
 	// Destroy and remove the old generation from the organisms and species
 	err := pop.purgeOldGeneration(s.bestSpeciesId)
 	if err != nil {
@@ -166,7 +166,7 @@ func (s *SequentialPopulationEpochExecutor) finalizeReproduction(pop *Population
 	pop.purgeOrAgeSpecies()
 
 	// Remove the innovations of the current generation
-	pop.Innovations = make([]*Innovation, 0)
+	pop.innovations = make([]Innovation, 0)
 
 	// Check to see if the best species died somehow. We don't want this to happen!!!
 	err = pop.checkBestSpeciesAlive(s.bestSpeciesId, s.bestSpeciesReproduced)
@@ -189,7 +189,7 @@ type ParallelPopulationEpochExecutor struct {
 	sequential *SequentialPopulationEpochExecutor
 }
 
-func (p *ParallelPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.NeatContext) error {
+func (p *ParallelPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.Options) error {
 	p.sequential = &SequentialPopulationEpochExecutor{}
 	err := p.sequential.prepareForReproduction(generation, population, context)
 	if err != nil {
@@ -210,7 +210,7 @@ func (p *ParallelPopulationEpochExecutor) NextEpoch(generation int, population *
 }
 
 // Do parallel reproduction cycle
-func (p *ParallelPopulationEpochExecutor) reproduce(generation int, pop *Population, context *neat.NeatContext) error {
+func (p *ParallelPopulationEpochExecutor) reproduce(generation int, pop *Population, context *neat.Options) error {
 	neat.DebugLog("POPULATION: Start Parallel Reproduction Cycle >>>>>")
 
 	// Perform reproduction. Reproduction is done on a per-Species basis
@@ -223,7 +223,7 @@ func (p *ParallelPopulationEpochExecutor) reproduce(generation int, pop *Populat
 		wg.Add(1)
 		// run in separate GO thread
 		go func(sp *Species, generation int, p *Population, sortedSpecies []*Species,
-			context *neat.NeatContext, resChan chan<- reproductionResult, wg *sync.WaitGroup) {
+			context *neat.Options, resChan chan<- reproductionResult, wg *sync.WaitGroup) {
 
 			babies, err := sp.reproduce(generation, p, sortedSpecies, context)
 			res := reproductionResult{}

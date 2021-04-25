@@ -15,7 +15,7 @@ import (
 // The bigger returned value the less compatible the genomes.
 //
 // Fully compatible genomes has 0.0 returned.
-func (g *Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
+func (g *Genome) compatibility(og *Genome, context *neat.Options) float64 {
 	if context.GenCompatMethod == 0 {
 		return g.compatLinear(og, context)
 	} else {
@@ -29,7 +29,7 @@ func (g *Genome) compatibility(og *Genome, context *neat.NeatContext) float64 {
 // where: pdg - PERCENT DISJOINT GENES, peg - PERCENT EXCESS GENES, and mdmg - MUTATIONAL DIFFERENCE WITHIN MATCHING GENES
 //
 // Fully compatible genomes has 0.0 returned.
-func (g *Genome) compatLinear(og *Genome, context *neat.NeatContext) float64 {
+func (g *Genome) compatLinear(og *Genome, context *neat.Options) float64 {
 	numDisjoint, numExcess, mutDiffTotal, numMatching := 0.0, 0.0, 0.0, 0.0
 	size1, size2 := len(g.Genes), len(og.Genes)
 	maxGenomeSize := size2
@@ -90,7 +90,7 @@ func (g *Genome) compatLinear(og *Genome, context *neat.NeatContext) float64 {
 // where: pdg - PERCENT DISJOINT GENES, peg - PERCENT EXCESS GENES, and mdmg - MUTATIONAL DIFFERENCE WITHIN MATCHING GENES
 //
 // Fully compatible genomes has 0.0 returned.
-func (g *Genome) compatFast(og *Genome, context *neat.NeatContext) float64 {
+func (g *Genome) compatFast(og *Genome, context *neat.Options) float64 {
 	list1Count, list2Count := len(g.Genes), len(og.Genes)
 	// First test edge cases
 	if list1Count == 0 && list2Count == 0 {

@@ -92,7 +92,7 @@ func TestSpecies_adjustFitness(t *testing.T) {
 	require.NoError(t, err, "failed to build species")
 
 	// Configuration
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		DropOffAge:      5,
 		SurvivalThresh:  0.5,
 		AgeSignificance: 0.5,
@@ -198,7 +198,7 @@ func TestSpecies_reproduce(t *testing.T) {
 	linkProb := 0.8
 
 	// Configuration
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		DropOffAge:      5,
 		SurvivalThresh:  0.5,
 		AgeSignificance: 0.5,

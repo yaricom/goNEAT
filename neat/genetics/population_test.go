@@ -15,7 +15,7 @@ func TestNewPopulationRandom(t *testing.T) {
 	rand.Seed(42)
 	in, out, nmax := 3, 2, 5
 	linkProb := 0.5
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		CompatThreshold: 0.5,
 		PopSize:         10,
 	}
@@ -39,7 +39,7 @@ func TestNewPopulation(t *testing.T) {
 	rand.Seed(42)
 	in, out, nmax, n := 3, 2, 5, 3
 	linkProb := 0.5
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		CompatThreshold: 0.5,
 		PopSize:         10,
 	}
@@ -91,7 +91,7 @@ func TestReadPopulation(t *testing.T) {
 		"gene 2 2 4 2.5 false 2 0 true\n" +
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		CompatThreshold: 0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(popStr), &conf)
@@ -127,7 +127,7 @@ func TestPopulation_verify(t *testing.T) {
 		"gene 2 2 4 2.5 false 2 0 true\n" +
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		CompatThreshold: 0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(popStr), &conf)
@@ -166,7 +166,7 @@ func TestPopulation_Write(t *testing.T) {
 		"gene 2 2 4 2.5 false 2 0 true\n" +
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
-	conf := neat.NeatContext{
+	conf := neat.Options{
 		CompatThreshold: 0.5,
 	}
 	pop, err := ReadPopulation(strings.NewReader(popStr), &conf)
