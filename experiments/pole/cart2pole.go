@@ -41,7 +41,7 @@ func NewCartDoublePoleGenerationEvaluator(outDir string, markov bool, actionType
 	}
 }
 
-// The structure to describe cart pole emulation
+// CartPole The structure to describe cart pole emulation
 type CartPole struct {
 	// The flag to indicate that we are executing Markov experiment setup (known velocities information)
 	isMarkov bool
@@ -65,7 +65,7 @@ type CartPole struct {
 	poleVelocitySum float64
 }
 
-// Perform evaluation of one epoch on double pole balancing
+// GenerationEvaluate Perform evaluation of one epoch on double pole balancing
 func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.NeatContext) (err error) {
 	cartPole := newCartPole(e.Markov)
 

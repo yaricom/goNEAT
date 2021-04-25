@@ -32,7 +32,7 @@ func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceS
 	}
 }
 
-// This method evaluates one epoch for given population and prints results into output directory if any.
+// GenerationEvaluate This method evaluates one epoch for given population and prints results into output directory if any.
 func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
