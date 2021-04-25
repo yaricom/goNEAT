@@ -115,7 +115,7 @@ func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
 	require.NoError(t, err)
 	err = wr.WriteGenome(gnome)
 	require.NoError(t, err, "failed to write genome")
-	//t.Log(out_buf.String())
+	//t.Log(outBuf.String())
 
 	// decode genome and compare
 	enc := yamlGenomeReader{r: bufio.NewReader(bytes.NewBuffer(outBuf.Bytes()))}
