@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// The structure to hold statistics about one experiment run (trial)
+// Trial The structure to hold statistics about one experiment run (trial)
 type Trial struct {
 	// The trial number
 	Id int
@@ -20,7 +20,7 @@ type Trial struct {
 	Duration time.Duration
 }
 
-// Calculates average duration of evaluations among all generations of organism populations in this trial
+// AvgEpochDuration Calculates average duration of evaluations among all generations of organism populations in this trial
 func (t *Trial) AvgEpochDuration() time.Duration {
 	total := time.Duration(0)
 	for _, i := range t.Generations {
@@ -29,7 +29,8 @@ func (t *Trial) AvgEpochDuration() time.Duration {
 	return total / time.Duration(len(t.Generations))
 }
 
-func (t *Trial) LastExecuted() time.Time {
+// RecentEpochEvalTime is to get time of the epoch executed most recently within this trial
+func (t *Trial) RecentEpochEvalTime() time.Time {
 	var u time.Time
 	for _, i := range t.Generations {
 		if u.Before(i.Executed) {
@@ -39,7 +40,7 @@ func (t *Trial) LastExecuted() time.Time {
 	return u
 }
 
-// Finds the most fit organism among all epochs in this trial. It's also possible to get the best organism only among the ones
+// BestOrganism Finds the most fit organism among all epochs in this trial. It's also possible to get the best organism only among the ones
 // which was able to solve the experiment's problem.
 func (t *Trial) BestOrganism(onlySolvers bool) (*genetics.Organism, bool) {
 	var orgs = make(genetics.Organisms, 0, len(t.Generations))
@@ -69,7 +70,7 @@ func (t *Trial) Solved() bool {
 	return false
 }
 
-// Fitness returns the fitnesses of the best organisms for each epoch in this trial
+// BestFitness Fitness returns the fitness values of the best organisms for each epoch in this trial
 func (t *Trial) BestFitness() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
@@ -79,7 +80,7 @@ func (t *Trial) BestFitness() Floats {
 	return x
 }
 
-// Age returns the age of the best species for each epoch in this trial
+// BestAge Age returns the age of the best species for each epoch in this trial
 func (t *Trial) BestAge() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
@@ -88,7 +89,7 @@ func (t *Trial) BestAge() Floats {
 	return x
 }
 
-// Complexity returns the complexity of the best species for each epoch in this trial
+// BestComplexity Complexity returns the complexity of the best species for each epoch in this trial
 func (t *Trial) BestComplexity() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
@@ -106,7 +107,7 @@ func (t *Trial) Diversity() Floats {
 	return x
 }
 
-// Returns average fitness, age, and complexity of population of organisms for each epoch in this trial
+// Average Returns average fitness, age, and complexity of population of organisms for each epoch in this trial
 func (t *Trial) Average() (fitness, age, complexity Floats) {
 	fitness = make(Floats, len(t.Generations))
 	age = make(Floats, len(t.Generations))
@@ -117,7 +118,7 @@ func (t *Trial) Average() (fitness, age, complexity Floats) {
 	return fitness, age, complexity
 }
 
-// Returns number of nodes, genes,  organism evaluations and species diversity in the winner genome
+// Winner Returns number of nodes, genes,  organism evaluations and species diversity in the winner genome
 func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
 	if t.WinnerGeneration != nil {
 		nodes = t.WinnerGeneration.WinnerNodes
@@ -140,7 +141,7 @@ func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
 	return nodes, genes, evals, diversity
 }
 
-// Encodes this trial
+// Encode Encodes this trial
 func (t *Trial) Encode(enc *gob.Encoder) error {
 	err := enc.Encode(t.Id)
 	err = enc.Encode(len(t.Generations))
@@ -153,7 +154,7 @@ func (t *Trial) Encode(enc *gob.Encoder) error {
 	return err
 }
 
-// Decodes trial data
+// Decode Decodes trial data
 func (t *Trial) Decode(dec *gob.Decoder) error {
 	err := dec.Decode(&t.Id)
 	var ngen int
@@ -183,8 +184,8 @@ func (ts Trials) Swap(i, j int) {
 	ts[i], ts[j] = ts[j], ts[i]
 }
 func (ts Trials) Less(i, j int) bool {
-	ui := ts[i].LastExecuted()
-	uj := ts[j].LastExecuted()
+	ui := ts[i].RecentEpochEvalTime()
+	uj := ts[j].RecentEpochEvalTime()
 	if ui.Equal(uj) {
 		return ts[i].Id < ts[j].Id
 	}

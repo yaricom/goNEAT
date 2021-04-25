@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// The structure to represent execution results of one generation
+// Generation the structure to represent execution results of one generation
 type Generation struct {
 	// The generation ID for this epoch
 	Id int
@@ -45,7 +45,7 @@ type Generation struct {
 	TrialId int
 }
 
-// Collects statistics about given population
+// FillPopulationStatistics Collects statistics about given population
 func (g *Generation) FillPopulationStatistics(pop *genetics.Population) {
 	maxFitness := float64(math.MinInt64)
 	g.Diversity = len(pop.Species)
@@ -69,7 +69,7 @@ func (g *Generation) FillPopulationStatistics(pop *genetics.Population) {
 	}
 }
 
-// Returns average fitness, age, and complexity among all organisms from population at the end of this epoch
+// Average Returns average fitness, age, and complexity among all organisms from population at the end of this epoch
 func (g *Generation) Average() (fitness, age, complexity float64) {
 	fitness = g.Fitness.Mean()
 	age = g.Age.Mean()
@@ -77,7 +77,7 @@ func (g *Generation) Average() (fitness, age, complexity float64) {
 	return fitness, age, complexity
 }
 
-// Encodes generation with provided GOB encoder
+// Encode Encodes generation with provided GOB encoder
 func (g *Generation) Encode(enc *gob.Encoder) error {
 	err := enc.EncodeValue(reflect.ValueOf(g.Id))
 	err = enc.EncodeValue(reflect.ValueOf(g.Executed))

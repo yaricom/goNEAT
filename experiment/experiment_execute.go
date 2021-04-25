@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// The Experiment execution entry point
+// Execute The Experiment execution entry point
 func (e *Experiment) Execute(context *neat.NeatContext, startGenome *genetics.Genome, executor interface{}) (err error) {
 	if e.Trials == nil {
 		e.Trials = make(Trials, context.NumRuns)

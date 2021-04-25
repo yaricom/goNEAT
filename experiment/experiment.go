@@ -22,7 +22,7 @@ type Experiment struct {
 	MaxFitnessScore float64
 }
 
-// Calculates average duration of experiment's trial
+// AvgTrialDuration Calculates average duration of experiment's trial
 // Note, that most trials finish after solution solved, so this metric can be used to represent how efficient the solvers
 // was generated
 func (e *Experiment) AvgTrialDuration() time.Duration {
@@ -33,7 +33,7 @@ func (e *Experiment) AvgTrialDuration() time.Duration {
 	return total / time.Duration(len(e.Trials))
 }
 
-// Calculates average duration of evaluations among all generations of organism populations in this experiment
+// AvgEpochDuration Calculates average duration of evaluations among all generations of organism populations in this experiment
 func (e *Experiment) AvgEpochDuration() time.Duration {
 	total := time.Duration(0)
 	for _, t := range e.Trials {
@@ -42,7 +42,7 @@ func (e *Experiment) AvgEpochDuration() time.Duration {
 	return total / time.Duration(len(e.Trials))
 }
 
-// Calculates average number of generations evaluated per trial during this experiment. This can be helpful when estimating
+// AvgGenerationsPerTrial Calculates average number of generations evaluated per trial during this experiment. This can be helpful when estimating
 // algorithm efficiency, because when winner organism is found the trial is terminated, i.e. less evaluations - more fast
 // convergence.
 func (e *Experiment) AvgGenerationsPerTrial() float64 {
@@ -53,11 +53,11 @@ func (e *Experiment) AvgGenerationsPerTrial() float64 {
 	return total / float64(len(e.Trials))
 }
 
-// Returns time of last trial's execution
-func (e *Experiment) LastExecuted() time.Time {
+// MostRecentTrialEvalTime Returns the time of evaluation of the most recent trial
+func (e *Experiment) MostRecentTrialEvalTime() time.Time {
 	var u time.Time
 	for _, e := range e.Trials {
-		ut := e.LastExecuted()
+		ut := e.RecentEpochEvalTime()
 		if u.Before(ut) {
 			u = ut
 		}
@@ -65,9 +65,9 @@ func (e *Experiment) LastExecuted() time.Time {
 	return u
 }
 
-// Finds the most fit organism among all epochs in this trial. It's also possible to get the best organism only among the ones
-// which was able to solve the experiment's problem. Returns the best fit organism in this experiment among with ID of trial
-// where it was found and boolean value to indicate if search was successful.
+// BestOrganism Finds the most fit organism among all epochs in this trial. It's also possible to get the best organism
+// only among the ones which was able to solve the experiment's problem. Returns the best fit organism in this experiment
+// among with ID of trial where it was found and boolean value to indicate if search was successful.
 func (e *Experiment) BestOrganism(onlySolvers bool) (*genetics.Organism, int, bool) {
 	var orgs = make(genetics.Organisms, 0, len(e.Trials))
 	for i, t := range e.Trials {
@@ -87,6 +87,7 @@ func (e *Experiment) BestOrganism(onlySolvers bool) (*genetics.Organism, int, bo
 
 }
 
+// Solved is to check if solution was found in at least one trial
 func (e *Experiment) Solved() bool {
 	for _, t := range e.Trials {
 		if t.Solved() {
@@ -96,7 +97,7 @@ func (e *Experiment) Solved() bool {
 	return false
 }
 
-// The fitness values of the best organisms for each trial
+// BestFitness The fitness values of the best organisms for each trial
 func (e *Experiment) BestFitness() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
@@ -107,7 +108,7 @@ func (e *Experiment) BestFitness() Floats {
 	return x
 }
 
-// The age values of the organisms for each trial
+// BestAge The age values of the organisms for each trial
 func (e *Experiment) BestAge() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
@@ -118,7 +119,7 @@ func (e *Experiment) BestAge() Floats {
 	return x
 }
 
-// The complexity values of the best organisms for each trial
+// BestComplexity The complexity values of the best organisms for each trial
 func (e *Experiment) BestComplexity() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
@@ -138,8 +139,8 @@ func (e *Experiment) Diversity() Floats {
 	return x
 }
 
-// Trials returns the number of epochs in each trial
-func (e *Experiment) Epochs() Floats {
+// EpochsPerTrial returns the number of epochs in each trial
+func (e *Experiment) EpochsPerTrial() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
 		x[i] = float64(len(t.Generations))
@@ -147,7 +148,7 @@ func (e *Experiment) Epochs() Floats {
 	return x
 }
 
-// The number of trials solved
+// TrialsSolved The number of trials solved
 func (e *Experiment) TrialsSolved() int {
 	count := 0
 	for _, t := range e.Trials {
@@ -158,13 +159,13 @@ func (e *Experiment) TrialsSolved() int {
 	return count
 }
 
-// The success rate
+// SuccessRate The success rate
 func (e *Experiment) SuccessRate() float64 {
 	soved := float64(e.TrialsSolved())
 	return soved / float64(len(e.Trials))
 }
 
-// Returns average number of nodes, genes, organisms evaluations, and species diversity of winner genomes among all
+// AvgWinner Returns average number of nodes, genes, organisms evaluations, and species diversity of winner genomes among all
 // trials, i.e. for all trials where winning solution was found
 func (e *Experiment) AvgWinner() (avgNodes, avgGenes, avgEvals, avgDiversity float64) {
 	totalNodes, totalGenes, totalEvals, totalDiversity := 0, 0, 0, 0
@@ -188,7 +189,7 @@ func (e *Experiment) AvgWinner() (avgNodes, avgGenes, avgEvals, avgDiversity flo
 	return avgNodes, avgGenes, avgEvals, avgDiversity
 }
 
-// Calculates the efficiency score of the solution
+// EfficiencyScore Calculates the efficiency score of the solution
 // We are interested in efficient solver search solution that take
 // less time per epoch, less generations per trial, and produce less complicated winner genomes.
 // At the same time it should have maximal fitness score and maximal success rate among trials.
@@ -229,7 +230,7 @@ func (e *Experiment) EfficiencyScore() float64 {
 	return score
 }
 
-// Prints experiment statistics
+// PrintStatistics Prints experiment statistics
 func (e *Experiment) PrintStatistics() {
 	fmt.Printf("\nSolved %d trials from %d, success rate: %f\n", e.TrialsSolved(), len(e.Trials), e.SuccessRate())
 	fmt.Printf("Average\n\tTrial duration:\t\t%s\n\tEpoch duration:\t\t%s\n\tGenerations/trial:\t%.1f\n",
@@ -307,13 +308,13 @@ func (e *Experiment) PrintStatistics() {
 	fmt.Printf("\nEfficiency score:\t\t%f\n\n", score)
 }
 
-// Encodes experiment and writes to provided writer
+// Write is to writes encoded experiment data into provided writer
 func (e *Experiment) Write(w io.Writer) error {
 	enc := gob.NewEncoder(w)
 	return e.Encode(enc)
 }
 
-// Encodes experiment with GOB encoding
+// Encode Encodes experiment with GOB encoding
 func (e *Experiment) Encode(enc *gob.Encoder) error {
 	err := enc.Encode(e.Id)
 	err = enc.Encode(e.Name)
@@ -329,13 +330,13 @@ func (e *Experiment) Encode(enc *gob.Encoder) error {
 	return err
 }
 
-// Reads experiment data from provided reader and decodes it
+// Read is to read experiment data from provided reader and decodes it
 func (e *Experiment) Read(r io.Reader) error {
 	dec := gob.NewDecoder(r)
 	return e.Decode(dec)
 }
 
-// Decodes experiment data
+// Decode Decodes experiment data
 func (e *Experiment) Decode(dec *gob.Decoder) error {
 	err := dec.Decode(&e.Id)
 	err = dec.Decode(&e.Name)
@@ -366,8 +367,8 @@ func (es Experiments) Swap(i, j int) {
 	es[i], es[j] = es[j], es[i]
 }
 func (es Experiments) Less(i, j int) bool {
-	ui := es[i].LastExecuted()
-	uj := es[j].LastExecuted()
+	ui := es[i].MostRecentTrialEvalTime()
+	uj := es[j].MostRecentTrialEvalTime()
 	if ui.Equal(uj) {
 		return es[i].Id < es[j].Id
 	}

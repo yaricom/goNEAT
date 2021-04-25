@@ -2,6 +2,8 @@ package experiment
 
 import (
 	"bytes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -14,33 +16,20 @@ func TestExperiment_Write_Read(t *testing.T) {
 	// Write experiment
 	var buff bytes.Buffer
 	err := ex.Write(&buff)
-	if err != nil {
-		t.Error("Failed to write experiment")
-	}
+	require.NoError(t, err, "Failed to write experiment")
 
 	// Read experiment
 	data := buff.Bytes()
-	new_ex := Experiment{}
-	err = new_ex.Read(bytes.NewBuffer(data))
-	if err != nil {
-		t.Error("failed to read experiment")
-	}
+	newEx := Experiment{}
+	err = newEx.Read(bytes.NewBuffer(data))
+	require.NoError(t, err, "failed to read experiment")
 
 	// Deep compare results
-	if ex.Id != new_ex.Id {
-		t.Error("ex.Id != new_ex.Id")
-	}
-
-	if ex.Name != new_ex.Name {
-		t.Error("ex.Name != new_ex.Name")
-	}
-
-	if len(ex.Trials) != len(new_ex.Trials) {
-		t.Error("len(ex.Trials) != len(new_ex.Trials)")
-		return
-	}
+	assert.Equal(t, ex.Id, newEx.Id)
+	assert.Equal(t, ex.Name, newEx.Name)
+	require.Len(t, newEx.Trials, len(ex.Trials))
 
 	for i := 0; i < len(ex.Trials); i++ {
-		deepCompareTrials(&ex.Trials[i], &new_ex.Trials[i], t)
+		assert.EqualValues(t, ex.Trials[i], newEx.Trials[i])
 	}
 }
