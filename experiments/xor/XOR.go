@@ -1,4 +1,5 @@
-// The XOR experiment serves to actually check that network topology actually evolves and everything works as expected.
+// Package xor defines the XOR experiment which serves to actually check that network topology actually evolves and
+// everything works as expected.
 // Because XOR is not linearly separable, a neural network requires hidden units to solve it. The two inputs must be
 // combined at some hidden unit, as opposed to only at the out- put node, because there is no function over a linear
 // combination of the inputs that can separate the inputs into the proper classes. These structural requirements make
@@ -35,7 +36,7 @@ func NewXORGenerationEvaluator(outputPath string) experiment.GenerationEvaluator
 	return &xorGenerationEvaluator{OutputPath: outputPath}
 }
 
-// This method evaluates one epoch for given population and prints results into output directory if any.
+// GenerationEvaluate This method evaluates one epoch for given population and prints results into output directory if any.
 func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.NeatContext) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
