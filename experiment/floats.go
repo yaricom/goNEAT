@@ -1,8 +1,9 @@
 package experiment
 
 import (
+	"gonum.org/v1/gonum/floats"
+	"gonum.org/v1/gonum/stat"
 	"math"
-	"sort"
 )
 
 // Floats provides descriptive statistics on a slice of float64 values
@@ -11,88 +12,68 @@ type Floats []float64
 // Min returns the smallest value in the slice
 func (x Floats) Min() float64 {
 	if len(x) == 0 {
-		return 0.0
+		return math.NaN()
 	}
-	sort.Float64s(x)
-	return x[0]
+	return floats.Min(x)
 }
 
 // Max returns the greatest value in the slice
 func (x Floats) Max() float64 {
 	if len(x) == 0 {
-		return 0.0
+		return math.NaN()
 	}
-	sort.Float64s(x)
-	return x[len(x)-1]
+	return floats.Max(x)
 }
 
 // Sum returns the total of the values in the slice
 func (x Floats) Sum() float64 {
-	s := 0.0
-	for _, v := range x {
-		s += v
-	}
-	return s
+	return floats.Sum(x)
 }
 
 // Mean returns the average of the values in the slice
 func (x Floats) Mean() float64 {
 	if len(x) == 0 {
-		return 0.0
+		return math.NaN()
 	}
-	return x.Sum() / float64(len(x))
+	return stat.Mean(x, nil)
 }
 
-// Median returns the middle value in the slice
+// Median returns the middle value in the slice (50% quantile)
 func (x Floats) Median() float64 {
-	sort.Float64s(x)
-	n := len(x)
-	switch {
-	case n == 0:
-		return 0.0
-	case n%2 == 0:
-		return (x[n/2-1] + x[n/2]) / 2.0
-	default:
-		return x[n/2]
+	if len(x) == 0 {
+		return math.NaN()
 	}
+	return stat.Quantile(0.5, stat.Empirical, x, nil)
 }
 
+// Q25 is the 25% quantile
 func (x Floats) Q25() float64 {
 	if len(x) == 0 {
-		return 0.0
+		return math.NaN()
 	}
-	sort.Float64s(x)
-	n := len(x) / 4
-	return x[n]
+	return stat.Quantile(0.25, stat.Empirical, x, nil)
 }
 
+// Q75 is the 75% quantile
 func (x Floats) Q75() float64 {
 	if len(x) == 0 {
-		return 0.0
+		return math.NaN()
 	}
-	sort.Float64s(x)
-	n := len(x) * 3 / 4
-	return x[n]
+	return stat.Quantile(0.75, stat.Empirical, x, nil)
 }
 
 // Variance returns the variance of the values in the slice
 func (x Floats) Variance() float64 {
 	if len(x) == 0 {
-		return 0.0
+		return math.NaN()
 	}
-	m := x.Mean()
-	s := 0.0
-	for _, v := range x {
-		s += (v - m) * (v - m)
-	}
-	return s
+	return stat.Variance(x, nil)
 }
 
-// Stdev returns the standard deviation of the values in the slice
-func (x Floats) Stdev() float64 {
+// StdDev returns the standard deviation of the values in the slice
+func (x Floats) StdDev() float64 {
 	if len(x) == 0 {
-		return 0.0
+		return math.NaN()
 	}
-	v := x.Variance()
-	return math.Sqrt(v / float64(len(x)))
+	return stat.StdDev(x, nil)
 }
