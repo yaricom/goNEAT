@@ -13,8 +13,9 @@ import (
 // An Experiment is a collection of trials for one experiment. It's useful for statistical analysis of a series of
 // experiments
 type Experiment struct {
-	Id   int
-	Name string
+	Id       int
+	Name     string
+	RandSeed int64
 	Trials
 	// The maximal allowed fitness score as defined by fitness function of experiment.
 	// It is used to normalize fitness score value used in efficiency score calculation. If this value
@@ -233,6 +234,7 @@ func (e *Experiment) EfficiencyScore() float64 {
 // PrintStatistics Prints experiment statistics
 func (e *Experiment) PrintStatistics() {
 	fmt.Printf("\nSolved %d trials from %d, success rate: %f\n", e.TrialsSolved(), len(e.Trials), e.SuccessRate())
+	fmt.Printf("Random seed: %d\n", e.RandSeed)
 	fmt.Printf("Average\n\tTrial duration:\t\t%s\n\tEpoch duration:\t\t%s\n\tGenerations/trial:\t%.1f\n",
 		e.AvgTrialDuration(), e.AvgEpochDuration(), e.AvgGenerationsPerTrial())
 	// Print absolute champion statistics

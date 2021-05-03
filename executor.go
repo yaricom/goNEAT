@@ -30,7 +30,8 @@ func main() {
 
 	// Seed the random-number generator with current time so that
 	// the numbers will be different every time we run.
-	rand.Seed(time.Now().Unix())
+	seed := time.Now().Unix()
+	rand.Seed(seed)
 
 	// Load neatOptions configuration
 	configFile, err := os.Open(*contextPath)
@@ -81,8 +82,9 @@ func main() {
 
 	// The 100 generation XOR experiment
 	expt := experiment.Experiment{
-		Id:     0,
-		Trials: make(experiment.Trials, neatOptions.NumRuns),
+		Id:       0,
+		Trials:   make(experiment.Trials, neatOptions.NumRuns),
+		RandSeed: seed,
 	}
 	var generationEvaluator experiment.GenerationEvaluator
 	switch *experimentName {
