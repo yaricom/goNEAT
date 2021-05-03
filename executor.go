@@ -23,7 +23,7 @@ func main() {
 	var contextPath = flag.String("context", "./data/xor.neat", "The execution context configuration file.")
 	var genomePath = flag.String("genome", "./data/xorstartgenes", "The seed genome to start with.")
 	var experimentName = flag.String("experiment", "XOR", "The name of experiment to run. [XOR, cart_pole, cart_2pole_markov, cart_2pole_non-markov]")
-	var trialsCount = flag.Int("trials", 0, "The numbar of trials for experiment. Overrides the one set in configuration.")
+	var trialsCount = flag.Int("trials", 0, "The number of trials for experiment. Overrides the one set in configuration.")
 	var logLevel = flag.String("log_level", "", "The logger level to be used. Overrides the one set in configuration.")
 
 	flag.Parse()
