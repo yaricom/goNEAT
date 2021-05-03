@@ -3,7 +3,9 @@ package experiment
 import (
 	"encoding/gob"
 	"fmt"
+	"github.com/sbinet/npyio/npz"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"gonum.org/v1/gonum/mat"
 	"io"
 	"math"
 	"sort"
@@ -357,6 +359,65 @@ func (e *Experiment) Decode(dec *gob.Decoder) error {
 		e.Trials[i] = trial
 	}
 	return err
+}
+
+// WriteNPZ Dumps experiment results to the NPZ file.
+// The file has following structure:
+// - trials_fitness - the mean, variance of fitness scores per trial
+// - trials_ages - the mean, variance of species ages per trial
+// - trials_complexity - the mean, variance of genome complexity of best organisms among species per trial
+// - trial_[0...n]_epoch_mean_fitnesses - the mean fitness scores per epoch per trial
+// - trial_[0...n]_epoch_best_fitnesses - the best fitness scores per epoch per trial
+// the same for AGE and COMPLEXITY per epoch per trial
+// - trial_[0...n]_epoch_diversity - the number of species per epoch per trial
+func (e *Experiment) WriteNPZ(w io.Writer) error {
+	// write general statistics
+	trialsFitness := mat.NewDense(len(e.Trials), 2, nil)    // mean, var
+	trialsAges := mat.NewDense(len(e.Trials), 2, nil)       // mean, var
+	trialsComplexity := mat.NewDense(len(e.Trials), 2, nil) // mean, var
+	for i, t := range e.Trials {
+		fitness, age, complexity := t.Average()
+		trialsFitness.SetRow(i, fitness.MeanVariance())
+		trialsAges.SetRow(i, age.MeanVariance())
+		trialsComplexity.SetRow(i, complexity.MeanVariance())
+	}
+	out := npz.NewWriter(w)
+	if err := out.Write("trials_fitness", trialsFitness); err != nil {
+		return err
+	}
+	if err := out.Write("trials_ages", trialsAges); err != nil {
+		return err
+	}
+	if err := out.Write("trials_complexity", trialsComplexity); err != nil {
+		return err
+	}
+	// write statistics per epoch per trial
+	//
+	for i, t := range e.Trials {
+		fitness, age, complexity := t.Average()
+		if err := out.Write(fmt.Sprintf("trial_%d_epoch_mean_fitnesses", i), fitness); err != nil {
+			return err
+		}
+		if err := out.Write(fmt.Sprintf("trial_%d_epoch_mean_ages", i), age); err != nil {
+			return err
+		}
+		if err := out.Write(fmt.Sprintf("trial_%d_epoch_mean_complexities", i), complexity); err != nil {
+			return err
+		}
+		if err := out.Write(fmt.Sprintf("trial_%d_epoch_best_fitnesses", i), t.BestFitness()); err != nil {
+			return err
+		}
+		if err := out.Write(fmt.Sprintf("trial_%d_epoch_best_ages", i), t.BestAge()); err != nil {
+			return err
+		}
+		if err := out.Write(fmt.Sprintf("trial_%d_epoch_best_complexities", i), t.BestComplexity()); err != nil {
+			return err
+		}
+		if err := out.Write(fmt.Sprintf("trial_%d_epoch_diversity", i), t.Diversity()); err != nil {
+			return err
+		}
+	}
+	return out.Close()
 }
 
 // Experiments is a sortable list of experiments by execution time and Id

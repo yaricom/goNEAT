@@ -38,6 +38,15 @@ func (x Floats) Mean() float64 {
 	return stat.Mean(x, nil)
 }
 
+// MeanVariance returns the sample mean and unbiased variance of the values in the slice
+func (x Floats) MeanVariance() []float64 {
+	if len(x) == 0 {
+		return []float64{math.NaN(), math.NaN()}
+	}
+	m, v := stat.MeanVariance(x, nil)
+	return []float64{m, v}
+}
+
 // Median returns the middle value in the slice (50% quantile)
 func (x Floats) Median() float64 {
 	if len(x) == 0 {
