@@ -21,3 +21,6 @@ out
 
 # The vendor folder
 vendor
+
+# The Jupyter checkpoint
+**/.ipynb_checkpoints
