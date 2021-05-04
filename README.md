@@ -310,6 +310,14 @@ genomeend 46
 
 ```
 
+## Jupyter notebook with experiment results
+
+The goNEAT library saves results of the experiments using Numpy NPZ format, which allows analysis of collected experimental
+data using available Python libraries.
+
+We included [Jupyter notebook](contents/notebooks/experiments_results.ipynb) with analysis of collected experimental data,
+which can be used as starter kit for your own experiments.
+
 ## Conclusion
 
 The experiments described in this work confirm that implemented NEAT method is able to evolve new structures in ANNs (XOR
