@@ -15,7 +15,7 @@ LOG_LEVEL = -1
 
 # The default parameters to run the experiment
 DATA_DIR=./data
-TRIALS_NUMBER=0
+TRIALS_NUMBER=10
 LOG_LEVEL=info
 
 
@@ -25,7 +25,7 @@ all: test
 
 # The target to run double-pole non Markov experiment
 #
-run-cartpole-two-markov:
+run-cartpole-two-non-markov:
 	$(GORUN) executor.go -out $(OUT_DIR)/pole2_non-markov \
 						 -context $(DATA_DIR)/pole2_non-markov.neat \
 						 -genome $(DATA_DIR)/pole2_non-markov_startgenes \
