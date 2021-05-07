@@ -24,7 +24,7 @@ jobs:
         GO111MODULE: on
 
     - name: Run coverage
-      run: go test -race -coverprofile=coverage.txt -covermode=atomic -timeout 40m -v ./...
+      run: go test -coverprofile=coverage.txt -covermode=atomic -timeout 40m -v ./...
       env:
         GO111MODULE: on
         
