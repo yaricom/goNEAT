@@ -40,16 +40,16 @@ const (
 	MinModuleActivation
 )
 
-// The neuron node activation function type
+// ActivationFunction The neuron node activation function type
 type ActivationFunction func(float64, []float64) float64
 
-// The neurons module activation function type
+// ModuleActivationFunction The neurons module activation function type
 type ModuleActivationFunction func([]float64, []float64) []float64
 
-// The default node activators factory reference
+// NodeActivators The default node activators factory reference
 var NodeActivators = NewNodeActivatorsFactory()
 
-// The factory to provide appropriate neuron node activation function
+// NodeActivatorsFactory The factory to provide appropriate neuron node activation function
 type NodeActivatorsFactory struct {
 	// The map of registered neuron node activators by type
 	activators map[NodeActivationType]ActivationFunction
@@ -61,7 +61,7 @@ type NodeActivatorsFactory struct {
 	inverse map[string]NodeActivationType
 }
 
-// Returns node activator factory initialized with default activation functions
+// NewNodeActivatorsFactory Returns node activator factory initialized with default activation functions
 func NewNodeActivatorsFactory() *NodeActivatorsFactory {
 	af := &NodeActivatorsFactory{
 		activators:       make(map[NodeActivationType]ActivationFunction),
@@ -99,7 +99,7 @@ func NewNodeActivatorsFactory() *NodeActivatorsFactory {
 	return af
 }
 
-// Method to calculate activation value for give input and auxiliary parameters using activation function with specified type.
+// ActivateByType is to calculate activation value for give input and auxiliary parameters using activation function with specified type.
 // Will return error and -0.0 activation if unsupported activation type requested.
 func (a *NodeActivatorsFactory) ActivateByType(input float64, auxParams []float64, aType NodeActivationType) (float64, error) {
 	if fn, ok := a.activators[aType]; ok {
@@ -109,7 +109,7 @@ func (a *NodeActivatorsFactory) ActivateByType(input float64, auxParams []float6
 	}
 }
 
-// Method will apply corresponding module activation function to the input values and returns appropriate output values.
+// ActivateModuleByType will apply corresponding module activation function to the input values and returns appropriate output values.
 // Will panic if unsupported activation function requested
 func (a *NodeActivatorsFactory) ActivateModuleByType(inputs []float64, auxParams []float64, aType NodeActivationType) ([]float64, error) {
 	if fn, ok := a.moduleActivators[aType]; ok {
@@ -119,7 +119,7 @@ func (a *NodeActivatorsFactory) ActivateModuleByType(inputs []float64, auxParams
 	}
 }
 
-// Registers given neuron activation function with provided type and name into the factory
+// Register Registers given neuron activation function with provided type and name into the factory
 func (a *NodeActivatorsFactory) Register(aType NodeActivationType, aFunc ActivationFunction, fName string) {
 	// store function
 	a.activators[aType] = aFunc
@@ -128,7 +128,7 @@ func (a *NodeActivatorsFactory) Register(aType NodeActivationType, aFunc Activat
 	a.inverse[fName] = aType
 }
 
-// Registers given neuron module activation function with provided type and name into the factory
+// RegisterModule Registers given neuron module activation function with provided type and name into the factory
 func (a *NodeActivatorsFactory) RegisterModule(aType NodeActivationType, aFunc ModuleActivationFunction, fName string) {
 	// store function
 	a.moduleActivators[aType] = aFunc
@@ -137,7 +137,7 @@ func (a *NodeActivatorsFactory) RegisterModule(aType NodeActivationType, aFunc M
 	a.inverse[fName] = aType
 }
 
-// Parse node activation type name and return corresponding activation type
+// ActivationTypeFromName Parse node activation type name and return corresponding activation type
 func (a *NodeActivatorsFactory) ActivationTypeFromName(name string) (NodeActivationType, error) {
 	if t, ok := a.inverse[name]; ok {
 		return t, nil
@@ -146,7 +146,7 @@ func (a *NodeActivatorsFactory) ActivationTypeFromName(name string) (NodeActivat
 	}
 }
 
-// Returns activation function name from given type
+// ActivationNameFromType Returns activation function name from given type
 func (a *NodeActivatorsFactory) ActivationNameFromType(aType NodeActivationType) (string, error) {
 	if n, ok := a.forward[aType]; ok {
 		return n, nil

@@ -392,7 +392,7 @@ func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator 
 	// The innovation is totally novel
 	if !innovationFound {
 		// Get the current node id with post increment
-		newNodeId := int(nodeIdGenerator.NextNodeId())
+		newNodeId := nodeIdGenerator.NextNodeId()
 
 		// Create the new NNode
 		node = network.NewNNode(newNodeId, network.HiddenNeuron)
