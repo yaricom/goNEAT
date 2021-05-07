@@ -111,9 +111,8 @@ func (n *Network) FastNetworkSolver() (Solver, error) {
 			if inIndex, ok := neuronLookup[in.InNode.Id]; ok {
 				inputs[j] = inIndex
 			} else {
-				return nil, errors.New(
-					fmt.Sprintf("Failed to lookup for input neuron with id: %d at control neuron: %d",
-						in.InNode.Id, cn.Id))
+				return nil, fmt.Errorf("failed to lookup for input neuron with id: %d at control neuron: %d",
+					in.InNode.Id, cn.Id)
 			}
 		}
 		// collect outputs
@@ -122,9 +121,8 @@ func (n *Network) FastNetworkSolver() (Solver, error) {
 			if outIndex, ok := neuronLookup[out.OutNode.Id]; ok {
 				outputs[j] = outIndex
 			} else {
-				return nil, errors.New(
-					fmt.Sprintf("Failed to lookup for output neuron with id: %d at control neuron: %d",
-						out.InNode.Id, cn.Id))
+				return nil, fmt.Errorf("failed to lookup for output neuron with id: %d at control neuron: %d",
+					out.InNode.Id, cn.Id)
 			}
 		}
 		// build control node

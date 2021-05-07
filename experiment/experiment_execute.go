@@ -101,7 +101,7 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 
 		}
 		// holds trial duration
-		trial.Duration = time.Now().Sub(trialStartTime)
+		trial.Duration = time.Since(trialStartTime)
 
 		// store trial into experiment
 		e.Trials[run] = trial

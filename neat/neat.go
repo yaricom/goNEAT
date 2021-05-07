@@ -148,8 +148,7 @@ func (c *Options) RandomNodeActivationType() (math.NodeActivationType, error) {
 	// find next random
 	index := math.SingleRouletteThrow(c.NodeActivatorsProb)
 	if index < 0 || index >= len(c.NodeActivators) {
-		return 0, errors.New(
-			fmt.Sprintf("unexpected error when trying to find random node activator, activator index: %d", index))
+		return 0, fmt.Errorf("unexpected error when trying to find random node activator, activator index: %d", index)
 	}
 	return c.NodeActivators[index], nil
 }
@@ -231,7 +230,7 @@ func LoadNeatOptions(r io.Reader) (*Options, error) {
 	// read configuration
 	var name string
 	var param string
-	for true {
+	for {
 		_, err := fmt.Fscanf(r, "%s %v", &name, &param)
 		if err == io.EOF {
 			break

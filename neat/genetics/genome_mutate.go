@@ -80,7 +80,7 @@ func (g *Genome) mutateConnectSensors(innovations InnovationsObserver, _ *neat.O
 				if inn.innovationType == newLinkInnType &&
 					inn.InNodeId == sensor.Id &&
 					inn.OutNodeId == output.Id &&
-					inn.IsRecurrent == false {
+					!inn.IsRecurrent {
 
 					gene = NewGeneWithTrait(g.Traits[inn.NewTraitNum], inn.NewWeight,
 						sensor, output, false, inn.InnovationNum, 0)

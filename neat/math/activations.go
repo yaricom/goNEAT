@@ -1,7 +1,6 @@
 package math
 
 import (
-	"errors"
 	"fmt"
 	"math"
 )
@@ -142,7 +141,7 @@ func (a *NodeActivatorsFactory) ActivationTypeFromName(name string) (NodeActivat
 	if t, ok := a.inverse[name]; ok {
 		return t, nil
 	} else {
-		return math.MaxInt8, errors.New("Unsupported activation type name: " + name)
+		return math.MaxInt8, fmt.Errorf("unsupported activation type name: %s", name)
 	}
 }
 

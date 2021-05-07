@@ -201,7 +201,7 @@ func (r *yamlGenomeReader) Read() (*Genome, error) {
 	}
 
 	gm, ok := m["genome"].(map[string]interface{})
-	if ok == false {
+	if !ok {
 		return nil, errors.New("failed to parse YAML configuration")
 	}
 

@@ -494,15 +494,13 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 		// First find the nodes connected by the gene's link
 		inNode := NodeWithId(gn.Link.InNode.Id, nodesDup)
 		if inNode == nil {
-			return nil, errors.New(
-				fmt.Sprintf("incoming node: %d not found for gene %s",
-					gn.Link.InNode.Id, gn.String()))
+			return nil, fmt.Errorf("incoming node: %d not found for gene %s",
+				gn.Link.InNode.Id, gn.String())
 		}
 		outNode := NodeWithId(gn.Link.OutNode.Id, nodesDup)
 		if outNode == nil {
-			return nil, errors.New(
-				fmt.Sprintf("outgoing node: %d not found for gene %s",
-					gn.Link.OutNode.Id, gn.String()))
+			return nil, fmt.Errorf("outgoing node: %d not found for gene %s",
+				gn.Link.OutNode.Id, gn.String())
 		}
 
 		// Find the duplicate of trait associated with this gene
@@ -617,7 +615,7 @@ func (g *Genome) verify() (bool, error) {
 	if len(g.Nodes) > 500 {
 		disabled := false
 		for _, gn := range g.Genes {
-			if gn.IsEnabled == false && disabled {
+			if !gn.IsEnabled && disabled {
 				return false, errors.New("two gene disables in a row")
 			}
 			disabled = !gn.IsEnabled
