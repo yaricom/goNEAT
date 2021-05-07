@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/yaricom/goNEAT/v2/neat/math"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
 	"strconv"
