@@ -1,18 +1,32 @@
+# goNEAT
+[![banner](contents/book_title.png)](https://www.oreilly.com/library/view/hands-on-neuroevolution-with/9781838824914/)
+
+[![version](https://img.shields.io/github/v/tag/yaricom/goNEAT.svg?sort=semver)](https://github.com/yaricom/goNEAT/releases/latest)
 [![Build Status](https://travis-ci.org/yaricom/goNEAT.svg?branch=master)](https://travis-ci.org/yaricom/goNEAT) [![GoDoc](https://godoc.org/github.com/yaricom/goNEAT/neat?status.svg)](https://godoc.org/github.com/yaricom/goNEAT/neat)
+[![Go version](https://img.shields.io/badge/go-1.15-blue.svg)](https://github.com/moovweb/gvm)
+[![license](https://img.shields.io/github/license/yaricom/goNEAT.svg)](https://github.com/yaricom/goNEAT/blob/master/LICENSE)
+[![yaricom/goNEAT](https://tokei.rs/b1/github/yaricom/goNEAT?category=lines)](https://github.com/yaricom/goNEAT)
+[![Sourcegraph](https://sourcegraph.com/github.com/yaricom/goNEAT/-/badge.svg)](https://sourcegraph.com/github.com/yaricom/goNEAT?badge)
+
+| Branch | Tests                                                                                      | Coverage                                                                                                                             | Linting                                                                    |
+|--------|--------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| master | [![CI](https://github.com/yaricom/goNEAT/actions/workflows/ci.yml/badge.svg)](https://github.com/yaricom/goNEAT/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/yaricom/goNEAT/branch/master/graph/badge.svg?token=as31613DnV)](https://codecov.io/gh/yaricom/goNEAT) | [![Lint](https://github.com/yaricom/goNEAT/actions/workflows/lint.yml/badge.svg)](https://github.com/yaricom/goNEAT/actions/workflows/lint.yml) |
 
 ## Overview
 This repository provides implementation of [NeuroEvolution of Augmenting Topologies (NEAT)][1] method written in Go language.
 
-The Neuroevolution (NE) is an artificial evolution of Neural Networks (NN) using genetic algorithms in order to find
-optimal NN parameters and topology. Neuroevolution of NN may assume search for optimal weights of connections between
+The NeuroEvolution (NE) is an artificial evolution of Neural Networks (NN) using genetic algorithms in order to find
+optimal NN parameters and topology. NeuroEvolution of NN may assume search for optimal weights of connections between
 NN nodes as well as search for optimal topology of resulting NN. The NEAT method implemented in this work do search for
 both: optimal connections weights and topology for given task (number of NN nodes per layer and their interconnections).
 
-#### System Requirements
-The source code written and compiled against GO 1.9.x.
+## Minimum requirements
+| Requirement | Notes            |
+|-------------|------------------|
+| Go version  | Go1.15 or higher |
 
 ## Installation
-Make sure that you have at least GO 1.8.x. environment installed onto your system and execute following command:
+Make sure that you have at least GO 1.15.x. environment installed onto your system and execute following command:
 ```bash
 
 go get github.com/yaricom/goNEAT
@@ -34,7 +48,7 @@ combination of the inputs that can separate the inputs into the proper classes. 
 suitable for testing NEAT’s ability to evolve structure.
 
 #### 1.1. The XOR Experiment with connected inputs in start genome
-In this experiment we will use start (seed) genome with inputs connected to the output. Thus it will check mostly the
+In this experiment we will use start (seed) genome with inputs connected to the output. Thus, it will check mostly the
 ability of NEAT to grow new hidden unit necessary for solving XOR problem.
 
 To run this experiment execute following commands:
@@ -73,7 +87,7 @@ Mean
 Where:
 - **Winner nodes/genes** is number of units and links between in produced Neural Network which was able to solve XOR problem.
 - **Winner evals** is the number of evaluations of intermediate organisms/genomes before winner was found.
-- **Mean Complexity** is an average compexity (number of nodes + number of links) of best organisms per epoch for all epochs.
+- **Mean Complexity** is an average complexity (number of nodes + number of links) of the best organisms per epoch for all epochs.
 - **Mean Diversity** is an average diversity (number of species) per epoch for all epochs
 - **Mean Age** is an average age of surviving species per epoch for all epochs
 
@@ -92,7 +106,7 @@ go run executor.go -out ./out/xor_disconnected -context ./data/xor.neat -genome 
 This will execute 100 trials of XOR (disconnected) experiment within 100 generations. The results of experiment execution
 will be saved into the ./out directory as in previous experiment.
 
-The experiment will fail sometimes to produce XOR solution over 100 generations, but most of times solution will be found. This
+The experiment sometimes fails to produce XOR solution over 100 generations, but most of times solution will be found. This
 confirms that algorithm is able not only grow needed hidden units, but also to restore input connections as needed.
 
 The example output of the command as following:
@@ -124,7 +138,7 @@ Figure 1.
 
 Where r is a pole failure angle (±12 ̊ from 0) and h is a track limit (±2.4 meters from the track centre).
 
-The simulation of the cart ends when either the pole exceeds the failure angle or the cart exceeds the limit of the track.
+The simulation of the cart ends when either the pole inclines over the failure angle, or the cart position is outside the track.
 The objective is to devise a controller that can keep the pole balanced for a defined length of simulation time.
 The controller must always output a force at full magnitude in either direction (bang-bang control).
 
@@ -171,7 +185,7 @@ The results demonstrate that winning Genome can be found in average within 2 gen
 belongs to 17 species in average) and within 30 generations for population of 150 organisms.
 
 It's interesting to note that for population with 1000 organisms the winning solution often found in the null generation,
-i.e. within initial random population. Thus the next experiment with double pole-balancing setup seems more interesting
+i.e. within initial random population. Thus, the next experiment with double pole-balancing setup seems more interesting
 for performance testing.
 
 In both single pole-balancing configurations described above the optimal winner organism has number of nodes and genes - 7 and 10 correspondingly.
@@ -182,7 +196,7 @@ The seven network nodes has following meaning:
 * nodes #6, 7 are output nodes signaling what action should be applied to the system to balance pole at
 each simulation step, i.e. force direction to be applied. The applied force direction depends on relative strength of
 activations of both output neurons. If activation of first output neuron (6-th node) greater than activation of second
-neuron (7-th node) the positive force direction applied. Otherwise the negative force direction applied.
+neuron (7-th node) then the positive force direction applied. Otherwise, the negative force direction applied.
 
 The TEN genes is exactly number of links required to connect FIVE input sensor nodes with TWO output neuron nodes (5x2).
 
@@ -251,7 +265,7 @@ Only horizontal cart position X, and angles of both poles θ1 and θ2 will be pr
 
 The best individual (i.e. the one with the highest fitness value) of every generation is tested for
 its ability to balance the system for a longer time period. If a potential solution passes this test
-by keeping the system balanced for 100’000 time steps, the so called generalization score(GS) of this
+by keeping the system balanced for 100’000 time steps, the so-called generalization score(GS) of this
 particular individual is calculated. This score measures the potential of a controller to balance the
 system starting from different initial conditions. It's calculated with a series of experiments, running
 over 1000 time steps, starting from 625 different initial conditions.
@@ -259,8 +273,8 @@ over 1000 time steps, starting from 625 different initial conditions.
 The initial conditions are chosen by assigning each value of the set Ω = \[0.05, 0.25, 0.5, 0.75, 0.95\] to
 each of the states x, ∆x/∆t, θ1 and ∆θ1/∆t, scaled to the range of the corresponding variables. The short pole 
 angle θ2 and its angular velocity ∆θ2/∆t are set to zero. The GS is
-then defined as the number of successful runs from the 625 initial conditions and an individual
-is defined as a solution if it reaches a generalization score of 200 or more.
+defined as the number of successful runs from the 625 initial conditions. The organism considered
+as successful solver if it reaches a generalization score of 200 or more.
 
 To run experiment execute following command:
 ```bash
@@ -287,9 +301,9 @@ Mean
 
 ```
 
-The maximal generalization score achieved in this test run is about 347 for very simple genome which comprise of five nodes
+The maximal generalization score achieved in this test run is about 347 for very simple genome which consists of five nodes
 and five genes (links). It has the same number of nodes as seed genome and only grew one extra recurrent gene connecting
-output node to itself. And it happen to be the most useful configuration among other.
+output node to itself. Furthermore, it happens to be the most useful configuration among other.
 
 The most fit organism's genome based on test non-markov run with maximal generalization score of 347:
 
