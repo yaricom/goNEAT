@@ -32,7 +32,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	err = utils.CreateOutputDir(outDirPath)
 	require.NoError(t, err, "Failed to create output directory")
 
-	// The 10 runs POLE2 Markov experiment
+	// Running POLE2 Markov experiment
 	opts.NumRuns = 5
 	experiment := experiment2.Experiment{
 		Id:     0,
@@ -106,7 +106,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	err = utils.CreateOutputDir(outDirPath)
 	require.NoError(t, err, "Failed to create output directory")
 
-	// The 10 runs POLE2 Non-Markov experiment
+	// Running POLE2 Non-Markov experiment
 	opts.NumRuns = 5
 	experiment := experiment2.Experiment{
 		Id:     0,

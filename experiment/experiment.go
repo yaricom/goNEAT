@@ -320,18 +320,23 @@ func (e *Experiment) Write(w io.Writer) error {
 
 // Encode Encodes experiment with GOB encoding
 func (e *Experiment) Encode(enc *gob.Encoder) error {
-	err := enc.Encode(e.Id)
-	err = enc.Encode(e.Name)
+	if err := enc.Encode(e.Id); err != nil {
+		return err
+	}
+	if err := enc.Encode(e.Name); err != nil {
+		return err
+	}
 
 	// encode trials
-	err = enc.Encode(len(e.Trials))
+	if err := enc.Encode(len(e.Trials)); err != nil {
+		return err
+	}
 	for _, t := range e.Trials {
-		err = t.Encode(enc)
-		if err != nil {
+		if err := t.Encode(enc); err != nil {
 			return err
 		}
 	}
-	return err
+	return nil
 }
 
 // Read is to read experiment data from provided reader and decodes it
@@ -342,23 +347,28 @@ func (e *Experiment) Read(r io.Reader) error {
 
 // Decode Decodes experiment data
 func (e *Experiment) Decode(dec *gob.Decoder) error {
-	err := dec.Decode(&e.Id)
-	err = dec.Decode(&e.Name)
+	if err := dec.Decode(&e.Id); err != nil {
+		return err
+	}
+	if err := dec.Decode(&e.Name); err != nil {
+		return err
+	}
 
 	// decode Trials
 	var tNum int
-	err = dec.Decode(&tNum)
-	if err != nil {
+	if err := dec.Decode(&tNum); err != nil {
 		return err
 	}
 
 	e.Trials = make([]Trial, tNum)
 	for i := 0; i < tNum; i++ {
 		trial := Trial{}
-		err = trial.Decode(dec)
+		if err := trial.Decode(dec); err != nil {
+			return err
+		}
 		e.Trials[i] = trial
 	}
-	return err
+	return nil
 }
 
 // WriteNPZ Dumps experiment results to the NPZ file.

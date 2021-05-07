@@ -79,50 +79,78 @@ func (g *Generation) Average() (fitness, age, complexity float64) {
 
 // Encode Encodes generation with provided GOB encoder
 func (g *Generation) Encode(enc *gob.Encoder) error {
-	err := enc.EncodeValue(reflect.ValueOf(g.Id))
-	err = enc.EncodeValue(reflect.ValueOf(g.Executed))
-	err = enc.EncodeValue(reflect.ValueOf(g.Solved))
-	err = enc.EncodeValue(reflect.ValueOf(g.Fitness))
-	err = enc.EncodeValue(reflect.ValueOf(g.Age))
-	err = enc.EncodeValue(reflect.ValueOf(g.Complexity))
-	err = enc.EncodeValue(reflect.ValueOf(g.Diversity))
-	err = enc.EncodeValue(reflect.ValueOf(g.WinnerEvals))
-	err = enc.EncodeValue(reflect.ValueOf(g.WinnerNodes))
-	err = enc.EncodeValue(reflect.ValueOf(g.WinnerGenes))
-
-	if err != nil {
+	if err := enc.EncodeValue(reflect.ValueOf(g.Id)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.Executed)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.Solved)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.Fitness)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.Age)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.Complexity)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.Diversity)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.WinnerEvals)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.WinnerNodes)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.WinnerGenes)); err != nil {
 		return err
 	}
 
 	// encode best organism
 	if g.Best != nil {
-		err = encodeOrganism(enc, g.Best)
+		if err := encodeOrganism(enc, g.Best); err != nil {
+			return err
+		}
 	}
-	return err
+	return nil
 }
 
 func encodeOrganism(enc *gob.Encoder, org *genetics.Organism) error {
-	err := enc.Encode(org.Fitness)
-	err = enc.Encode(org.IsWinner)
-	err = enc.Encode(org.Generation)
-	err = enc.Encode(org.ExpectedOffspring)
-	err = enc.Encode(org.Error)
-
-	if err != nil {
+	if err := enc.Encode(org.Fitness); err != nil {
+		return err
+	}
+	if err := enc.Encode(org.IsWinner); err != nil {
+		return err
+	}
+	if err := enc.Encode(org.Generation); err != nil {
+		return err
+	}
+	if err := enc.Encode(org.ExpectedOffspring); err != nil {
+		return err
+	}
+	if err := enc.Encode(org.Error); err != nil {
 		return err
 	}
 
 	// encode organism genome
 	if org.Genotype != nil {
-		err = enc.Encode(org.Genotype.Id)
-		outBuf := bytes.NewBufferString("")
-		if err = org.Genotype.Write(outBuf); err != nil {
+		if err := enc.Encode(org.Genotype.Id); err != nil {
 			return err
 		}
-		err = enc.Encode(outBuf.Bytes())
+		outBuf := bytes.NewBufferString("")
+		if err := org.Genotype.Write(outBuf); err != nil {
+			return err
+		}
+		if err := enc.Encode(outBuf.Bytes()); err != nil {
+			return err
+		}
 	}
 
-	return err
+	return nil
 }
 
 func (g *Generation) Decode(dec *gob.Decoder) error {

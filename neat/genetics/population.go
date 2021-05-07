@@ -398,10 +398,9 @@ func (p *Population) deltaCoding(sortedSpecies []*Species, opts *neat.Options) {
 func (p *Population) giveBabiesToTheBest(sortedSpecies []*Species, opts *neat.Options) {
 	stolenBabies := 0 // Babies taken from the bad species and given to the champs
 
-	currSpecies := sortedSpecies[0] // the best species
 	// Take away a constant number of expected offspring from the worst few species
 	for i := len(sortedSpecies) - 1; i >= 0 && stolenBabies < opts.BabiesStolen; i-- {
-		currSpecies = sortedSpecies[i]
+		currSpecies := sortedSpecies[i]
 		if currSpecies.Age > 5 && currSpecies.ExpectedOffspring > 2 {
 			if currSpecies.ExpectedOffspring-1 >= opts.BabiesStolen-stolenBabies {
 				// This species has enough to finish off the stolen pool
@@ -425,7 +424,7 @@ func (p *Population) giveBabiesToTheBest(sortedSpecies []*Species, opts *neat.Op
 	// They will get, in order, 1/5 1/5 and 1/10 of the stolen babies
 	stolenBlocks := []int{opts.BabiesStolen / 5, opts.BabiesStolen / 5, opts.BabiesStolen / 10}
 	blockIndex := 0
-	for _, currSpecies = range sortedSpecies {
+	for _, currSpecies := range sortedSpecies {
 		if currSpecies.lastImproved() > opts.DropOffAge {
 			// Don't give a chance to dying species even if they are champs
 			continue
@@ -459,7 +458,7 @@ func (p *Population) giveBabiesToTheBest(sortedSpecies []*Species, opts *neat.Op
 	}
 	// If any stolen babies aren't taken, give them to species #1's champ
 	if stolenBabies > 0 {
-		currSpecies = sortedSpecies[0]
+		currSpecies := sortedSpecies[0]
 		currSpecies.Organisms[0].superChampOffspring += stolenBabies
 		currSpecies.ExpectedOffspring += stolenBabies
 	}

@@ -552,8 +552,7 @@ func (g *Genome) mateSinglePoint(og *Genome, genomeId int) (*Genome, error) {
 			}
 		}
 		if chosenGene == nil {
-			// no gene was chosen - no need to process further
-			skip = true
+			// no gene was chosen - no need to process further - exit cycle
 			break
 		}
 

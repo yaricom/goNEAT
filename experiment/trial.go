@@ -143,35 +143,38 @@ func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
 
 // Encode Encodes this trial
 func (t *Trial) Encode(enc *gob.Encoder) error {
-	err := enc.Encode(t.Id)
-	err = enc.Encode(len(t.Generations))
+	if err := enc.Encode(t.Id); err != nil {
+		return err
+	}
+	if err := enc.Encode(len(t.Generations)); err != nil {
+		return err
+	}
 	for _, e := range t.Generations {
-		err = e.Encode(enc)
-		if err != nil {
+		if err := e.Encode(enc); err != nil {
 			return err
 		}
 	}
-	return err
+	return nil
 }
 
 // Decode Decodes trial data
 func (t *Trial) Decode(dec *gob.Decoder) error {
-	err := dec.Decode(&t.Id)
+	if err := dec.Decode(&t.Id); err != nil {
+		return err
+	}
 	var ngen int
-	err = dec.Decode(&ngen)
-	if err != nil {
+	if err := dec.Decode(&ngen); err != nil {
 		return err
 	}
 	t.Generations = make([]Generation, ngen)
 	for i := 0; i < ngen; i++ {
 		gen := Generation{}
-		err = gen.Decode(dec)
-		if err != nil {
+		if err := gen.Decode(dec); err != nil {
 			return err
 		}
 		t.Generations[i] = gen
 	}
-	return err
+	return nil
 }
 
 // Trials is a sortable collection of experiment runs (trials) by execution time and id

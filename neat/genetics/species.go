@@ -236,8 +236,8 @@ func (s *Species) lastImproved() int {
 	return s.Age - s.AgeOfLastImprovement
 }
 
-// Returns size of this Species, i.e. number of Organisms belonging to it
-func (s *Species) size() int {
+// Size Returns size of this Species, i.e. number of Organisms belonging to it
+func (s *Species) Size() int {
 	return len(s.Organisms)
 }
 

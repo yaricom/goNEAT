@@ -74,13 +74,12 @@ func (n *Network) FastNetworkSolver() (Solver, error) {
 	// create activation functions array
 	activations := make([]math.NodeActivationType, totalNeuronCount)
 	neuronLookup := make(map[int]int) // id:index
-	neuronIndex := 0
 
 	// walk through neuron nodes in order: bias, input, output, hidden
-	neuronIndex = processList(neuronIndex, biasList, activations, neuronLookup)
+	neuronIndex := processList(0, biasList, activations, neuronLookup)
 	neuronIndex = processList(neuronIndex, inList, activations, neuronLookup)
 	neuronIndex = processList(neuronIndex, n.Outputs, activations, neuronLookup)
-	neuronIndex = processList(neuronIndex, hiddenList, activations, neuronLookup)
+	processList(neuronIndex, hiddenList, activations, neuronLookup)
 
 	// walk through neurons in order: input, output, hidden and create bias and connections lists
 	biases := make([]float64, totalNeuronCount)
