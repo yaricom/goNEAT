@@ -34,11 +34,15 @@ Please do not depend on master as your production branch. Use [releases](https:/
 
 ## Documentation
 
-The algorithm performance evaluation and related documentation can be found in project's [wiki](https://github.com/yaricom/goNEAT/wiki)
+You can find the algorithm performance evaluation and related documentation in the project's [wiki](https://github.com/yaricom/goNEAT/wiki)
 
-The goNEAT library saves results of the experiments using Numpy NPZ format, which allows analysis of collected experimental
-data using available Python libraries.  We included [Jupyter notebook](contents/notebooks/experiments_results.ipynb) with analysis of collected experimental data,
-which can be used as starter kit to analyse data samples acquired from your experiments.
+The goNEAT library saves results of the experiments using [Numpy NPZ](https://numpy.org/doc/stable/reference/generated/numpy.savez.html)
+format, which allows analysis of collected experimental
+data samples using a variety of readily available Python libraries.
+
+For your reference, we included [Jupyter notebook](contents/notebooks/experiments_results.ipynb) with an 
+example of the collected experimental data analysis, which can be used as a starter kit to analyze data 
+samples acquired from your experiments.
 
 ### Installation
 
@@ -54,8 +58,7 @@ For new projects, consider using the v2 of the library with the following import
 import "github.com/yaricom/goNEAT/v2"
 ```
 
-[`genetics`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics "API documentation") package
--------------------------------------------------------------------------------------------
+### [`genetics`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics "API documentation") package
 
 The `genetics` package provides the genetic part of the NEAT algorithm describing all the machinery related to
 genome mutations, mating, and speciation of the population of organisms.
@@ -76,13 +79,11 @@ supported data formats:
 The current implementation supports sequential and parallel execution of evolution epoch which controlled by
 [related parameter](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat#EpochExecutorType) in the NEAT context options.
 
-[`math`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/math "API documentation") package
--------------------------------------------------------------------------------------------
+### [`math`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/math "API documentation") package
 
 Package `math` defines standard mathematical primitives used by the NEAT algorithm as well as utility functions
 
-[`network`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network "API documentation") package
--------------------------------------------------------------------------------------------
+### [`network`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network "API documentation") package
 
 Package `network` provides data structures and utilities to describe Artificial Neural Network and network solvers.
 
@@ -96,8 +97,7 @@ The current implementation supports two types of network solvers:
 * [`FastModularNetworkSolver`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network#FastModularNetworkSolver) is the network solver implementation to be used for large neural networks simulation.
 * Standard Network Solver implemented by the `Network` type
 
-[`experiment`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment "API documentation") package
--------------------------------------------------------------------------------------------
+### [`experiment`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment "API documentation") package
 
 Package `experiment` defines standard evolutionary epochs evaluators and experimental data samples collectors. It provides
 standardised approach to define experiments using the NEAT algorithm implementation.
