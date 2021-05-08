@@ -1,11 +1,11 @@
 package genetics
 
 import (
-	"github.com/yaricom/goNEAT/neat/network"
 	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
-// The Multiple-Input Multiple-Output (MIMO) control Gene allows to create modular genomes, in which several groups of genes
+// MIMOControlGene The Multiple-Input Multiple-Output (MIMO) control Gene allows to create modular genomes, in which several groups of genes
 // connected through single MIMO Gene and corresponding control function is applied to all inputs in order to produce
 // outputs. This allows to build modular hierarchical genomes which can be considered as sum of constituent components
 // and evolved as a whole and as a concrete parts simultaneously.
@@ -13,40 +13,40 @@ type MIMOControlGene struct {
 	// The current innovation number for this gene
 	InnovationNum int64
 	// Used to see how much mutation has changed the link
-	MutationNum   float64
+	MutationNum float64
 	// If true the gene is enabled
-	IsEnabled     bool
+	IsEnabled bool
 
 	// The control node with control/activation function
-	ControlNode   *network.NNode
+	ControlNode *network.NNode
 
 	// The list of associated IO nodes for fast traversal
-	ioNodes       []*network.NNode
+	ioNodes []*network.NNode
 }
 
-// Creates new MIMO gene
-func NewMIMOGene(control_node *network.NNode, innov_num int64, mut_num float64, enabled bool) *MIMOControlGene {
+// NewMIMOGene Creates new MIMO gene
+func NewMIMOGene(controlNode *network.NNode, innovNum int64, mutNum float64, enabled bool) *MIMOControlGene {
 	gene := &MIMOControlGene{
-		ControlNode:control_node,
-		InnovationNum:innov_num,
-		MutationNum:mut_num,
-		IsEnabled:enabled,
+		ControlNode:   controlNode,
+		InnovationNum: innovNum,
+		MutationNum:   mutNum,
+		IsEnabled:     enabled,
 	}
 	// collect IO nodes list
 	gene.ioNodes = make([]*network.NNode, 0)
-	for _, l := range control_node.Incoming {
+	for _, l := range controlNode.Incoming {
 		gene.ioNodes = append(gene.ioNodes, l.InNode)
 	}
-	for _, l := range control_node.Outgoing {
+	for _, l := range controlNode.Outgoing {
 		gene.ioNodes = append(gene.ioNodes, l.OutNode)
 	}
 
 	return gene
 }
 
-// The copy constructor taking parameters from provided control gene for given control node
-func NewMIMOGeneCopy(g *MIMOControlGene, control_node *network.NNode) *MIMOControlGene {
-	cg := NewMIMOGene(control_node, g.InnovationNum, g.MutationNum, g.IsEnabled)
+// NewMIMOGeneCopy The copy constructor taking parameters from provided control gene for given control node
+func NewMIMOGeneCopy(g *MIMOControlGene, controlNode *network.NNode) *MIMOControlGene {
+	cg := NewMIMOGene(controlNode, g.InnovationNum, g.MutationNum, g.IsEnabled)
 	return cg
 }
 
@@ -63,10 +63,10 @@ func (g *MIMOControlGene) hasIntersection(nodes map[int]*network.NNode) bool {
 
 // The stringer
 func (g *MIMOControlGene) String() string {
-	enabl_str := ""
+	enabledStr := ""
 	if !g.IsEnabled {
-		enabl_str = " -DISABLED-"
+		enabledStr = " -DISABLED-"
 	}
-	return fmt.Sprintf("[MIMO Gene INNOV (%4d, % .3f) %s control node: %s]",
-		g.InnovationNum, g.MutationNum, enabl_str, g.ControlNode.String())
+	return fmt.Sprintf("[MIMO Gene INNOV (%5d, %2.3f) %s control node: %s]",
+		g.InnovationNum, g.MutationNum, enabledStr, g.ControlNode.String())
 }

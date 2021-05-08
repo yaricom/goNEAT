@@ -3,11 +3,11 @@ package network
 import (
 	"bytes"
 	"fmt"
-	"github.com/yaricom/goNEAT/neat"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 )
 
-// A NODE is either a NEURON or a SENSOR.
+// NNode is either a NEURON or a SENSOR.
 //   - If it's a sensor, it can be loaded with a value for output
 //   - If it's a neuron, it has a list of its incoming input signals ([]*Link is used)
 // Use an activation count to avoid flushing
@@ -16,7 +16,7 @@ type NNode struct {
 	Id int
 
 	// The type of node activation function (SIGMOID, ...)
-	ActivationType utils.NodeActivationType
+	ActivationType math.NodeActivationType
 	// The neuron type for this node (HIDDEN, INPUT, OUTPUT, BIAS)
 	NeuronType NodeNeuronType
 
@@ -56,7 +56,7 @@ type NNode struct {
 	isActive bool
 }
 
-// Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
+// NewNNode Creates new node with specified ID and neuron type associated (INPUT, HIDDEN, OUTPUT, BIAS)
 func NewNNode(nodeId int, neuronType NodeNeuronType) *NNode {
 	n := NewNetworkNode()
 	n.Id = nodeId
@@ -64,7 +64,7 @@ func NewNNode(nodeId int, neuronType NodeNeuronType) *NNode {
 	return n
 }
 
-// Construct a NNode off another NNode with given trait for genome purposes
+// NewNNodeCopy Construct a NNode off another NNode with given trait for genome purposes
 func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 	node := NewNetworkNode()
 	node.Id = n.Id
@@ -74,11 +74,11 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 	return node
 }
 
-// The default constructor
+// NewNetworkNode The default constructor
 func NewNetworkNode() *NNode {
 	return &NNode{
 		NeuronType:     HiddenNeuron,
-		ActivationType: utils.SigmoidSteepenedActivation,
+		ActivationType: math.SigmoidSteepenedActivation,
 		Incoming:       make([]*Link, 0),
 		Outgoing:       make([]*Link, 0),
 	}
@@ -100,7 +100,7 @@ func (n *NNode) saveActivations() {
 	n.lastActivation = n.Activation
 }
 
-// Returns activation for a current step
+// GetActiveOut Returns activation for a current step
 func (n *NNode) GetActiveOut() float64 {
 	if n.ActivationsCount > 0 {
 		return n.Activation
@@ -109,7 +109,7 @@ func (n *NNode) GetActiveOut() float64 {
 	}
 }
 
-// Returns activation from PREVIOUS time step
+// GetActiveOutTd Returns activation from PREVIOUS time step
 func (n *NNode) GetActiveOutTd() float64 {
 	if n.ActivationsCount > 1 {
 		return n.lastActivation
@@ -118,17 +118,17 @@ func (n *NNode) GetActiveOutTd() float64 {
 	}
 }
 
-// Returns true if this node is SENSOR
+// IsSensor Returns true if this node is SENSOR
 func (n *NNode) IsSensor() bool {
 	return n.NeuronType == InputNeuron || n.NeuronType == BiasNeuron
 }
 
-// returns true if this node is NEURON
+// IsNeuron returns true if this node is NEURON
 func (n *NNode) IsNeuron() bool {
 	return n.NeuronType == HiddenNeuron || n.NeuronType == OutputNeuron
 }
 
-// If the node is a SENSOR, returns TRUE and loads the value
+// SensorLoad If the node is a SENSOR, returns TRUE and loads the value
 func (n *NNode) SensorLoad(load float64) bool {
 	if n.IsSensor() {
 		// Keep a memory of activations for potential time delayed connections
@@ -154,7 +154,7 @@ func (n *NNode) addIncoming(in *NNode, weight float64) {
 	n.Incoming = append(n.Incoming, newLink)
 }
 
-// Recursively deactivate backwards through the network
+// Flushback Recursively deactivate backwards through the network
 func (n *NNode) Flushback() {
 	n.ActivationsCount = 0
 	n.Activation = 0
@@ -164,7 +164,7 @@ func (n *NNode) Flushback() {
 	n.visited = false
 }
 
-// Verify flushing for debugging
+// FlushbackCheck is to verify flushing for debugging
 func (n *NNode) FlushbackCheck() error {
 	if n.ActivationsCount > 0 {
 		return fmt.Errorf("NNODE: %s has activation count %d", n, n.ActivationsCount)
@@ -181,7 +181,7 @@ func (n *NNode) FlushbackCheck() error {
 	return nil
 }
 
-// Find the greatest depth starting from this neuron at depth d
+// Depth Find the greatest depth starting from this neuron at depth d
 func (n *NNode) Depth(d int) (int, error) {
 	if d > 1000 {
 		// to avoid infinite recursion
@@ -212,7 +212,7 @@ func (n *NNode) Depth(d int) (int, error) {
 
 }
 
-// Convenient method to check network's node type (SENSOR, NEURON)
+// NodeType Convenient method to check network's node type (SENSOR, NEURON)
 func (n *NNode) NodeType() NodeType {
 	if n.IsSensor() {
 		return SensorNode
@@ -221,7 +221,7 @@ func (n *NNode) NodeType() NodeType {
 }
 
 func (n *NNode) String() string {
-	activation, _ := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
+	activation, _ := math.NodeActivators.ActivationNameFromType(n.ActivationType)
 	active := "active"
 	if !n.isActive {
 		active = "inactive"
@@ -231,14 +231,14 @@ func (n *NNode) String() string {
 		n.ActivationsCount, n.Activation, n.Params)
 }
 
-// Prints all node's fields to the string
+// Print Prints all node's fields to the string
 func (n *NNode) Print() string {
 	str := "NNode fields\n"
 	b := bytes.NewBufferString(str)
 	_, _ = fmt.Fprintf(b, "\tId: %d\n", n.Id)
 	_, _ = fmt.Fprintf(b, "\tIsActive: %t\n", n.isActive)
 	_, _ = fmt.Fprintf(b, "\tActivation: %f\n", n.Activation)
-	activation, _ := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
+	activation, _ := math.NodeActivators.ActivationNameFromType(n.ActivationType)
 	_, _ = fmt.Fprintf(b, "\tActivation Type: %s\n", activation)
 	_, _ = fmt.Fprintf(b, "\tNeuronType: %d\n", n.NeuronType)
 	_, _ = fmt.Fprintf(b, "\tActivationsCount: %d\n", n.ActivationsCount)

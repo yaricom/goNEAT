@@ -1,111 +1,111 @@
 package genetics
 
 import (
-	"github.com/yaricom/goNEAT/neat"
-	"sort"
-	"fmt"
-	"errors"
-	"encoding/gob"
 	"bytes"
+	"context"
+	"encoding/gob"
+	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"sort"
 	"sync"
 )
 
-// The epoch executor type definition
-type EpochExecutorType int
-const (
-	// The sequential executor
-	SequentialExecutorType EpochExecutorType = 0
-	// The parallel executor to perform reproduction cycle in parallel threads
-	ParallelExecutorType = 1
-)
-
-// Executes epoch's turnover for population of organisms
+// PopulationEpochExecutor Executes epoch's turnover for a population of the organisms
 type PopulationEpochExecutor interface {
-	// Turnover the population to a new generation
-	NextEpoch(generation int, population *Population, context *neat.NeatContext) error
+	// NextEpoch Turnover the population to a new generation
+	NextEpoch(ctx context.Context, generation int, population *Population) error
 }
 
-// The epoch executor which will run execution sequentially in single thread for all species and organisms
+// SequentialPopulationEpochExecutor The epoch executor that runs execution sequentially in single thread for all species and organisms
 type SequentialPopulationEpochExecutor struct {
-	sorted_species          []*Species
-	best_species_reproduced bool
-	best_species_id         int
+	sortedSpecies         []*Species
+	bestSpeciesReproduced bool
+	bestSpeciesId         int
 }
 
-func (ex *SequentialPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.NeatContext) error {
-	err := ex.prepare(generation, population, context)
+func (s *SequentialPopulationEpochExecutor) NextEpoch(ctx context.Context, generation int, population *Population) error {
+	err := s.prepareForReproduction(ctx, generation, population)
 	if err != nil {
 		return err
 	}
-	err = ex.reproduce(generation, population, context)
+	err = s.reproduce(ctx, generation, population)
 	if err != nil {
 		return err
 	}
-	err = ex.finalize(generation, population, context)
+	err = s.finalizeReproduction(ctx, population)
 
 	neat.DebugLog(fmt.Sprintf("POPULATION: >>>>> Epoch %d complete\n", generation))
 
 	return err
 }
 
-func (ex *SequentialPopulationEpochExecutor) prepare(generation int, p *Population, context *neat.NeatContext) error {
+// prepareForReproduction is to prepareForReproduction population for reproduction
+func (s *SequentialPopulationEpochExecutor) prepareForReproduction(ctx context.Context, generation int, p *Population) error {
+	opts, found := neat.FromContext(ctx)
+	if !found {
+		return neat.ErrNEATOptionsNotFound
+	}
+
 	// clear executor state from previous run
-	ex.sorted_species = nil
+	s.sortedSpecies = nil
 
 	// Use Species' ages to modify the objective fitness of organisms in other words, make it more fair for younger
 	// species so they have a chance to take hold and also penalize stagnant species. Then adjust the fitness using
 	// the species size to "share" fitness within a species. Then, within each Species, mark for death those below
 	// survival_thresh * average
 	for _, sp := range p.Species {
-		sp.adjustFitness(context)
+		sp.adjustFitness(opts)
 	}
 
 	// find and remove species unable to produce offspring due to fitness stagnation
 	p.purgeZeroOffspringSpecies(generation)
 
 	// Stick the Species pointers into a new Species list for sorting
-	ex.sorted_species = make([]*Species, len(p.Species))
-	copy(ex.sorted_species, p.Species)
+	s.sortedSpecies = make([]*Species, len(p.Species))
+	copy(s.sortedSpecies, p.Species)
 
 	// Sort the Species by max original fitness of its first organism
-	sort.Sort(sort.Reverse(byOrganismOrigFitness(ex.sorted_species)))
+	sort.Sort(sort.Reverse(byOrganismOrigFitness(s.sortedSpecies)))
 
 	// Used in debugging to see why (if) best species dies
-	ex.best_species_id = ex.sorted_species[0].Id
+	s.bestSpeciesId = s.sortedSpecies[0].Id
 
 	if neat.LogLevel == neat.LogLevelDebug {
 		neat.DebugLog("POPULATION: >> Sorted Species START <<")
-		for _, sp := range ex.sorted_species {
+		for _, sp := range s.sortedSpecies {
 			// Print out for Debugging/viewing what's going on
 			neat.DebugLog(
 				fmt.Sprintf("POPULATION: >> Orig. fitness of Species %d (Size %d): %f, current fitness: %f, expected offspring: %d, last improved %d \n",
-					sp.Id, len(sp.Organisms), sp.Organisms[0].originalFitness, sp.Organisms[0].Fitness, sp.ExpectedOffspring, (sp.Age - sp.AgeOfLastImprovement)))
+					sp.Id, len(sp.Organisms), sp.Organisms[0].originalFitness, sp.Organisms[0].Fitness, sp.ExpectedOffspring,
+					sp.Age-sp.AgeOfLastImprovement))
 		}
 		neat.DebugLog("POPULATION: >> Sorted Species END <<\n")
-
 	}
 
 	// Check for Population-level stagnation
-	curr_species := ex.sorted_species[0]
-	curr_species.Organisms[0].isPopulationChampion = true // DEBUG marker of the best of pop
-	if curr_species.Organisms[0].originalFitness > p.HighestFitness {
-		p.HighestFitness = curr_species.Organisms[0].originalFitness
+	currSpecies := s.sortedSpecies[0]
+	currSpecies.Organisms[0].isPopulationChampion = true // DEBUG marker of the best of pop
+	if currSpecies.Organisms[0].originalFitness > p.HighestFitness {
+		p.HighestFitness = currSpecies.Organisms[0].originalFitness
 		p.EpochsHighestLastChanged = 0
-		neat.DebugLog(fmt.Sprintf("POPULATION: NEW POPULATION RECORD FITNESS: %f of SPECIES with ID: %d\n", p.HighestFitness, ex.best_species_id))
-
+		if neat.LogLevel == neat.LogLevelDebug {
+			neat.DebugLog(fmt.Sprintf("POPULATION: NEW POPULATION RECORD FITNESS: %f of SPECIES with ID: %d\n", p.HighestFitness, s.bestSpeciesId))
+		}
 	} else {
 		p.EpochsHighestLastChanged += 1
-		neat.DebugLog(fmt.Sprintf(" generations since last population fitness record: %f\n", p.HighestFitness))
+		if neat.LogLevel == neat.LogLevelDebug {
+			neat.DebugLog(fmt.Sprintf(" generations since last population fitness record: %f\n", p.HighestFitness))
+		}
 	}
 
 	// Check for stagnation - if there is stagnation, perform delta-coding
-	if p.EpochsHighestLastChanged >= context.DropOffAge + 5 {
+	if p.EpochsHighestLastChanged >= opts.DropOffAge+5 {
 		// Population stagnated - trying to fix it by delta coding
-		p.deltaCoding(ex.sorted_species, context)
-	} else if context.BabiesStolen > 0 {
+		p.deltaCoding(s.sortedSpecies, opts)
+	} else if opts.BabiesStolen > 0 {
 		// STOLEN BABIES: The system can take expected offspring away from worse species and give them
 		// to superior species depending on the system parameter BabiesStolen (when BabiesStolen > 0)
-		p.giveBabiesToTheBest(ex.sorted_species, context)
+		p.giveBabiesToTheBest(s.sortedSpecies, opts)
 	}
 
 	// Kill off all Organisms marked for death. The remainder will be allowed to reproduce.
@@ -113,94 +113,96 @@ func (ex *SequentialPopulationEpochExecutor) prepare(generation int, p *Populati
 	return err
 }
 
-// Do sequential reproduction cycle
-func (ex *SequentialPopulationEpochExecutor) reproduce(generation int, p *Population, context *neat.NeatContext) error {
+// reproduce is to run the reproduction cycle
+func (s *SequentialPopulationEpochExecutor) reproduce(ctx context.Context, generation int, p *Population) error {
 	neat.DebugLog("POPULATION: Start Sequential Reproduction Cycle >>>>>")
+	opts, found := neat.FromContext(ctx)
+	if !found {
+		return neat.ErrNEATOptionsNotFound
+	}
 
 	// Perform reproduction. Reproduction is done on a per-Species basis
 	babies := make([]*Organism, 0)
 
 	for _, sp := range p.Species {
-		rep_babies, err := sp.reproduce(generation, p, ex.sorted_species, context)
+		repBabies, err := sp.reproduce(ctx, generation, p, s.sortedSpecies)
 		if err != nil {
 			return err
 		}
-		if sp.Id == ex.best_species_id {
+		if sp.Id == s.bestSpeciesId {
 			// store flag if best species reproduced - it will be used to determine if best species
 			// produced offspring before died
-			ex.best_species_reproduced = true
+			s.bestSpeciesReproduced = true
 		}
 
 		// store babies
-		babies = append(babies, rep_babies...)
+		babies = append(babies, repBabies...)
 	}
 
 	// sanity check - make sure that population size keep the same
-	if len(babies) != context.PopSize {
-		return errors.New(
-			fmt.Sprintf("POPULATION: Progeny size after reproduction cycle dimished.\nExpected: [%d], but got: [%d]",
-				context.PopSize, len(babies)))
+	if len(babies) != opts.PopSize {
+		return fmt.Errorf("progeny size after reproduction cycle dimished, expected: [%d], but got: [%d]",
+			opts.PopSize, len(babies))
 	}
 
-
 	// speciate fresh progeny
-	err := p.speciate(babies, context)
+	err := p.speciate(ctx, babies)
 
 	neat.DebugLog("POPULATION: >>>>> Reproduction Complete")
 
 	return err
 }
 
-func (ex *SequentialPopulationEpochExecutor) finalize(generation int, p *Population, context *neat.NeatContext) error {
+// finalizeReproduction is to finalizeReproduction reproduction cycle
+func (s *SequentialPopulationEpochExecutor) finalizeReproduction(_ context.Context, pop *Population) error {
 	// Destroy and remove the old generation from the organisms and species
-	err := p.purgeOldGeneration(ex.best_species_id)
+	err := pop.purgeOldGeneration(s.bestSpeciesId)
 	if err != nil {
 		return err
 	}
 
 	// Removes all empty Species and age ones that survive.
 	// As this happens, create master organism list for the new generation.
-	p.purgeOrAgeSpecies()
+	pop.purgeOrAgeSpecies()
 
 	// Remove the innovations of the current generation
-	p.Innovations = make([]*Innovation, 0)
+	pop.innovations = make([]Innovation, 0)
 
 	// Check to see if the best species died somehow. We don't want this to happen!!!
-	err = p.checkBestSpeciesAlive(ex.best_species_id, ex.best_species_reproduced)
+	err = pop.checkBestSpeciesAlive(s.bestSpeciesId, s.bestSpeciesReproduced)
 
 	// DEBUG: Checking the top organism's duplicate in the next gen
 	// This prints the champ's child to the screen
 	if neat.LogLevel == neat.LogLevelDebug && err != nil {
-		for _, curr_org := range p.Organisms {
-			if curr_org.isPopulationChampionChild {
-				neat.DebugLog(
-					fmt.Sprintf("POPULATION: At end of reproduction cycle, the child of the pop champ is: %s",
-						curr_org.Genotype))
+		for _, org := range pop.Organisms {
+			if org.isPopulationChampionChild {
+				neat.DebugLog(fmt.Sprintf("POPULATION: At end of reproduction cycle, the child of the pop champ is: %s",
+					org.Genotype))
 			}
 		}
 	}
 	return err
 }
 
-// The population epoch executor with parallel reproduction cycle
+// ParallelPopulationEpochExecutor The population epoch executor with parallel reproduction cycle
 type ParallelPopulationEpochExecutor struct {
 	sequential *SequentialPopulationEpochExecutor
 }
 
-func (ex *ParallelPopulationEpochExecutor) NextEpoch(generation int, population *Population, context *neat.NeatContext) error {
-	ex.sequential = &SequentialPopulationEpochExecutor{}
-	err := ex.sequential.prepare(generation, population, context)
+func (p *ParallelPopulationEpochExecutor) NextEpoch(ctx context.Context, generation int, population *Population) error {
+	p.sequential = &SequentialPopulationEpochExecutor{}
+	err := p.sequential.prepareForReproduction(ctx, generation, population)
 	if err != nil {
 		return err
 	}
 
 	// Do parallel reproduction
-	err = ex.reproduce(generation, population, context)
+	err = p.reproduce(ctx, generation, population)
 	if err != nil {
 		return err
 	}
 
-	err = ex.sequential.finalize(generation, population, context)
+	err = p.sequential.finalizeReproduction(ctx, population)
 
 	neat.DebugLog(fmt.Sprintf("POPULATION: >>>>> Epoch %d complete\n", generation))
 
@@ -208,87 +210,86 @@ func (ex *ParallelPopulationEpochExecutor) NextEpoch(generation int, population 
 }
 
 // Do parallel reproduction cycle
-func (ex *ParallelPopulationEpochExecutor) reproduce(generation int, p *Population, context *neat.NeatContext) error {
+func (p *ParallelPopulationEpochExecutor) reproduce(ctx context.Context, generation int, pop *Population) error {
 	neat.DebugLog("POPULATION: Start Parallel Reproduction Cycle >>>>>")
+	opts, found := neat.FromContext(ctx)
+	if !found {
+		return neat.ErrNEATOptionsNotFound
+	}
 
 	// Perform reproduction. Reproduction is done on a per-Species basis
-	sp_num := len(p.Species)
-	res_chan := make(chan reproductionResult, sp_num)
+	spNum := len(pop.Species)
+	resChan := make(chan reproductionResult, spNum)
 	// The wait group to wait for all GO routines
 	var wg sync.WaitGroup
 
-	for _, curr_species := range p.Species {
+	for _, species := range pop.Species {
 		wg.Add(1)
 		// run in separate GO thread
-		go func(sp *Species, generation int, p *Population, sorted_species []*Species,
-		context *neat.NeatContext, res_chan chan <- reproductionResult, wg *sync.WaitGroup) {
+		go func(ctx context.Context, sp *Species, generation int, p *Population, sortedSpecies []*Species, resChan chan<- reproductionResult, wg *sync.WaitGroup) {
+			defer wg.Done()
+			babies, err := sp.reproduce(ctx, generation, p, sortedSpecies)
 
-			babies, err := sp.reproduce(generation, p, sorted_species, context)
 			res := reproductionResult{}
 			if err == nil {
-				res.species_id = sp.Id
+				res.speciesId = sp.Id
 
 				// fill babies into result
 				var buf bytes.Buffer
 				enc := gob.NewEncoder(&buf)
 				for _, baby := range babies {
-					err = enc.Encode(baby)
-					if err != nil {
+					if err = enc.Encode(baby); err != nil {
 						break
 					}
 				}
 				if err == nil {
 					res.babies = buf.Bytes()
-					res.babies_stored = len(babies)
+					res.babiesStored = len(babies)
 				}
 			}
 			res.err = err
 
 			// write result to channel and signal to wait group
-			res_chan <- res
-			wg.Done()
+			resChan <- res
 
-		}(curr_species, generation, p, ex.sequential.sorted_species, context, res_chan, &wg)
+		}(ctx, species, generation, pop, p.sequential.sortedSpecies, resChan, &wg)
 	}
 
 	// wait for reproduction results
 	wg.Wait()
-	close(res_chan)
+	close(resChan)
 
 	// read reproduction results, instantiate progeny and speciate over population
 	babies := make([]*Organism, 0)
-	for result := range res_chan {
+	for result := range resChan {
 		if result.err != nil {
 			return result.err
 		}
 		// read baby genome
 		dec := gob.NewDecoder(bytes.NewBuffer(result.babies))
-		for i := 0; i < result.babies_stored; i++ {
+		for i := 0; i < result.babiesStored; i++ {
 			org := Organism{}
 			err := dec.Decode(&org)
 			if err != nil {
-				return errors.New(
-					fmt.Sprintf("POPULATION: Failed to decode baby organism, reason: %s", err))
+				return fmt.Errorf("failed to decode baby organism, reason: %v", err)
 			}
 			babies = append(babies, &org)
 		}
-		if result.species_id == ex.sequential.best_species_id {
+		if result.speciesId == p.sequential.bestSpeciesId {
 			// store flag if best species reproduced - it will be used to determine if best species
 			// produced offspring before died
-			ex.sequential.best_species_reproduced = (babies != nil)
+			p.sequential.bestSpeciesReproduced = babies != nil
 		}
 	}
 
 	// sanity check - make sure that population size keep the same
-	if len(babies) != context.PopSize {
-		return errors.New(
-			fmt.Sprintf("POPULATION: Progeny size after reproduction cycle dimished.\nExpected: [%d], but got: [%d]",
-				context.PopSize, len(babies)))
+	if len(babies) != opts.PopSize {
+		return fmt.Errorf("progeny size after reproduction cycle dimished, expected: [%d], but got: [%d]",
+			opts.PopSize, len(babies))
 	}
 
-
 	// speciate fresh progeny
-	err := p.speciate(babies, context)
+	err := pop.speciate(ctx, babies)
 
 	neat.DebugLog("POPULATION: >>>>> Reproduction Complete")
 

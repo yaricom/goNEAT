@@ -2,10 +2,10 @@ package network
 
 import (
 	"fmt"
-	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/v2/neat"
 )
 
-// A LINK is a connection from one node to another with an associated weight.
+// Link is a connection from one node to another with an associated weight.
 // It can be marked as recurrent.
 type Link struct {
 	// Weight of connection
@@ -30,7 +30,7 @@ type Link struct {
 	AddedWeight float64
 }
 
-// Creates new link with specified weight, input and output neurons connected recurrently or not.
+// NewLink Creates new link with specified weight, input and output neurons connected recurrently or not.
 func NewLink(weight float64, inputNode, outNode *NNode, recurrent bool) *Link {
 	link := newLink(weight)
 	link.InNode = inputNode
@@ -39,7 +39,7 @@ func NewLink(weight float64, inputNode, outNode *NNode, recurrent bool) *Link {
 	return link
 }
 
-// Creates new Link with specified Trait
+// NewLinkWithTrait Creates new Link with specified Trait
 func NewLinkWithTrait(trait *neat.Trait, weight float64, inputNode, outNode *NNode, recurrent bool) *Link {
 	link := newLink(weight)
 	link.InNode = inputNode
@@ -50,7 +50,7 @@ func NewLinkWithTrait(trait *neat.Trait, weight float64, inputNode, outNode *NNo
 	return link
 }
 
-// The copy constructor to create new link with parameters taken from provided ones and connecting specified nodes
+// NewLinkCopy The copy constructor to create new link with parameters taken from provided ones and connecting specified nodes
 func NewLinkCopy(l *Link, inputNode, outNode *NNode) *Link {
 	link := newLink(l.Weight)
 	link.InNode = inputNode
@@ -68,7 +68,7 @@ func newLink(weight float64) *Link {
 	}
 }
 
-// Checks if this link is genetically equal to provided one, i.e. connects nodes with the same IDs and has equal
+// IsEqualGenetically Checks if this link is genetically equal to provided one, i.e. connects nodes with the same IDs and has equal
 // recurrent flag. I.e. if both links represent the same Gene.
 func (l *Link) IsEqualGenetically(ol *Link) bool {
 	sameInNode := l.InNode.Id == ol.InNode.Id

@@ -3,372 +3,324 @@
 package neat
 
 import (
+	"context"
 	"fmt"
+	"github.com/pkg/errors"
+	"github.com/spf13/cast"
+	"github.com/yaricom/goNEAT/v2/neat/math"
+	"gopkg.in/yaml.v3"
 	"io"
-	"log"
-	"os"
-	"github.com/spf13/viper"
-	"errors"
-	"github.com/yaricom/goNEAT/neat/utils"
-	"strings"
+	"io/ioutil"
 	"strconv"
+	"strings"
 )
 
-// LoggerLevel type to specify logger output level
-type LoggerLevel byte
+// GenomeCompatibilityMethod defines the method to calculate genomes compatibility
+type GenomeCompatibilityMethod string
 
 const (
-	// The Debug log level
-	LogLevelDebug LoggerLevel = iota
-	// The Info log level
-	LogLevelInfo
-	// The Warning log level
-	LogLevelWarning
-	// The Error log level
-	LogLevelError
+	GenomeCompatibilityMethodLinear GenomeCompatibilityMethod = "linear"
+	GenomeCompatibilityMethodFast   GenomeCompatibilityMethod = "fast"
 )
 
-var (
-	// The current log level of the context
-	LogLevel LoggerLevel
-
-	loggerDebug = log.New(os.Stdout, "DEBUG: ", log.Ltime | log.Lshortfile)
-	loggerInfo = log.New(os.Stdout, "INFO: ", log.Ltime | log.Lshortfile)
-	loggerWarn = log.New(os.Stdout, "ALERT: ", log.Ltime | log.Lshortfile)
-	loggerError = log.New(os.Stderr, "ERROR: ", log.Ltime | log.Lshortfile)
-
-	// The logger to output all messages
-	DebugLog = func(message string) {
-		if LogLevel <= LogLevelDebug {
-			loggerDebug.Output(2, message)
-		}
+// Validate is to check if this genome compatibility method supported by algorithm
+func (g GenomeCompatibilityMethod) Validate() error {
+	if g != GenomeCompatibilityMethodLinear && g != GenomeCompatibilityMethodFast {
+		return errors.Errorf("unsupported genome compatibility method: [%s]", g)
 	}
-	// The logger to output messages with Info and up level
-	InfoLog = func(message string) {
-		if LogLevel <= LogLevelInfo {
-			loggerInfo.Output(2, message)
-		}
-	}
-	// The logger to output messages with Warn and up level
-	WarnLog = func(message string) {
-		if LogLevel <= LogLevelWarning {
-			loggerWarn.Output(2, message)
-		}
-	}
-	// The logger to output messages with Error and up level
-	ErrorLog = func(message string) {
-		if LogLevel <= LogLevelError {
-			loggerError.Output(2, message)
-		}
-	}
-)
-
-
-// The NEAT execution context holding common configuration parameters, etc.
-type NeatContext struct {
-				       // Probability of mutating a single trait param
-	TraitParamMutProb      float64
-				       // Power of mutation on a single trait param
-	TraitMutationPower     float64
-				       // The power of a link weight mutation
-	WeightMutPower         float64
-
-				       // These 3 global coefficients are used to determine the formula for
-				       // computing the compatibility between 2 genomes.  The formula is:
-				       // disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg.
-				       // See the compatibility method in the Genome class for more info
-				       // They can be thought of as the importance of disjoint Genes,
-				       // excess Genes, and parametric difference between Genes of the
-				       // same function, respectively.
-	DisjointCoeff          float64
-	ExcessCoeff            float64
-	MutdiffCoeff           float64
-
-				       // This global tells compatibility threshold under which
-				       // two Genomes are considered the same species
-	CompatThreshold        float64
-
-				       /* Globals involved in the epoch cycle - mating, reproduction, etc.. */
-
-				       // How much does age matter? Gives a fitness boost up to some young age (niching).
-				       // If it is 1, then young species get no fitness boost.
-	AgeSignificance        float64
-				       // Percent of average fitness for survival, how many get to reproduce based on survival_thresh * pop_size
-	SurvivalThresh         float64
-
-				       // Probabilities of a non-mating reproduction
-	MutateOnlyProb         float64
-	MutateRandomTraitProb  float64
-	MutateLinkTraitProb    float64
-	MutateNodeTraitProb    float64
-	MutateLinkWeightsProb  float64
-	MutateToggleEnableProb float64
-	MutateGeneReenableProb float64
-	MutateAddNodeProb      float64
-	MutateAddLinkProb      float64
-	MutateConnectSensors   float64 // probability of mutation involving disconnected inputs connection
-
-				       // Probabilities of a mate being outside species
-	InterspeciesMateRate   float64
-	MateMultipointProb     float64
-	MateMultipointAvgProb  float64
-	MateSinglepointProb    float64
-
-				       // Prob. of mating without mutation
-	MateOnlyProb           float64
-				       // Probability of forcing selection of ONLY links that are naturally recurrent
-	RecurOnlyProb          float64
-
-				       // Size of population
-	PopSize                int
-				       // Age when Species starts to be penalized
-	DropOffAge             int
-				       // Number of tries mutate_add_link will attempt to find an open link
-	NewLinkTries           int
-
-				       // Tells to print population to file every n generations
-	PrintEvery             int
-
-				       // The number of babies to stolen off to the champions
-	BabiesStolen           int
-
-				       // The number of runs to average over in an experiment
-	NumRuns                int
-
-				       // The number of epochs (generations) to execute training
-	NumGenerations         int
-				       // The epoch's executor type to apply
-	EpochExecutorType      int
-				       // The genome compatibility testing method to use (0 - linear, 1 - fast (make sense for large genomes))
-	GenCompatMethod        int
-
-				       // The neuron nodes activation functions list to choose from
-	NodeActivators         []utils.NodeActivationType
-				       // The probabilities of selection of the specific node activator function
-	NodeActivatorsProb     []float64
-}
-
-// Creates new empty NEAT context
-func NewNeatContext() *NeatContext {
-	nc := &NeatContext{}
-	nc.initDefaultNodeActivators()
-	return nc
-}
-
-// Loads context configuration from provided reader as YAML
-func (c *NeatContext) LoadContext(r io.Reader) error {
-	viper.SetConfigType("YAML")
-	err := viper.ReadConfig(r)
-	if err != nil {
-		return err
-	}
-	v := viper.Sub("neat")
-	if v == nil {
-		return errors.New("neat subsection not found in configuration")
-	}
-
-	c.TraitParamMutProb = v.GetFloat64("trait_param_mut_prob")
-	c.TraitMutationPower = v.GetFloat64("trait_mutation_power")
-	c.WeightMutPower = v.GetFloat64("weight_mut_power")
-	c.DisjointCoeff = v.GetFloat64("disjoint_coeff")
-	c.ExcessCoeff = v.GetFloat64("excess_coeff")
-	c.MutdiffCoeff = v.GetFloat64("mutdiff_coeff")
-	c.CompatThreshold = v.GetFloat64("compat_threshold")
-	c.AgeSignificance = v.GetFloat64("age_significance")
-	c.SurvivalThresh = v.GetFloat64("survival_thresh")
-	c.MutateOnlyProb = v.GetFloat64("mutate_only_prob")
-	c.MutateRandomTraitProb = v.GetFloat64("mutate_random_trait_prob")
-	c.MutateLinkTraitProb = v.GetFloat64("mutate_link_trait_prob")
-	c.MutateNodeTraitProb = v.GetFloat64("mutate_node_trait_prob")
-	c.MutateLinkWeightsProb = v.GetFloat64("mutate_link_weights_prob")
-	c.MutateToggleEnableProb = v.GetFloat64("mutate_toggle_enable_prob")
-	c.MutateGeneReenableProb = v.GetFloat64("mutate_gene_reenable_prob")
-	c.MutateAddNodeProb = v.GetFloat64("mutate_add_node_prob")
-	c.MutateAddLinkProb = v.GetFloat64("mutate_add_link_prob")
-	c.MutateConnectSensors = v.GetFloat64("mutate_connect_sensors")
-	c.InterspeciesMateRate = v.GetFloat64("interspecies_mate_rate")
-	c.MateMultipointProb = v.GetFloat64("mate_multipoint_prob")
-	c.MateMultipointAvgProb = v.GetFloat64("mate_multipoint_avg_prob")
-	c.MateSinglepointProb = v.GetFloat64("mate_singlepoint_prob")
-	c.MateOnlyProb = v.GetFloat64("mate_only_prob")
-	c.RecurOnlyProb = v.GetFloat64("recur_only_prob")
-
-	c.PopSize = v.GetInt("pop_size")
-	c.DropOffAge = v.GetInt("dropoff_age")
-	c.NewLinkTries = v.GetInt("newlink_tries")
-	c.PrintEvery = v.GetInt("print_every")
-	c.BabiesStolen = v.GetInt("babies_stolen")
-	c.NumRuns = v.GetInt("num_runs")
-	c.NumGenerations = v.GetInt("num_generations")
-
-	// read epoch executor type [sequential, parallel]
-	ep_exec := v.GetString("epoch_executor")
-	if ep_exec == "sequential" {
-		c.EpochExecutorType = 0 //genetics.SequentialExecutorType
-	} else if ep_exec == "parallel" {
-		c.EpochExecutorType = 1 //genetics.ParallelExecutorType
-	} else {
-		return errors.New(fmt.Sprintf("Unsupported epoch executor type: %s", ep_exec))
-	}
-
-	// read genome compatibility method [linear, fast]
-	gen_compat := v.GetString("genome_compat_method")
-	if gen_compat == "" || gen_compat == "linear" {
-		c.GenCompatMethod = 0
-	} else if gen_compat == "fast" {
-		c.GenCompatMethod = 1
-	} else {
-		return errors.New(fmt.Sprintf("Unsupported genome compatibility method: %s", gen_compat))
-	}
-
-	// read log level [Debug, Info, Warning, Error]
-	l_level := v.GetString("log_level")
-	switch l_level {
-	case "Debug":
-		LogLevel = LogLevelDebug
-	case "Info":
-		LogLevel = LogLevelInfo
-	case "Warning":
-		LogLevel = LogLevelWarning
-	case "Error":
-		LogLevel = LogLevelError
-	default:
-		return errors.New(fmt.Sprintf("Usupported log level: %s", l_level))
-	}
-
-	// read node activators
-	actFns := v.GetStringSlice("node_activators")
-	if actFns != nil {
-		c.NodeActivators = make([]utils.NodeActivationType, len(actFns))
-		c.NodeActivatorsProb = make([]float64, len(actFns))
-		for i, line := range actFns {
-			fields := strings.Fields(line)
-			if c.NodeActivators[i], err = utils.NodeActivators.ActivationTypeFromName(fields[0]); err != nil {
-				return err
-			}
-			if prob, err := strconv.ParseFloat(fields[1], 64); err != nil {
-				return err
-			} else {
-				c.NodeActivatorsProb[i] = prob
-			}
-		}
-	} else {
-		// just use default activators
-		c.initDefaultNodeActivators()
-	}
-
 	return nil
 }
 
-// Returns next random node activation type among registered with this context
-func (c *NeatContext) RandomNodeActivationType() (utils.NodeActivationType, error) {
+// EpochExecutorType is to define the type of epoch evaluator
+type EpochExecutorType string
+
+const (
+	EpochExecutorTypeSequential EpochExecutorType = "sequential"
+	EpochExecutorTypeParallel   EpochExecutorType = "parallel"
+)
+
+// Validate is to check is this executor type is supported by algorithm
+func (e EpochExecutorType) Validate() error {
+	if e != EpochExecutorTypeSequential && e != EpochExecutorTypeParallel {
+		return errors.Errorf("unsupported epoch executor type: [%s]", e)
+	}
+	return nil
+}
+
+// Options The NEAT algorithm options.
+type Options struct {
+	// Probability of mutating a single trait param
+	TraitParamMutProb float64 `yaml:"trait_param_mut_prob"`
+	// Power of mutation on a single trait param
+	TraitMutationPower float64 `yaml:"trait_mutation_power"`
+	// The power of a link weight mutation
+	WeightMutPower float64 `yaml:"weight_mut_power"`
+
+	// These 3 global coefficients are used to determine the formula for
+	// computing the compatibility between 2 genomes.  The formula is:
+	// disjoint_coeff * pdg + excess_coeff * peg + mutdiff_coeff * mdmg.
+	// See the compatibility method in the Genome class for more info
+	// They can be thought of as the importance of disjoint Genes,
+	// excess Genes, and parametric difference between Genes of the
+	// same function, respectively.
+	DisjointCoeff float64 `yaml:"disjoint_coeff"`
+	ExcessCoeff   float64 `yaml:"excess_coeff"`
+	MutdiffCoeff  float64 `yaml:"mutdiff_coeff"`
+
+	// This global tells compatibility threshold under which
+	// two Genomes are considered the same species
+	CompatThreshold float64 `yaml:"compat_threshold"`
+
+	/* Globals involved in the epoch cycle - mating, reproduction, etc.. */
+
+	// How much does age matter? Gives a fitness boost up to some young age (niching).
+	// If it is 1, then young species get no fitness boost.
+	AgeSignificance float64 `yaml:"age_significance"`
+	// Percent of average fitness for survival, how many get to reproduce based on survival_thresh * pop_size
+	SurvivalThresh float64 `yaml:"survival_thresh"`
+
+	// Probabilities of a non-mating reproduction
+	MutateOnlyProb         float64 `yaml:"mutate_only_prob"`
+	MutateRandomTraitProb  float64 `yaml:"mutate_random_trait_prob"`
+	MutateLinkTraitProb    float64 `yaml:"mutate_link_trait_prob"`
+	MutateNodeTraitProb    float64 `yaml:"mutate_node_trait_prob"`
+	MutateLinkWeightsProb  float64 `yaml:"mutate_link_weights_prob"`
+	MutateToggleEnableProb float64 `yaml:"mutate_toggle_enable_prob"`
+	MutateGeneReenableProb float64 `yaml:"mutate_gene_reenable_prob"`
+	MutateAddNodeProb      float64 `yaml:"mutate_add_node_prob"`
+	MutateAddLinkProb      float64 `yaml:"mutate_add_link_prob"`
+	// probability of mutation involving disconnected inputs connection
+	MutateConnectSensors float64 `yaml:"mutate_connect_sensors"`
+
+	// Probabilities of a mate being outside species
+	InterspeciesMateRate  float64 `yaml:"interspecies_mate_rate"`
+	MateMultipointProb    float64 `yaml:"mate_multipoint_prob"`
+	MateMultipointAvgProb float64 `yaml:"mate_multipoint_avg_prob"`
+	MateSinglepointProb   float64 `yaml:"mate_singlepoint_prob"`
+
+	// Prob. of mating without mutation
+	MateOnlyProb float64 `yaml:"mate_only_prob"`
+	// Probability of forcing selection of ONLY links that are naturally recurrent
+	RecurOnlyProb float64 `yaml:"recur_only_prob"`
+
+	// Size of population
+	PopSize int `yaml:"pop_size"`
+	// Age when Species starts to be penalized
+	DropOffAge int `yaml:"dropoff_age"`
+	// Number of tries mutate_add_link will attempt to find an open link
+	NewLinkTries int `yaml:"newlink_tries"`
+
+	// Tells to print population to file every n generations
+	PrintEvery int `yaml:"print_every"`
+
+	// The number of babies to stolen off to the champions
+	BabiesStolen int `yaml:"babies_stolen"`
+
+	// The number of runs to average over in an experiment
+	NumRuns int `yaml:"num_runs"`
+
+	// The number of epochs (generations) to execute training
+	NumGenerations int `yaml:"num_generations"`
+
+	// The epoch's executor type to apply (sequential, parallel)
+	EpochExecutorType EpochExecutorType `yaml:"epoch_executor"`
+	// The genome compatibility testing method to use (linear, fast (make sense for large genomes))
+	GenCompatMethod GenomeCompatibilityMethod `yaml:"genome_compat_method"`
+
+	// The neuron nodes activation functions list to choose from
+	NodeActivators []math.NodeActivationType `yaml:"-"`
+	// The probabilities of selection of the specific node activator function
+	NodeActivatorsProb []float64 `yaml:"-"`
+
+	// NodeActivatorsWithProbs the list of supported node activation with probability of each one
+	NodeActivatorsWithProbs []string `yaml:"node_activators"`
+
+	// LogLevel the log output details level
+	LogLevel string `yaml:"log_level"`
+}
+
+// RandomNodeActivationType Returns next random node activation type among registered with this context
+func (c *Options) RandomNodeActivationType() (math.NodeActivationType, error) {
 	// quick check for the most cases
 	if len(c.NodeActivators) == 1 {
 		return c.NodeActivators[0], nil
 	}
 	// find next random
-	index := utils.SingleRouletteThrow(c.NodeActivatorsProb)
-	if index < 0 || index >= len(c.NodeActivators){
-		return 0, errors.New(
-			fmt.Sprintf("unexpected error when trying to find random node activator, activator index: %d", index))
+	index := math.SingleRouletteThrow(c.NodeActivatorsProb)
+	if index < 0 || index >= len(c.NodeActivators) {
+		return 0, fmt.Errorf("unexpected error when trying to find random node activator, activator index: %d", index)
 	}
 	return c.NodeActivators[index], nil
 }
 
-// Loads context configuration from provided reader
-func LoadContext(r io.Reader) *NeatContext {
-	c := NeatContext{}
+// set default values for activator type and its probability of selection
+func (c *Options) initNodeActivators() (err error) {
+	if len(c.NodeActivatorsWithProbs) == 0 {
+		c.NodeActivators = []math.NodeActivationType{math.SigmoidSteepenedActivation}
+		c.NodeActivatorsProb = []float64{1.0}
+		return nil
+	}
+	// create activators
+	actFns := c.NodeActivatorsWithProbs
+	c.NodeActivators = make([]math.NodeActivationType, len(actFns))
+	c.NodeActivatorsProb = make([]float64, len(actFns))
+	for i, line := range actFns {
+		fields := strings.Fields(line)
+		if c.NodeActivators[i], err = math.NodeActivators.ActivationTypeFromName(fields[0]); err != nil {
+			return err
+		}
+		if prob, err := strconv.ParseFloat(fields[1], 64); err != nil {
+			return err
+		} else {
+			c.NodeActivatorsProb[i] = prob
+		}
+	}
+	return nil
+}
+
+// Validate is to validate that this options has valid values
+func (c *Options) Validate() error {
+	if err := c.EpochExecutorType.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.GenCompatMethod.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// NeatContext is to get Context which carries NEAT options inside to be propagated
+func (c *Options) NeatContext() context.Context {
+	return NewContext(context.Background(), c)
+}
+
+// LoadYAMLOptions is to load NEAT options encoded as YAML file
+func LoadYAMLOptions(r io.Reader) (*Options, error) {
+	content, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	// read options
+	var opts Options
+	if err = yaml.Unmarshal(content, &opts); err != nil {
+		return nil, errors.Wrap(err, "failed to decode NEAT options from YAML")
+	}
+
+	// initialize logger
+	if err = InitLogger(opts.LogLevel); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize logger")
+	}
+
+	// read node activators
+	if err = opts.initNodeActivators(); err != nil {
+		return nil, errors.Wrap(err, "failed to read node activators")
+	}
+
+	if err = opts.Validate(); err != nil {
+		return nil, errors.Wrap(err, "invalid NEAT options")
+	}
+
+	return &opts, nil
+}
+
+// LoadNeatOptions Loads NEAT options configuration from provided reader encode in plain text format (.neat)
+func LoadNeatOptions(r io.Reader) (*Options, error) {
+	c := &Options{}
 	// read configuration
 	var name string
-	var param float64;
-	for true {
-		_, err := fmt.Fscanf(r, "%s %f", &name, &param)
+	var param string
+	for {
+		_, err := fmt.Fscanf(r, "%s %v", &name, &param)
 		if err == io.EOF {
 			break
 		}
 		switch name {
 		case "trait_param_mut_prob":
-			c.TraitParamMutProb = param
+			c.TraitParamMutProb = cast.ToFloat64(param)
 		case "trait_mutation_power":
-			c.TraitMutationPower = param
+			c.TraitMutationPower = cast.ToFloat64(param)
 		case "weight_mut_power":
-			c.WeightMutPower = param
+			c.WeightMutPower = cast.ToFloat64(param)
 		case "disjoint_coeff":
-			c.DisjointCoeff = param
+			c.DisjointCoeff = cast.ToFloat64(param)
 		case "excess_coeff":
-			c.ExcessCoeff = param
+			c.ExcessCoeff = cast.ToFloat64(param)
 		case "mutdiff_coeff":
-			c.MutdiffCoeff = param
+			c.MutdiffCoeff = cast.ToFloat64(param)
 		case "compat_threshold":
-			c.CompatThreshold = param
+			c.CompatThreshold = cast.ToFloat64(param)
 		case "age_significance":
-			c.AgeSignificance = param
+			c.AgeSignificance = cast.ToFloat64(param)
 		case "survival_thresh":
-			c.SurvivalThresh = param
+			c.SurvivalThresh = cast.ToFloat64(param)
 		case "mutate_only_prob":
-			c.MutateOnlyProb = param
+			c.MutateOnlyProb = cast.ToFloat64(param)
 		case "mutate_random_trait_prob":
-			c.MutateRandomTraitProb = param
+			c.MutateRandomTraitProb = cast.ToFloat64(param)
 		case "mutate_link_trait_prob":
-			c.MutateLinkTraitProb = param
+			c.MutateLinkTraitProb = cast.ToFloat64(param)
 		case "mutate_node_trait_prob":
-			c.MutateNodeTraitProb = param
+			c.MutateNodeTraitProb = cast.ToFloat64(param)
 		case "mutate_link_weights_prob":
-			c.MutateLinkWeightsProb = param
+			c.MutateLinkWeightsProb = cast.ToFloat64(param)
 		case "mutate_toggle_enable_prob":
-			c.MutateToggleEnableProb = param
+			c.MutateToggleEnableProb = cast.ToFloat64(param)
 		case "mutate_gene_reenable_prob":
-			c.MutateGeneReenableProb = param
+			c.MutateGeneReenableProb = cast.ToFloat64(param)
 		case "mutate_add_node_prob":
-			c.MutateAddNodeProb = param
+			c.MutateAddNodeProb = cast.ToFloat64(param)
 		case "mutate_add_link_prob":
-			c.MutateAddLinkProb = param
+			c.MutateAddLinkProb = cast.ToFloat64(param)
 		case "mutate_connect_sensors":
-			c.MutateConnectSensors = param
+			c.MutateConnectSensors = cast.ToFloat64(param)
 		case "interspecies_mate_rate":
-			c.InterspeciesMateRate = param
+			c.InterspeciesMateRate = cast.ToFloat64(param)
 		case "mate_multipoint_prob":
-			c.MateMultipointProb = param
+			c.MateMultipointProb = cast.ToFloat64(param)
 		case "mate_multipoint_avg_prob":
-			c.MateMultipointAvgProb = param
+			c.MateMultipointAvgProb = cast.ToFloat64(param)
 		case "mate_singlepoint_prob":
-			c.MateSinglepointProb = param
+			c.MateSinglepointProb = cast.ToFloat64(param)
 		case "mate_only_prob":
-			c.MateOnlyProb = param
+			c.MateOnlyProb = cast.ToFloat64(param)
 		case "recur_only_prob":
-			c.RecurOnlyProb = param
+			c.RecurOnlyProb = cast.ToFloat64(param)
 		case "pop_size":
-			c.PopSize = int(param)
+			c.PopSize = cast.ToInt(param)
 		case "dropoff_age":
-			c.DropOffAge = int(param)
+			c.DropOffAge = cast.ToInt(param)
 		case "newlink_tries":
-			c.NewLinkTries = int(param)
+			c.NewLinkTries = cast.ToInt(param)
 		case "print_every":
-			c.PrintEvery = int(param)
+			c.PrintEvery = cast.ToInt(param)
 		case "babies_stolen":
-			c.BabiesStolen = int(param)
+			c.BabiesStolen = cast.ToInt(param)
 		case "num_runs":
-			c.NumRuns = int(param)
+			c.NumRuns = cast.ToInt(param)
 		case "num_generations":
-			c.NumGenerations = int(param)
+			c.NumGenerations = cast.ToInt(param)
 		case "epoch_executor":
-			c.EpochExecutorType = int(param)
+			c.EpochExecutorType = EpochExecutorType(param)
 		case "genome_compat_method":
-			c.GenCompatMethod = int(param)
+			c.GenCompatMethod = GenomeCompatibilityMethod(param)
 		case "log_level":
-			LogLevel = LoggerLevel(param)
+			c.LogLevel = param
 		default:
-			fmt.Printf("WARNING! Unknown configuration parameter found: %s = %f\n", name, param)
+			return nil, errors.Errorf("unknown configuration parameter found: %s = %s", name, param)
 		}
 	}
-	// just use default value for nodes activators
-	c.initDefaultNodeActivators()
+	// initialize logger
+	if err := InitLogger(c.LogLevel); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize logger")
+	}
 
-	return &c
-}
+	if err := c.initNodeActivators(); err != nil {
+		return nil, err
+	}
+	if err := c.Validate(); err != nil {
+		return nil, err
+	}
 
-// set default values for activator type and its probability of selection
-func (c *NeatContext) initDefaultNodeActivators() {
-	c.NodeActivators = []utils.NodeActivationType{utils.SigmoidSteepenedActivation}
-	c.NodeActivatorsProb = []float64{1.0}
+	return c, nil
 }

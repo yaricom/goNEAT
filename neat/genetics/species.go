@@ -1,45 +1,46 @@
 package genetics
 
 import (
-	"github.com/yaricom/goNEAT/neat"
-	"sort"
-	"math"
-	"fmt"
+	"context"
 	"errors"
-	"math/rand"
+	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat"
 	"io"
+	"math"
+	"math/rand"
+	"sort"
 )
 
 // A Species is a group of similar Organisms.
 // Reproduction takes place mostly within a single species, so that compatible organisms can mate.
 type Species struct {
 	// The ID
-	Id                   int;
+	Id int
 	// The age of the Species
-	Age                  int
+	Age int
 	// The maximal fitness it ever had
-	MaxFitnessEver       float64
+	MaxFitnessEver float64
 	// How many child expected
-	ExpectedOffspring    int
+	ExpectedOffspring int
 
 	// Is it novel
-	IsNovel              bool
+	IsNovel bool
 
 	// The organisms in the Species
-	Organisms            Organisms
+	Organisms Organisms
 	// If this is too long ago, the Species will goes extinct
 	AgeOfLastImprovement int
 
 	// Flag used for search optimization
-	IsChecked            bool
+	IsChecked bool
 }
 
-// Construct new species with specified ID
+// NewSpecies Construct new species with specified ID
 func NewSpecies(id int) *Species {
 	return newSpecies(id)
 }
 
-// Allows the creation of a Species that won't age (a novel one). This protects new Species from aging
+// NewSpeciesNovel Allows the creation of a Species that won't age (a novel one). This protects new Species from aging
 // inside their first generation
 func NewSpeciesNovel(id int, novel bool) *Species {
 	s := newSpecies(id)
@@ -51,40 +52,49 @@ func NewSpeciesNovel(id int, novel bool) *Species {
 // The private default constructor
 func newSpecies(id int) *Species {
 	return &Species{
-		Id:id,
-		Age:1,
-		Organisms:make([]*Organism, 0),
+		Id:        id,
+		Age:       1,
+		Organisms: make([]*Organism, 0),
 	}
 }
 
 // Writes species to the specified writer
-func (s Species) Write(w io.Writer) {
+func (s *Species) Write(w io.Writer) error {
 	_, avg := s.ComputeMaxAndAvgFitness()
 	// Print a comment on the Species info
-	fmt.Fprintf(w, "/* Species #%d : (Size %d) (AF %.3f) (Age %d)  */\n",
-		s.Id, len(s.Organisms), avg, s.Age)
+	if _, err := fmt.Fprintf(w, "/* Species #%d : (Size %d) (AF %.3f) (Age %d)  */\n",
+		s.Id, len(s.Organisms), avg, s.Age); err != nil {
+		return err
+	}
 
 	// Sort organisms - best fitness first
-	sorted_organisms := make(Organisms, len(s.Organisms))
-	copy(sorted_organisms, s.Organisms)
-	sort.Sort(sort.Reverse(sorted_organisms))
+	sortedOrganisms := make(Organisms, len(s.Organisms))
+	copy(sortedOrganisms, s.Organisms)
+	sort.Sort(sort.Reverse(sortedOrganisms))
 
 	// Print all the Organisms' Genomes to the outFile
-	for _, org := range sorted_organisms {
-		fmt.Fprintf(w, "/* Organism #%d Fitness: %.3f Error: %.3f */\n",
-			org.Genotype.Id, org.Fitness, org.Error)
-		if org.IsWinner {
-			fmt.Fprintf(w, "/* ## $ WINNER ORGANISM FOR SPECIES #%d $ ## */\n", s.Id)
+	for _, org := range sortedOrganisms {
+		if _, err := fmt.Fprintf(w, "/* Organism #%d Fitness: %.3f Error: %.3f */\n",
+			org.Genotype.Id, org.Fitness, org.Error); err != nil {
+			return err
 		}
-		org.Genotype.Write(w)
+		if org.IsWinner {
+			if _, err := fmt.Fprintf(w, "/* ## $ WINNER ORGANISM FOR SPECIES #%d $ ## */\n", s.Id); err != nil {
+				return err
+			}
+		}
+		if err := org.Genotype.Write(w); err != nil {
+			return err
+		}
 	}
+	return nil
 }
-
 
 // Adds new Organism to the group related to this Species
 func (s *Species) addOrganism(o *Organism) {
 	s.Organisms = append(s.Organisms, o)
 }
+
 // Removes an organism from Species
 func (s *Species) removeOrganism(org *Organism) (bool, error) {
 	orgs := make([]*Organism, 0)
@@ -93,9 +103,8 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 			orgs = append(orgs, o)
 		}
 	}
-	if len(orgs) != len(s.Organisms) - 1 {
-		return false, errors.New(
-			fmt.Sprintf("SPECIES: Attempt to remove nonexistent Organism from Species with #of organisms: %d", len(s.Organisms)))
+	if len(orgs) != len(s.Organisms)-1 {
+		return false, fmt.Errorf("attempt to remove nonexistent Organism from Species with #of organisms: %d", len(s.Organisms))
 	} else {
 		s.Organisms = orgs
 		return true, nil
@@ -105,10 +114,10 @@ func (s *Species) removeOrganism(org *Organism) (bool, error) {
 // Can change the fitness of the organisms in the Species to be higher for very new species (to protect them).
 // Divides the fitness by the size of the Species, so that fitness is "shared" by the species.
 // NOTE: Invocation of this method will result of species organisms sorted by fitness in descending order, i.e. most fit will be first.
-func (s *Species) adjustFitness(context *neat.NeatContext) {
-	age_debt := (s.Age - s.AgeOfLastImprovement + 1) - context.DropOffAge
-	if age_debt == 0 {
-		age_debt = 1
+func (s *Species) adjustFitness(opts *neat.Options) {
+	ageDebt := (s.Age - s.AgeOfLastImprovement + 1) - opts.DropOffAge
+	if ageDebt == 0 {
+		ageDebt = 1
 	}
 
 	for _, org := range s.Organisms {
@@ -117,7 +126,7 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 
 		// Make fitness decrease after a stagnation point dropoff_age
 		// Added as if to keep species pristine until the dropoff point
-		if age_debt >= 1 {
+		if ageDebt >= 1 {
 			// Extreme penalty for a long period of stagnation (divide fitness by 100)
 			org.Fitness = org.Fitness * 0.01
 		}
@@ -126,7 +135,7 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 		// The age_significance parameter is a system parameter
 		// if it is 1, then young species get no fitness boost
 		if s.Age <= 10 {
-			org.Fitness = org.Fitness * context.AgeSignificance
+			org.Fitness = org.Fitness * opts.AgeSignificance
 		}
 		// Do not allow negative fitness
 		if org.Fitness < 0.0 {
@@ -148,17 +157,17 @@ func (s *Species) adjustFitness(context *neat.NeatContext) {
 
 	// Decide how many get to reproduce based on survival_thresh * pop_size
 	// Adding 1.0 ensures that at least one will survive
-	num_parents := int(math.Floor(context.SurvivalThresh * float64(len(s.Organisms)) + 1.0))
+	numParents := int(math.Floor(opts.SurvivalThresh*float64(len(s.Organisms)) + 1.0))
 
 	// Mark for death those who are ranked too low to be parents
 	s.Organisms[0].isChampion = true // Mark the champ as such
-	for c := num_parents; c < len(s.Organisms); c++ {
+	for c := numParents; c < len(s.Organisms); c++ {
 		s.Organisms[c].toEliminate = true
 	}
 }
 
-// Computes maximal and average fitness of species
-func (s Species) ComputeMaxAndAvgFitness() (max, avg float64) {
+// ComputeMaxAndAvgFitness Computes maximal and average fitness of species
+func (s *Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 	total := 0.0
 	for _, o := range s.Organisms {
 		total += o.Fitness
@@ -172,13 +181,13 @@ func (s Species) ComputeMaxAndAvgFitness() (max, avg float64) {
 	return max, avg
 }
 
-// Returns most fit organism for this species
-func (s Species) FindChampion() *Organism {
-	champ_fitness := -1.0
+// FindChampion Returns most fit organism for this species
+func (s *Species) FindChampion() *Organism {
+	champFitness := -1.0
 	var champion *Organism
 	for _, org := range s.Organisms {
-		if org.Fitness > champ_fitness {
-			champ_fitness = org.Fitness
+		if org.Fitness > champFitness {
+			champFitness = org.Fitness
 			champion = org
 		}
 	}
@@ -186,7 +195,7 @@ func (s Species) FindChampion() *Organism {
 }
 
 // Returns first organism or nil
-func (s Species) firstOrganism() *Organism {
+func (s *Species) firstOrganism() *Organism {
 	if len(s.Organisms) > 0 {
 		return s.Organisms[0]
 	} else {
@@ -198,86 +207,97 @@ func (s Species) firstOrganism() *Organism {
 // The skim is fractional offspring left over from a previous species that was counted. These fractional parts are
 // kept until they add up to 1.
 // Returns the whole offspring count for this species as well as fractional offspring left after computation (skim).
-func (s Species) countOffspring(skim float64) (int, float64) {
-	var e_o_intpart int  // The floor of an organism's expected offspring
-	var e_o_fracpart float64 // Expected offspring fractional part
-	var skim_intpart float64  // The whole offspring in the skim
+func (s *Species) countOffspring(skim float64) (int, float64) {
+	var orgOffIntPart int      // The floor of an organism's expected offspring
+	var orgOffFracPart float64 // Expected offspring fractional part
+	var skimIntPart float64    // The whole offspring in the skim
 
 	expectedOffspring := 0
 	for _, o := range s.Organisms {
-		e_o_intpart = int(math.Floor(o.ExpectedOffspring))
-		e_o_fracpart = math.Mod(o.ExpectedOffspring, 1.0)
+		orgOffIntPart = int(math.Floor(o.ExpectedOffspring))
+		orgOffFracPart = math.Mod(o.ExpectedOffspring, 1.0)
 
-		expectedOffspring += e_o_intpart
+		expectedOffspring += orgOffIntPart
 
 		// Skim off the fractional offspring
-		skim += e_o_fracpart
+		skim += orgOffFracPart
 
 		if skim >= 1.0 {
-			skim_intpart = math.Floor(skim)
-			expectedOffspring += int(skim_intpart)
-			skim -= skim_intpart
+			skimIntPart = math.Floor(skim)
+			expectedOffspring += int(skimIntPart)
+			skim -= skimIntPart
 		}
 	}
 	return expectedOffspring, skim
 }
 
 // Compute generations since last improvement
-func (s Species) lastImproved() int {
+func (s *Species) lastImproved() int {
 	return s.Age - s.AgeOfLastImprovement
 }
 
-// Returns size of this Species, i.e. number of Organisms belonging to it
-func (s Species) size() int {
+// Size Returns size of this Species, i.e. number of Organisms belonging to it
+func (s *Species) Size() int {
 	return len(s.Organisms)
 }
 
 // Returns Organism - champion among others (best fitness)
-func (s Species) findChampion() *Organism {
+func (s *Species) findChampion() *Organism {
 	sort.Sort(sort.Reverse(s.Organisms))
 	return s.Organisms[0]
 }
 
 // Perform mating and mutation to form next generation. The sorted_species is ordered to have best species in the beginning.
 // Returns list of baby organisms as a result of reproduction of all organisms in this species.
-func (s Species) reproduce(generation int, pop *Population, sorted_species []*Species, context *neat.NeatContext) ([]*Organism, error) {
+func (s *Species) reproduce(ctx context.Context, generation int, pop *Population, sortedSpecies []*Species) ([]*Organism, error) {
+	opts, found := neat.FromContext(ctx)
+	if !found {
+		return nil, neat.ErrNEATOptionsNotFound
+	}
 	//Check for a mistake
 	if s.ExpectedOffspring > 0 && len(s.Organisms) == 0 {
-		return nil, errors.New("SPECIES: ATTEMPT TO REPRODUCE OUT OF EMPTY SPECIES")
+		return nil, errors.New("attempt to reproduce out of empty species")
 	}
 
 	// The number of Organisms in the old generation
-	pool_size := len(s.Organisms)
+	poolSize := len(s.Organisms)
 	// The champion of the 'this' specie is the first element of the specie;
-	the_champ := s.Organisms[0]
+	theChamp := s.Organisms[0]
 
 	// The species babies
 	babies := make([]*Organism, 0)
 
 	// Flag the preservation of the champion
-	champ_clone_done := false
+	champCloneDone := false
 
 	// Create the designated number of offspring for the Species one at a time
 	for count := 0; count < s.ExpectedOffspring; count++ {
-		neat.DebugLog(fmt.Sprintf("SPECIES: Offspring #%d from %d, (species: %d)",
-			count, s.ExpectedOffspring, s.Id))
+		// check if execution was canceled and exit
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
 
-		mut_struct_baby, mate_baby := false, false
+		if neat.LogLevel == neat.LogLevelDebug {
+			neat.DebugLog(fmt.Sprintf("SPECIES: Offspring #%d from %d, (species: %d)",
+				count, s.ExpectedOffspring, s.Id))
+		}
+		mutStructBaby, mateBaby := false, false
 
 		// Debug Trap
-		if s.ExpectedOffspring > context.PopSize {
+		if s.ExpectedOffspring > opts.PopSize {
 			neat.WarnLog(fmt.Sprintf("SPECIES: Species [%d] expected offspring: %d exceeds population size limit: %d\n",
-				s.Id, s.ExpectedOffspring, context.PopSize))
+				s.Id, s.ExpectedOffspring, opts.PopSize))
 		}
 
 		var baby *Organism
-
-		if the_champ.superChampOffspring > 0 {
+		if theChamp.superChampOffspring > 0 {
 			neat.DebugLog("SPECIES: Reproduce super champion")
 
 			// If we have a super_champ (Population champion), finish off some special clones
-			mom := the_champ;
-			new_genome, err := mom.Genotype.duplicate(count)
+			mom := theChamp
+			newGenome, err := mom.Genotype.duplicate(count)
 			if err != nil {
 				return nil, err
 			}
@@ -286,101 +306,107 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 			// The last offspring will be an exact duplicate of this super_champ
 			// Note: Superchamp offspring only occur with stolen babies!
 			//      Settings used for published experiments did not use this
-			if the_champ.superChampOffspring > 1 {
-				if rand.Float64() < 0.8 || context.MutateAddLinkProb == 0.0 {
+			if theChamp.superChampOffspring > 1 {
+				if rand.Float64() < 0.8 || opts.MutateAddLinkProb == 0.0 {
 					// Make sure no links get added when the system has link adding disabled
-					new_genome.mutateLinkWeights(context.WeightMutPower, 1.0, gaussianMutator)
-				} else {
-					// Sometimes we add a link to a superchamp
-					new_genome.Genesis(generation)
-					if _, err = new_genome.mutateAddLink(pop, context); err != nil {
+					if _, err = newGenome.mutateLinkWeights(opts.WeightMutPower, 1.0, gaussianMutator); err != nil {
 						return nil, err
 					}
-					mut_struct_baby = true;
+				} else {
+					// Sometimes we add a link to a superchamp
+					if _, err = newGenome.Genesis(generation); err != nil {
+						return nil, err
+					}
+					if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
+						return nil, err
+					}
+					mutStructBaby = true
 				}
 			}
 
 			// Create the new baby organism
-			baby, err = NewOrganism(0.0, new_genome, generation)
+			baby, err = NewOrganism(0.0, newGenome, generation)
 			if err != nil {
 				return nil, err
 			}
 
-			if the_champ.superChampOffspring == 1 {
-				if the_champ.isPopulationChampion {
+			if theChamp.superChampOffspring == 1 {
+				if theChamp.isPopulationChampion {
 					baby.isPopulationChampionChild = true
 					baby.highestFitness = mom.originalFitness
 				}
 			}
 
-			the_champ.superChampOffspring--
-		} else if !champ_clone_done && s.ExpectedOffspring > 5 {
+			theChamp.superChampOffspring--
+		} else if !champCloneDone && s.ExpectedOffspring > 5 {
 			neat.DebugLog("SPECIES: Clone species champion")
 
 			// If we have a Species champion, just clone it
-			mom := the_champ // Mom is the champ
-			new_genome, err := mom.Genotype.duplicate(count)
+			mom := theChamp // Mom is the champ
+			newGenome, err := mom.Genotype.duplicate(count)
 			if err != nil {
 				return nil, err
 			}
 			// Baby is just like mommy
-			champ_clone_done = true
+			champCloneDone = true
 
 			// Create the new baby organism
-			baby, err = NewOrganism(0.0, new_genome, generation)
+			baby, err = NewOrganism(0.0, newGenome, generation)
 			if err != nil {
 				return nil, err
 			}
 
-		} else if rand.Float64() < context.MutateOnlyProb || pool_size == 1 {
+		} else if rand.Float64() < opts.MutateOnlyProb || poolSize == 1 {
 			neat.DebugLog("SPECIES: Reproduce by applying random mutation:")
 
 			// Apply mutations
-			org_num := rand.Int31n(int32(pool_size)) // select random mom
-			mom := s.Organisms[org_num]
-			new_genome, err := mom.Genotype.duplicate(count)
+			orgNum := rand.Int31n(int32(poolSize)) // select random mom
+			mom := s.Organisms[orgNum]
+			newGenome, err := mom.Genotype.duplicate(count)
 			if err != nil {
 				return nil, err
 			}
 
 			// Do the mutation depending on probabilities of various mutations
-			if rand.Float64() < context.MutateAddNodeProb {
+			if rand.Float64() < opts.MutateAddNodeProb {
 				neat.DebugLog("SPECIES: ---> mutateAddNode")
 
 				// Mutate add node
-				if _, err = new_genome.mutateAddNode(pop, context); err != nil {
+				if _, err = newGenome.mutateAddNode(pop, pop, opts); err != nil {
 					return nil, err
 				}
-				mut_struct_baby = true
-			} else if rand.Float64() < context.MutateAddLinkProb {
+				mutStructBaby = true
+			} else if rand.Float64() < opts.MutateAddLinkProb {
 				neat.DebugLog("SPECIES: ---> mutateAddLink")
 
 				// Mutate add link
-				new_genome.Genesis(generation)
-				if _, err = new_genome.mutateAddLink(pop, context); err != nil {
+				if _, err = newGenome.Genesis(generation); err != nil {
 					return nil, err
 				}
-				mut_struct_baby = true
-			} else if rand.Float64() < context.MutateConnectSensors {
+				if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
+					return nil, err
+				}
+				mutStructBaby = true
+			} else if rand.Float64() < opts.MutateConnectSensors {
 				neat.DebugLog("SPECIES: ---> mutateConnectSensors")
-				if link_added, err := new_genome.mutateConnectSensors(pop, context); err != nil {
+				if linkAdded, err := newGenome.mutateConnectSensors(pop, opts); err != nil {
 					return nil, err
 				} else {
-					mut_struct_baby = link_added
+					mutStructBaby = linkAdded
 				}
 			}
 
-			if !mut_struct_baby {
+			if !mutStructBaby {
 				neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 				// If we didn't do a structural mutation, we do the other kinds
-				if _, err = new_genome.mutateAllNonstructural(context); err != nil {
+				if _, err = newGenome.mutateAllNonstructural(opts); err != nil {
 					return nil, err
 				}
 			}
 
 			// Create the new baby organism
-			baby, err = NewOrganism(0.0, new_genome, generation);
+			baby, err = NewOrganism(0.0, newGenome, generation)
 			if err != nil {
 				return nil, err
 			}
@@ -388,119 +414,119 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 			neat.DebugLog("SPECIES: Reproduce by mating:")
 
 			// Otherwise we should mate
-			org_num := rand.Int31n(int32(pool_size)) // select random mom
-			mom := s.Organisms[org_num]
+			orgNum := rand.Int31n(int32(poolSize)) // select random mom
+			mom := s.Organisms[orgNum]
 
 			// Choose random dad
 			var dad *Organism
-			if rand.Float64() > context.InterspeciesMateRate {
+			if rand.Float64() > opts.InterspeciesMateRate {
 				neat.DebugLog("SPECIES: ---> mate within species")
 
 				// Mate within Species
-				org_num = rand.Int31n(int32(pool_size))
-				dad = s.Organisms[org_num]
+				orgNum = rand.Int31n(int32(poolSize))
+				dad = s.Organisms[orgNum]
 			} else {
 				neat.DebugLog("SPECIES: ---> mate outside species")
 
 				// Mate outside Species
-				rand_species := s
+				randSpecies := s
 
 				// Select a random species
 				giveup := 0
-				for ; rand_species.Id == s.Id && giveup < 5; {
+				for randSpecies.Id == s.Id && giveup < 5 {
 					// Choose a random species tending towards better species
-					rand_mult := rand.Float64() / 4.0
+					randMult := rand.Float64() / 4.0
 					// This tends to select better species
-					rand_species_num := int(math.Floor(rand_mult * float64(len(sorted_species))))
-					rand_species = *sorted_species[rand_species_num]
+					randSpeciesNum := int(math.Floor(randMult * float64(len(sortedSpecies))))
+					randSpecies = sortedSpecies[randSpeciesNum]
 
 					giveup++
 				}
-				dad = rand_species.Organisms[0]
+				dad = randSpecies.Organisms[0]
 			}
 
 			// Perform mating based on probabilities of different mating types
-			var new_genome *Genome
+			var newGenome *Genome
 			var err error
-			if rand.Float64() < context.MateMultipointProb {
+			if rand.Float64() < opts.MateMultipointProb {
 				neat.DebugLog("SPECIES: ------> mateMultipoint")
 
 				// mate multipoint baby
-				new_genome, err = mom.Genotype.mateMultipoint(dad.Genotype, count, mom.originalFitness, dad.originalFitness)
+				newGenome, err = mom.Genotype.mateMultipoint(dad.Genotype, count, mom.originalFitness, dad.originalFitness)
 				if err != nil {
 					return nil, err
 				}
-			} else if rand.Float64() < context.MateMultipointAvgProb / (context.MateMultipointAvgProb + context.MateSinglepointProb) {
+			} else if rand.Float64() < opts.MateMultipointAvgProb/(opts.MateMultipointAvgProb+opts.MateSinglepointProb) {
 				neat.DebugLog("SPECIES: ------> mateMultipointAvg")
 
 				// mate multipoint_avg baby
-				new_genome, err = mom.Genotype.mateMultipointAvg(dad.Genotype, count, mom.originalFitness, dad.originalFitness)
+				newGenome, err = mom.Genotype.mateMultipointAvg(dad.Genotype, count, mom.originalFitness, dad.originalFitness)
 				if err != nil {
 					return nil, err
 				}
 			} else {
-				neat.DebugLog("SPECIES: ------> mateSinglepoint")
+				neat.DebugLog("SPECIES: ------> mateSinglePoint")
 
-				new_genome, err = mom.Genotype.mateSinglepoint(dad.Genotype, count)
+				newGenome, err = mom.Genotype.mateSinglePoint(dad.Genotype, count)
 				if err != nil {
 					return nil, err
 				}
 			}
 
-			mate_baby = true
+			mateBaby = true
 
 			// Determine whether to mutate the baby's Genome
 			// This is done randomly or if the mom and dad are the same organism
-			if rand.Float64() > context.MateOnlyProb ||
+			if rand.Float64() > opts.MateOnlyProb ||
 				dad.Genotype.Id == mom.Genotype.Id ||
-				dad.Genotype.compatibility(mom.Genotype, context) == 0.0 {
+				dad.Genotype.compatibility(mom.Genotype, opts) == 0.0 {
 				neat.DebugLog("SPECIES: ------> Mutatte baby genome:")
 
 				// Do the mutation depending on probabilities of  various mutations
-				if rand.Float64() < context.MutateAddNodeProb {
+				if rand.Float64() < opts.MutateAddNodeProb {
 					neat.DebugLog("SPECIES: ---------> mutateAddNode")
 
 					// mutate_add_node
-					if _, err = new_genome.mutateAddNode(pop, context); err != nil {
+					if _, err = newGenome.mutateAddNode(pop, pop, opts); err != nil {
 						return nil, err
 					}
-					mut_struct_baby = true
-				} else if rand.Float64() < context.MutateAddLinkProb {
+					mutStructBaby = true
+				} else if rand.Float64() < opts.MutateAddLinkProb {
 					neat.DebugLog("SPECIES: ---------> mutateAddLink")
 
 					// mutate_add_link
-					new_genome.Genesis(generation)
-					if _, err = new_genome.mutateAddLink(pop, context); err != nil {
+					if _, err = newGenome.Genesis(generation); err != nil {
 						return nil, err
 					}
-					mut_struct_baby = true
-				} else if rand.Float64() < context.MutateConnectSensors {
-					neat.DebugLog("SPECIES: ---> mutateConnectSensors")
-					if link_added, err := new_genome.mutateConnectSensors(pop, context); err != nil {
+					if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
 						return nil, err
-					} else {
-						mut_struct_baby = link_added
+					}
+					mutStructBaby = true
+				} else if rand.Float64() < opts.MutateConnectSensors {
+					neat.DebugLog("SPECIES: ---> mutateConnectSensors")
+					if mutStructBaby, err = newGenome.mutateConnectSensors(pop, opts); err != nil {
+						return nil, err
 					}
 				}
 
-				if !mut_struct_baby {
+				if !mutStructBaby {
 					neat.DebugLog("SPECIES: ---> mutateAllNonstructural")
 
 					// If we didn't do a structural mutation, we do the other kinds
-					if _, err := new_genome.mutateAllNonstructural(context); err != nil {
+					if _, err = newGenome.mutateAllNonstructural(opts); err != nil {
 						return nil, err
 					}
 				}
 			}
 			// Create the new baby organism
-			baby, err = NewOrganism(0.0, new_genome, generation)
+			baby, err = NewOrganism(0.0, newGenome, generation)
 			if err != nil {
 				return nil, err
 			}
 		} // end else
 
-		baby.mutationStructBaby = mut_struct_baby
-		baby.mateBaby = mate_baby
+		baby.mutationStructBaby = mutStructBaby
+		baby.mateBaby = mateBaby
 
 		babies = append(babies, baby)
 
@@ -509,19 +535,23 @@ func (s Species) reproduce(generation int, pop *Population, sorted_species []*Sp
 }
 
 func createFirstSpecies(pop *Population, baby *Organism) {
-	neat.DebugLog(fmt.Sprintf("SPECIES: Create first species for baby organism [%d]", baby.Genotype.Id))
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog(fmt.Sprintf("SPECIES: Create first species for baby organism [%d]", baby.Genotype.Id))
+	}
 
 	pop.LastSpecies++
-	new_species := NewSpeciesNovel(pop.LastSpecies, true)
-	pop.Species = append(pop.Species, new_species)
-	new_species.addOrganism(baby) // Add the baby
-	baby.Species = new_species // Point baby to its species
+	species := NewSpeciesNovel(pop.LastSpecies, true)
+	pop.Species = append(pop.Species, species)
+	species.addOrganism(baby) // Add the baby
+	baby.Species = species    // Point baby to its species
 
-	neat.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d, new species id: %d",
-		len(pop.Species), new_species.Id))
+	if neat.LogLevel == neat.LogLevelDebug {
+		neat.DebugLog(fmt.Sprintf("SPECIES: # of species in population: %d, new species id: %d",
+			len(pop.Species), species.Id))
+	}
 }
 
-func (s Species) String() string {
+func (s *Species) String() string {
 	max, avg := s.ComputeMaxAndAvgFitness()
 	str := fmt.Sprintf("Species #%d, age=%d, avg_fitness=%.3f, max_fitness=%.3f, max_fitness_ever=%.3f, expected_offspring=%d, age_of_last_improvement=%d\n",
 		s.Id, s.Age, avg, max, s.MaxFitnessEver, s.ExpectedOffspring, s.AgeOfLastImprovement)
@@ -563,7 +593,7 @@ func (f byOrganismOrigFitness) Less(i, j int) bool {
 	return false
 }
 
-// This is used for list sorting of species by maximal fitness
+// ByOrganismFitness is used for list sorting of species by maximal fitness
 type ByOrganismFitness []*Species
 
 func (f ByOrganismFitness) Len() int {
@@ -575,7 +605,7 @@ func (f ByOrganismFitness) Swap(i, j int) {
 }
 
 func (f ByOrganismFitness) Less(i, j int) bool {
-	i_max, _ := f[i].ComputeMaxAndAvgFitness()
-	j_max, _ := f[j].ComputeMaxAndAvgFitness()
-	return i_max < j_max
+	iMax, _ := f[i].ComputeMaxAndAvgFitness()
+	jMax, _ := f[j].ComputeMaxAndAvgFitness()
+	return iMax < jMax
 }

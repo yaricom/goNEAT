@@ -1,154 +1,72 @@
 package genetics
 
 import (
-	"testing"
-	"github.com/yaricom/goNEAT/neat"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/neat"
 	"math/rand"
 	"strings"
-	"bytes"
-	"bufio"
+	"testing"
 )
 
 func TestNewPopulationRandom(t *testing.T) {
 	rand.Seed(42)
 	in, out, nmax := 3, 2, 5
-	recurrent := false
-	link_prob := 0.5
-	conf := neat.NeatContext{
-		CompatThreshold:0.5,
-		PopSize:10,
+	linkProb := 0.5
+	conf := neat.Options{
+		CompatThreshold: 0.5,
+		PopSize:         10,
 	}
-	pop, err := NewPopulationRandom(in, out, nmax, recurrent, link_prob, &conf)
-	if err != nil {
-		t.Error(err)
-	}
-	if pop == nil {
-		t.Error("pop == nil")
-	}
-	if len(pop.Organisms) != conf.PopSize {
-		t.Error("len(pop.Organisms) != size")
-	}
-	if pop.nextNodeId != 11 {
-		t.Error("pop.currNodeId != 11")
-	}
-	if pop.nextInnovNum != int64(101) {
-		t.Error("pop.currInnovNum != 101")
-	}
-	if len(pop.Species) == 0 {
-		t.Error("len(pop.Species) == 0")
-	}
+	pop, err := NewPopulationRandom(in, out, nmax, false, linkProb, &conf)
+	require.NoError(t, err, "failed to create population")
+	require.NotNil(t, pop, "population expected")
+	require.Len(t, pop.Organisms, conf.PopSize, "wrong population size")
+	assert.EqualValues(t, 11, pop.nextNodeId, "wrong next node ID")
+	assert.EqualValues(t, 101, pop.nextInnovNum, "wrong next innovation number")
+	assert.True(t, len(pop.Species) > 0, "population has no species")
 
-	for _, org := range pop.Organisms {
-		if len(org.Genotype.Genes) == 0 {
-			t.Error("len(org.GNome.Genes) == 0")
-		}
-		if len(org.Genotype.Nodes) == 0 {
-			t.Error("len(org.GNome.Nodes) == 0")
-		}
-		if len(org.Genotype.Traits) == 0 {
-			t.Error("len(org.GNome.Traits) == 0")
-		}
-		if org.Genotype.Phenotype == nil {
-			t.Error("org.GNome.Phenotype == nil")
-		}
+	for i, org := range pop.Organisms {
+		assert.True(t, len(org.Genotype.Genes) > 0, "organism has no genes at: %d", i)
+		assert.True(t, len(org.Genotype.Nodes) > 0, "organism has no nodes at: %d", i)
+		assert.True(t, len(org.Genotype.Traits) > 0, "organism has no traits at: %d", i)
+		assert.NotNil(t, org.Genotype.Phenotype, "organism has no phenotype")
 	}
-
 }
 
 func TestNewPopulation(t *testing.T) {
 	rand.Seed(42)
 	in, out, nmax, n := 3, 2, 5, 3
-	recurrent := false
-	link_prob := 0.5
-	conf := neat.NeatContext{
-		CompatThreshold:0.5,
-		PopSize:10,
+	linkProb := 0.5
+	conf := neat.Options{
+		CompatThreshold: 0.5,
+		PopSize:         10,
 	}
-	gen := newGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
+	gen := newGenomeRand(1, in, out, n, nmax, false, linkProb)
 
 	pop, err := NewPopulation(gen, &conf)
-	if err != nil {
-		t.Error(err)
-	}
-	if pop == nil {
-		t.Error("pop == nil")
-	}
-	if len(pop.Organisms) != conf.PopSize {
-		t.Error("len(pop.Organisms) != conf.PopSize")
-	}
-	last_node_id, _ := gen.getLastNodeId()
-	if pop.nextNodeId != int32(last_node_id + 1) {
-		t.Error("pop.currNodeId != last_node_id")
-	}
-	last_gene_innov_num, _ := gen.getNextGeneInnovNum()
-	if pop.nextInnovNum != last_gene_innov_num {
-		t.Error("pop.currInnovNum != last_gene_innov_num")
-	}
+	require.NoError(t, err, "failed to create population")
+	require.NotNil(t, pop, "population expected")
+	require.Len(t, pop.Organisms, conf.PopSize, "wrong population size")
+	lastNodeId, err := gen.getLastNodeId()
+	require.NoError(t, err, "failed to get last node ID")
+	assert.Equal(t, int32(lastNodeId+1), pop.nextNodeId, "wrong next node ID")
 
-	for _, org := range pop.Organisms {
-		if len(org.Genotype.Genes) == 0 {
-			t.Error("len(org.GNome.Genes) == 0")
-		}
-		if len(org.Genotype.Nodes) == 0 {
-			t.Error("len(org.GNome.Nodes) == 0")
-		}
-		if len(org.Genotype.Traits) == 0 {
-			t.Error("len(org.GNome.Traits) == 0")
-		}
-		if org.Genotype.Phenotype == nil {
-			t.Error("org.GNome.Phenotype == nil")
-		}
-	}
-}
+	nextGeneInnovNum, err := gen.getNextGeneInnovNum()
+	require.NoError(t, err, "failed to get next gene innovation number")
+	assert.Equal(t, nextGeneInnovNum-1, pop.nextInnovNum, "wrong next innovation number in population")
+	require.Len(t, pop.Species, 1, "wrong species number")
 
-func TestReadPopulation(t *testing.T) {
-	pop_str := "genomestart 1\n" +
-		"trait 1 0.1 0 0 0 0 0 0 0\n" +
-		"trait 2 0.2 0 0 0 0 0 0 0\n" +
-		"trait 3 0.3 0 0 0 0 0 0 0\n" +
-		"node 1 0 1 1\n" +
-		"node 2 0 1 1\n" +
-		"node 3 0 1 3\n" +
-		"node 4 0 0 2\n" +
-		"gene 1 1 4 1.5 false 1 0 true\n" +
-		"gene 2 2 4 2.5 false 2 0 true\n" +
-		"gene 3 3 4 3.5 false 3 0 true\n" +
-		"genomeend 1\n" +
-		"genomestart 2\n" +
-		"trait 1 0.1 0 0 0 0 0 0 0\n" +
-		"trait 2 0.2 0 0 0 0 0 0 0\n" +
-		"trait 3 0.3 0 0 0 0 0 0 0\n" +
-		"node 1 0 1 1\n" +
-		"node 2 0 1 1\n" +
-		"node 3 0 1 3\n" +
-		"node 4 0 0 2\n" +
-		"gene 1 1 4 1.5 false 1 0 true\n" +
-		"gene 2 2 4 2.5 false 2 0 true\n" +
-		"gene 3 3 4 3.5 false 3 0 true\n" +
-		"genomeend 2\n"
-	conf := neat.NeatContext{
-		CompatThreshold:0.5,
-	}
-	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if pop == nil {
-		t.Error("pop == nil")
-	}
-	if len(pop.Organisms) != 2 {
-		t.Error("len(pop.Organisms) != size")
-	}
-	if len(pop.Species) != 1 {
-		// because genomes are identical
-		t.Error("len(pop.Species) != 1", len(pop.Species))
+	for i, org := range pop.Organisms {
+		assert.True(t, len(org.Genotype.Genes) > 0, "organism has no genes at: %d", i)
+		assert.True(t, len(org.Genotype.Nodes) > 0, "organism has no nodes at: %d", i)
+		assert.True(t, len(org.Genotype.Traits) > 0, "organism has no traits at: %d", i)
+		assert.NotNil(t, org.Genotype.Phenotype, "organism has no phenotype")
 	}
 }
 
 func TestPopulation_verify(t *testing.T) {
 	// first create population
-	pop_str := "genomestart 1\n" +
+	popStr := "genomestart 1\n" +
 		"trait 1 0.1 0 0 0 0 0 0 0\n" +
 		"trait 2 0.2 0 0 0 0 0 0 0\n" +
 		"trait 3 0.3 0 0 0 0 0 0 0\n" +
@@ -172,79 +90,15 @@ func TestPopulation_verify(t *testing.T) {
 		"gene 2 2 4 2.5 false 2 0 true\n" +
 		"gene 3 3 4 3.5 false 3 0 true\n" +
 		"genomeend 2\n"
-	conf := neat.NeatContext{
-		CompatThreshold:0.5,
+	conf := neat.Options{
+		CompatThreshold: 0.5,
 	}
-	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if pop == nil {
-		t.Error("pop == nil")
-	}
+	pop, err := ReadPopulation(strings.NewReader(popStr), &conf)
+	require.NoError(t, err, "failed to create population")
+	require.NotNil(t, pop, "population expected")
 
 	// then verify created
 	res, err := pop.Verify()
-	if err != nil {
-		t.Error(err)
-	}
-	if !res {
-		t.Error("Population verification failed, but must not")
-	}
-}
-
-func TestPopulation_Write(t *testing.T) {
-	// first create population
-	pop_str := "genomestart 1\n" +
-		"trait 1 0.1 0 0 0 0 0 0 0\n" +
-		"trait 2 0.2 0 0 0 0 0 0 0\n" +
-		"trait 3 0.3 0 0 0 0 0 0 0\n" +
-		"node 1 0 1 1\n" +
-		"node 2 0 1 1\n" +
-		"node 3 0 1 3\n" +
-		"node 4 0 0 2\n" +
-		"gene 1 1 4 1.5 false 1 0 true\n" +
-		"gene 2 2 4 2.5 false 2 0 true\n" +
-		"gene 3 3 4 3.5 false 3 0 true\n" +
-		"genomeend 1\n" +
-		"genomestart 2\n" +
-		"trait 1 0.1 0 0 0 0 0 0 0\n" +
-		"trait 2 0.2 0 0 0 0 0 0 0\n" +
-		"trait 3 0.3 0 0 0 0 0 0 0\n" +
-		"node 1 0 1 1\n" +
-		"node 2 0 1 1\n" +
-		"node 3 0 1 3\n" +
-		"node 4 0 0 2\n" +
-		"gene 1 1 4 1.5 false 1 0 true\n" +
-		"gene 2 2 4 2.5 false 2 0 true\n" +
-		"gene 3 3 4 3.5 false 3 0 true\n" +
-		"genomeend 2\n"
-	conf := neat.NeatContext{
-		CompatThreshold:0.5,
-	}
-	pop, err := ReadPopulation(strings.NewReader(pop_str), &conf)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if pop == nil {
-		t.Error("pop == nil")
-		return
-	}
-
-	// write it again and test
-	out_buf := bytes.NewBufferString("")
-	pop.Write(out_buf)
-
-	_, p_str_r, err_p := bufio.ScanLines([]byte(pop_str), true)
-	_, o_str_r, err_o := bufio.ScanLines(out_buf.Bytes(), true)
-	if err_p != nil || err_o != nil {
-		t.Error("Failed to parse strings", err_o, err_p)
-	}
-	for i, gsr := range p_str_r {
-		if gsr != o_str_r[i] {
-			t.Error("Lines mismatch", gsr, o_str_r[i])
-		}
-	}
+	require.NoError(t, err, "failed to verify population")
+	assert.True(t, res, "Population verification failed, but must not")
 }

@@ -1,31 +1,34 @@
 package genetics
 
 import (
-	"testing"
-	"github.com/yaricom/goNEAT/neat"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/neat"
 	"math/rand"
+	"testing"
 )
 
-func runSequentialPopulationEpochExecutor_NextEpoch(pop *Population, conf *neat.NeatContext) error {
+func sequentialExecutorNextEpoch(pop *Population, opts *neat.Options) error {
 	ex := SequentialPopulationEpochExecutor{}
 
 	for i := 0; i < 100; i++ {
-		err := ex.NextEpoch(i + 1, pop, conf)
+		err := ex.NextEpoch(opts.NeatContext(), i+1, pop)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed at: %d epoch", i)
 		}
 	}
 	return nil
 
 }
 
-func runParallelPopulationEpochExecutor_NextEpoch(pop *Population, conf *neat.NeatContext) error {
+func parallelExecutorNextEpoch(pop *Population, opts *neat.Options) error {
 	ex := ParallelPopulationEpochExecutor{}
 
 	for i := 0; i < 100; i++ {
-		err := ex.NextEpoch(i + 1, pop, conf)
+		err := ex.NextEpoch(opts.NeatContext(), i+1, pop)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed at: %d epoch", i)
 		}
 	}
 	return nil
@@ -34,34 +37,25 @@ func runParallelPopulationEpochExecutor_NextEpoch(pop *Population, conf *neat.Ne
 func TestPopulationEpochExecutor_NextEpoch(t *testing.T) {
 	rand.Seed(42)
 	in, out, nmax, n := 3, 2, 15, 3
-	recurrent := false
-	link_prob := 0.8
-	conf := neat.NeatContext{
-		CompatThreshold:0.5,
-		DropOffAge:1,
-		PopSize: 30,
-		BabiesStolen:10,
-		RecurOnlyProb:0.2,
+	linkProb := 0.8
+	conf := neat.Options{
+		CompatThreshold: 0.5,
+		DropOffAge:      1,
+		PopSize:         30,
+		BabiesStolen:    10,
+		RecurOnlyProb:   0.2,
 	}
 	neat.LogLevel = neat.LogLevelInfo
-	gen := newGenomeRand(1, in, out, n, nmax, recurrent, link_prob)
+	gen := newGenomeRand(1, in, out, n, nmax, false, linkProb)
 	pop, err := NewPopulation(gen, &conf)
-	if err != nil {
-		t.Error(err)
-	}
-	if pop == nil {
-		t.Error("pop == nil")
-	}
+	require.NoError(t, err, "failed to create population")
+	require.NotNil(t, pop, "population expected")
 
 	// test sequential executor
-	err = runSequentialPopulationEpochExecutor_NextEpoch(pop, &conf)
-	if err != nil {
-		t.Error(err)
-	}
+	err = sequentialExecutorNextEpoch(pop, &conf)
+	assert.NoError(t, err, "failed to run sequential epoch executor")
 
 	// test parallel executor
-	err = runParallelPopulationEpochExecutor_NextEpoch(pop, &conf)
-	if err != nil {
-		t.Error(err)
-	}
+	err = parallelExecutorNextEpoch(pop, &conf)
+	assert.NoError(t, err, "failed to run parallel epoch executor")
 }

@@ -1,9 +1,9 @@
 package genetics
 
 import (
-	"github.com/yaricom/goNEAT/neat/network"
 	"fmt"
-	"github.com/yaricom/goNEAT/neat"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
 // The Gene class in this system specifies a "Connection Gene."
@@ -17,55 +17,56 @@ import (
 // (Since it was first innovated). In the current implementation the mutation number is the same as the weight.
 type Gene struct {
 	// The link between nodes
-	Link          *network.Link
+	Link *network.Link
 	// The current innovation number for this gene
 	InnovationNum int64
 	// Used to see how much mutation has changed the link
-	MutationNum   float64
+	MutationNum float64
 	// If true the gene is enabled
-	IsEnabled     bool
+	IsEnabled bool
 }
 
-// Creates new Gene
-func NewGene(weight float64, in_node, out_node *network.NNode, recurrent bool, inov_num int64, mut_num float64) *Gene {
-	return newGene(network.NewLink(weight, in_node, out_node, recurrent), inov_num, mut_num, true)
+// NewGene Creates new Gene
+func NewGene(weight float64, inNode, outNode *network.NNode, recurrent bool, innovationNum int64, mutationNum float64) *Gene {
+	return NewConnectionGene(network.NewLink(weight, inNode, outNode, recurrent), innovationNum, mutationNum, true)
 }
 
-// Creates new Gene with Trait
-func NewGeneWithTrait(trait *neat.Trait, weight float64, in_node, out_node *network.NNode,
-recurrent bool, inov_num int64, mut_num float64) *Gene {
-	return newGene(network.NewLinkWithTrait(trait, weight, in_node, out_node, recurrent), inov_num, mut_num, true)
+// NewGeneWithTrait Creates new Gene with Trait
+func NewGeneWithTrait(trait *neat.Trait, weight float64, inNode, outNode *network.NNode,
+	recurrent bool, innovationNum int64, mutationNum float64) *Gene {
+	return NewConnectionGene(network.NewLinkWithTrait(trait, weight, inNode, outNode, recurrent), innovationNum, mutationNum, true)
 }
 
-// Construct a gene off of another gene as a duplicate
-func NewGeneCopy(g *Gene, trait *neat.Trait, in_node, out_node *network.NNode) *Gene {
-	return newGene(network.NewLinkWithTrait(trait, g.Link.Weight, in_node, out_node, g.Link.IsRecurrent),
+// NewGeneCopy Construct a gene off of another gene as a duplicate
+func NewGeneCopy(g *Gene, trait *neat.Trait, inNode, outNode *network.NNode) *Gene {
+	return NewConnectionGene(network.NewLinkWithTrait(trait, g.Link.Weight, inNode, outNode, g.Link.IsRecurrent),
 		g.InnovationNum, g.MutationNum, true)
 }
 
-func newGene(link *network.Link, inov_num int64, mut_num float64, enabled bool) *Gene {
+// NewConnectionGene is to create new connection gene with provided link
+func NewConnectionGene(link *network.Link, innovationNum int64, mutationNum float64, enabled bool) *Gene {
 	return &Gene{
-		Link:link,
-		InnovationNum:inov_num,
-		MutationNum:mut_num,
-		IsEnabled:enabled,
+		Link:          link,
+		InnovationNum: innovationNum,
+		MutationNum:   mutationNum,
+		IsEnabled:     enabled,
 	}
 }
 
 func (g *Gene) String() string {
-	enabl_str := ""
+	enabledStr := ""
 	if !g.IsEnabled {
-		enabl_str = " -DISABLED-"
+		enabledStr = " -DISABLED-"
 	}
-	recurr_str := ""
+	recurrentStr := ""
 	if g.Link.IsRecurrent {
-		recurr_str = " -RECUR-"
+		recurrentStr = " -RECUR-"
 	}
-	trait_str := ""
+	traitStr := ""
 	if g.Link.Trait != nil {
-		trait_str = fmt.Sprintf(" Link's trait_id: %d", g.Link.Trait.Id)
+		traitStr = fmt.Sprintf(" Link's trait_id: %d", g.Link.Trait.Id)
 	}
-	return fmt.Sprintf("[Link (%4d ->%4d) INNOV (%4d, % .3f) Weight: % .3f %s%s%s : %s->%s]",
+	return fmt.Sprintf("[Link (%4d ->%4d) INNOV (%4d, %.3f) Weight: %.3f %s%s%s : %s->%s]",
 		g.Link.InNode.Id, g.Link.OutNode.Id, g.InnovationNum, g.MutationNum, g.Link.Weight,
-		trait_str, enabl_str, recurr_str, g.Link.InNode, g.Link.OutNode)
+		traitStr, enabledStr, recurrentStr, g.Link.InNode, g.Link.OutNode)
 }

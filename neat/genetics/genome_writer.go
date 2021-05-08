@@ -1,29 +1,28 @@
 package genetics
 
 import (
-	"io"
 	"bufio"
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"github.com/spf13/cast"
-	"github.com/yaricom/goNEAT/neat"
-	"github.com/yaricom/goNEAT/neat/network"
-	"github.com/yaricom/goNEAT/neat/utils"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
+	"github.com/yaricom/goNEAT/v2/neat/network"
+	"gopkg.in/yaml.v3"
+	"io"
 )
 
-// The interface to define genome writer
+// GenomeWriter is the interface to define genome writer
 type GenomeWriter interface {
-	// Writes Genome record
+	// WriteGenome writes Genome record into underlying writer
 	WriteGenome(genome *Genome) error
 }
 
-// Creates genome writer with specified data encoding format
+// NewGenomeWriter creates genome writer with specified data encoding format
 func NewGenomeWriter(w io.Writer, encoding GenomeEncoding) (GenomeWriter, error) {
 	switch encoding {
 	case PlainGenomeEncoding:
-		return &plainGenomeWriter{w:bufio.NewWriter(w)}, nil
+		return &plainGenomeWriter{w: bufio.NewWriter(w)}, nil
 	case YAMLGenomeEncoding:
-		return &yamlGenomeWriter{w:bufio.NewWriter(w)}, nil
+		return &yamlGenomeWriter{w: bufio.NewWriter(w)}, nil
 	default:
 		return nil, ErrUnsupportedGenomeEncoding
 	}
@@ -34,45 +33,52 @@ type plainGenomeWriter struct {
 	w *bufio.Writer
 }
 
-// Writes genome in Plain Text format
 func (wr *plainGenomeWriter) WriteGenome(g *Genome) error {
-	_, err := fmt.Fprintf(wr.w, "genomestart %d\n", g.Id)
-	if err != nil {
+	if _, err := fmt.Fprintf(wr.w, "genomestart %d\n", g.Id); err != nil {
 		return err
 	}
 
 	for _, tr := range g.Traits {
-		fmt.Fprint(wr.w, "trait ")
-		err := wr.writeTrait(tr)
-		if err != nil {
+		if _, err := fmt.Fprint(wr.w, "trait "); err != nil {
 			return err
 		}
-		fmt.Fprintln(wr.w, "")
+		if err := wr.writeTrait(tr); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(wr.w, ""); err != nil {
+			return err
+		}
 	}
 
 	for _, nd := range g.Nodes {
-		fmt.Fprint(wr.w, "node ")
-		err := wr.writeNetworkNode(nd)
-		if err != nil {
+		if _, err := fmt.Fprint(wr.w, "node "); err != nil {
 			return err
 		}
-		fmt.Fprintln(wr.w, "")
+		if err := wr.writeNetworkNode(nd); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(wr.w, ""); err != nil {
+			return err
+		}
 	}
 
 	for _, gn := range g.Genes {
-		fmt.Fprint(wr.w, "gene ")
-		err := wr.writeConnectionGene(gn)
-		if err != nil {
+		if _, err := fmt.Fprint(wr.w, "gene "); err != nil {
 			return err
 		}
-		fmt.Fprintln(wr.w, "")
+		if err := wr.writeConnectionGene(gn); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(wr.w, ""); err != nil {
+			return err
+		}
 	}
-	_, err = fmt.Fprintf(wr.w, "genomeend %d\n", g.Id)
+	if _, err := fmt.Fprintf(wr.w, "genomeend %d\n", g.Id); err != nil {
+		return err
+	}
 
 	// flush buffer
-	err = wr.w.Flush()
-
-	return err
+	return wr.w.Flush()
 }
 
 // Dump trait in plain text format
@@ -80,7 +86,7 @@ func (wr *plainGenomeWriter) writeTrait(t *neat.Trait) error {
 	_, err := fmt.Fprintf(wr.w, "%d ", t.Id)
 	if err == nil {
 		for i, p := range t.Params {
-			if i < len(t.Params) - 1 {
+			if i < len(t.Params)-1 {
 				_, err = fmt.Fprintf(wr.w, "%g ", p)
 			} else {
 				_, err = fmt.Fprintf(wr.w, "%g", p)
@@ -93,19 +99,21 @@ func (wr *plainGenomeWriter) writeTrait(t *neat.Trait) error {
 	}
 	return err
 }
+
 // Dump network node in plain text format
 func (wr *plainGenomeWriter) writeNetworkNode(n *network.NNode) error {
-	trait_id := 0
+	traitId := 0
 	if n.Trait != nil {
-		trait_id = n.Trait.Id
+		traitId = n.Trait.Id
 	}
-	act_str, err := utils.NodeActivators.ActivationNameFromType(n.ActivationType)
+	actStr, err := math.NodeActivators.ActivationNameFromType(n.ActivationType)
 	if err == nil {
-		_, err = fmt.Fprintf(wr.w, "%d %d %d %d %s", n.Id, trait_id, n.NodeType(),
-			n.NeuronType, act_str)
+		_, err = fmt.Fprintf(wr.w, "%d %d %d %d %s", n.Id, traitId, n.NodeType(),
+			n.NeuronType, actStr)
 	}
 	return err
 }
+
 // Dump connection gene in plain text format
 func (wr *plainGenomeWriter) writeConnectionGene(g *Gene) error {
 	link := g.Link
@@ -117,12 +125,12 @@ func (wr *plainGenomeWriter) writeConnectionGene(g *Gene) error {
 	outNodeId := link.OutNode.Id
 	weight := link.Weight
 	recurrent := link.IsRecurrent
-	innov_num := g.InnovationNum
-	mut_num := g.MutationNum
+	innovNum := g.InnovationNum
+	mutNum := g.MutationNum
 	enabled := g.IsEnabled
 
 	_, err := fmt.Fprintf(wr.w, "%d %d %d %g %t %d %g %t",
-		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
+		traitId, inNodeId, outNodeId, weight, recurrent, innovNum, mutNum, enabled)
 	return err
 }
 
@@ -132,15 +140,15 @@ type yamlGenomeWriter struct {
 }
 
 func (wr *yamlGenomeWriter) WriteGenome(g *Genome) (err error) {
-	g_map := make(map[string]interface{})
-	g_map["id"] = g.Id
+	gMap := make(map[string]interface{})
+	gMap["id"] = g.Id
 
 	// encode traits
 	traits := make([]map[string]interface{}, len(g.Traits))
 	for i, t := range g.Traits {
 		traits[i] = wr.encodeGenomeTrait(t)
 	}
-	g_map["traits"] = traits
+	gMap["traits"] = traits
 
 	// encode network nodes
 	nodes := make([]map[string]interface{}, len(g.Nodes))
@@ -150,14 +158,14 @@ func (wr *yamlGenomeWriter) WriteGenome(g *Genome) (err error) {
 			return err
 		}
 	}
-	g_map["nodes"] = nodes
+	gMap["nodes"] = nodes
 
 	// encode connection genes
 	genes := make([]map[string]interface{}, len(g.Genes))
 	for i, gn := range g.Genes {
 		genes[i] = wr.encodeConnectionGene(gn)
 	}
-	g_map["genes"] = genes
+	gMap["genes"] = genes
 
 	// encode control genes if any
 	if len(g.ControlGenes) > 0 {
@@ -168,17 +176,16 @@ func (wr *yamlGenomeWriter) WriteGenome(g *Genome) (err error) {
 				return err
 			}
 		}
-		g_map["modules"] = modules
+		gMap["modules"] = modules
 	}
 
-
 	// store genome map
-	r_map := make(map[string]interface{})
-	r_map["genome"] = g_map
+	rMap := make(map[string]interface{})
+	rMap["genome"] = gMap
 
 	// encode everything as YAML
 	enc := yaml.NewEncoder(wr.w)
-	err = enc.Encode(r_map)
+	err = enc.Encode(rMap)
 	if err == nil {
 		// flush stream
 		err = wr.w.Flush()
@@ -187,18 +194,18 @@ func (wr *yamlGenomeWriter) WriteGenome(g *Genome) (err error) {
 	return err
 }
 
-func (wr *yamlGenomeWriter) encodeControlGene(gene *MIMOControlGene) (g_map map[string]interface{}, err error) {
-	g_map = make(map[string]interface{})
-	g_map["id"] = gene.ControlNode.Id
+func (wr *yamlGenomeWriter) encodeControlGene(gene *MIMOControlGene) (gMap map[string]interface{}, err error) {
+	gMap = make(map[string]interface{})
+	gMap["id"] = gene.ControlNode.Id
 	if gene.ControlNode.Trait != nil {
-		g_map["trait_id"] = gene.ControlNode.Trait.Id
+		gMap["trait_id"] = gene.ControlNode.Trait.Id
 	} else {
-		g_map["trait_id"] = 0
+		gMap["trait_id"] = 0
 	}
-	g_map["innov_num"] = gene.InnovationNum
-	g_map["mut_num"] = gene.MutationNum
-	g_map["enabled"] = gene.IsEnabled
-	g_map["activation"], err = utils.NodeActivators.ActivationNameFromType(gene.ControlNode.ActivationType)
+	gMap["innov_num"] = gene.InnovationNum
+	gMap["mut_num"] = gene.MutationNum
+	gMap["enabled"] = gene.IsEnabled
+	gMap["activation"], err = math.NodeActivators.ActivationNameFromType(gene.ControlNode.ActivationType)
 	if err != nil {
 		return nil, err
 	}
@@ -207,58 +214,58 @@ func (wr *yamlGenomeWriter) encodeControlGene(gene *MIMOControlGene) (g_map map[
 	for i, in := range gene.ControlNode.Incoming {
 		inputs[i] = wr.encodeModuleLink(in.InNode.Id, i)
 	}
-	g_map["inputs"] = inputs
+	gMap["inputs"] = inputs
 
 	// store outputs
 	outputs := make([]map[string]interface{}, len(gene.ControlNode.Outgoing))
 	for i, out := range gene.ControlNode.Outgoing {
 		outputs[i] = wr.encodeModuleLink(out.OutNode.Id, i)
 	}
-	g_map["outputs"] = outputs
+	gMap["outputs"] = outputs
 
-	return g_map, err
+	return gMap, err
 }
 
 func (wr *yamlGenomeWriter) encodeModuleLink(id, order int) map[string]interface{} {
-	l_map := make(map[string]interface{})
-	l_map["id"] = id
-	l_map["order"] = order
-	return l_map
+	lMap := make(map[string]interface{})
+	lMap["id"] = id
+	lMap["order"] = order
+	return lMap
 }
 
 func (wr *yamlGenomeWriter) encodeConnectionGene(gene *Gene) map[string]interface{} {
-	g_map := make(map[string]interface{})
+	gMap := make(map[string]interface{})
 	if gene.Link.Trait != nil {
-		g_map["trait_id"] = gene.Link.Trait.Id
+		gMap["trait_id"] = gene.Link.Trait.Id
 	} else {
-		g_map["trait_id"] = 0
+		gMap["trait_id"] = 0
 	}
-	g_map["src_id"] = gene.Link.InNode.Id
-	g_map["tgt_id"] = gene.Link.OutNode.Id
-	g_map["innov_num"] = gene.InnovationNum
-	g_map["weight"] = gene.Link.Weight
-	g_map["mut_num"] = gene.MutationNum
-	g_map["recurrent"] = cast.ToString(gene.Link.IsRecurrent)
-	g_map["enabled"] = cast.ToString(gene.IsEnabled)
-	return g_map
+	gMap["src_id"] = gene.Link.InNode.Id
+	gMap["tgt_id"] = gene.Link.OutNode.Id
+	gMap["innov_num"] = gene.InnovationNum
+	gMap["weight"] = gene.Link.Weight
+	gMap["mut_num"] = gene.MutationNum
+	gMap["recurrent"] = gene.Link.IsRecurrent
+	gMap["enabled"] = gene.IsEnabled
+	return gMap
 }
 
-func (wr *yamlGenomeWriter) encodeNetworkNode(node *network.NNode) (n_map map[string]interface{}, err error) {
-	n_map = make(map[string]interface{})
-	n_map["id"] = node.Id
+func (wr *yamlGenomeWriter) encodeNetworkNode(node *network.NNode) (nMap map[string]interface{}, err error) {
+	nMap = make(map[string]interface{})
+	nMap["id"] = node.Id
 	if node.Trait != nil {
-		n_map["trait_id"] = node.Trait.Id
+		nMap["trait_id"] = node.Trait.Id
 	} else {
-		n_map["trait_id"] = 0
+		nMap["trait_id"] = 0
 	}
-	n_map["type"] = network.NeuronTypeName(node.NeuronType)
-	n_map["activation"], err = utils.NodeActivators.ActivationNameFromType(node.ActivationType)
-	return n_map, err
+	nMap["type"] = network.NeuronTypeName(node.NeuronType)
+	nMap["activation"], err = math.NodeActivators.ActivationNameFromType(node.ActivationType)
+	return nMap, err
 }
 
 func (wr *yamlGenomeWriter) encodeGenomeTrait(trait *neat.Trait) map[string]interface{} {
-	tr_map := make(map[string]interface{})
-	tr_map["id"] = trait.Id
-	tr_map["params"] = trait.Params
-	return tr_map
+	trMap := make(map[string]interface{})
+	trMap["id"] = trait.Id
+	trMap["params"] = trait.Params
+	return trMap
 }

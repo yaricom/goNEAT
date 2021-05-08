@@ -1,126 +1,108 @@
 package genetics
 
 import (
-	"testing"
-	"bytes"
-	"github.com/yaricom/goNEAT/neat"
-	"fmt"
-	"strings"
 	"bufio"
-	"github.com/yaricom/goNEAT/neat/network"
-	"reflect"
+	"bytes"
+	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/network"
+	"strings"
+	"testing"
 )
 
 func TestPlainGenomeWriter_WriteTrait(t *testing.T) {
 	params := []float64{
 		0.40227575878298616, 0.0, 0.0, 0.0, 0.0, 0.3245553261200018, 0.0, 0.12248956525856575,
 	}
-	trait_id := 2
+	traitId := 2
 	trait := neat.NewTrait()
-	trait.Id = trait_id
+	trait.Id = traitId
 	trait.Params = params
 
-	trait_str := fmt.Sprintf("%d %g %g %g %g %g %g %g %g",
-		trait_id, params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7])
+	traitStr := fmt.Sprintf("%d %g %g %g %g %g %g %g %g",
+		traitId, params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7])
 
-	out_buffer := bytes.NewBufferString("")
-	wr := plainGenomeWriter{w:bufio.NewWriter(out_buffer)}
+	outBuffer := bytes.NewBufferString("")
+	wr := plainGenomeWriter{w: bufio.NewWriter(outBuffer)}
 	err := wr.writeTrait(trait)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	wr.w.Flush()
+	require.NoError(t, err, "failed to write trait")
+	err = wr.w.Flush()
+	require.NoError(t, err)
 
-	out_str := strings.TrimSpace(out_buffer.String())
-	if trait_str != out_str {
-		t.Errorf("Wrong trait serialization\n[%s]\n[%s]", trait_str, out_str)
-	}
+	outStr := strings.TrimSpace(outBuffer.String())
+	assert.Equal(t, traitStr, outStr)
 }
 
 // Tests NNode serialization
 func TestPlainGenomeWriter_WriteNetworkNode(t *testing.T) {
-	node_id, trait_id, ntype, neuron_type := 1, 10, network.SensorNode, network.InputNeuron
-	node_str := fmt.Sprintf("%d %d %d %d SigmoidSteepenedActivation", node_id, trait_id, ntype, neuron_type)
+	nodeId, traitId, nodeType, neuronType := 1, 10, network.SensorNode, network.InputNeuron
+	nodeStr := fmt.Sprintf("%d %d %d %d SigmoidSteepenedActivation", nodeId, traitId, nodeType, neuronType)
 	trait := neat.NewTrait()
 	trait.Id = 10
 
-	node := network.NewNNode(node_id, neuron_type)
+	node := network.NewNNode(nodeId, neuronType)
 	node.Trait = trait
-	out_buffer := bytes.NewBufferString("")
+	outBuffer := bytes.NewBufferString("")
 
-	wr := plainGenomeWriter{w:bufio.NewWriter(out_buffer)}
+	wr := plainGenomeWriter{w: bufio.NewWriter(outBuffer)}
 	err := wr.writeNetworkNode(node)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	wr.w.Flush()
+	require.NoError(t, err, "failed to write network node")
+	err = wr.w.Flush()
+	require.NoError(t, err)
 
-	out_str := out_buffer.String()
-
-	if out_str != node_str {
-		t.Errorf("Node serialization failed. Expected: %s, but found %s", node_str, out_str)
-	}
+	outStr := outBuffer.String()
+	assert.Equal(t, nodeStr, outStr, "Node serialization failed")
 }
 
 func TestPlainGenomeWriter_WriteConnectionGene(t *testing.T) {
 	// gene  1 1 4 1.1983046913458986 0 1.0 1.1983046913458986 0
-	traitId, inNodeId, outNodeId, innov_num := 1, 1, 4, int64(1)
-	weight, mut_num := 1.1983046913458986, 1.1983046913458986
+	traitId, inNodeId, outNodeId, innovNum := 1, 1, 4, int64(1)
+	weight, mutNum := 1.1983046913458986, 1.1983046913458986
 	recurrent, enabled := false, false
-	gene_str := fmt.Sprintf("%d %d %d %g %t %d %g %t",
-		traitId, inNodeId, outNodeId, weight, recurrent, innov_num, mut_num, enabled)
+	geneStr := fmt.Sprintf("%d %d %d %g %t %d %g %t",
+		traitId, inNodeId, outNodeId, weight, recurrent, innovNum, mutNum, enabled)
 
 	trait := neat.NewTrait()
 	trait.Id = traitId
 	gene := NewGeneWithTrait(trait, weight, network.NewNNode(1, network.InputNeuron),
-		network.NewNNode(4, network.HiddenNeuron), recurrent, innov_num, mut_num)
-	gene.IsEnabled = enabled
+		network.NewNNode(4, network.HiddenNeuron), false, innovNum, mutNum)
+	gene.IsEnabled = false
 
-	out_buf := bytes.NewBufferString("")
+	outBuf := bytes.NewBufferString("")
 
-	wr := plainGenomeWriter{w:bufio.NewWriter(out_buf)}
+	wr := plainGenomeWriter{w: bufio.NewWriter(outBuf)}
 	err := wr.writeConnectionGene(gene)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	wr.w.Flush()
+	require.NoError(t, err, "failed to write connection gene")
+	err = wr.w.Flush()
+	require.NoError(t, err)
 
-	out_str := out_buf.String()
-	if gene_str != out_str {
-		t.Errorf("Wrong Gene serialization\n[%s]\n[%s]", gene_str, out_str)
-	}
+	outStr := outBuf.String()
+	assert.Equal(t, geneStr, outStr, "Wrong Gene serialization")
 }
 
 func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 	gnome := buildTestGenome(1)
-	out_buf := bytes.NewBufferString("")
-	wr, err := NewGenomeWriter(bufio.NewWriter(out_buf), PlainGenomeEncoding)
-	if err == nil {
-		err = wr.WriteGenome(gnome)
-	}
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	outBuf := bytes.NewBufferString("")
+	wr, err := NewGenomeWriter(bufio.NewWriter(outBuf), PlainGenomeEncoding)
+	require.NoError(t, err, "failed to create genome writer")
+	err = wr.WriteGenome(gnome)
+	require.NoError(t, err, "failed to write genome")
 
-	g_scanner := bufio.NewScanner(strings.NewReader(gnome_str))
-	g_scanner.Split(bufio.ScanLines)
+	inputScanner := bufio.NewScanner(strings.NewReader(gnomeStr))
+	inputScanner.Split(bufio.ScanLines)
 
-	o_scanner := bufio.NewScanner(out_buf)
-	o_scanner.Split(bufio.ScanLines)
+	outScanner := bufio.NewScanner(outBuf)
+	outScanner.Split(bufio.ScanLines)
 
-	for g_scanner.Scan() {
-		if !o_scanner.Scan() {
+	for inputScanner.Scan() {
+		if !outScanner.Scan() {
 			t.Error("Unexpected end of genome data")
 		}
-		g_text := g_scanner.Text()
-		o_text := o_scanner.Text()
-		if g_text != o_text {
-			t.Error(fmt.Sprintf("Lines mismatch [%s] != [%s]" , g_text, o_text))
-		}
+		inText := inputScanner.Text()
+		outText := outScanner.Text()
+		require.Equal(t, inText, outText, "lines mismatch at")
 	}
 }
 
@@ -128,113 +110,71 @@ func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
 	gnome := buildTestModularGenome(1)
 
 	// encode genome
-	out_buf := bytes.NewBufferString("")
-	wr, err := NewGenomeWriter(bufio.NewWriter(out_buf), YAMLGenomeEncoding)
-	if err == nil {
-		err = wr.WriteGenome(gnome)
-	}
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	//t.Log(out_buf.String())
+	outBuf := bytes.NewBufferString("")
+	wr, err := NewGenomeWriter(bufio.NewWriter(outBuf), YAMLGenomeEncoding)
+	require.NoError(t, err)
+	err = wr.WriteGenome(gnome)
+	require.NoError(t, err, "failed to write genome")
+	//t.Log(outBuf.String())
 
 	// decode genome and compare
-	enc := yamlGenomeReader{r:bufio.NewReader(bytes.NewBuffer(out_buf.Bytes()))}
-	gnome_enc, err := enc.Read()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	enc := yamlGenomeReader{r: bufio.NewReader(bytes.NewBuffer(outBuf.Bytes()))}
+	gnomeEnc, err := enc.Read()
+	require.NoError(t, err, "failed to read genome")
 
-	if gnome.Id != gnome_enc.Id {
-		t.Error("gnome.Id != gnome_enc.Id", gnome.Id, gnome_enc.Id)
-	}
-	if len(gnome.Genes) != len(gnome_enc.Genes) {
-		t.Error("len(gnome.Genes) != len(gnome_enc.Genes)", len(gnome.Genes), len(gnome_enc.Genes))
-	}
+	assert.Equal(t, gnome.Id, gnomeEnc.Id, "wrong genome ID")
+
+	// check encoded genes
+	//
+	assert.Len(t, gnomeEnc.Genes, len(gnome.Genes), "wrong genes number")
 	for i, g := range gnome.Genes {
-		og := gnome_enc.Genes[i]
-		if !g.Link.IsEqualGenetically(og.Link) {
-			t.Error("!g.Link.IsEqualGenetically(og.Link) at:", i)
-		}
-		if g.IsEnabled != og.IsEnabled {
-			t.Error("g.IsEnabled != og.IsEnabled at:", i)
-		}
-		if g.MutationNum != og.MutationNum {
-			t.Error("g.MutationNum != og.MutationNum at:", i)
-		}
-		if g.InnovationNum != og.InnovationNum {
-			t.Error("g.InnovationNum != og.InnovationNum at:", i)
-		}
+		og := gnomeEnc.Genes[i]
+		assert.True(t, g.Link.IsEqualGenetically(og.Link), "genes not equal genetically at: %d", i)
+		assert.Equal(t, g.IsEnabled, og.IsEnabled, "at: %d", i)
+		assert.Equal(t, g.MutationNum, og.MutationNum, "at: %d", i)
+		assert.Equal(t, g.InnovationNum, og.InnovationNum, "at: %d", i)
 	}
 
-	if len(gnome.Nodes) != len(gnome_enc.Nodes) {
-		t.Error("len(gnome.Nodes) != len(gnome_enc.Nodes)", len(gnome.Nodes), len(gnome_enc.Nodes))
-	}
+	// check encoded nodes
+	//
+	assert.Len(t, gnomeEnc.Nodes, len(gnome.Nodes), "wrong number of nodes encoded")
 	for i, n := range gnome.Nodes {
-		nd := gnome_enc.Nodes[i]
-		if n.Id != nd.Id {
-			t.Error("n.Id != nd.Id at:", i)
-		}
-		if n.ActivationType != nd.ActivationType {
-			t.Error("n.ActivationType != nd.ActivationType at:", i)
-		}
-		if n.NeuronType != nd.NeuronType {
-			t.Error("n.NeuronType != nd.NeuronType at:", i)
-		}
+		nd := gnomeEnc.Nodes[i]
+		assert.Equal(t, n.Id, nd.Id, "wrong node ID at: %d", i)
+		assert.Equal(t, n.ActivationType, nd.ActivationType, "wrong node activation at: %d", i)
+		assert.Equal(t, n.NeuronType, nd.NeuronType, "wrong node neuron type at: %d", i)
 	}
 
-	if len(gnome.Traits) != len(gnome_enc.Traits) {
-		t.Error("len(gnome.Traits) != len(gnome_enc.Traits)", len(gnome.Traits), len(gnome_enc.Traits))
-	}
+	// check encoded traits
+	//
+	assert.Len(t, gnomeEnc.Traits, len(gnome.Traits), "wrong number of traits encoded")
 	for i, tr := range gnome.Traits {
-		etr := gnome_enc.Traits[i]
-		if tr.Id != etr.Id {
-			t.Error("tr.Id != etr.Id at:", i)
-		}
-		if !reflect.DeepEqual(tr.Params, etr.Params) {
-			t.Error("!reflect.DeepEqual(tr.Params, etr.Params) at:", i)
-		}
+		etr := gnomeEnc.Traits[i]
+		assert.Equal(t, tr.Id, etr.Id, "wrong trait ID at: %d", i)
+		assert.ElementsMatch(t, tr.Params, etr.Params, "wrong trait params at: %d", i)
 	}
 
-	if len(gnome.ControlGenes) != len(gnome_enc.ControlGenes) {
-		t.Error("len(gnome.ControlGenes) != len(gnome_enc.ControlGenes)",
-			len(gnome.ControlGenes), len(gnome_enc.ControlGenes))
-	}
+	// check control genes
+	//
+	assert.Len(t, gnomeEnc.ControlGenes, len(gnome.ControlGenes), "wrong numbre of control genes encoded")
 	for i, cg := range gnome.ControlGenes {
-		ocg := gnome_enc.ControlGenes[i]
-		if cg.IsEnabled != ocg.IsEnabled {
-			t.Error("cg.IsEnabled != ocg.IsEnabled at: ", i)
-		}
-		if cg.MutationNum != ocg.MutationNum {
-			t.Error("cg.MutationNum != ocg.MutationNum at:", i)
-		}
-		if cg.InnovationNum != ocg.InnovationNum {
-			t.Error("cg.InnovationNum != ocg.InnovationNum at:", i)
-		}
-		if cg.ControlNode.Id != ocg.ControlNode.Id {
-			t.Error("cg.ControlNode.Id != ocg.ControlNode.Id at:", i, cg.ControlNode.Id, ocg.ControlNode.Id)
-		}
+		ocg := gnomeEnc.ControlGenes[i]
+		assert.Equal(t, cg.IsEnabled, ocg.IsEnabled, "wrong enabled at: %d", i)
+		assert.Equal(t, cg.MutationNum, ocg.MutationNum, "wrong mutation number at: %d", i)
+		assert.Equal(t, cg.InnovationNum, ocg.InnovationNum, "wrong innovation at: %d", i)
+		assert.Equal(t, cg.ControlNode.Id, ocg.ControlNode.Id, "wrong node ID at: %d", i)
 		checkLinks(cg.ControlNode.Incoming, ocg.ControlNode.Incoming, t)
 		checkLinks(cg.ControlNode.Outgoing, ocg.ControlNode.Outgoing, t)
 	}
 }
 
 func checkLinks(left, right []*network.Link, t *testing.T) {
-	if len(left) != len(right) {
-		t.Error("Links size mismatch", len(left), len(right))
-	}
+	require.Equal(t, len(left), len(right), "Links length mismatch")
+
 	for i, l := range left {
 		r := right[i]
-		if l.InNode.Id != r.InNode.Id {
-			t.Error("l.InNode.Id != r.InNode.Id", l.InNode.Id, r.InNode.Id)
-		}
-		if l.OutNode.Id != r.OutNode.Id {
-			t.Error("l.OutNode.Id != r.OutNode.Id", l.OutNode.Id, r.OutNode.Id )
-		}
-		if l.Weight != r.Weight {
-			t.Error("l.Weight != r.Weight", l.Weight, r.Weight)
-		}
+		assert.Equal(t, l.InNode.Id, r.InNode.Id, "wrong link InNode ID at: %d", i)
+		assert.Equal(t, l.OutNode.Id, r.OutNode.Id, "wrong link OutNode ID at: %d", i)
+		assert.Equal(t, l.Weight, r.Weight, "wrong link Weight at: %d", i)
 	}
 }

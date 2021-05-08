@@ -1,70 +1,73 @@
 package genetics
 
 import (
-	"github.com/yaricom/goNEAT/neat/network"
-	"fmt"
 	"bytes"
+	"fmt"
+	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
-// The object to associate implementation specific data with particular organism for various algorithm implementations
+// Organisms is sortable list of organisms by fitness
+type Organisms []*Organism
+
+// OrganismData is the object to associate implementation specific data with particular organism for various algorithm implementations
 type OrganismData struct {
 	// The implementation specific data object to be associated with organism
 	Value interface{}
 }
 
-// Organisms are Genotypes (Genomes) and Phenotypes (Networks) with fitness information,
+// Organism is Genotypes (Genomes) and Phenotypes (Networks) with fitness information,
 // i.e. the genotype and phenotype together.
 type Organism struct {
 	// A measure of fitness for the Organism
-	Fitness                   float64
+	Fitness float64
 	// The error value indicating how far organism's performance is from ideal task goal, e.g. MSE
-	Error                     float64
+	Error float64
 	// Win marker (if needed for a particular task)
-	IsWinner                  bool
+	IsWinner bool
 
 	// The Organism's phenotype
-	Phenotype                 *network.Network
+	Phenotype *network.Network
 	// The Organism's genotype
-	Genotype                  *Genome
+	Genotype *Genome
 	// The Species of the Organism
-	Species                   *Species
+	Species *Species
 
 	// Number of children this Organism may have
-	ExpectedOffspring         float64
+	ExpectedOffspring float64
 	// Tells which generation this Organism is from
-	Generation                int
+	Generation int
 
 	// The utility data transfer object to be used by different GA implementations to hold additional data.
 	// Implemented as ANY to allow implementation specific objects.
-	Data                      *OrganismData
+	Data *OrganismData
 
 	// A fitness measure that won't change during fitness adjustments of population's epoch evaluation
-	originalFitness           float64
+	originalFitness float64
 
 	// Marker for destruction of inferior Organisms
-	toEliminate               bool
+	toEliminate bool
 	// Marks the species champion
-	isChampion                bool
+	isChampion bool
 
 	// Number of reserved offspring for a population leader
-	superChampOffspring       int
+	superChampOffspring int
 	// Marks the best in population
-	isPopulationChampion      bool
+	isPopulationChampion bool
 	// Marks the duplicate child of a champion (for tracking purposes)
 	isPopulationChampionChild bool
 
 	// DEBUG variable - highest fitness of champ
-	highestFitness            float64
+	highestFitness float64
 
 	// Track its origin - for debugging or analysis - we can tell how the organism was born
-	mutationStructBaby        bool
-	mateBaby                  bool
+	mutationStructBaby bool
+	mateBaby           bool
 
 	// The flag to be used as utility value
-	Flag                      int
+	Flag int
 }
 
-// Creates new organism with specified genome, fitness and given generation number
+// NewOrganism Creates new organism with specified genome, fitness and given generation number
 func NewOrganism(fit float64, g *Genome, generation int) (org *Organism, err error) {
 	phenotype := g.Phenotype
 	if phenotype == nil {
@@ -74,15 +77,15 @@ func NewOrganism(fit float64, g *Genome, generation int) (org *Organism, err err
 		}
 	}
 	org = &Organism{
-		Fitness:fit,
-		Genotype:g,
-		Phenotype:phenotype,
-		Generation:generation,
+		Fitness:    fit,
+		Genotype:   g,
+		Phenotype:  phenotype,
+		Generation: generation,
 	}
 	return org, nil
 }
 
-// Regenerate the network based on a change in the genotype
+// UpdatePhenotype Regenerate the underlying network graph based on a change in the genotype
 func (o *Organism) UpdatePhenotype() (err error) {
 	// First, delete the old phenotype (net)
 	o.Phenotype = nil
@@ -92,7 +95,7 @@ func (o *Organism) UpdatePhenotype() (err error) {
 	return err
 }
 
-// Method to check if this algorithm is champion child and if so than if it's damaged
+// CheckChampionChildDamaged Method to check if this algorithm is champion child and if so than if it's damaged
 func (o *Organism) CheckChampionChildDamaged() bool {
 	if o.isPopulationChampionChild && o.highestFitness > o.Fitness {
 		return true
@@ -100,29 +103,31 @@ func (o *Organism) CheckChampionChildDamaged() bool {
 	return false
 }
 
-// Encodes this organism for wired transmission during parallel reproduction cycle
+// MarshalBinary Encodes this organism for wired transmission during parallel reproduction cycle
 func (o *Organism) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
-	_, err := fmt.Fprintln(&buf, o.Fitness, o.Generation, o.highestFitness, o.isPopulationChampionChild, o.Genotype.Id)
-	o.Genotype.Write(&buf)
-	if err != nil {
+	if _, err := fmt.Fprintln(&buf, o.Fitness, o.Generation, o.highestFitness, o.isPopulationChampionChild, o.Genotype.Id); err != nil {
 		return nil, err
-	} else {
-		return buf.Bytes(), nil
+	} else if err = o.Genotype.Write(&buf); err != nil {
+		return nil, err
 	}
+	return buf.Bytes(), nil
 }
-// Decodes organism received over the wire during parallel reproduction cycle
+
+// UnmarshalBinary Decodes organism received over the wire during parallel reproduction cycle
 func (o *Organism) UnmarshalBinary(data []byte) error {
 	// A simple encoding: plain text.
 	b := bytes.NewBuffer(data)
-	var genotype_id int
-	_, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &o.highestFitness, &o.isPopulationChampionChild, &genotype_id)
-	o.Genotype, err = ReadGenome(b, genotype_id)
-	if err == nil {
-		o.Phenotype, err = o.Genotype.Genesis(genotype_id)
+	var genotypeId int
+	if _, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &o.highestFitness, &o.isPopulationChampionChild, &genotypeId); err != nil {
+		return err
+	} else if o.Genotype, err = ReadGenome(b, genotypeId); err != nil {
+		return err
+	} else if o.Phenotype, err = o.Genotype.Genesis(genotypeId); err != nil {
+		return err
 	}
 
-	return err
+	return nil
 }
 
 func (o *Organism) String() string {
@@ -130,42 +135,41 @@ func (o *Organism) String() string {
 	if o.isChampion {
 		champStr = " - CHAMPION - "
 	}
-	eliminStr := ""
+	eliminateStr := ""
 	if o.toEliminate {
-		eliminStr = " - TO BE ELIMINATED - "
+		eliminateStr = " - TO BE ELIMINATED - "
 	}
 	return fmt.Sprintf("[Organism generation: %d, fitness: %.3f, original fitness: %.3f%s%s]",
-		o.Generation, o.Fitness, o.originalFitness, champStr, eliminStr)
+		o.Generation, o.Fitness, o.originalFitness, champStr, eliminateStr)
 }
 
-// Dumps all organism's fields into string
+// Dump is to dump all organism's fields into string
 func (o *Organism) Dump() string {
 	b := bytes.NewBufferString("Organism:")
-	fmt.Fprintln(b, "Fitness: ", o.Fitness)
-	fmt.Fprintln(b, "Error: ", o.Error)
-	fmt.Fprintln(b, "IsWinner: ", o.IsWinner)
-	fmt.Fprintln(b, "Phenotype: ", o.Phenotype)
-	fmt.Fprintln(b, "Genotype: ", o.Genotype)
-	fmt.Fprintln(b, "Species: ", o.Species)
-	fmt.Fprintln(b, "ExpectedOffspring: ", o.ExpectedOffspring)
-	fmt.Fprintln(b, "Data: ", o.Data)
-	fmt.Fprintln(b, "Phenotype: ", o.Phenotype)
-	fmt.Fprintln(b, "originalFitness: ", o.originalFitness)
-	fmt.Fprintln(b, "toEliminate: ", o.toEliminate)
-	fmt.Fprintln(b, "isChampion: ", o.isChampion)
-	fmt.Fprintln(b, "superChampOffspring: ", o.superChampOffspring)
-	fmt.Fprintln(b, "isPopulationChampion: ", o.isPopulationChampion)
-	fmt.Fprintln(b, "isPopulationChampionChild: ", o.isPopulationChampionChild)
-	fmt.Fprintln(b, "highestFitness: ", o.highestFitness)
-	fmt.Fprintln(b, "mutationStructBaby: ", o.mutationStructBaby)
-	fmt.Fprintln(b, "mateBaby: ", o.mateBaby)
-	fmt.Fprintln(b, "Flag: ", o.Flag)
+	_, _ = fmt.Fprintln(b, "Fitness: ", o.Fitness)
+	_, _ = fmt.Fprintln(b, "Error: ", o.Error)
+	_, _ = fmt.Fprintln(b, "IsWinner: ", o.IsWinner)
+	_, _ = fmt.Fprintln(b, "Phenotype: ", o.Phenotype)
+	_, _ = fmt.Fprintln(b, "Genotype: ", o.Genotype)
+	_, _ = fmt.Fprintln(b, "Species: ", o.Species)
+	_, _ = fmt.Fprintln(b, "ExpectedOffspring: ", o.ExpectedOffspring)
+	_, _ = fmt.Fprintln(b, "Data: ", o.Data)
+	_, _ = fmt.Fprintln(b, "Phenotype: ", o.Phenotype)
+	_, _ = fmt.Fprintln(b, "originalFitness: ", o.originalFitness)
+	_, _ = fmt.Fprintln(b, "toEliminate: ", o.toEliminate)
+	_, _ = fmt.Fprintln(b, "isChampion: ", o.isChampion)
+	_, _ = fmt.Fprintln(b, "superChampOffspring: ", o.superChampOffspring)
+	_, _ = fmt.Fprintln(b, "isPopulationChampion: ", o.isPopulationChampion)
+	_, _ = fmt.Fprintln(b, "isPopulationChampionChild: ", o.isPopulationChampionChild)
+	_, _ = fmt.Fprintln(b, "highestFitness: ", o.highestFitness)
+	_, _ = fmt.Fprintln(b, "mutationStructBaby: ", o.mutationStructBaby)
+	_, _ = fmt.Fprintln(b, "mateBaby: ", o.mateBaby)
+	_, _ = fmt.Fprintln(b, "Flag: ", o.Flag)
 
 	return b.String()
 }
 
-// Organisms is sortable list of organisms by fitness
-type Organisms []*Organism
+// The Organisms sort interface implementation
 
 func (f Organisms) Len() int {
 	return len(f)
@@ -176,7 +180,7 @@ func (f Organisms) Swap(i, j int) {
 func (f Organisms) Less(i, j int) bool {
 	if f[i].Fitness < f[j].Fitness {
 		// try to promote most fit organisms
-		return true  // lower fitness is less
+		return true // lower fitness is less
 	} else if f[i].Fitness == f[j].Fitness {
 		// try to promote less complex organisms
 		ci := f[i].Phenotype.Complexity()
