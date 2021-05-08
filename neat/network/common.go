@@ -1,4 +1,4 @@
-// Package network provides data holders and utilities to describe Artificial Neural Network
+// Package network provides data structures and utilities to describe Artificial Neural Network and network solvers.
 package network
 
 import (

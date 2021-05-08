@@ -1,7 +1,6 @@
 package network
 
-// Solver Defines network solver interface which describes neural network graph with methods to
-// run activation waves.
+// Solver defines network solver interface, which allows propagation of the activation waves through the underlying network graph.
 type Solver interface {
 	// ForwardSteps Propagates activation wave through all network nodes provided number of steps in forward direction.
 	// Returns true if activation wave passed from all inputs to outputs.

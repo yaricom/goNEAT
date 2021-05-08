@@ -1,4 +1,4 @@
-// Package math provides definition of common mathematical primitives used by NEAT as well as utiltiy functions
+// Package math defines standard mathematical primitives used by the NEAT algorithm as well as utility functions
 package math
 
 import (

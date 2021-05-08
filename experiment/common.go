@@ -1,4 +1,4 @@
-// Package experiment provides definition of experiments statistics collectors.
+// Package experiment defines standard evolutionary epochs evaluators and experimental data samples collectors.
 package experiment
 
 import (
@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-// GenerationEvaluator The interface describing evaluator for one generation of evolution.
+// GenerationEvaluator the interface describing evaluator for one epoch (generation) of the evolutionary process.
 type GenerationEvaluator interface {
 	// GenerationEvaluate Invoked to evaluate one generation of population of organisms within given
 	// execution context.
