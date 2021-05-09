@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.8.2
+*May 9, 2021*
+
+* Updated experiment.Execute to separate epoch evaluator and trial run observer parameters for better maintainability.
+
 ## v2.8.1
 *May 8, 2021*
 
