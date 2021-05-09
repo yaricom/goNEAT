@@ -39,7 +39,7 @@ func TestXOR(t *testing.T) {
 		Id:     0,
 		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(opts.NeatContext(), startGenome, NewXORGenerationEvaluator(outDirPath))
+	err = experiment.Execute(opts.NeatContext(), startGenome, NewXORGenerationEvaluator(outDirPath), nil)
 	require.NoError(t, err, "Failed to perform XOR experiment")
 
 	// Find winner statistics
@@ -101,7 +101,7 @@ func TestXOR_disconnected(t *testing.T) {
 		Id:     0,
 		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(opts.NeatContext(), startGenome, NewXORGenerationEvaluator(outDirPath))
+	err = experiment.Execute(opts.NeatContext(), startGenome, NewXORGenerationEvaluator(outDirPath), nil)
 	require.NoError(t, err, "Failed to perform XOR disconnected experiment")
 
 	// Find winner statistics

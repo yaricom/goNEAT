@@ -38,7 +38,8 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 		Id:     0,
 		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(opts.NeatContext(), startGenome, NewCartDoublePoleGenerationEvaluator(outDirPath, true, ContinuousAction))
+	evaluator := NewCartDoublePoleGenerationEvaluator(outDirPath, true, ContinuousAction)
+	err = experiment.Execute(opts.NeatContext(), startGenome, evaluator, nil)
 	require.NoError(t, err, "Failed to perform POLE2 Markov experiment")
 
 	// Find winner statistics
@@ -112,7 +113,8 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 		Id:     0,
 		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(opts.NeatContext(), startGenome, NewCartDoublePoleGenerationEvaluator(outDirPath, false, ContinuousAction))
+	evaluator := NewCartDoublePoleGenerationEvaluator(outDirPath, false, ContinuousAction)
+	err = experiment.Execute(opts.NeatContext(), startGenome, evaluator, nil)
 	require.NoError(t, err, "Failed to perform POLE2 Non-Markov experiment")
 
 	// Find winner statistics
