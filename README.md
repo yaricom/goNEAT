@@ -32,6 +32,29 @@ and their interconnections).
 
 Please do not depend on master as your production branch. Use [releases](https://github.com/yaricom/goNEAT/releases) instead.
 
+## Quick Start
+
+You can evaluate the NEAT algorithm performance by running the following command:
+
+```bash
+cd $GOPATH/src/github.com/yaricom/goNEAT
+go run executor.go -out ./out/xor -context ./data/xor.neat -genome ./data/xorstartgenes -experiment XOR
+```
+
+Or
+
+```bash
+make run-xor
+````
+
+The command above will run the [XOR problem solver experiment](https://github.com/yaricom/goNEAT/wiki/XOR-Experiment#the-xor-experiment-with-connected-inputs-in-the-start-genome)
+and save the collected data samples. You can use saved experimental data for analysis using standard plotting
+libraries as in the figure below.
+
+![The XOR results plot](contents/xor_results_plot.png)
+
+The figure was created using Matplotlib. You can find more details in the [Jupyter notebook](contents/notebooks/experiments_results.ipynb).
+
 ## Documentation
 
 You can find the algorithm performance evaluation and related documentation in the project's [wiki](https://github.com/yaricom/goNEAT/wiki)
@@ -58,6 +81,7 @@ For new projects, consider using the v2 of the library with the following import
 import "github.com/yaricom/goNEAT/v2"
 ```
 
+---
 ### [`genetics`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics "API documentation") package
 
 The `genetics` package provides the genetic part of the NEAT algorithm describing all the machinery related to
@@ -115,7 +139,7 @@ for the details about how to set up and run experiment executors.
 ## Conclusion
 
 The experiments described in this work confirm that introduced NEAT algorithm implementation can evolve new structures in 
-_Artificial Neural Networks_ ([XOR experiments](https://github.com/yaricom/goNEAT/wiki/XOR-Experiment)) and can solve reinforcement learning 
+the _Artificial Neural Networks_ ([XOR experiments](https://github.com/yaricom/goNEAT/wiki/XOR-Experiment)) and can solve reinforcement learning 
 tasks under conditions of incomplete knowledge ([single-pole balancing](https://github.com/yaricom/goNEAT/wiki/The-single-pole-balancing-experiment) and
 [double-pole balancing](https://github.com/yaricom/goNEAT/wiki/Double-Pole-Balancing-Experiments)).
 
@@ -128,10 +152,10 @@ If you found this library helpful, please consider supporting further work on th
 
 You can help to evolve this project either by pressing [`Sponsor`](https://www.patreon.com/io42) or by sending some funds 
 to:
-* _LTC:_ LPi2hvnMQLWy1BKbjtyPeEqVcfyPfQLErs
-* _DOGE:_ D9u3YQJfpjYQT67ZQRub97jjgiiG7S3S6x
+* **LTC:** LPi2hvnMQLWy1BKbjtyPeEqVcfyPfQLErs
+* **DOGE:** D9u3YQJfpjYQT67ZQRub97jjgiiG7S3S6x
 
-## Credits
+## References
 
 * The original C++ NEAT implementation created by Kenneth Stanley, see: [NEAT][1]
 * Other NEAT implementations may be found at [NEAT Software Catalog][2]
