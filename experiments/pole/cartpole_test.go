@@ -40,7 +40,8 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 		Id:     0,
 		Trials: make(experiment2.Trials, opts.NumRuns),
 	}
-	err = experiment.Execute(opts.NeatContext(), startGenome, NewCartPoleGenerationEvaluator(outDirPath, true, 500000))
+	evaluator := NewCartPoleGenerationEvaluator(outDirPath, true, 500000)
+	err = experiment.Execute(opts.NeatContext(), startGenome, evaluator, nil)
 	require.NoError(t, err, "Failed to perform POLE1 experiment")
 
 	// Find winner statistics

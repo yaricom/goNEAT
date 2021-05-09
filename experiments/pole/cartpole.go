@@ -13,8 +13,6 @@ import (
 
 const twelveDegrees = 12.0 * math.Pi / 180.0
 
-// The single pole balancing experiment entry point.
-// This experiment performs evolution on single pole balancing task in order to produce appropriate genome.
 type cartPoleGenerationEvaluator struct {
 	// The output path to store execution results
 	OutputPath string
@@ -24,6 +22,8 @@ type cartPoleGenerationEvaluator struct {
 	WinBalancingSteps int
 }
 
+// NewCartPoleGenerationEvaluator is to create generations evaluator for single-pole balancing experiment.
+// This experiment performs evolution on single pole balancing task in order to produce appropriate genome.
 func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceSteps int) experiment.GenerationEvaluator {
 	return &cartPoleGenerationEvaluator{
 		OutputPath:        outDir,

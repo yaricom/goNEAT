@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// Execute The Experiment execution entry point
-func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, executor interface{}) (err error) {
+// Execute is to run specific experiment using provided startGenome and specific evaluator for each epoch of the experiment
+func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, evaluator GenerationEvaluator, trialObserver TrialRunObserver) error {
 	opts, found := neat.FromContext(ctx)
 	if !found {
 		return neat.ErrNEATOptionsNotFound
@@ -19,12 +19,11 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 		e.Trials = make(Trials, opts.NumRuns)
 	}
 
-	var pop *genetics.Population
 	for run := 0; run < opts.NumRuns; run++ {
 		trialStartTime := time.Now()
 
 		neat.InfoLog("\n>>>>> Spawning new population ")
-		pop, err = genetics.NewPopulation(startGenome, opts)
+		pop, err := genetics.NewPopulation(startGenome, opts)
 		if err != nil {
 			neat.InfoLog("Failed to spawn new population from start genome")
 			return err
@@ -51,11 +50,9 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 			Id: run,
 		}
 
-		if trialObserver, ok := executor.(TrialRunObserver); ok {
+		if trialObserver != nil {
 			trialObserver.TrialRunStarted(&trial) // optional
 		}
-
-		generationEvaluator := executor.(GenerationEvaluator) // mandatory
 
 		for generationId := 0; generationId < opts.NumGenerations; generationId++ {
 			// check if context was canceled
@@ -71,7 +68,7 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 				TrialId: run,
 			}
 			genStartTime := time.Now()
-			err = generationEvaluator.GenerationEvaluate(pop, &generation, opts)
+			err = evaluator.GenerationEvaluate(pop, &generation, opts)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Generation [%d] evaluation failed !!!!!\n", generationId))
 				return err
@@ -92,19 +89,28 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 			generation.Duration = generation.Executed.Sub(genStartTime)
 			trial.Generations = append(trial.Generations, generation)
 
+			// notify trial observer
+			if trialObserver != nil {
+				trialObserver.EpochEvaluated(&trial, &generation)
+			}
+
 			if generation.Solved {
 				// stop further evaluation if already solved
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation, fitness: %f <<<<<\n",
 					generationId, generation.Best.Fitness))
 				break
 			}
-
 		}
 		// holds trial duration
 		trial.Duration = time.Since(trialStartTime)
 
 		// store trial into experiment
 		e.Trials[run] = trial
+
+		// notify trial observer
+		if trialObserver != nil {
+			trialObserver.TrialRunFinished(&trial)
+		}
 	}
 
 	return nil

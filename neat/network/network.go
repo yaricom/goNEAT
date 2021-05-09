@@ -7,7 +7,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/math"
 )
 
-// Network is a LIST of input NODEs and a LIST of output NODEs.
+// Network is a collection of all nodes within an organism's phenotype, which effectively defines Neural Network topology.
 // The point of the network is to define a single entity which can evolve
 // or learn on its own, even though it may be part of a larger framework.
 type Network struct {

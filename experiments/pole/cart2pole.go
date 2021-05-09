@@ -22,7 +22,6 @@ const nonMarkovLongMaxSteps = 100000
 // The maximal number of time steps for Non-Markov generalization run
 const nonMarkovGeneralizationMaxSteps = 1000
 
-// The double pole-balancing experiment both Markov and non-Markov versions
 type cartDoublePoleGenerationEvaluator struct {
 	// The output path to store execution results
 	OutputPath string
@@ -33,6 +32,7 @@ type cartDoublePoleGenerationEvaluator struct {
 	ActionType ActionType
 }
 
+// NewCartDoublePoleGenerationEvaluator is the generations evaluator for double-pole balancing experiment: both Markov and non-Markov versions
 func NewCartDoublePoleGenerationEvaluator(outDir string, markov bool, actionType ActionType) experiment.GenerationEvaluator {
 	return &cartDoublePoleGenerationEvaluator{
 		OutputPath: outDir,

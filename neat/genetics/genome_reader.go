@@ -145,7 +145,7 @@ func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, er
 		n.Trait = TraitWithId(int(traitId), traits)
 	}
 
-	if neuronType, err := strconv.ParseInt(parts[3], 10, 32); err != nil {
+	if neuronType, err := strconv.ParseInt(parts[3], 10, 8); err != nil {
 		return nil, err
 	} else {
 		n.NeuronType = network.NodeNeuronType(neuronType)

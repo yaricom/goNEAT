@@ -80,7 +80,7 @@ func main() {
 		neat.LogLevel = neat.LoggerLevel(*logLevel)
 	}
 
-	// The 100 generation XOR experiment
+	// create experiment
 	expt := experiment.Experiment{
 		Id:       0,
 		Trials:   make(experiment.Trials, neatOptions.NumRuns),
@@ -109,7 +109,7 @@ func main() {
 
 	// run experiment in the separate GO routine
 	go func() {
-		if err = expt.Execute(neat.NewContext(ctx, neatOptions), startGenome, generationEvaluator); err != nil {
+		if err = expt.Execute(neat.NewContext(ctx, neatOptions), startGenome, generationEvaluator, nil); err != nil {
 			errChan <- err
 		} else {
 			errChan <- nil

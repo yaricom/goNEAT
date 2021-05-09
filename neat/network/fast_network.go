@@ -29,7 +29,7 @@ type FastControlNode struct {
 	OutputIndexes []int
 }
 
-// FastModularNetworkSolver The fast modular network solver implementation to be used for big neural networks simulation.
+// FastModularNetworkSolver is the network solver implementation to be used for large neural networks simulation.
 type FastModularNetworkSolver struct {
 	// A network id
 	Id int

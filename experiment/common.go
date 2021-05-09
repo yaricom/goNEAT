@@ -1,4 +1,4 @@
-// Package experiment provides definition of experiments statistics collectors.
+// Package experiment defines standard evolutionary epochs evaluators and experimental data samples collectors.
 package experiment
 
 import (
@@ -10,17 +10,21 @@ import (
 	"os"
 )
 
-// GenerationEvaluator The interface describing evaluator for one generation of evolution.
+// GenerationEvaluator the interface describing evaluator for one epoch (generation) of the evolutionary process.
 type GenerationEvaluator interface {
 	// GenerationEvaluate Invoked to evaluate one generation of population of organisms within given
 	// execution context.
 	GenerationEvaluate(pop *genetics.Population, epoch *Generation, context *neat.Options) (err error)
 }
 
-// TrialRunObserver The interface to describe trial lifecycle observer interested to receive lifecycle notifications
+// TrialRunObserver defines observer to be notified about experiment's trial lifecycle methods
 type TrialRunObserver interface {
-	// TrialRunStarted Invoked to notify that new trial run just started before any epoch evaluation in that trial run
+	// TrialRunStarted invoked to notify that new trial run just started. Invoked before any epoch evaluation in that trial run
 	TrialRunStarted(trial *Trial)
+	// TrialRunFinished invoked to notify that the trial run just finished. Invoked after all epochs evaluated or successful solver found.
+	TrialRunFinished(trial *Trial)
+	// EpochEvaluated invoked to notify that evaluation of specific epoch completed.
+	EpochEvaluated(trial *Trial, epoch *Generation)
 }
 
 // Returns appropriate executor type from given context

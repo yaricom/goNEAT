@@ -6,14 +6,14 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
-// The Gene class in this system specifies a "Connection Gene."
+// The Gene type in this system specifies a "Connection Gene."
 // Nodes are represented using the NNode class, which serves as both a genotypic and phenotypic representation of nodes.
 // Genetic Representation of connections uses this special class because it calls for special operations better served
 // by a specific genetic representation.
-// A Gene object in this system specifies a link between two nodes along with an "innovation number" which tells when
+// A Gene object in this system specifies a link between two nodes along with an InnovationNum which tells when
 // in the history of a population the gene first arose. This allows the system to track innovations and use those to
 // determine which organisms are compatible (i.e. in the same species).
-// A mutation_num gives a rough sense of how much mutation the gene has experienced since it originally appeared
+// A MutationNum gives a rough sense of how much mutation the gene has experienced since it originally appeared
 // (Since it was first innovated). In the current implementation the mutation number is the same as the weight.
 type Gene struct {
 	// The link between nodes

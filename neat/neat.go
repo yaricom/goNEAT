@@ -1,5 +1,5 @@
-// Package neat implements NeuroEvolution of Augmenting Topologies (NEAT) method which can be used to evolve
-// Artificial Neural Networks to perform specific task using genetic algorithms.
+// Package neat implements the NeuroEvolution of Augmenting Topologies (NEAT) method, which can be used to evolve
+// specific Artificial Neural Networks from scratch using genetic algorithms.
 package neat
 
 import (
