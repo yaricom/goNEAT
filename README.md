@@ -81,7 +81,8 @@ For new projects, consider using the v2 of the library with the following import
 import "github.com/yaricom/goNEAT/v2"
 ```
 
----
+## Essential Packages
+
 ### [`genetics`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics "API documentation") package
 
 The `genetics` package provides the genetic part of the NEAT algorithm describing all the machinery related to
@@ -133,8 +134,84 @@ You can find examples of `GenerationEvaluator` implementations at [experiments](
 * [`pole`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiments/pole) - single-, double-pole balancing experiments
 * [`xor`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiments/xor) - XOR solver experiment
 
-Also, consider taking a look at [executor.go](https://github.com/yaricom/goNEAT/blob/master/executor.go) implementation
-for the details about how to set up and run experiment executors.
+The following code snippet demonstrates how to run experiments using different implementations of the `GenerationEvaluator` 
+and the [`experiment.Execute`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment#Execute):
+
+```go
+// create experiment
+expt := experiment.Experiment{
+    Id:       0,
+    Trials:   make(experiment.Trials, neatOptions.NumRuns),
+    RandSeed: seed,
+}
+var generationEvaluator experiment.GenerationEvaluator
+switch *experimentName {
+case "XOR":
+    expt.MaxFitnessScore = 16.0 // as given by fitness function definition
+    generationEvaluator = xor.NewXORGenerationEvaluator(outDir)
+case "cart_pole":
+    expt.MaxFitnessScore = 1.0 // as given by fitness function definition
+    generationEvaluator = pole.NewCartPoleGenerationEvaluator(outDir, true, 500000)
+case "cart_2pole_markov":
+    expt.MaxFitnessScore = 1.0 // as given by fitness function definition
+    generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, true, pole.ContinuousAction)
+case "cart_2pole_non-markov":
+    generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, false, pole.ContinuousAction)
+default:
+    log.Fatalf("Unsupported experiment: %s", *experimentName)
+}
+
+// prepare to execute
+errChan := make(chan error)
+ctx, cancel := context.WithCancel(context.Background())
+
+// run experiment in the separate GO routine
+go func() {
+    if err = expt.Execute(neat.NewContext(ctx, neatOptions), startGenome, generationEvaluator, nil); err != nil {
+        errChan <- err
+    } else {
+        errChan <- nil
+    }
+}()
+```
+
+For more details, take a look at the experiment [executor](https://github.com/yaricom/goNEAT/blob/master/executor.go) 
+implementation provided with the goNEAT library.
+
+### [`neat`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat "API documentation") package
+
+Package `neat` is an entry point to the NEAT algorithm. It defines the NEAT execution context and configuration
+options.
+
+You can find all available configuration options in the [`Options`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat#Options).
+
+The configuration options can be saved either using plain text or the YAML format. We recommend using the YAML format 
+for new projects because it allows for a more flexible setup and detailed documentation of the configuration 
+parameters.
+
+Take a look at the [example configuration file](data/xor_test.neat.yml) to get a better understanding.
+
+The NEAT context options can be read as follows:
+
+```go
+// Loading YAML options
+optFile, err := os.Open("./data/xor_test.neat.yml")
+if err != nil {
+	return err
+}
+options, err := neat.LoadYAMLOptions(optFile)
+```
+
+Or with plain-text format:
+
+```go
+// Loading plain-text options
+optFile, err := os.Open("./data/xor_test.neat")
+if err != nil {
+	return err
+}
+options, err := neat.LoadNeatOptions(optFile)
+```
 
 ## Conclusion
 
