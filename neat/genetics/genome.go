@@ -416,7 +416,7 @@ func (g *Genome) Genesis(netId int) (*network.Network, error) {
 
 			// NOTE: This line could be run through a recurrence check if desired
 			// (no need to in the current implementation of NEAT)
-			newLink = network.NewLinkWithTrait(curLink.Trait, curLink.Weight, inNode, outNode, curLink.IsRecurrent)
+			newLink = network.NewLinkWithTrait(curLink.Trait, curLink.ConnectionWeight, inNode, outNode, curLink.IsRecurrent)
 
 			// Add link to the connected nodes
 			outNode.Incoming = append(outNode.Incoming, newLink)
@@ -440,7 +440,7 @@ func (g *Genome) Genesis(netId int) (*network.Network, error) {
 				for _, l := range cg.ControlNode.Incoming {
 					inNode = l.InNode.PhenotypeAnalogue
 					outNode = newCopyNode
-					newLink = network.NewLink(l.Weight, inNode, outNode, false)
+					newLink = network.NewLink(l.ConnectionWeight, inNode, outNode, false)
 					// only incoming to control node
 					outNode.Incoming = append(outNode.Incoming, newLink)
 				}
@@ -449,7 +449,7 @@ func (g *Genome) Genesis(netId int) (*network.Network, error) {
 				for _, l := range cg.ControlNode.Outgoing {
 					inNode = newCopyNode
 					outNode = l.OutNode.PhenotypeAnalogue
-					newLink = network.NewLink(l.Weight, inNode, outNode, false)
+					newLink = network.NewLink(l.ConnectionWeight, inNode, outNode, false)
 					// only outgoing from control node
 					inNode.Outgoing = append(inNode.Outgoing, newLink)
 				}

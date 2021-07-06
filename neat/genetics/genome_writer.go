@@ -123,7 +123,7 @@ func (wr *plainGenomeWriter) writeConnectionGene(g *Gene) error {
 	}
 	inNodeId := link.InNode.Id
 	outNodeId := link.OutNode.Id
-	weight := link.Weight
+	weight := link.ConnectionWeight
 	recurrent := link.IsRecurrent
 	innovNum := g.InnovationNum
 	mutNum := g.MutationNum
@@ -243,7 +243,7 @@ func (wr *yamlGenomeWriter) encodeConnectionGene(gene *Gene) map[string]interfac
 	gMap["src_id"] = gene.Link.InNode.Id
 	gMap["tgt_id"] = gene.Link.OutNode.Id
 	gMap["innov_num"] = gene.InnovationNum
-	gMap["weight"] = gene.Link.Weight
+	gMap["weight"] = gene.Link.ConnectionWeight
 	gMap["mut_num"] = gene.MutationNum
 	gMap["recurrent"] = gene.Link.IsRecurrent
 	gMap["enabled"] = gene.IsEnabled

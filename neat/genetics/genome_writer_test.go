@@ -175,6 +175,6 @@ func checkLinks(left, right []*network.Link, t *testing.T) {
 		r := right[i]
 		assert.Equal(t, l.InNode.Id, r.InNode.Id, "wrong link InNode ID at: %d", i)
 		assert.Equal(t, l.OutNode.Id, r.OutNode.Id, "wrong link OutNode ID at: %d", i)
-		assert.Equal(t, l.Weight, r.Weight, "wrong link Weight at: %d", i)
+		assert.Equal(t, l.ConnectionWeight, r.ConnectionWeight, "wrong link Weight at: %d", i)
 	}
 }

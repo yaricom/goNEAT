@@ -347,7 +347,7 @@ func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator 
 	// Extract the link
 	link := gene.Link
 	// Extract the weight
-	oldWeight := link.Weight
+	oldWeight := link.ConnectionWeight
 	// Get the old link's trait
 	trait := link.Trait
 
@@ -488,16 +488,16 @@ func (g *Genome) mutateLinkWeights(power, rate float64, mutationType mutatorType
 		if mutationType == gaussianMutator {
 			randChoice := rand.Float64()
 			if randChoice > gaussPoint {
-				gene.Link.Weight += random
+				gene.Link.ConnectionWeight += random
 			} else if randChoice > coldGaussPoint {
-				gene.Link.Weight = random
+				gene.Link.ConnectionWeight = random
 			}
 		} else if mutationType == goldGaussianMutator {
-			gene.Link.Weight = random
+			gene.Link.ConnectionWeight = random
 		}
 
 		// Record the innovation
-		gene.MutationNum = gene.Link.Weight
+		gene.MutationNum = gene.Link.ConnectionWeight
 
 		num += 1.0
 	}
