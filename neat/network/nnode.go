@@ -253,3 +253,10 @@ func (n *NNode) Print() string {
 
 	return b.String()
 }
+
+// The Gonum Graph specific
+
+// ID is to get ID of the node. Implements graph.Node ID method.
+func (n *NNode) ID() int64 {
+	return int64(n.Id)
+}
