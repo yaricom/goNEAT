@@ -123,13 +123,21 @@ func (n *Network) edgeBetween(uid, vid int64, directed bool) *Link {
 	}
 	// check if nodes linked
 	if !directed {
-		// for undirected check incoming links too
+		// for undirected check that incoming link of the source node point to the target node
 		for _, l := range uNode.Incoming {
 			if l.InNode.ID() == vid {
 				return l
 			}
 		}
+	} else {
+		// for directed check that incoming link of the target node points to the source node
+		for _, l := range vNode.Incoming {
+			if l.OutNode.ID() == uid {
+				return l
+			}
+		}
 	}
+	// check that outgoing link of source node points to the target node
 	for _, l := range uNode.Outgoing {
 		if l.OutNode.ID() == vid {
 			return l
