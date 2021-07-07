@@ -132,7 +132,7 @@ func (n *Network) edgeBetween(uid, vid int64, directed bool) *Link {
 	} else {
 		// for directed check that incoming link of the target node points to the source node
 		for _, l := range vNode.Incoming {
-			if l.OutNode.ID() == uid {
+			if l.InNode.ID() == uid {
 				return l
 			}
 		}

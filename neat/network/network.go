@@ -90,17 +90,17 @@ func (n *Network) FastNetworkSolver() (Solver, error) {
 	biases := make([]float64, totalNeuronCount)
 	connections := make([]*FastNetworkLink, 0)
 
-	if inConnects, err := processIncomingConnections(inList, biases, neuronLookup); err == nil {
+	if inConnects, err := n.processIncomingConnections(inList, biases, neuronLookup); err == nil {
 		connections = append(connections, inConnects...)
 	} else {
 		return nil, err
 	}
-	if inConnects, err := processIncomingConnections(hiddenList, biases, neuronLookup); err == nil {
+	if inConnects, err := n.processIncomingConnections(hiddenList, biases, neuronLookup); err == nil {
 		connections = append(connections, inConnects...)
 	} else {
 		return nil, err
 	}
-	if inConnects, err := processIncomingConnections(n.Outputs, biases, neuronLookup); err == nil {
+	if inConnects, err := n.processIncomingConnections(n.Outputs, biases, neuronLookup); err == nil {
 		connections = append(connections, inConnects...)
 	} else {
 		return nil, err
@@ -146,8 +146,8 @@ func processList(startIndex int, nList []*NNode, activations []math.NodeActivati
 	return startIndex
 }
 
-func processIncomingConnections(nList []*NNode, biases []float64, neuronLookup map[int]int) (connections []*FastNetworkLink, err error) {
-	connections = make([]*FastNetworkLink, 0)
+func (n *Network) processIncomingConnections(nList []*NNode, biases []float64, neuronLookup map[int]int) ([]*FastNetworkLink, error) {
+	connections := make([]*FastNetworkLink, 0)
 	for _, ne := range nList {
 		if targetIndex, ok := neuronLookup[ne.Id]; ok {
 			for _, in := range ne.Incoming {
@@ -164,20 +164,25 @@ func processIncomingConnections(nList []*NNode, biases []float64, neuronLookup m
 						}
 						connections = append(connections, &conn)
 					}
-				} else {
-					err = fmt.Errorf("failed to lookup for source neuron with id: %d", in.InNode.Id)
-					break
+				} else { //if !n.IsControlNode(in.InNode.Id) {
+					return nil, fmt.Errorf("failed to lookup for source neuron with id: %d", in.InNode.Id)
 				}
 			}
 		} else {
-			err = fmt.Errorf("failed to lookup for target neuron with id: %d", ne.Id)
-			break
+			return nil, fmt.Errorf("failed to lookup for target neuron with id: %d", ne.Id)
 		}
 	}
-	if err != nil {
-		return nil, err
+	return connections, nil
+}
+
+// IsControlNode is to check if specified node ID is a control node
+func (n *Network) IsControlNode(nid int) bool {
+	for _, cn := range n.controlNodes {
+		if cn.Id == nid {
+			return true
+		}
 	}
-	return connections, err
+	return false
 }
 
 func (n *Network) Flush() (res bool, err error) {
