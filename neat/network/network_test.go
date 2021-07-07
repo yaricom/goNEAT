@@ -20,18 +20,18 @@ func buildNetwork() *Network {
 	}
 
 	// HIDDEN 4
-	allNodes[3].addIncoming(allNodes[0], 15.0)
-	allNodes[3].addIncoming(allNodes[1], 10.0)
+	allNodes[3].connectFrom(allNodes[0], 15.0)
+	allNodes[3].connectFrom(allNodes[1], 10.0)
 	// HIDDEN 5
-	allNodes[4].addIncoming(allNodes[1], 5.0)
-	allNodes[4].addIncoming(allNodes[2], 1.0)
+	allNodes[4].connectFrom(allNodes[1], 5.0)
+	allNodes[4].connectFrom(allNodes[2], 1.0)
 	// HIDDEN 6
-	allNodes[5].addIncoming(allNodes[4], 17.0)
+	allNodes[5].connectFrom(allNodes[4], 17.0)
 	// OUTPUT 7
-	allNodes[6].addIncoming(allNodes[3], 7.0)
-	allNodes[6].addIncoming(allNodes[5], 4.5)
+	allNodes[6].connectFrom(allNodes[3], 7.0)
+	allNodes[6].connectFrom(allNodes[5], 4.5)
 	// OUTPUT 8
-	allNodes[7].addIncoming(allNodes[5], 13.0)
+	allNodes[7].connectFrom(allNodes[5], 13.0)
 
 	return NewNetwork(allNodes[0:3], allNodes[6:8], allNodes, 0)
 }

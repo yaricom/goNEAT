@@ -154,6 +154,14 @@ func (n *NNode) addIncoming(in *NNode, weight float64) {
 	n.Incoming = append(n.Incoming, newLink)
 }
 
+// connectFrom is to create link between two nodes. The incoming links of current node and outgoing links of in node
+// would be updated to have reference to the new link.
+func (n *NNode) connectFrom(in *NNode, weight float64) {
+	newLink := NewLink(weight, in, n, false)
+	n.Incoming = append(n.Incoming, newLink)
+	in.Outgoing = append(in.Outgoing, newLink)
+}
+
 // Flushback Recursively deactivate backwards through the network
 func (n *NNode) Flushback() {
 	n.ActivationsCount = 0

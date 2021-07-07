@@ -26,16 +26,20 @@ type Network struct {
 	inputs []*NNode
 	// NNodes that connect network modules
 	controlNodes []*NNode
+
+	// allNodesMIMO a list of all nodes in the network including MIMO control ones
+	allNodesMIMO []*NNode
 }
 
 // NewNetwork Creates new network
 func NewNetwork(in, out, all []*NNode, netId int) *Network {
 	n := Network{
-		Id:       netId,
-		inputs:   in,
-		Outputs:  out,
-		allNodes: all,
-		numLinks: -1,
+		Id:           netId,
+		inputs:       in,
+		Outputs:      out,
+		allNodes:     all,
+		numLinks:     -1,
+		allNodesMIMO: all,
 	}
 	return &n
 }
@@ -44,6 +48,7 @@ func NewNetwork(in, out, all []*NNode, netId int) *Network {
 func NewModularNetwork(in, out, all, control []*NNode, netId int) *Network {
 	n := NewNetwork(in, out, all, netId)
 	n.controlNodes = control
+	n.allNodesMIMO = append(n.allNodesMIMO, control...)
 	return n
 }
 
@@ -427,7 +432,7 @@ func (n *Network) MaxDepth() (int, error) {
 	return max, nil
 }
 
-// AllNodes Returns all nodes in the network
+// AllNodes Returns all nodes in the network including control ones
 func (n *Network) AllNodes() []*NNode {
-	return n.allNodes
+	return n.allNodesMIMO
 }

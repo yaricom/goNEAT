@@ -15,7 +15,7 @@ func (n *Network) Node(id int64) graph.Node {
 //
 // Nodes must not return nil.
 func (n *Network) Nodes() graph.Nodes {
-	return newNodesIterator(n.allNodes)
+	return newNodesIterator(n.allNodesMIMO)
 }
 
 // From returns all nodes that can be reached directly
@@ -105,7 +105,7 @@ func (n *Network) To(id int64) graph.Nodes {
 
 func (n *Network) edgeBetween(uid, vid int64, directed bool) *Link {
 	var uNode, vNode *NNode
-	for _, np := range n.allNodes {
+	for _, np := range n.allNodesMIMO {
 		if np.ID() == uid {
 			uNode = np
 		}
@@ -139,7 +139,7 @@ func (n *Network) edgeBetween(uid, vid int64, directed bool) *Link {
 }
 
 func (n *Network) nodeWithID(id int64) *NNode {
-	for _, np := range n.allNodes {
+	for _, np := range n.allNodesMIMO {
 		if np.ID() == id {
 			return np
 		}
