@@ -43,7 +43,7 @@ func TestNNode_AddIncoming(t *testing.T) {
 	assert.Len(t, node2.Incoming, 1, "Wrong number of incoming nodes")
 
 	link := node2.Incoming[0]
-	assert.Equal(t, weight, link.Weight, "Wrong incoming link weight")
+	assert.Equal(t, weight, link.ConnectionWeight, "Wrong incoming link weight")
 	assert.Equal(t, node, link.InNode, "Wrong InNode in Link")
 	assert.Equal(t, node2, link.OutNode, "Wrong OutNode in Link")
 }

@@ -13,7 +13,7 @@ import (
 type Network struct {
 	// A network id
 	Id int
-	// Is a name of this network */
+	// Is a name of this network
 	Name string
 	// NNodes that output from the network
 	Outputs []*NNode
@@ -149,13 +149,13 @@ func processIncomingConnections(nList []*NNode, biases []float64, neuronLookup m
 				if sourceIndex, ok := neuronLookup[in.InNode.Id]; ok {
 					if in.InNode.NeuronType == BiasNeuron {
 						// store bias for target neuron
-						biases[targetIndex] += in.Weight
+						biases[targetIndex] += in.ConnectionWeight
 					} else {
 						// save connection
 						conn := FastNetworkLink{
 							SourceIndex: sourceIndex,
 							TargetIndex: targetIndex,
-							Weight:      in.Weight,
+							Weight:      in.ConnectionWeight,
 						}
 						connections = append(connections, &conn)
 					}
@@ -247,12 +247,12 @@ func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 				for _, link := range np.Incoming {
 					// Handle possible time delays
 					if !link.IsTimeDelayed {
-						addAmount = link.Weight * link.InNode.GetActiveOut()
+						addAmount = link.ConnectionWeight * link.InNode.GetActiveOut()
 						if link.InNode.isActive || link.InNode.IsSensor() {
 							np.isActive = true
 						}
 					} else {
-						addAmount = link.Weight * link.InNode.GetActiveOutTd()
+						addAmount = link.ConnectionWeight * link.InNode.GetActiveOutTd()
 					}
 					np.ActivationSum += addAmount
 				} // End {for} over incoming links
