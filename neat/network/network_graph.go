@@ -38,6 +38,18 @@ func (n *Network) From(id int64) graph.Nodes {
 	for _, l := range node.Outgoing {
 		nodes = append(nodes, l.OutNode)
 	}
+	// check control nodes - the control nodes can have this node as incoming.
+	// The control node is not in the list of outgoing nodes of the ordinary node by design.
+	// This is done to have clear demarcation between modules and to avoid any intersections.
+	for _, cn := range n.controlNodes {
+		for _, incoming := range cn.Incoming {
+			if incoming.InNode.ID() == id {
+				nodes = append(nodes, cn)
+				break
+			}
+		}
+	}
+
 	return iterator.NewOrderedNodes(nodes)
 }
 
@@ -107,12 +119,25 @@ func (n *Network) To(id int64) graph.Nodes {
 	for _, l := range node.Incoming {
 		nodes = append(nodes, l.InNode)
 	}
+
+	// check control nodes - the control nodes can have this node as incoming.
+	// The control node is not in the list of incoming nodes of the ordinary node by design.
+	// This is done to have clear demarcation between modules and to avoid any intersections.
+	for _, cn := range n.controlNodes {
+		for _, outgoing := range cn.Outgoing {
+			if outgoing.OutNode.ID() == id {
+				nodes = append(nodes, cn)
+				break
+			}
+		}
+	}
+
 	return iterator.NewOrderedNodes(nodes)
 }
 
 func (n *Network) edgeBetween(uid, vid int64, directed bool) *Link {
 	var uNode, vNode *NNode
-	for _, np := range n.allNodesMIMO {
+	for _, np := range n.allNodes {
 		if np.ID() == uid {
 			uNode = np
 		}
@@ -125,9 +150,68 @@ func (n *Network) edgeBetween(uid, vid int64, directed bool) *Link {
 			break
 		}
 	}
-	if uNode == nil || vNode == nil {
+	// nothing found - return immediately
+	if uNode == nil && vNode == nil {
 		return nil
 	}
+
+	// there are possibility of the control node on either side of the edge - exploring it
+	if uNode == nil || vNode == nil {
+		// check control nodes for possible edge. The control nodes is not double linked with ordinary nodes
+		var cid, oid int64
+		if uNode == nil {
+			// possibility of the control node on the incoming side
+			cid = uid
+			oid = vid
+		} else {
+			// possibility of the control node on the outgoing side
+			cid = vid
+			oid = uid
+		}
+		// iterate over control nodes and check that it has edge to the ordinary node
+		for _, cn := range n.controlNodes {
+			if cn.ID() != cid {
+				continue
+			}
+			// check connections
+			for _, incoming := range cn.Incoming {
+				if incoming.InNode.ID() == oid {
+					if !directed {
+						return incoming
+					} else {
+						// make sure that control node is on the outgoing side
+						if uNode != nil {
+							return incoming
+						} else {
+							return nil
+						}
+					}
+				}
+			}
+			for _, outgoing := range cn.Outgoing {
+				if outgoing.OutNode.ID() == oid {
+					if !directed {
+						return outgoing
+					} else {
+						// make sure that control node if on the incoming side
+						if vNode != nil {
+							return outgoing
+						} else {
+							return nil
+						}
+					}
+				}
+			}
+		}
+
+		// nothing was found
+		return nil
+	}
+
+	//
+	// process ordinary nodes found on both sides of the edge
+	//
+
 	// check if nodes linked
 	if !directed {
 		// for undirected check that incoming link of the source node point to the target node

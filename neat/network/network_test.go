@@ -52,10 +52,9 @@ func buildModularNetwork() *Network {
 	}
 	// HIDDEN 6 - control node
 	controlNodes[0].ActivationType = math.MultiplyModuleActivation
-	controlNodes[0].connectFrom(allNodes[3], 1.0)
-	controlNodes[0].connectFrom(allNodes[4], 1.0)
-	l := controlNodes[0].addOutgoing(allNodes[5], 1.0)
-	allNodes[5].Incoming = append(allNodes[5].Incoming, l)
+	controlNodes[0].addIncoming(allNodes[3], 1.0)
+	controlNodes[0].addIncoming(allNodes[4], 1.0)
+	controlNodes[0].addOutgoing(allNodes[5], 1.0)
 
 	// HIDDEN 4
 	allNodes[3].ActivationType = math.LinearActivation

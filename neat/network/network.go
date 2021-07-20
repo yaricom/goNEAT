@@ -164,7 +164,7 @@ func (n *Network) processIncomingConnections(nList []*NNode, biases []float64, n
 						}
 						connections = append(connections, &conn)
 					}
-				} else { //if !n.IsControlNode(in.InNode.Id) {
+				} else {
 					return nil, fmt.Errorf("failed to lookup for source neuron with id: %d", in.InNode.Id)
 				}
 			}

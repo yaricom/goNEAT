@@ -250,6 +250,7 @@ func TestNetwork_HasEdgeBetween_Modular(t *testing.T) {
 
 		{uid: 6, vid: 4, exists: true},
 		{uid: 6, vid: 5, exists: true},
+		{uid: 7, vid: 6, exists: true},
 		// not existing, dummy
 		{uid: 1, vid: 3, exists: false},
 		{uid: 2, vid: 3, exists: false},
@@ -487,6 +488,7 @@ func TestNetwork_To_Modular(t *testing.T) {
 		{id: 9, ids: []int64{7}},
 
 		{id: 6, ids: []int64{4, 5}},
+		{id: 7, ids: []int64{6}},
 		// not existing
 		{id: 1, ids: []int64{}},
 		{id: 2, ids: []int64{}},
