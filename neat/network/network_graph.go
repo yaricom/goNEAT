@@ -1,6 +1,9 @@
 package network
 
-import "gonum.org/v1/gonum/graph"
+import (
+	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/iterator"
+)
 
 // the Gonum graph.Graph
 //
@@ -15,7 +18,11 @@ func (n *Network) Node(id int64) graph.Node {
 //
 // Nodes must not return nil.
 func (n *Network) Nodes() graph.Nodes {
-	return newNodesIterator(n.allNodesMIMO)
+	nodes := make([]graph.Node, len(n.allNodesMIMO))
+	for i, n := range n.allNodesMIMO {
+		nodes[i] = n
+	}
+	return iterator.NewOrderedNodes(nodes)
 }
 
 // From returns all nodes that can be reached directly
@@ -27,11 +34,11 @@ func (n *Network) From(id int64) graph.Nodes {
 	if node == nil {
 		return graph.Empty
 	}
-	var nodes []*NNode
+	var nodes []graph.Node
 	for _, l := range node.Outgoing {
 		nodes = append(nodes, l.OutNode)
 	}
-	return newNodesIterator(nodes)
+	return iterator.NewOrderedNodes(nodes)
 }
 
 // HasEdgeBetween returns whether an edge exists between
@@ -96,11 +103,11 @@ func (n *Network) To(id int64) graph.Nodes {
 	if node == nil {
 		return graph.Empty
 	}
-	var nodes []*NNode
+	var nodes []graph.Node
 	for _, l := range node.Incoming {
 		nodes = append(nodes, l.InNode)
 	}
-	return newNodesIterator(nodes)
+	return iterator.NewOrderedNodes(nodes)
 }
 
 func (n *Network) edgeBetween(uid, vid int64, directed bool) *Link {
@@ -153,61 +160,4 @@ func (n *Network) nodeWithID(id int64) *NNode {
 		}
 	}
 	return nil
-}
-
-// nodesIterator is the definition of iterator for a list of nodes.
-type nodesIterator struct {
-	nodes []*NNode
-	index int
-	curr  *NNode
-}
-
-func newNodesIterator(nodes []*NNode) graph.Nodes {
-	return &nodesIterator{nodes: nodes}
-}
-
-// Next advances the iterator and returns whether
-// the next call to the item method will return a
-// non-nil item.
-//
-// Next should be called prior to any call to the
-// iterator's item retrieval method after the
-// iterator has been obtained or reset.
-//
-// The order of iteration is implementation
-// dependent.
-func (i *nodesIterator) Next() bool {
-	if i.index < len(i.nodes) {
-		i.curr = i.nodes[i.index]
-		i.index++
-		return true
-	}
-	i.curr = nil
-	return false
-}
-
-// Len returns the number of items remaining in the
-// iterator.
-//
-// If the number of items in the iterator is unknown,
-// too large to materialize or too costly to calculate
-// then Len may return a negative value.
-// In this case the consuming function must be able
-// to operate on the items of the iterator directly
-// without materializing the items into a slice.
-// The magnitude of a negative length has
-// implementation-dependent semantics.
-func (i *nodesIterator) Len() int {
-	return len(i.nodes) - i.index
-}
-
-// Node returns the current Node from the iterator.
-func (i *nodesIterator) Node() graph.Node {
-	return i.curr
-}
-
-// Reset returns the iterator to its start position.
-func (i *nodesIterator) Reset() {
-	i.index = 0
-	i.curr = nil
 }
