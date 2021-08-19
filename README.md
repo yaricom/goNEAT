@@ -223,15 +223,6 @@ tasks under conditions of incomplete knowledge ([single-pole balancing](https://
 We hope that you will find great applications in your research and work projects for the provided NEAT algorithm's 
 implementation as well as utilities to run experiments while collecting relevant data samples.
 
-## Support this work
-
-If you found this library helpful, please consider supporting further work on the project by donating.
-
-You can help to evolve this project either by pressing [`Sponsor`](https://www.patreon.com/io42) or by sending some funds 
-to:
-* **LTC:** LPi2hvnMQLWy1BKbjtyPeEqVcfyPfQLErs
-* **DOGE:** D9u3YQJfpjYQT67ZQRub97jjgiiG7S3S6x
-
 ## References
 
 * The original C++ NEAT implementation created by Kenneth Stanley, see: [NEAT][1]
