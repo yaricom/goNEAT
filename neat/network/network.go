@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/neat/math"
+	"gonum.org/v1/gonum/graph/path"
+	"io"
 )
 
 // Network is a collection of all nodes within an organism's phenotype, which effectively defines Neural Network topology.
@@ -301,7 +303,7 @@ func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 	return true, nil
 }
 
-// Activate Activates the net such that all outputs are active
+// Activate is to activate the network such that all outputs are active
 func (n *Network) Activate() (bool, error) {
 	return n.ActivateSteps(20)
 }
@@ -413,12 +415,26 @@ func (n *Network) IsRecurrent(inNode, outNode *NNode, count *int, thresh int) bo
 	return false
 }
 
-// MaxDepth Find the maximum number of neurons between an output and an input
-func (n *Network) MaxDepth() (int, error) {
+// MaxActivationDepth is to find the maximum number of neuron layers to be activated between an output and an input layers.
+// The input layer is excluded as it does not require activation.
+func (n *Network) MaxActivationDepth() (int, error) {
+	// The quick case when there are no hidden nodes or control
+	if len(n.allNodes) == len(n.inputs)+len(n.Outputs) && len(n.controlNodes) == 0 {
+		return 1, nil // just one layer depth
+	}
+
+	return n.maxActivationDepth(nil)
+}
+
+// MaxActivationDepthFast is to find the maximum number of neuron layers to be activated between an output and an input layers.
+// This is the fastest version of depth calculation but only suitable for simple networks. If current network is modular
+// the error will be raised.
+func (n *Network) MaxActivationDepthFast() (int, error) {
 	if len(n.controlNodes) > 0 {
 		return -1, errors.New("unsupported for modular networks")
 	}
-	// The quick case when there are no hidden nodes
+
+	// The quick case when there are no hidden nodes or control
 	if len(n.allNodes) == len(n.inputs)+len(n.Outputs) && len(n.controlNodes) == 0 {
 		return 1, nil // just one layer depth
 	}
@@ -440,4 +456,41 @@ func (n *Network) MaxDepth() (int, error) {
 // AllNodes Returns all nodes in the network including control ones
 func (n *Network) AllNodes() []*NNode {
 	return n.allNodesMIMO
+}
+
+func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
+	allPaths, ok := path.JohnsonAllPaths(n)
+	if !ok {
+		return 0, errors.New("failed to calculate network depth, negative cycle detected")
+	}
+	max := 0 // The max depth
+	for _, in := range n.inputs {
+		for _, out := range n.Outputs {
+			if paths, _ := allPaths.AllBetween(in.ID(), out.ID()); paths != nil {
+				if w != nil {
+					if err := PrintPath(w, paths); err != nil {
+						return 0, err
+					}
+				}
+				// iterate over returned paths and find the one with maximal length
+				for _, p := range paths {
+					l := len(p)
+					if l > max {
+						max = l
+					}
+				}
+			}
+		}
+		if w != nil {
+			if _, err := fmt.Fprintln(w, "---------------"); err != nil {
+				return 0, err
+			}
+		}
+	}
+
+	max = max - 1 // we do not count input layer
+	if max == 0 {
+		return 0, errors.New("failed to calculate network depth")
+	}
+	return max, nil
 }

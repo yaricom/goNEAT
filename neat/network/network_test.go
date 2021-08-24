@@ -94,13 +94,36 @@ func TestModularNetwork_Activate(t *testing.T) {
 	assert.Equal(t, 2730.0, net.Outputs[1].Activation)
 }
 
-// Tests Network MaxDepth
-func TestNetwork_MaxDepth(t *testing.T) {
+// Tests MaxActivationDepth for simple network
+func TestNetwork_MaxActivationDepth_Simple(t *testing.T) {
 	net := buildNetwork()
 
-	depth, err := net.MaxDepth()
+	depth, err := net.MaxActivationDepth()
 	assert.NoError(t, err, "failed to calculate max depth")
 	assert.Equal(t, 3, depth)
+}
+
+func TestNetwork_MaxActivationDepth_Modular(t *testing.T) {
+	net := buildModularNetwork()
+
+	depthUnified, err := net.MaxActivationDepth()
+	assert.NoError(t, err, "failed to calculate max depth")
+	assert.Equal(t, 4, depthUnified)
+}
+
+func TestNetwork_MaxActivationDepthFast_Simple(t *testing.T) {
+	net := buildNetwork()
+
+	depth, err := net.MaxActivationDepthFast()
+	assert.NoError(t, err, "failed to calculate max depth")
+	assert.Equal(t, 3, depth)
+}
+
+func TestNetwork_MaxActivationDepthFast_Modular(t *testing.T) {
+	net := buildModularNetwork()
+
+	_, err := net.MaxActivationDepthFast()
+	assert.Error(t, err, "error expected")
 }
 
 // Tests Network OutputIsOff

@@ -21,7 +21,7 @@ func TestFastModularNetworkSolver_RecursiveSteps(t *testing.T) {
 	data = append(data, 1.0) // BIAS is a third object
 	err = net.LoadSensors(data)
 	require.NoError(t, err, "failed to load sensors")
-	depth, err := net.MaxDepth()
+	depth, err := net.MaxActivationDepth()
 	require.NoError(t, err, "failed to calculate max depth")
 	for i := 0; i < depth; i++ {
 		res, err := net.Activate()
