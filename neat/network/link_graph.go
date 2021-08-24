@@ -1,6 +1,10 @@
 package network
 
-import "gonum.org/v1/gonum/graph"
+import (
+	"fmt"
+	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/encoding"
+)
 
 // The Gonum Graph specific
 
@@ -28,4 +32,18 @@ func (l *Link) Weight() float64 {
 func (l *Link) ReversedEdge() graph.Edge {
 	// the reversal is not valid - returning the same
 	return l
+}
+
+// Attributes returns list of standard attributes associated with the graph edge
+func (l *Link) Attributes() []encoding.Attribute {
+	attrs := make([]encoding.Attribute, 0)
+
+	if len(l.Params) > 0 {
+		attrs = append(attrs, encoding.Attribute{
+			Key:   "parameters",
+			Value: fmt.Sprintf("%v", l.Params),
+		})
+	}
+
+	return attrs
 }

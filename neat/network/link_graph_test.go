@@ -1,7 +1,10 @@
 package network
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/neat"
 	"testing"
 )
 
@@ -44,4 +47,20 @@ func TestLink_ReversedEdge(t *testing.T) {
 
 	reversed := l.ReversedEdge()
 	assert.Equal(t, l, reversed)
+}
+
+func TestLink_Attributes(t *testing.T) {
+	in := NewNNode(1, InputNeuron)
+	out := NewNNode(2, HiddenNeuron)
+
+	trait := &neat.Trait{Id: 1, Params: []float64{1.1, 2.3, 3.4, 4.2, 5.5, 6.7}}
+	l := NewLinkWithTrait(trait, 1.0, in, out, false)
+
+	attrs := l.Attributes()
+	require.Len(t, attrs, 1, "wrong number of attributes")
+
+	assert.Equal(t, "parameters", attrs[0].Key)
+
+	expected := fmt.Sprintf("%v", trait.Params)
+	assert.Equal(t, expected, attrs[0].Value)
 }

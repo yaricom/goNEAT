@@ -26,8 +26,6 @@ type Link struct {
 	// The following parameters are for use in neurons that learn through habituation,
 	// sensitization, or Hebbian-type processes
 	Params []float64
-	// The amount of weight adjustment
-	AddedWeight float64
 }
 
 // NewLink Creates new link with specified weight, input and output neurons connected recurrently or not.
