@@ -55,7 +55,7 @@ const (
 	BiasNeuron
 )
 
-// NeuronTypeName Returns human readable neuron type name for given constant
+// NeuronTypeName Returns human-readable neuron type name for given constant
 func NeuronTypeName(nlayer NodeNeuronType) string {
 	switch nlayer {
 	case HiddenNeuron:
