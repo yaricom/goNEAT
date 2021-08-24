@@ -52,15 +52,21 @@ func TestLink_ReversedEdge(t *testing.T) {
 func TestLink_Attributes(t *testing.T) {
 	in := NewNNode(1, InputNeuron)
 	out := NewNNode(2, HiddenNeuron)
+	w := 12.6
 
 	trait := &neat.Trait{Id: 1, Params: []float64{1.1, 2.3, 3.4, 4.2, 5.5, 6.7}}
-	l := NewLinkWithTrait(trait, 1.0, in, out, false)
+	l := NewLinkWithTrait(trait, w, in, out, false)
 
 	attrs := l.Attributes()
-	require.Len(t, attrs, 1, "wrong number of attributes")
+	require.Len(t, attrs, 3, "wrong number of attributes")
 
-	assert.Equal(t, "parameters", attrs[0].Key)
+	assert.Equal(t, "weight", attrs[0].Key)
+	assert.Equal(t, fmt.Sprintf("%f", w), attrs[0].Value)
 
+	assert.Equal(t, "recurrent", attrs[1].Key)
+	assert.Equal(t, fmt.Sprintf("%v", l.IsRecurrent), attrs[1].Value)
+
+	assert.Equal(t, "parameters", attrs[2].Key)
 	expected := fmt.Sprintf("%v", trait.Params)
-	assert.Equal(t, expected, attrs[0].Value)
+	assert.Equal(t, expected, attrs[2].Value)
 }

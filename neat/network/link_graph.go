@@ -36,7 +36,15 @@ func (l *Link) ReversedEdge() graph.Edge {
 
 // Attributes returns list of standard attributes associated with the graph edge
 func (l *Link) Attributes() []encoding.Attribute {
-	attrs := make([]encoding.Attribute, 0)
+	attrs := []encoding.Attribute{{
+		Key:   "weight",
+		Value: fmt.Sprintf("%f", l.ConnectionWeight),
+	},
+		{
+			Key:   "recurrent",
+			Value: fmt.Sprintf("%v", l.IsRecurrent),
+		},
+	}
 
 	if len(l.Params) > 0 {
 		attrs = append(attrs, encoding.Attribute{
