@@ -39,7 +39,7 @@ func NewGeneWithTrait(trait *neat.Trait, weight float64, inNode, outNode *networ
 
 // NewGeneCopy Construct a gene off of another gene as a duplicate
 func NewGeneCopy(g *Gene, trait *neat.Trait, inNode, outNode *network.NNode) *Gene {
-	return NewConnectionGene(network.NewLinkWithTrait(trait, g.Link.Weight, inNode, outNode, g.Link.IsRecurrent),
+	return NewConnectionGene(network.NewLinkWithTrait(trait, g.Link.ConnectionWeight, inNode, outNode, g.Link.IsRecurrent),
 		g.InnovationNum, g.MutationNum, true)
 }
 
@@ -67,6 +67,6 @@ func (g *Gene) String() string {
 		traitStr = fmt.Sprintf(" Link's trait_id: %d", g.Link.Trait.Id)
 	}
 	return fmt.Sprintf("[Link (%4d ->%4d) INNOV (%4d, %.3f) Weight: %.3f %s%s%s : %s->%s]",
-		g.Link.InNode.Id, g.Link.OutNode.Id, g.InnovationNum, g.MutationNum, g.Link.Weight,
+		g.Link.InNode.Id, g.Link.OutNode.Id, g.InnovationNum, g.MutationNum, g.Link.ConnectionWeight,
 		traitStr, enabledStr, recurrentStr, g.Link.InNode, g.Link.OutNode)
 }

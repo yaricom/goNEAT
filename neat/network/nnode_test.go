@@ -43,9 +43,26 @@ func TestNNode_AddIncoming(t *testing.T) {
 	assert.Len(t, node2.Incoming, 1, "Wrong number of incoming nodes")
 
 	link := node2.Incoming[0]
-	assert.Equal(t, weight, link.Weight, "Wrong incoming link weight")
+	assert.Equal(t, weight, link.ConnectionWeight, "Wrong incoming link weight")
 	assert.Equal(t, node, link.InNode, "Wrong InNode in Link")
 	assert.Equal(t, node2, link.OutNode, "Wrong OutNode in Link")
+}
+
+func TestNNode_connectFrom(t *testing.T) {
+	node := NewNNode(1, InputNeuron)
+	node2 := NewNNode(2, HiddenNeuron)
+
+	weight := 1.5
+	node2.connectFrom(node, weight)
+	assert.Len(t, node2.Incoming, 1, "Wrong number of incoming nodes")
+	assert.Len(t, node.Outgoing, 1, "wrong number of outgoing links")
+
+	link := node2.Incoming[0]
+	assert.Equal(t, weight, link.ConnectionWeight, "Wrong incoming link weight")
+	assert.Equal(t, node, link.InNode, "Wrong InNode in Link")
+	assert.Equal(t, node2, link.OutNode, "Wrong OutNode in Link")
+
+	assert.EqualValues(t, link, node.Outgoing[0], "incoming and outgoing links do not match")
 }
 
 // Tests NNode Depth

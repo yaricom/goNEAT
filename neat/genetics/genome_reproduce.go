@@ -284,7 +284,7 @@ func (g *Genome) mateMultipointAvg(og *Genome, genomeId int, fitness1, fitness2 
 				} else {
 					avgGene.Link.Trait = p2gene.Link.Trait
 				}
-				avgGene.Link.Weight = (p1gene.Link.Weight + p2gene.Link.Weight) / 2.0 // WEIGHTS AVERAGED HERE
+				avgGene.Link.ConnectionWeight = (p1gene.Link.ConnectionWeight + p2gene.Link.ConnectionWeight) / 2.0 // WEIGHTS AVERAGED HERE
 
 				if rand.Float64() > 0.5 {
 					avgGene.Link.InNode = p1gene.Link.InNode
@@ -505,7 +505,7 @@ func (g *Genome) mateSinglePoint(og *Genome, genomeId int) (*Genome, error) {
 					} else {
 						avgGene.Link.Trait = p2gene.Link.Trait
 					}
-					avgGene.Link.Weight = (p1gene.Link.Weight + p2gene.Link.Weight) / 2.0 // WEIGHTS AVERAGED HERE
+					avgGene.Link.ConnectionWeight = (p1gene.Link.ConnectionWeight + p2gene.Link.ConnectionWeight) / 2.0 // WEIGHTS AVERAGED HERE
 
 					if rand.Float64() > 0.5 {
 						avgGene.Link.InNode = p1gene.Link.InNode

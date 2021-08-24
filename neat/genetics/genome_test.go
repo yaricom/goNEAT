@@ -71,11 +71,11 @@ func buildTestModularGenome(id int) *Genome {
 		ActivationType: math.MultiplyModuleActivation,
 	}
 	controlNode.Incoming = []*network.Link{
-		{Weight: 1.0, InNode: ioNodes[0], OutNode: controlNode},
-		{Weight: 1.0, InNode: ioNodes[1], OutNode: controlNode},
+		{ConnectionWeight: 1.0, InNode: ioNodes[0], OutNode: controlNode},
+		{ConnectionWeight: 1.0, InNode: ioNodes[1], OutNode: controlNode},
 	}
 	controlNode.Outgoing = []*network.Link{
-		{Weight: 1.0, InNode: controlNode, OutNode: ioNodes[2]},
+		{ConnectionWeight: 1.0, InNode: controlNode, OutNode: ioNodes[2]},
 	}
 	gnome.ControlGenes = []*MIMOControlGene{NewMIMOGene(controlNode, int64(7), 5.5, true)}
 	return gnome

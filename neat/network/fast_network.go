@@ -198,7 +198,7 @@ func (s *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res b
 		if s.inActivation[currentAdjNode] {
 			s.neuronSignalsBeingProcessed[currentNode] += s.lastActivation[currentAdjNode] * s.adjacentMatrix[currentAdjNode][currentNode]
 		} else {
-			// Otherwise proceed as normal
+			// Otherwise, proceed as normal
 			// Recurse if this neuron has not been activated yet
 			if !s.activated[currentAdjNode] {
 				res, err = s.recursiveActivateNode(currentAdjNode)

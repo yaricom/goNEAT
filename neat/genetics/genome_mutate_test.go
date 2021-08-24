@@ -147,7 +147,7 @@ func TestGenome_mutateLinkWeights(t *testing.T) {
 
 	for i, gn := range gnome1.Genes {
 		// check that link weights are different from original ones (1.5, 2.5, 3.5)
-		assert.NotEqual(t, float64(i)+1.5, gn.Link.Weight, "Found not mutated gene: %s", gn)
+		assert.NotEqual(t, float64(i)+1.5, gn.Link.ConnectionWeight, "Found not mutated gene: %s", gn)
 	}
 }
 

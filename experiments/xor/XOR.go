@@ -115,7 +115,7 @@ func (e *xorGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool,
 		{1.0, 1.0, 0.0},
 		{1.0, 1.0, 1.0}}
 
-	netDepth, err := organism.Phenotype.MaxDepth() // The max depth of the network to be activated
+	netDepth, err := organism.Phenotype.MaxActivationDepthFast() // The max depth of the network to be activated
 	if err != nil {
 		neat.WarnLog(
 			fmt.Sprintf("Failed to estimate maximal depth of the network with loop:\n%s\nUsing default dpeth: %d",

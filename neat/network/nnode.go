@@ -143,15 +143,26 @@ func (n *NNode) SensorLoad(load float64) bool {
 }
 
 // Adds a non recurrent outgoing link to this node
-func (n *NNode) addOutgoing(out *NNode, weight float64) {
+func (n *NNode) addOutgoing(out *NNode, weight float64) *Link {
 	newLink := NewLink(weight, n, out, false)
 	n.Outgoing = append(n.Outgoing, newLink)
+	return newLink
 }
 
 // Adds a NONRECURRENT Link to an incoming NNode in the incoming List
-func (n *NNode) addIncoming(in *NNode, weight float64) {
+func (n *NNode) addIncoming(in *NNode, weight float64) *Link {
 	newLink := NewLink(weight, in, n, false)
 	n.Incoming = append(n.Incoming, newLink)
+	return newLink
+}
+
+// connectFrom is to create link between two nodes. The incoming links of current node and outgoing links of in node
+// would be updated to have reference to the new link.
+func (n *NNode) connectFrom(in *NNode, weight float64) *Link {
+	newLink := NewLink(weight, in, n, false)
+	n.Incoming = append(n.Incoming, newLink)
+	in.Outgoing = append(in.Outgoing, newLink)
+	return newLink
 }
 
 // Flushback Recursively deactivate backwards through the network
@@ -252,4 +263,11 @@ func (n *NNode) Print() string {
 	_, _ = fmt.Fprintf(b, "\tlastActivation2: %f\n", n.lastActivation2)
 
 	return b.String()
+}
+
+// The Gonum Graph specific
+
+// ID is to get ID of the node. Implements graph.Node ID method.
+func (n *NNode) ID() int64 {
+	return int64(n.Id)
 }

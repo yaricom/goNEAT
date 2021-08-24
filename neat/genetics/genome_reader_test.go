@@ -61,7 +61,7 @@ func TestPlainGenomeReader_Read(t *testing.T) {
 		assert.Equal(t, i+1, g.Link.Trait.Id, "Gene Link Trait Id is wrong at: %d", i)
 		assert.Equal(t, i+1, g.Link.InNode.Id, "Gene link's input node Id is wrong at: %d", i)
 		assert.Equal(t, 4, g.Link.OutNode.Id, "Gene link's output node Id is wrong at: &d", i)
-		assert.Equal(t, float64(i)+1.5, g.Link.Weight, "Gene link's weight is wrong at: %d", i)
+		assert.Equal(t, float64(i)+1.5, g.Link.ConnectionWeight, "Gene link's weight is wrong at: %d", i)
 		assert.False(t, g.Link.IsRecurrent, "Gene link's recurrent flag is wrong at: %d", i)
 		assert.EqualValues(t, i+1, g.InnovationNum, "Gene's innovation number is wrong at: %d", i)
 		assert.EqualValues(t, 0, g.MutationNum, "Gene's mutation number is wrong at: %d", i)
@@ -130,7 +130,7 @@ func TestReadGene_ReadPlainGene(t *testing.T) {
 	assert.Equal(t, inNodeId, link.InNode.Id)
 	require.NotNil(t, link.OutNode)
 	assert.Equal(t, outNodeId, link.OutNode.Id)
-	assert.Equal(t, weight, link.Weight)
+	assert.Equal(t, weight, link.ConnectionWeight)
 	assert.False(t, link.IsRecurrent)
 }
 
@@ -253,7 +253,7 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		assert.Equal(t, g.IsEnabled, genome.Genes[i].IsEnabled, "at: %d", i)
 		assert.Equal(t, g.MutationNum, genome.Genes[i].MutationNum, "at: %d", i)
 		require.NotNil(t, genome.Genes[i].Link, "at: %d", i)
-		assert.Equal(t, g.Link.Weight, genome.Genes[i].Link.Weight, "at: %d", i)
+		assert.Equal(t, g.Link.ConnectionWeight, genome.Genes[i].Link.ConnectionWeight, "at: %d", i)
 		require.NotNil(t, genome.Genes[i].Link.InNode, "at: %d", i)
 		assert.Equal(t, g.Link.InNode.Id, genome.Genes[i].Link.InNode.Id, "at: %d", i)
 		require.NotNil(t, genome.Genes[i].Link.OutNode, "at: %d", i)
@@ -280,7 +280,7 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 			assert.Equal(t, idCount, l.InNode.Id, "at: %d, %d", i, j)
 			require.NotNil(t, l.OutNode, "at: %d, %d", i, j)
 			assert.Equal(t, l.OutNode.Id, g.ControlNode.Id, "at: %d, %d", i, j)
-			assert.Equal(t, 1.0, l.Weight, "at: %d, %d", i, j)
+			assert.Equal(t, 1.0, l.ConnectionWeight, "at: %d, %d", i, j)
 			idCount++
 		}
 		// check Outgoing InNode
@@ -291,7 +291,7 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		// check Outgoing OutNode
 		require.NotNil(t, g.ControlNode.Outgoing[0].OutNode, "at: %d", i)
 		assert.Equal(t, idCount, g.ControlNode.Outgoing[0].OutNode.Id, "at: %d", i)
-		assert.Equal(t, 1.0, g.ControlNode.Outgoing[0].Weight, "at: %d", i)
+		assert.Equal(t, 1.0, g.ControlNode.Outgoing[0].ConnectionWeight, "at: %d", i)
 		idCount++
 	}
 }
