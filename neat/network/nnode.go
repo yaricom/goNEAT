@@ -142,14 +142,14 @@ func (n *NNode) SensorLoad(load float64) bool {
 	}
 }
 
-// Adds a non recurrent outgoing link to this node
+// Adds a non-recurrent outgoing link to this node
 func (n *NNode) addOutgoing(out *NNode, weight float64) *Link {
 	newLink := NewLink(weight, n, out, false)
 	n.Outgoing = append(n.Outgoing, newLink)
 	return newLink
 }
 
-// Adds a NONRECURRENT Link to an incoming NNode in the incoming List
+// Adds a non-recurrent Link to an incoming NNode in the incoming List
 func (n *NNode) addIncoming(in *NNode, weight float64) *Link {
 	newLink := NewLink(weight, in, n, false)
 	n.Incoming = append(n.Incoming, newLink)
@@ -242,8 +242,8 @@ func (n *NNode) String() string {
 		n.ActivationsCount, n.Activation, n.Params)
 }
 
-// Print Prints all node's fields to the string
-func (n *NNode) Print() string {
+// PrintDebug is to print all fields of the node to the string
+func (n *NNode) PrintDebug() string {
 	str := "NNode fields\n"
 	b := bytes.NewBufferString(str)
 	_, _ = fmt.Fprintf(b, "\tId: %d\n", n.Id)
@@ -263,11 +263,4 @@ func (n *NNode) Print() string {
 	_, _ = fmt.Fprintf(b, "\tlastActivation2: %f\n", n.lastActivation2)
 
 	return b.String()
-}
-
-// The Gonum Graph specific
-
-// ID is to get ID of the node. Implements graph.Node ID method.
-func (n *NNode) ID() int64 {
-	return int64(n.Id)
 }

@@ -3,8 +3,46 @@ package network
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v2/neat/math"
 	"testing"
 )
+
+func TestNewNNode(t *testing.T) {
+	node := NewNNode(1, InputNeuron)
+
+	require.NotNil(t, node)
+	assert.Equal(t, 1, node.Id)
+	assert.Equal(t, math.SigmoidSteepenedActivation, node.ActivationType)
+	assert.Equal(t, InputNeuron, node.NeuronType)
+	assert.NotNil(t, node.Incoming)
+	assert.NotNil(t, node.Outgoing)
+}
+
+func TestNewNNodeCopy(t *testing.T) {
+	node := NewNNode(1, InputNeuron)
+	trait := &neat.Trait{Id: 1, Params: []float64{1.1, 2.3, 3.4, 4.2, 5.5, 6.7}}
+
+	nodeCopy := NewNNodeCopy(node, trait)
+
+	require.NotNil(t, nodeCopy)
+	assert.Equal(t, node.Id, nodeCopy.Id)
+	assert.Equal(t, node.ActivationType, nodeCopy.ActivationType)
+	assert.Equal(t, node.NeuronType, nodeCopy.NeuronType)
+	assert.Equal(t, trait, nodeCopy.Trait)
+	assert.NotNil(t, node.Incoming)
+	assert.NotNil(t, node.Outgoing)
+}
+
+func TestNewNetworkNode(t *testing.T) {
+	node := NewNetworkNode()
+
+	require.NotNil(t, node)
+	assert.Equal(t, math.SigmoidSteepenedActivation, node.ActivationType)
+	assert.Equal(t, HiddenNeuron, node.NeuronType)
+	assert.NotNil(t, node.Incoming)
+	assert.NotNil(t, node.Outgoing)
+}
 
 // Tests NNode SensorLoad
 func TestNNode_SensorLoad(t *testing.T) {
@@ -118,4 +156,165 @@ func TestNNode_Flushback(t *testing.T) {
 	// Check activation and time delayed activation
 	assert.Zero(t, node.GetActiveOut())
 	assert.Zero(t, node.GetActiveOutTd())
+}
+
+func TestNNode_GetActiveOut(t *testing.T) {
+	activation := 1293.98
+	node := NewNNode(1, InputNeuron)
+	node.Activation = activation
+
+	out := node.GetActiveOut()
+	assert.Equal(t, 0.0, out, "no activations - must be zero")
+
+	node.ActivationsCount = 1
+	out = node.GetActiveOut()
+	assert.Equal(t, activation, out)
+}
+
+func TestNNode_GetActiveOutTd(t *testing.T) {
+	activation := 1293.98
+	node := NewNNode(1, InputNeuron)
+	node.lastActivation = activation
+	node.ActivationsCount = 1
+
+	out := node.GetActiveOutTd()
+	assert.Equal(t, 0.0, out, "last activation not available yet")
+
+	node.ActivationsCount = 2
+	out = node.GetActiveOutTd()
+	assert.Equal(t, activation, out)
+}
+
+func TestNNode_IsSensor(t *testing.T) {
+	testCases := []struct {
+		nType    NodeNeuronType
+		isSensor bool
+	}{
+		{
+			nType:    InputNeuron,
+			isSensor: true,
+		},
+		{
+			nType:    BiasNeuron,
+			isSensor: true,
+		},
+		{
+			nType:    HiddenNeuron,
+			isSensor: false,
+		},
+		{
+			nType:    OutputNeuron,
+			isSensor: false,
+		},
+	}
+	for i, tc := range testCases {
+		node := NewNNode(1, tc.nType)
+		assert.Equal(t, tc.isSensor, node.IsSensor(), "wrong value at: %d", i)
+	}
+}
+
+func TestNNode_IsNeuron(t *testing.T) {
+	testCases := []struct {
+		nType    NodeNeuronType
+		isNeuron bool
+	}{
+		{
+			nType:    InputNeuron,
+			isNeuron: false,
+		},
+		{
+			nType:    BiasNeuron,
+			isNeuron: false,
+		},
+		{
+			nType:    HiddenNeuron,
+			isNeuron: true,
+		},
+		{
+			nType:    OutputNeuron,
+			isNeuron: true,
+		},
+	}
+	for i, tc := range testCases {
+		node := NewNNode(1, tc.nType)
+		assert.Equal(t, tc.isNeuron, node.IsNeuron(), "wrong value at: %d", i)
+	}
+}
+
+func TestNNode_FlushbackCheck(t *testing.T) {
+	testCases := []struct {
+		node   NNode
+		failed bool
+	}{
+		{
+			node:   NNode{},
+			failed: false,
+		},
+		{
+			node:   NNode{Activation: 1.0},
+			failed: true,
+		},
+		{
+			node:   NNode{ActivationsCount: 1},
+			failed: true,
+		},
+		{
+			node:   NNode{lastActivation: 2.0},
+			failed: true,
+		},
+		{
+			node:   NNode{lastActivation2: 3.4},
+			failed: true,
+		},
+	}
+	for i, tc := range testCases {
+		err := tc.node.FlushbackCheck()
+		if tc.failed {
+			assert.Error(t, err, "error expected at: %d", i)
+		} else {
+			assert.NoError(t, err, "no error expected at: %d", i)
+		}
+	}
+}
+
+func TestNNode_NodeType(t *testing.T) {
+	testCases := []struct {
+		neuronType NodeNeuronType
+		nodeType   NodeType
+	}{
+		{
+			neuronType: BiasNeuron,
+			nodeType:   SensorNode,
+		},
+		{
+			neuronType: InputNeuron,
+			nodeType:   SensorNode,
+		},
+		{
+			neuronType: HiddenNeuron,
+			nodeType:   NeuronNode,
+		},
+		{
+			neuronType: OutputNeuron,
+			nodeType:   NeuronNode,
+		},
+	}
+	for i, tc := range testCases {
+		node := NewNNode(1, tc.neuronType)
+		assert.Equal(t, tc.nodeType, node.NodeType(), "wrong node type at: %d", i)
+	}
+}
+
+func TestNNode_PrintDebug(t *testing.T) {
+	node := NewNNode(1, InputNeuron)
+
+	out := node.PrintDebug()
+	assert.NotEmpty(t, out)
+}
+
+func TestNNode_String(t *testing.T) {
+	node := NewNNode(1, InputNeuron)
+
+	out := node.String()
+	assert.NotEmpty(t, out)
 }
