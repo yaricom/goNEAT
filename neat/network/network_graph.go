@@ -2,7 +2,9 @@ package network
 
 import (
 	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/iterator"
+	"io"
 )
 
 // the Gonum graph.Graph
@@ -233,6 +235,19 @@ func (n *Network) edgeBetween(uid, vid int64, directed bool) *Link {
 		if l.OutNode.ID() == vid {
 			return l
 		}
+	}
+	return nil
+}
+
+// WriteDOT is to write this network graph using the GraphViz DOT encoding.
+// See DOT Guide: https://www.graphviz.org/pdf/dotguide.pdf
+func (n *Network) WriteDOT(w io.Writer) error {
+	data, err := dot.Marshal(n, n.Name, "", "")
+	if err != nil {
+		return err
+	}
+	if _, err = w.Write(data); err != nil {
+		return err
 	}
 	return nil
 }
