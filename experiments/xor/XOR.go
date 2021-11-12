@@ -86,17 +86,30 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 		// print winner organism
 		for _, org := range pop.Organisms {
 			if org.IsWinner {
-				// Prints the winner organism to file!
+				// Prints the winner organism's Genome to the file!
 				orgPath := fmt.Sprintf("%s/%s_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-					"xor_winner", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+					"xor_winner_genome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(orgPath); err != nil {
 					return err
 				} else if err = org.Genotype.Write(file); err != nil {
-					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
+					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's genome, reason: %s\n", err))
 					return err
 				} else {
-					neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", epoch.Id, orgPath))
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner's genome dumped to: %s\n", epoch.Id, orgPath))
 				}
+				// Prints the winner organism's Phenotype to the file!
+				orgPath = fmt.Sprintf("%s/%s_%d-%d.dot", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
+					"xor_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+				if file, err := os.Create(orgPath); err != nil {
+					return err
+				} else if err = org.Phenotype.WriteDOT(file); err != nil {
+					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
+					return err
+				} else {
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome DOT graph dumped to: %s\n",
+						epoch.Id, orgPath))
+				}
+
 				break
 			}
 		}
