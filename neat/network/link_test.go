@@ -84,3 +84,15 @@ func TestLink_String(t *testing.T) {
 	str := link.String()
 	assert.NotEmpty(t, str)
 }
+
+func TestLink_IDString(t *testing.T) {
+	in := NewNNode(1, InputNeuron)
+	out := NewNNode(2, HiddenNeuron)
+
+	link := NewLink(0, in, out, true)
+	idStr := link.IDString()
+	assert.NotEmpty(t, idStr)
+
+	expectedIdStr := "1-2"
+	assert.Equal(t, expectedIdStr, idStr)
+}
