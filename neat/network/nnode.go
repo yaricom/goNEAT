@@ -196,7 +196,7 @@ func (n *NNode) FlushbackCheck() error {
 func (n *NNode) Depth(d int) (int, error) {
 	if d > 1000 {
 		// to avoid infinite recursion
-		return 10, NetErrDepthCalculationFailedLoopDetected
+		return 10, ErrNetDepthCalculationFailedLoopDetected
 	}
 	n.visited = true
 	// Base Case

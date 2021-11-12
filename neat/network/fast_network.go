@@ -324,7 +324,7 @@ func (s *FastModularNetworkSolver) LoadSensors(inputs []float64) error {
 			s.neuronSignals[s.biasNeuronCount+i] = inputs[i]
 		}
 	} else {
-		return NetErrUnsupportedSensorsArraySize
+		return ErrNetUnsupportedSensorsArraySize
 	}
 	return nil
 }

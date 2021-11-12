@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	// NetErrExceededMaxActivationAttempts The error to be raised when maximal number of network activation attempts exceeded
-	NetErrExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded")
-	// NetErrUnsupportedSensorsArraySize The error to be raised when unsupported sensors data array size provided
-	NetErrUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
-	// NetErrDepthCalculationFailedLoopDetected The error to be raised when depth calculation failed due to the loop in network
-	NetErrDepthCalculationFailedLoopDetected = errors.New("depth can not be determined for network with loop")
+	// ErrNetExceededMaxActivationAttempts The error to be raised when maximal number of network activation attempts exceeded
+	ErrNetExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded")
+	// ErrNetUnsupportedSensorsArraySize The error to be raised when unsupported size of the sensors data array provided
+	ErrNetUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
+	// ErrNetDepthCalculationFailedLoopDetected The error to be raised when depth calculation failed due to the loop in network
+	ErrNetDepthCalculationFailedLoopDetected = errors.New("depth can not be determined for network with loop")
 )
 
 // NodeType NNodeType defines the type of NNode to create

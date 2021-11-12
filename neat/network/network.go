@@ -247,7 +247,7 @@ func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 	for n.OutputIsOff() || !oneTime {
 
 		if abortCount >= maxSteps {
-			return false, NetErrExceededMaxActivationAttempts
+			return false, ErrNetExceededMaxActivationAttempts
 		}
 
 		// For each neuron node, compute the sum of its incoming activation
