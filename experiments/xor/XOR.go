@@ -97,7 +97,7 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 				} else {
 					neat.InfoLog(fmt.Sprintf("Generation #%d winner's genome dumped to: %s\n", epoch.Id, orgPath))
 				}
-				// Prints the winner organism's Phenotype to the file!
+				// Prints the winner organism's Phenotype to the DOT file!
 				orgPath = fmt.Sprintf("%s/%s_%d-%d.dot", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
 					"xor_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(orgPath); err != nil {
@@ -107,6 +107,19 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 					return err
 				} else {
 					neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome DOT graph dumped to: %s\n",
+						epoch.Id, orgPath))
+				}
+
+				// Prints the winner organism's Phenotype to the Cytoscape JSON file!
+				orgPath = fmt.Sprintf("%s/%s_%d-%d.cyjs", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
+					"xor_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+				if file, err := os.Create(orgPath); err != nil {
+					return err
+				} else if err = org.Phenotype.WriteCytoscapeJSON(file); err != nil {
+					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
+					return err
+				} else {
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome Cytoscape JSON graph dumped to: %s\n",
 						epoch.Id, orgPath))
 				}
 
