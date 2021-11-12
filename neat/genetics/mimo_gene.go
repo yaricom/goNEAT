@@ -5,7 +5,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
-// MIMOControlGene The Multiple-Input Multiple-Output (MIMO) control Gene allows to create modular genomes, in which several groups of genes
+// MIMOControlGene The Multiple-Input Multiple-Output (MIMO) control Gene allows creating modular genomes, in which several groups of genes
 // connected through single MIMO Gene and corresponding control function is applied to all inputs in order to produce
 // outputs. This allows to build modular hierarchical genomes which can be considered as sum of constituent components
 // and evolved as a whole and as a concrete parts simultaneously.
