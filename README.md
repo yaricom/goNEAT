@@ -126,117 +126,6 @@ The topology of the Neural Network represented by the `Network` fully supports t
 by [Gonum graph](https://pkg.go.dev/gonum.org/v1/gonum/graph) package. This feature can be used for analysis of the network
 topology as well as encoding the graph in variety of popular graph presentation formats.
 
-The default `Network` implementation allows serialization into popular [GraphViz DOT](http://www.graphviz.org/doc/info/lang.html)
-format. The following code snippet demonstrates `Network` graph serialization:
-
-```go
-allNodes := []*NNode{
-    NewNNode(1, InputNeuron),
-    NewNNode(2, InputNeuron),
-    NewNNode(3, BiasNeuron),
-    NewNNode(4, HiddenNeuron),
-    NewNNode(5, HiddenNeuron),
-    NewNNode(6, HiddenNeuron),
-    NewNNode(7, OutputNeuron),
-    NewNNode(8, OutputNeuron),
-}
-
-// HIDDEN 4
-allNodes[3].connectFrom(allNodes[0], 15.0)
-allNodes[3].connectFrom(allNodes[1], 10.0)
-// HIDDEN 5
-allNodes[4].connectFrom(allNodes[1], 5.0)
-allNodes[4].connectFrom(allNodes[2], 1.0)
-// HIDDEN 6
-allNodes[5].connectFrom(allNodes[4], 17.0)
-// OUTPUT 7
-allNodes[6].connectFrom(allNodes[3], 7.0)
-allNodes[6].connectFrom(allNodes[5], 4.5)
-// OUTPUT 8
-allNodes[7].connectFrom(allNodes[5], 13.0)
-
-net := NewNetwork(allNodes[0:3], allNodes[6:8], allNodes, 0)
-net.Name = "TestNN"
-
-b := bytes.NewBufferString("")
-err := net.WriteDOT(b)
-fmt.Println(b)
-```
-
-The produced output looks like the following:
-```text
-strict digraph TestNN {
-    // Node definitions.
-    1 [
-    neuron_type=INPT
-    activation_type=SigmoidSteepenedActivation
-    ];
-    2 [
-    neuron_type=INPT
-    activation_type=SigmoidSteepenedActivation
-    ];
-    3 [
-    neuron_type=BIAS
-    activation_type=SigmoidSteepenedActivation
-    ];
-    4 [
-    neuron_type=HIDN
-    activation_type=SigmoidSteepenedActivation
-    ];
-    5 [
-    neuron_type=HIDN
-    activation_type=SigmoidSteepenedActivation
-    ];
-    6 [
-    neuron_type=HIDN
-    activation_type=SigmoidSteepenedActivation
-    ];
-    7 [
-    neuron_type=OUTP
-    activation_type=SigmoidSteepenedActivation
-    ];
-    8 [
-    neuron_type=OUTP
-    activation_type=SigmoidSteepenedActivation
-    ];
-    
-    // Edge definitions.
-    1 -> 4 [
-    weight=15.000000
-    recurrent=false
-    ];
-    2 -> 4 [
-    weight=10.000000
-    recurrent=false
-    ];
-    2 -> 5 [
-    weight=5.000000
-    recurrent=false
-    ];
-    3 -> 5 [
-    weight=1.000000
-    recurrent=false
-    ];
-    4 -> 7 [
-    weight=7.000000
-    recurrent=false
-    ];
-    5 -> 6 [
-    weight=17.000000
-    recurrent=false
-    ];
-    6 -> 7 [
-    weight=4.500000
-    recurrent=false
-    ];
-    6 -> 8 [
-    weight=13.000000
-    recurrent=false
-    ];
-}
-```
-The DOT output can be saved into the file for subsequent visualization by variety of tools listed at [GraphViz Downloads](http://www.graphviz.org/download/).
-
 ### [`experiment`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment "API documentation") package
 
 Package `experiment` defines standard evolutionary epochs evaluators and experimental data samples collectors. It provides
@@ -327,6 +216,139 @@ if err != nil {
 }
 options, err := neat.LoadNeatOptions(optFile)
 ```
+
+## Phenotype Network Graph Visualization
+
+The [`formats`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network/formats "formats") package provides support for various network graph serialization formats which can be used to visualize the graph with help of well-known tools. Currently, we have support for DOT and CytoscapeJS data formats.
+
+### The DOT format
+The `Network` can be serialized into popular [GraphViz DOT](http://www.graphviz.org/doc/info/lang.html)
+format. The following code snippet demonstrates how this can be done:
+
+```go
+import (
+"github.com/yaricom/goNEAT/v2/neat/network"
+"github.com/yaricom/goNEAT/v2/neat/network/formats"
+"bytes"
+"fmt"
+)
+
+allNodes := []*network.NNode{
+    network.NewNNode(1, network.InputNeuron),
+	network.NewNNode(2, network.InputNeuron),
+    network.NewNNode(3, network.BiasNeuron),
+    network.NewNNode(4, network.HiddenNeuron),
+    network.NewNNode(5, network.HiddenNeuron),
+    network.NewNNode(6, network.HiddenNeuron),
+    network.NewNNode(7, network.OutputNeuron),
+    network.NewNNode(8, network.OutputNeuron),
+}
+
+// HIDDEN 4
+allNodes[3].connectFrom(allNodes[0], 15.0)
+allNodes[3].connectFrom(allNodes[1], 10.0)
+// HIDDEN 5
+allNodes[4].connectFrom(allNodes[1], 5.0)
+allNodes[4].connectFrom(allNodes[2], 1.0)
+// HIDDEN 6
+allNodes[5].connectFrom(allNodes[4], 17.0)
+// OUTPUT 7
+allNodes[6].connectFrom(allNodes[3], 7.0)
+allNodes[6].connectFrom(allNodes[5], 4.5)
+// OUTPUT 8
+allNodes[7].connectFrom(allNodes[5], 13.0)
+
+net := network.NewNetwork(allNodes[0:3], allNodes[6:8], allNodes, 0)
+net.Name = "TestNN"
+
+b := bytes.NewBufferString("")
+err := formats.WriteDOT(b, net)
+fmt.Println(b)
+```
+
+The produced output looks like the following:
+```text
+strict digraph TestNN {
+    // Node definitions.
+    1 [
+    neuron_type=INPT
+    activation_type=SigmoidSteepenedActivation
+    ];
+    2 [
+    neuron_type=INPT
+    activation_type=SigmoidSteepenedActivation
+    ];
+    3 [
+    neuron_type=BIAS
+    activation_type=SigmoidSteepenedActivation
+    ];
+    4 [
+    neuron_type=HIDN
+    activation_type=SigmoidSteepenedActivation
+    ];
+    5 [
+    neuron_type=HIDN
+    activation_type=SigmoidSteepenedActivation
+    ];
+    6 [
+    neuron_type=HIDN
+    activation_type=SigmoidSteepenedActivation
+    ];
+    7 [
+    neuron_type=OUTP
+    activation_type=SigmoidSteepenedActivation
+    ];
+    8 [
+    neuron_type=OUTP
+    activation_type=SigmoidSteepenedActivation
+    ];
+    
+    // Edge definitions.
+    1 -> 4 [
+    weight=15.000000
+    recurrent=false
+    ];
+    2 -> 4 [
+    weight=10.000000
+    recurrent=false
+    ];
+    2 -> 5 [
+    weight=5.000000
+    recurrent=false
+    ];
+    3 -> 5 [
+    weight=1.000000
+    recurrent=false
+    ];
+    4 -> 7 [
+    weight=7.000000
+    recurrent=false
+    ];
+    5 -> 6 [
+    weight=17.000000
+    recurrent=false
+    ];
+    6 -> 7 [
+    weight=4.500000
+    recurrent=false
+    ];
+    6 -> 8 [
+    weight=13.000000
+    recurrent=false
+    ];
+}
+```
+The DOT output can be saved into the file for subsequent visualization by variety of tools listed at [GraphViz Downloads](http://www.graphviz.org/download/).
+
+### The CytoscapeJS JSON format
+
+Another important data format supported by the library is the `CytoscapeJS JSON`. The `Network` graph serialized into this format can be easily rendered using either [Cytoscape App](https://cytoscape.org) or the corresponding [CytoscapeJS](https://js.cytoscape.org) JavaScript library.
+
+The following image is an example of visualizing the phenotype of the XOR experiment winner using [Cytoscape App](https://cytoscape.org).
+
+![The XOR winner phenotype](contents/xor/xor_winner_phenome_6-11.svg)
+
+You can find more **interesting visualizations** at project's [Wiki](https://github.com/yaricom/goNEAT/wiki/Network-Graph-Visualization).
 
 ## Conclusion
 
