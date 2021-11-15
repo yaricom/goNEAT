@@ -77,8 +77,9 @@ func TestNNode_AddIncoming(t *testing.T) {
 	node2 := NewNNode(2, HiddenNeuron)
 
 	weight := 1.5
-	node2.addIncoming(node, weight)
+	node2.AddIncoming(node, weight)
 	assert.Len(t, node2.Incoming, 1, "Wrong number of incoming nodes")
+	assert.Len(t, node.Outgoing, 0)
 
 	link := node2.Incoming[0]
 	assert.Equal(t, weight, link.ConnectionWeight, "Wrong incoming link weight")
@@ -86,12 +87,27 @@ func TestNNode_AddIncoming(t *testing.T) {
 	assert.Equal(t, node2, link.OutNode, "Wrong OutNode in Link")
 }
 
-func TestNNode_connectFrom(t *testing.T) {
+func TestNNode_AddOutgoing(t *testing.T) {
 	node := NewNNode(1, InputNeuron)
 	node2 := NewNNode(2, HiddenNeuron)
 
 	weight := 1.5
-	node2.connectFrom(node, weight)
+	node.AddOutgoing(node2, weight)
+	assert.Len(t, node.Outgoing, 1, "wrong number of outgoing nodes")
+	assert.Len(t, node2.Incoming, 0)
+
+	link := node.Outgoing[0]
+	assert.Equal(t, weight, link.ConnectionWeight, "Wrong incoming link weight")
+	assert.Equal(t, node, link.InNode, "Wrong InNode in Link")
+	assert.Equal(t, node2, link.OutNode, "Wrong OutNode in Link")
+}
+
+func TestNNode_ConnectFrom(t *testing.T) {
+	node := NewNNode(1, InputNeuron)
+	node2 := NewNNode(2, HiddenNeuron)
+
+	weight := 1.5
+	node2.ConnectFrom(node, weight)
 	assert.Len(t, node2.Incoming, 1, "Wrong number of incoming nodes")
 	assert.Len(t, node.Outgoing, 1, "wrong number of outgoing links")
 
@@ -109,8 +125,8 @@ func TestNNode_Depth(t *testing.T) {
 	node2 := NewNNode(2, HiddenNeuron)
 	node3 := NewNNode(3, OutputNeuron)
 
-	node2.addIncoming(node, 15.0)
-	node3.addIncoming(node2, 20.0)
+	node2.AddIncoming(node, 15.0)
+	node3.AddIncoming(node2, 20.0)
 
 	depth, err := node3.Depth(0)
 	require.NoError(t, err)
@@ -122,9 +138,9 @@ func TestNNode_DepthWithLoop(t *testing.T) {
 	node2 := NewNNode(2, HiddenNeuron)
 	node3 := NewNNode(3, OutputNeuron)
 
-	node2.addIncoming(node, 15.0)
-	node3.addIncoming(node2, 20.0)
-	node2.addIncoming(node3, 10.0)
+	node2.AddIncoming(node, 15.0)
+	node3.AddIncoming(node2, 20.0)
+	node2.AddIncoming(node3, 10.0)
 	depth, err := node3.Depth(0)
 	require.NoError(t, err)
 	assert.Equal(t, 2, depth)

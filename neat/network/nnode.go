@@ -142,23 +142,29 @@ func (n *NNode) SensorLoad(load float64) bool {
 	}
 }
 
-// Adds a non-recurrent outgoing link to this node
-func (n *NNode) addOutgoing(out *NNode, weight float64) *Link {
+// AddOutgoing adds a non-recurrent outgoing link to this node. You should use this with caution because this doesn't
+// create full duplex link needed for proper network activation.
+// This method only intended for linking the control nodes. For all other needs use ConnectFrom which properly creates
+// all needed links.
+func (n *NNode) AddOutgoing(out *NNode, weight float64) *Link {
 	newLink := NewLink(weight, n, out, false)
 	n.Outgoing = append(n.Outgoing, newLink)
 	return newLink
 }
 
-// Adds a non-recurrent Link to an incoming NNode in the incoming List
-func (n *NNode) addIncoming(in *NNode, weight float64) *Link {
+// AddIncoming adds a non-recurrent incoming link to this node. You should use this with caution because this doesn't
+// create full duplex link needed for proper network activation.
+// This method only intended for linking the control nodes. For all other needs use ConnectFrom which properly creates
+// all needed links.
+func (n *NNode) AddIncoming(in *NNode, weight float64) *Link {
 	newLink := NewLink(weight, in, n, false)
 	n.Incoming = append(n.Incoming, newLink)
 	return newLink
 }
 
-// connectFrom is to create link between two nodes. The incoming links of current node and outgoing links of in node
+// ConnectFrom is to create link between two nodes. The incoming links of current node and outgoing links of in node
 // would be updated to have reference to the new link.
-func (n *NNode) connectFrom(in *NNode, weight float64) *Link {
+func (n *NNode) ConnectFrom(in *NNode, weight float64) *Link {
 	newLink := NewLink(weight, in, n, false)
 	n.Incoming = append(n.Incoming, newLink)
 	in.Outgoing = append(in.Outgoing, newLink)
