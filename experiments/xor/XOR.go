@@ -11,6 +11,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/experiment"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"github.com/yaricom/goNEAT/v2/neat/network/formats"
 	"math"
 	"os"
 )
@@ -102,7 +103,7 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 					"xor_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(orgPath); err != nil {
 					return err
-				} else if err = org.Phenotype.WriteDOT(file); err != nil {
+				} else if err = formats.WriteDOT(file, org.Phenotype); err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
 					return err
 				} else {
@@ -115,7 +116,7 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 					"xor_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(orgPath); err != nil {
 					return err
-				} else if err = org.Phenotype.WriteCytoscapeJSON(file); err != nil {
+				} else if err = formats.WriteCytoscapeJSON(file, org.Phenotype); err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
 					return err
 				} else {
