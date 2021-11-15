@@ -6,6 +6,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v2/neat/network/formats"
 	"math"
 	"math/rand"
 	"os"
@@ -83,7 +84,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 			if org.IsWinner {
 				// Prints the winner organism to file!
 				orgPath := fmt.Sprintf("%s/%s_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-					"pole1_winner", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+					"pole1_winner_genome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(orgPath); err != nil {
 					return err
 				} else if err = org.Genotype.Write(file); err != nil {
@@ -91,6 +92,19 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 					return err
 				} else {
 					neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", epoch.Id, orgPath))
+				}
+
+				// Prints the winner organism's Phenotype to the Cytoscape JSON file!
+				orgPath = fmt.Sprintf("%s/%s_%d-%d.cyjs", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
+					"pole1_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+				if file, err := os.Create(orgPath); err != nil {
+					return err
+				} else if err = formats.WriteCytoscapeJSON(file, org.Phenotype); err != nil {
+					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
+					return err
+				} else {
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome Cytoscape JSON graph dumped to: %s\n",
+						epoch.Id, orgPath))
 				}
 				break
 			}
