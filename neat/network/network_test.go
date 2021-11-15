@@ -20,18 +20,18 @@ func buildNetwork() *Network {
 	}
 
 	// HIDDEN 4
-	allNodes[3].connectFrom(allNodes[0], 15.0)
-	allNodes[3].connectFrom(allNodes[1], 10.0)
+	allNodes[3].ConnectFrom(allNodes[0], 15.0)
+	allNodes[3].ConnectFrom(allNodes[1], 10.0)
 	// HIDDEN 5
-	allNodes[4].connectFrom(allNodes[1], 5.0)
-	allNodes[4].connectFrom(allNodes[2], 1.0)
+	allNodes[4].ConnectFrom(allNodes[1], 5.0)
+	allNodes[4].ConnectFrom(allNodes[2], 1.0)
 	// HIDDEN 6
-	allNodes[5].connectFrom(allNodes[4], 17.0)
+	allNodes[5].ConnectFrom(allNodes[4], 17.0)
 	// OUTPUT 7
-	allNodes[6].connectFrom(allNodes[3], 7.0)
-	allNodes[6].connectFrom(allNodes[5], 4.5)
+	allNodes[6].ConnectFrom(allNodes[3], 7.0)
+	allNodes[6].ConnectFrom(allNodes[5], 4.5)
 	// OUTPUT 8
-	allNodes[7].connectFrom(allNodes[5], 13.0)
+	allNodes[7].ConnectFrom(allNodes[5], 13.0)
 
 	return NewNetwork(allNodes[0:3], allNodes[6:8], allNodes, 0)
 }
@@ -52,27 +52,27 @@ func buildModularNetwork() *Network {
 	}
 	// HIDDEN 6 - control node
 	controlNodes[0].ActivationType = math.MultiplyModuleActivation
-	controlNodes[0].addIncoming(allNodes[3], 1.0)
-	controlNodes[0].addIncoming(allNodes[4], 1.0)
-	controlNodes[0].addOutgoing(allNodes[5], 1.0)
+	controlNodes[0].AddIncoming(allNodes[3], 1.0)
+	controlNodes[0].AddIncoming(allNodes[4], 1.0)
+	controlNodes[0].AddOutgoing(allNodes[5], 1.0)
 
 	// HIDDEN 4
 	allNodes[3].ActivationType = math.LinearActivation
-	allNodes[3].connectFrom(allNodes[0], 15.0)
-	allNodes[3].connectFrom(allNodes[2], 10.0)
+	allNodes[3].ConnectFrom(allNodes[0], 15.0)
+	allNodes[3].ConnectFrom(allNodes[2], 10.0)
 	// HIDDEN 5
 	allNodes[4].ActivationType = math.LinearActivation
-	allNodes[4].connectFrom(allNodes[1], 5.0)
-	allNodes[4].connectFrom(allNodes[2], 1.0)
+	allNodes[4].ConnectFrom(allNodes[1], 5.0)
+	allNodes[4].ConnectFrom(allNodes[2], 1.0)
 
 	// HIDDEN 7
 	allNodes[5].ActivationType = math.NullActivation
 
 	// OUTPUT 8
-	allNodes[6].connectFrom(allNodes[5], 4.5)
+	allNodes[6].ConnectFrom(allNodes[5], 4.5)
 	allNodes[6].ActivationType = math.LinearActivation
 	// OUTPUT 9
-	allNodes[7].connectFrom(allNodes[5], 13.0)
+	allNodes[7].ConnectFrom(allNodes[5], 13.0)
 	allNodes[7].ActivationType = math.LinearActivation
 
 	return NewModularNetwork(allNodes[0:3], allNodes[6:8], allNodes, controlNodes, 0)
@@ -225,7 +225,7 @@ func TestNetwork_IsRecurrent(t *testing.T) {
 
 	// Introduce recurrence
 	visited = 0
-	nodes[4].addIncoming(nodes[7], 3.0)
+	nodes[4].AddIncoming(nodes[7], 3.0)
 	recur = net.IsRecurrent(nodes[5], nodes[7], &visited, 32)
 	assert.True(t, recur, "Network is actually recurrent now")
 	assert.Equal(t, 5, visited)
