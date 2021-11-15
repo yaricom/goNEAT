@@ -102,7 +102,7 @@ func nodeToCyJsNode(node *network.NNode, control bool) cytoscapejs.Node {
 	if err != nil {
 		actName = "unknown"
 	}
-	return cytoscapejs.Node{
+	nodeJS := cytoscapejs.Node{
 		Data: cytoscapejs.NodeData{
 			ID: fmt.Sprintf("%d", node.Id),
 			Attributes: map[string]interface{}{
@@ -112,7 +112,6 @@ func nodeToCyJsNode(node *network.NNode, control bool) cytoscapejs.Node {
 				"node_type":             network.NodeTypeName(node.NodeType()),
 				"in_connections_count":  len(node.Incoming),
 				"out_connections_count": len(node.Outgoing),
-				"trait":                 node.Trait.String(),
 				"control_node":          control,
 				"background-color":      nodeBgColor(node, control),
 				"border-color":          nodeBorderColor(node, control),
@@ -121,10 +120,14 @@ func nodeToCyJsNode(node *network.NNode, control bool) cytoscapejs.Node {
 		},
 		Selectable: true,
 	}
+	if node.Trait != nil {
+		nodeJS.Data.Attributes["trait"] = node.Trait.String()
+	}
+	return nodeJS
 }
 
 func linkToCyJsEdge(link *network.Link) cytoscapejs.Edge {
-	return cytoscapejs.Edge{
+	edgeJS := cytoscapejs.Edge{
 		Data: cytoscapejs.EdgeData{
 			ID:     link.IDString(),
 			Source: fmt.Sprintf("%d", link.InNode.Id),
@@ -133,11 +136,14 @@ func linkToCyJsEdge(link *network.Link) cytoscapejs.Edge {
 				"weight":       link.ConnectionWeight,
 				"recurrent":    link.IsRecurrent,
 				"time_delayed": link.IsTimeDelayed,
-				"trait":        link.Trait.String(),
 			},
 		},
 		Selectable: true,
 	}
+	if link.Trait != nil {
+		edgeJS.Data.Attributes["trait"] = link.Trait.String()
+	}
+	return edgeJS
 }
 
 func nodeBgColor(node *network.NNode, control bool) string {
