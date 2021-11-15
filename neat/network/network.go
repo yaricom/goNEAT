@@ -453,9 +453,19 @@ func (n *Network) MaxActivationDepthFast() (int, error) {
 	return max, nil
 }
 
-// AllNodes Returns all nodes in the network including control ones
+// AllNodes Returns all network nodes including MIMO control nodes: base nodes + control nodes
 func (n *Network) AllNodes() []*NNode {
 	return n.allNodesMIMO
+}
+
+// ControlNodes returns all control nodes of this network.
+func (n *Network) ControlNodes() []*NNode {
+	return n.controlNodes
+}
+
+// BaseNodes returns all nodes in this network excluding MIMO control nodes
+func (n *Network) BaseNodes() []*NNode {
+	return n.allNodes
 }
 
 func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
