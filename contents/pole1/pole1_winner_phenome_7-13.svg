@@ -13,7 +13,7 @@
      viewBox="0 0 519 482"
      >
 <title>Single Pole-Balancing experiment winner</title>
-<desc>The visualization of single pole-balancing experiment winner's phenotype.</desc>
+<desc>The visualization of single pole-balancing experiment winner's phenotype  as was found by goNEAT algorithm (https://github.com/yaricom/goNEAT).</desc>
 <g stroke-dashoffset="0" stroke-linejoin="miter" stroke-dasharray="none" stroke-width="1" stroke-linecap="square" stroke-miterlimit="10">
 <g fill="#ffffff" fill-rule="nonzero" fill-opacity="1" stroke="none">
   <path d="M 0 0 L 519 0 L 519 482 L 0 482 L 0 0 z"/>

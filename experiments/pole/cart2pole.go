@@ -6,6 +6,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v2/neat/network/formats"
 	"math"
 	"os"
 	"sort"
@@ -234,7 +235,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 			if org.IsWinner {
 				// Prints the winner organism to file!
 				orgPath := fmt.Sprintf("%s/%s_%.1f_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-					"pole2_winner", org.Fitness, org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+					"pole2_winner_genome", org.Fitness, org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
 				if file, err := os.Create(orgPath); err != nil {
 					return err
 				} else if err = org.Genotype.Write(file); err != nil {
@@ -242,6 +243,19 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 					return err
 				} else {
 					neat.InfoLog(fmt.Sprintf("Generation #%d winner %d dumped to: %s\n", epoch.Id, org.Genotype.Id, orgPath))
+				}
+
+				// Prints the winner organism's Phenotype to the Cytoscape JSON file!
+				orgPath = fmt.Sprintf("%s/%s_%d-%d.cyjs", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
+					"pole2_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+				if file, err := os.Create(orgPath); err != nil {
+					return err
+				} else if err = formats.WriteCytoscapeJSON(file, org.Phenotype); err != nil {
+					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
+					return err
+				} else {
+					neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome Cytoscape JSON graph dumped to: %s\n",
+						epoch.Id, orgPath))
 				}
 				break
 			}
@@ -268,7 +282,7 @@ func (e *cartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organ
 		neat.WarnLog(fmt.Sprintf("ORGANISM DAMAGED:\n%s", organism.Genotype))
 	}
 
-	// Decide if its a winner, in Markov Case
+	// Decide if it's a winner, in Markov Case
 	if cartPole.isMarkov {
 		if organism.Fitness >= markovMaxSteps {
 			winner = true

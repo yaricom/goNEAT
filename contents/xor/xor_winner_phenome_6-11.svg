@@ -13,7 +13,7 @@
      viewBox="0 0 495 479"
      >
 <title>XOR experiment winner's phenotype</title>
-<desc>The visualization of the XOR experiment winner's phenotype.</desc>
+<desc>The visualization of the XOR experiment winner's phenotype  as was found by goNEAT algorithm (https://github.com/yaricom/goNEAT).</desc>
 <g stroke-dashoffset="0" stroke-linejoin="miter" stroke-dasharray="none" stroke-width="1" stroke-linecap="square" stroke-miterlimit="10">
 <g fill="#ffffff" fill-rule="nonzero" fill-opacity="1" stroke="none">
   <path d="M 0 0 L 495 0 L 495 479 L 0 479 L 0 0 z"/>
