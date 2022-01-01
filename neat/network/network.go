@@ -474,8 +474,8 @@ func (n *Network) BaseNodes() []*NNode {
 func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 	allPaths, ok := path.JohnsonAllPaths(n)
 	if !ok {
-		//
-		allPaths, ok = path.FloydWarshall(n)
+		// negative cycle detected - fallback to FloydWarshall
+		allPaths, _ = path.FloydWarshall(n)
 	}
 	max := 0 // The max depth
 	for _, in := range n.inputs {
