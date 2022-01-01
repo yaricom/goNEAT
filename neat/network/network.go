@@ -472,7 +472,8 @@ func (n *Network) BaseNodes() []*NNode {
 func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 	allPaths, ok := path.JohnsonAllPaths(n)
 	if !ok {
-		return 0, errors.New("failed to calculate network depth, negative cycle detected")
+		//
+		allPaths, ok = path.FloydWarshall(n)
 	}
 	max := 0 // The max depth
 	for _, in := range n.inputs {
@@ -500,7 +501,8 @@ func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 	}
 
 	if max == 0 {
-		return 0, errors.New("failed to calculate network depth")
+		// possibly not connected
+		return 1, nil
 	}
 	return max, nil
 }
