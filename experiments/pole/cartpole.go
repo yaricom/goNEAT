@@ -67,7 +67,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 	// Fill statistics about current epoch
 	epoch.FillPopulationStatistics(pop)
 
-	// Only print to file every print_every generations
+	// Only print to file every print_every generation
 	if epoch.Solved || epoch.Id%context.PrintEvery == 0 {
 		popPath := fmt.Sprintf("%s/gen_%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId), epoch.Id)
 		if file, err := os.Create(popPath); err != nil {
@@ -80,34 +80,35 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 
 	if epoch.Solved {
 		// print winner organism
-		for _, org := range pop.Organisms {
-			if org.IsWinner {
-				// Prints the winner organism to file!
-				orgPath := fmt.Sprintf("%s/%s_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-					"pole1_winner_genome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
-				if file, err := os.Create(orgPath); err != nil {
-					return err
-				} else if err = org.Genotype.Write(file); err != nil {
-					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
-					return err
-				} else {
-					neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", epoch.Id, orgPath))
-				}
+		org := epoch.Best
+		depth, err := org.Phenotype.MaxActivationDepthFast()
+		if err == nil {
+			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
+		}
 
-				// Prints the winner organism's Phenotype to the Cytoscape JSON file!
-				orgPath = fmt.Sprintf("%s/%s_%d-%d.cyjs", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-					"pole1_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
-				if file, err := os.Create(orgPath); err != nil {
-					return err
-				} else if err = formats.WriteCytoscapeJSON(file, org.Phenotype); err != nil {
-					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
-					return err
-				} else {
-					neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome Cytoscape JSON graph dumped to: %s\n",
-						epoch.Id, orgPath))
-				}
-				break
-			}
+		// Prints the winner organism to file!
+		orgPath := fmt.Sprintf("%s/%s_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
+			"pole1_winner_genome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+		if file, err := os.Create(orgPath); err != nil {
+			return err
+		} else if err = org.Genotype.Write(file); err != nil {
+			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
+			return err
+		} else {
+			neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", epoch.Id, orgPath))
+		}
+
+		// Prints the winner organism's Phenotype to the Cytoscape JSON file!
+		orgPath = fmt.Sprintf("%s/%s_%d-%d.cyjs", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
+			"pole1_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+		if file, err := os.Create(orgPath); err != nil {
+			return err
+		} else if err = formats.WriteCytoscapeJSON(file, org.Phenotype); err != nil {
+			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
+			return err
+		} else {
+			neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome Cytoscape JSON graph dumped to: %s\n",
+				epoch.Id, orgPath))
 		}
 	}
 
@@ -127,7 +128,7 @@ func (e *cartPoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (
 		neat.DebugLog(fmt.Sprintf("Organism #%3d\tfitness: %f", organism.Genotype.Id, organism.Fitness))
 	}
 
-	// Decide if its a winner
+	// Decide if it's a winner
 	if organism.Fitness >= float64(e.WinBalancingSteps) {
 		organism.IsWinner = true
 	}
@@ -163,6 +164,12 @@ func (e *cartPoleGenerationEvaluator) runCart(net *network.Network) (steps int, 
 		thetaDot = float64(rand.Int31()%3000)/1000.0 - 1.5
 	}
 
+	netDepth, err := net.MaxActivationDepthFast() // The max depth of the network to be activated
+	if err != nil {
+		neat.WarnLog(fmt.Sprintf(
+			"Failed to estimate maximal depth of the network with loop.\nUsing default depth: %d", netDepth))
+	}
+
 	in := make([]float64, 5)
 	for steps = 0; steps < e.WinBalancingSteps; steps++ {
 		/*-- setup the input layer based on the four inputs --*/
@@ -176,7 +183,7 @@ func (e *cartPoleGenerationEvaluator) runCart(net *network.Network) (steps int, 
 		}
 
 		/*-- activate the network based on the input --*/
-		if res, err := net.Activate(); !res {
+		if res, err := net.ForwardSteps(netDepth); !res {
 			//If it loops, exit returning only fitness of 1 step
 			neat.DebugLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
 			return 1, nil
