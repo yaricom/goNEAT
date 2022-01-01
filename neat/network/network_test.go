@@ -7,6 +7,20 @@ import (
 	"testing"
 )
 
+func buildDisconnectedNetwork() *Network {
+	allNodes := []*NNode{
+		NewNNode(1, InputNeuron),
+		NewNNode(2, InputNeuron),
+		NewNNode(3, BiasNeuron),
+		NewNNode(4, HiddenNeuron),
+		NewNNode(5, HiddenNeuron),
+		NewNNode(6, HiddenNeuron),
+		NewNNode(7, OutputNeuron),
+		NewNNode(8, OutputNeuron),
+	}
+	return NewNetwork(allNodes[0:3], allNodes[6:8], allNodes, 0)
+}
+
 func buildNetwork() *Network {
 	allNodes := []*NNode{
 		NewNNode(1, InputNeuron),
@@ -160,6 +174,20 @@ func TestNetwork_Activate(t *testing.T) {
 	}
 }
 
+func TestNetwork_ForwardSteps(t *testing.T) {
+	net := buildNetwork()
+
+	// test normal activation
+	res, err := net.ForwardSteps(3)
+	assert.NoError(t, err)
+	assert.True(t, res)
+
+	// test zero steps
+	res, err = net.ForwardSteps(0)
+	assert.EqualError(t, err, ErrZeroActivationStepsRequested.Error())
+	assert.False(t, res)
+}
+
 // Test Network LoadSensors
 func TestNetwork_LoadSensors(t *testing.T) {
 	net := buildNetwork()
@@ -248,4 +276,64 @@ func TestNetwork_FastNetworkSolver(t *testing.T) {
 	// check solver structure
 	assert.Equal(t, net.NodeCount(), solver.NodeCount(), "wrong number of nodes")
 	assert.Equal(t, net.LinkCount(), solver.LinkCount(), "wrong number of links")
+}
+
+func TestNetwork_ActivateSteps_zero_activation_steps(t *testing.T) {
+	net := buildNetwork()
+
+	res, err := net.ActivateSteps(0)
+	assert.EqualError(t, err, ErrZeroActivationStepsRequested.Error())
+	assert.False(t, res)
+}
+
+func TestNetwork_ActivateSteps_ErrNetExceededMaxActivationAttempts(t *testing.T) {
+	net := buildDisconnectedNetwork()
+
+	res, err := net.ActivateSteps(10)
+	assert.EqualError(t, err, ErrNetExceededMaxActivationAttempts.Error())
+	assert.False(t, res)
+}
+
+func TestNetwork_ActivateSteps_maxActivationDepth_disconnected(t *testing.T) {
+	net := buildDisconnectedNetwork()
+
+	depth, err := net.maxActivationDepth(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, depth)
+}
+
+func TestNetwork_ActivateSteps_maxActivationDepth_negative_cycle(t *testing.T) {
+	net := buildNetwork()
+
+	// create negative cycle
+	for _, np := range net.allNodes {
+		if np.IsNeuron() {
+			for i, link := range np.Incoming {
+				np.Incoming[i] = NewLink(link.ConnectionWeight*(-1.0), link.InNode, link.OutNode, link.IsRecurrent)
+			}
+		}
+	}
+	net.allNodes[1].ConnectFrom(net.allNodes[7], -13.0)
+
+	depth, err := net.maxActivationDepth(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, depth)
+
+	logNetworkActivationPath(net, t)
+}
+
+func TestModularNetwork_ControlNodes(t *testing.T) {
+	net := buildModularNetwork()
+
+	cNodes := net.ControlNodes()
+	assert.NotNil(t, cNodes)
+	assert.Len(t, cNodes, len(net.controlNodes))
+}
+
+func TestModularNetwork_BaseNodes(t *testing.T) {
+	net := buildModularNetwork()
+
+	baseNodes := net.BaseNodes()
+	assert.NotNil(t, baseNodes)
+	assert.Len(t, baseNodes, len(net.allNodes))
 }
