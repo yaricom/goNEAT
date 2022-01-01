@@ -3,11 +3,12 @@ package network
 // Solver defines network solver interface, which allows propagation of the activation waves through the underlying network graph.
 type Solver interface {
 	// ForwardSteps Propagates activation wave through all network nodes provided number of steps in forward direction.
-	// Returns true if activation wave passed from all inputs to outputs.
+	// Normally the number of steps should be equal to the activation depth of the network.
+	// Returns true if activation wave passed from all inputs to the output nodes.
 	ForwardSteps(steps int) (bool, error)
 
 	// RecursiveSteps Propagates activation wave through all network nodes provided number of steps by recursion from output nodes
-	// Returns true if activation wave passed from all inputs to outputs.
+	// Returns true if activation wave passed from all inputs to the output nodes.
 	RecursiveSteps() (bool, error)
 
 	// Relax Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute

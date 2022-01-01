@@ -234,7 +234,12 @@ func (n *Network) OutputIsOff() bool {
 }
 
 // ActivateSteps Attempts to activate the network given number of steps before returning error.
+// Normally the maxSteps should be equal to the maximal activation depth of the network as returned by
+// MaxActivationDepth() or MaxActivationDepthFast()
 func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
+	if maxSteps == 0 {
+		return false, ErrZeroActivationStepsRequested
+	}
 	// For adding to the active sum
 	addAmount := 0.0
 	// Make sure we at least activate once
@@ -309,8 +314,11 @@ func (n *Network) Activate() (bool, error) {
 }
 
 func (n *Network) ForwardSteps(steps int) (res bool, err error) {
+	if steps == 0 {
+		return false, ErrZeroActivationStepsRequested
+	}
 	for i := 0; i < steps; i++ {
-		res, err = n.Activate()
+		res, err = n.ActivateSteps(steps)
 		if err != nil {
 			// failure - no need to continue
 			break
@@ -502,9 +510,5 @@ func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 		}
 	}
 
-	if max == 0 {
-		// possibly not connected
-		return 1, nil
-	}
 	return max, nil
 }

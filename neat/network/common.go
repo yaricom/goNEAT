@@ -15,6 +15,8 @@ var (
 	ErrNetUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
 	// ErrNetDepthCalculationFailedLoopDetected The error to be raised when depth calculation failed due to the loop in network
 	ErrNetDepthCalculationFailedLoopDetected = errors.New("depth can not be determined for network with loop")
+	// ErrZeroActivationStepsRequested the error to be raised when zero activation steps requested
+	ErrZeroActivationStepsRequested = errors.New("zero activation steps requested")
 )
 
 // NodeType NNodeType defines the type of NNode to create
