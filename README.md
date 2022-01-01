@@ -360,6 +360,9 @@ tasks under conditions of incomplete knowledge ([single-pole balancing](https://
 We hope that you will find great applications in your research and work projects for the provided NEAT algorithm's 
 implementation as well as utilities to run experiments while collecting relevant data samples.
 
+## Projects Using goNEAT library
+* [Learning to play Asteroids in Golang with NEAT](https://maori.geek.nz/learning-to-play-asteroids-in-golang-with-neat-f44c3472938f)
+
 ## References
 
 * The original C++ NEAT implementation created by Kenneth Stanley, see: [NEAT][1]
