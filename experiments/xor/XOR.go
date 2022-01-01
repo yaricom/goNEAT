@@ -158,18 +158,21 @@ func (e *xorGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool,
 
 	// Load and activate the network on each input
 	for count := 0; count < 4; count++ {
-		if err := organism.Phenotype.LoadSensors(in[count]); err != nil {
-			neat.ErrorLog("Failed to load sensors")
+		if err = organism.Phenotype.LoadSensors(in[count]); err != nil {
+			neat.ErrorLog(fmt.Sprintf("Failed to load sensors: %s", err))
 			return false, err
 		}
 
 		// Use depth to ensure full relaxation
-		success, err = organism.Phenotype.ForwardSteps(netDepth)
+		if success, err = organism.Phenotype.ForwardSteps(netDepth); err != nil {
+			neat.ErrorLog(fmt.Sprintf("Failed to activate network: %s", err))
+			return false, err
+		}
 		out[count] = organism.Phenotype.Outputs[0].Activation
 
 		// Flush network for subsequent use
 		if _, err = organism.Phenotype.Flush(); err != nil {
-			neat.ErrorLog("Failed to flush network")
+			neat.ErrorLog(fmt.Sprintf("Failed to flush network: %s", err))
 			return false, err
 		}
 	}
