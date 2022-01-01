@@ -416,7 +416,6 @@ func (n *Network) IsRecurrent(inNode, outNode *NNode, count *int, thresh int) bo
 }
 
 // MaxActivationDepth is to find the maximum number of neuron layers to be activated between an output and an input layers.
-// The input layer is excluded as it does not require activation.
 func (n *Network) MaxActivationDepth() (int, error) {
 	// The quick case when there are no hidden nodes or control
 	if len(n.allNodes) == len(n.inputs)+len(n.Outputs) && len(n.controlNodes) == 0 {
@@ -441,7 +440,7 @@ func (n *Network) MaxActivationDepthFast() (int, error) {
 
 	max := 0 // The max depth
 	for _, node := range n.Outputs {
-		currDepth, err := node.Depth(0)
+		currDepth, err := node.Depth(1) // 1 is to include this layer
 		if err != nil {
 			return currDepth, err
 		}
@@ -500,7 +499,6 @@ func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 		}
 	}
 
-	max = max - 1 // we do not count input layer
 	if max == 0 {
 		return 0, errors.New("failed to calculate network depth")
 	}

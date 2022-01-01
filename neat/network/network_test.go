@@ -100,7 +100,7 @@ func TestNetwork_MaxActivationDepth_Simple(t *testing.T) {
 
 	depth, err := net.MaxActivationDepth()
 	assert.NoError(t, err, "failed to calculate max depth")
-	assert.Equal(t, 3, depth)
+	assert.Equal(t, 4, depth)
 
 	logNetworkActivationPath(net, t)
 }
@@ -110,7 +110,7 @@ func TestNetwork_MaxActivationDepth_Modular(t *testing.T) {
 
 	depth, err := net.MaxActivationDepth()
 	assert.NoError(t, err, "failed to calculate max depth")
-	assert.Equal(t, 4, depth)
+	assert.Equal(t, 5, depth)
 
 	logNetworkActivationPath(net, t)
 }
@@ -120,7 +120,7 @@ func TestNetwork_MaxActivationDepthFast_Simple(t *testing.T) {
 
 	depth, err := net.MaxActivationDepthFast()
 	assert.NoError(t, err, "failed to calculate max depth")
-	assert.Equal(t, 3, depth)
+	assert.Equal(t, 4, depth)
 
 	logNetworkActivationPath(net, t)
 }
