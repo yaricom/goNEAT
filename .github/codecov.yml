@@ -1,2 +1,2 @@
 ignore:
-  - "folder/**/*"  # ignoring experiments folder
+  - "experiments/**/*"  # ignoring experiments folder
