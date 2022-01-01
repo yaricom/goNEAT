@@ -428,6 +428,8 @@ func (n *Network) MaxActivationDepth() (int, error) {
 // MaxActivationDepthFast is to find the maximum number of neuron layers to be activated between an output and an input layers.
 // This is the fastest version of depth calculation but only suitable for simple networks. If current network is modular
 // the error will be raised.
+// If network has loops the default depth of 10 will be returned. Use MaxActivationDepth() instead if you are expecting
+// loops in the network graph.
 func (n *Network) MaxActivationDepthFast() (int, error) {
 	if len(n.controlNodes) > 0 {
 		return -1, errors.New("unsupported for modular networks")
