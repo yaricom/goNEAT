@@ -6,6 +6,23 @@ import (
 	"testing"
 )
 
+func TestFastModularNetworkSolver_LoadSensors(t *testing.T) {
+	net := buildNetwork()
+
+	fmm, err := net.FastNetworkSolver()
+	require.NoError(t, err, "failed to create fast network solver")
+
+	// test normal
+	data := []float64{0.5, 1.1}
+	err = fmm.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
+
+	// test abnormal
+	data = append(data, 1.0)
+	err = fmm.LoadSensors(data)
+	require.EqualError(t, err, ErrNetUnsupportedSensorsArraySize.Error())
+}
+
 func TestFastModularNetworkSolver_RecursiveSteps(t *testing.T) {
 	net := buildNetwork()
 
