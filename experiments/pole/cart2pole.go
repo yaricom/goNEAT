@@ -326,7 +326,7 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 
 	netDepth, err := net.MaxActivationDepth() // The max depth of the network to be activated
 	if err != nil {
-		neat.WarnLog(fmt.Sprintf("Failed to estimate activation depth of the network, skipping evaluation"))
+		neat.WarnLog("Failed to estimate activation depth of the network, skipping evaluation")
 		return 0, nil
 	}
 
@@ -341,7 +341,7 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 			input[5] = (p.state[5] + 1.0) / 2.0
 			input[6] = 0.5
 
-			if err := net.LoadSensors(input); err != nil {
+			if err = net.LoadSensors(input); err != nil {
 				return 0, err
 			}
 
