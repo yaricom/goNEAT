@@ -1,0 +1,2 @@
+ignore:
+  - "experiments/"  # ignoring experiments folder
