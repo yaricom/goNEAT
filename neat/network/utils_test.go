@@ -12,23 +12,17 @@ import (
 func TestPrintAllActivationDepthPaths_Simple(t *testing.T) {
 	net := buildNetwork()
 
-	b := bytes.NewBufferString("")
-	err := PrintAllActivationDepthPaths(net, b)
-	require.NoError(t, err, "failed to print")
-	t.Log(b.String())
-	expected := "1 -> 4 -> 7\n---------------\n2 -> 4 -> 7\n2 -> 5 -> 6 -> 8\n---------------\n3 -> 5 -> 6 -> 7\n3 -> 5 -> 6 -> 8\n---------------\n"
-	assert.Equal(t, expected, b.String())
+	actual := logNetworkActivationPath(net, t)
+	expected := "\n1 -> 4 -> 7\n---------------\n2 -> 4 -> 7\n2 -> 5 -> 6 -> 8\n---------------\n3 -> 5 -> 6 -> 7\n3 -> 5 -> 6 -> 8\n---------------\n"
+	assert.Equal(t, expected, actual)
 }
 
 func TestPrintAllActivationDepthPaths_Modular(t *testing.T) {
 	net := buildModularNetwork()
 
-	b := bytes.NewBufferString("")
-	err := PrintAllActivationDepthPaths(net, b)
-	require.NoError(t, err, "failed to print")
-	t.Log(b.String())
-	expected := "1 -> 4 -> 6 -> 7 -> 8\n1 -> 4 -> 6 -> 7 -> 9\n---------------\n2 -> 5 -> 6 -> 7 -> 8\n2 -> 5 -> 6 -> 7 -> 9\n---------------\n3 -> 5 -> 6 -> 7 -> 8\n3 -> 5 -> 6 -> 7 -> 9\n---------------\n"
-	assert.Equal(t, expected, b.String())
+	actual := logNetworkActivationPath(net, t)
+	expected := "\n1 -> 4 -> 6 -> 7 -> 8\n1 -> 4 -> 6 -> 7 -> 9\n---------------\n2 -> 5 -> 6 -> 7 -> 8\n2 -> 5 -> 6 -> 7 -> 9\n---------------\n3 -> 5 -> 6 -> 7 -> 8\n3 -> 5 -> 6 -> 7 -> 9\n---------------\n"
+	assert.Equal(t, expected, actual)
 }
 
 func TestPrintPath(t *testing.T) {
@@ -45,4 +39,12 @@ func TestPrintPath(t *testing.T) {
 	t.Log(b)
 	expected := "3 -> 5 -> 6 -> 8"
 	assert.Equal(t, expected, strings.TrimSpace(b.String()), "wrong path")
+}
+
+func logNetworkActivationPath(net *Network, t *testing.T) string {
+	b := bytes.NewBufferString("\n")
+	err := PrintAllActivationDepthPaths(net, b)
+	require.NoError(t, err, "failed to print")
+	t.Log(b.String())
+	return b.String()
 }

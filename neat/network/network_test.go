@@ -81,7 +81,7 @@ func buildModularNetwork() *Network {
 func TestModularNetwork_Activate(t *testing.T) {
 	net := buildModularNetwork()
 
-	data := []float64{1.0, 2.0, 0.5}
+	data := []float64{1.0, 2.0, 1.0}
 	err := net.LoadSensors(data)
 	require.NoError(t, err, "failed to load sensors")
 
@@ -90,8 +90,8 @@ func TestModularNetwork_Activate(t *testing.T) {
 		require.NoError(t, err, "error when do activation at: %d", i)
 		require.True(t, res, "failed to activate at: %d", i)
 	}
-	assert.Equal(t, 945.0, net.Outputs[0].Activation)
-	assert.Equal(t, 2730.0, net.Outputs[1].Activation)
+	assert.Equal(t, 1237.5, net.Outputs[0].Activation)
+	assert.Equal(t, 3575.0, net.Outputs[1].Activation)
 }
 
 // Tests MaxActivationDepth for simple network
@@ -101,14 +101,18 @@ func TestNetwork_MaxActivationDepth_Simple(t *testing.T) {
 	depth, err := net.MaxActivationDepth()
 	assert.NoError(t, err, "failed to calculate max depth")
 	assert.Equal(t, 3, depth)
+
+	logNetworkActivationPath(net, t)
 }
 
 func TestNetwork_MaxActivationDepth_Modular(t *testing.T) {
 	net := buildModularNetwork()
 
-	depthUnified, err := net.MaxActivationDepth()
+	depth, err := net.MaxActivationDepth()
 	assert.NoError(t, err, "failed to calculate max depth")
-	assert.Equal(t, 4, depthUnified)
+	assert.Equal(t, 4, depth)
+
+	logNetworkActivationPath(net, t)
 }
 
 func TestNetwork_MaxActivationDepthFast_Simple(t *testing.T) {
@@ -117,6 +121,8 @@ func TestNetwork_MaxActivationDepthFast_Simple(t *testing.T) {
 	depth, err := net.MaxActivationDepthFast()
 	assert.NoError(t, err, "failed to calculate max depth")
 	assert.Equal(t, 3, depth)
+
+	logNetworkActivationPath(net, t)
 }
 
 func TestNetwork_MaxActivationDepthFast_Modular(t *testing.T) {

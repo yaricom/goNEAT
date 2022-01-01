@@ -21,17 +21,20 @@ func TestFastModularNetworkSolver_RecursiveSteps(t *testing.T) {
 	data = append(data, 1.0) // BIAS is a third object
 	err = net.LoadSensors(data)
 	require.NoError(t, err, "failed to load sensors")
+
 	depth, err := net.MaxActivationDepth()
 	require.NoError(t, err, "failed to calculate max depth")
-	for i := 0; i < depth; i++ {
-		res, err := net.Activate()
-		require.NoError(t, err, "error when trying to activate at: %d", i)
-		require.True(t, res, "failed to activate at: %d", i)
-	}
+
+	t.Logf("depth: %d\n", depth)
+	logNetworkActivationPath(net, t)
+
+	res, err := net.ForwardSteps(depth)
+	require.NoError(t, err, "error when trying to activate objective network")
+	require.True(t, res, "failed to activate objective network")
 
 	// Do recursive activation of the Fast Network Solver
 	//
-	res, err := fmm.RecursiveSteps()
+	res, err = fmm.RecursiveSteps()
 	require.NoError(t, err, "error when trying to activate Fast Network Solver")
 	require.True(t, res, "recursive activation failed")
 
@@ -55,22 +58,24 @@ func TestFastModularNetworkSolver_ForwardSteps(t *testing.T) {
 	err = fmm.LoadSensors(data)
 	require.NoError(t, err, "failed to load sensors")
 
-	steps := 5
+	depth, err := net.MaxActivationDepth()
+	require.NoError(t, err, "failed to calculate max depth")
+
+	t.Logf("depth: %d\n", depth)
+	logNetworkActivationPath(net, t)
 
 	// activate objective network
 	//
 	data = append(data, 1.0) // BIAS is third object
 	err = net.LoadSensors(data)
 	require.NoError(t, err, "failed to load sensors")
-	for i := 0; i < steps; i++ {
-		res, err := net.Activate()
-		require.NoError(t, err, "error when trying to activate at: %d", i)
-		require.True(t, res, "failed to activate at: %d", i)
-	}
+	res, err := net.ForwardSteps(depth)
+	require.NoError(t, err, "error when trying to activate objective network")
+	require.True(t, res, "failed to activate objective network")
 
 	// do forward steps through the solver and test results
 	//
-	res, err := fmm.ForwardSteps(steps)
+	res, err = fmm.ForwardSteps(depth)
 	require.NoError(t, err, "error while do forward steps")
 	require.True(t, res, "forward steps returned false")
 
@@ -92,22 +97,24 @@ func TestFastModularNetworkSolver_Relax(t *testing.T) {
 	err = fmm.LoadSensors(data)
 	require.NoError(t, err, "failed to load sensors")
 
-	steps := 5
+	depth, err := net.MaxActivationDepth()
+	require.NoError(t, err, "failed to calculate max depth")
+
+	t.Logf("depth: %d\n", depth)
+	logNetworkActivationPath(net, t)
 
 	// activate objective network
 	//
 	data = append(data, 1.0) // BIAS is third object
 	err = net.LoadSensors(data)
 	require.NoError(t, err, "failed to load sensors")
-	for i := 0; i < steps; i++ {
-		res, err := net.Activate()
-		require.NoError(t, err, "error when trying to activate at: %d", i)
-		require.True(t, res, "failed to activate at: %d", i)
-	}
+	res, err := net.ForwardSteps(depth)
+	require.NoError(t, err, "error when trying to activate objective network")
+	require.True(t, res, "failed to activate objective network")
 
 	// do relaxation of fast network solver
 	//
-	res, err := fmm.Relax(steps, 1)
+	res, err = fmm.Relax(depth, 1)
 	require.NoError(t, err)
 	require.True(t, res, "failed to relax within given maximal steps number")
 

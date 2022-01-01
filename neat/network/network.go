@@ -468,6 +468,8 @@ func (n *Network) BaseNodes() []*NNode {
 	return n.allNodes
 }
 
+// maxActivationDepth calculates maximal activation depth and optionally prints the examined activation paths to the
+// provided writer.
 func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 	allPaths, ok := path.JohnsonAllPaths(n)
 	if !ok {
