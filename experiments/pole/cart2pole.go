@@ -326,8 +326,17 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 
 	netDepth, err := net.MaxActivationDepth() // The max depth of the network to be activated
 	if err != nil {
-		neat.WarnLog("Failed to estimate activation depth of the network, skipping evaluation")
+		neat.WarnLog(fmt.Sprintf(
+			"Failed to estimate activation depth of the network, skipping evaluation: %s", err))
 		return 0, nil
+	} else if netDepth == 0 {
+		// disconnected - assign minimal fitness to not completely exclude organism from evolution
+		// returning only fitness of 1 step
+		if p.isMarkov {
+			return 1.0, nil
+		} else {
+			return 0.0001, err
+		}
 	}
 
 	if p.isMarkov {
@@ -346,11 +355,11 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 			}
 
 			/*-- activate the network based on the input --*/
-			if res, err := net.ForwardSteps(netDepth); err != nil {
+			if res, err := net.ActivateSteps(netDepth); err != nil {
+				neat.DebugLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
 				return 0, err
 			} else if !res {
-				//If it loops, exit returning only fitness of 1 step
-				neat.DebugLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
+				// If it loops, exit returning only fitness of 1 step
 				return 1.0, nil
 			}
 			action := net.Outputs[0].Activation
@@ -387,12 +396,12 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 			}
 
 			/*-- activate the network based on the input --*/
-			if res, err := net.ForwardSteps(netDepth); err != nil {
+			if res, err := net.ActivateSteps(netDepth); err != nil {
+				neat.WarnLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
 				return 0, err
 			} else if !res {
 				// If it loops, exit returning only fitness of 1 step
-				neat.WarnLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
-				return 0.0001, err
+				return 0.0001, nil
 			}
 
 			action := net.Outputs[0].Activation

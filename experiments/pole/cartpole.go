@@ -168,6 +168,9 @@ func (e *cartPoleGenerationEvaluator) runCart(net *network.Network) (steps int, 
 	if err != nil {
 		neat.WarnLog(fmt.Sprintf(
 			"Failed to estimate maximal depth of the network with loop.\nUsing default depth: %d", netDepth))
+	} else if netDepth == 0 {
+		// possibly disconnected - return minimal fitness score
+		return 1, nil
 	}
 
 	in := make([]float64, 5)
