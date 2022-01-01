@@ -163,24 +163,12 @@ func (e *xorGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool,
 			return false, err
 		}
 
-		// Relax net and get output
-		success, err = organism.Phenotype.Activate()
-		if err != nil {
-			neat.ErrorLog("Failed to activate network")
-			return false, err
-		}
-
-		// use depth to ensure relaxation
-		for relax := 0; relax <= netDepth; relax++ {
-			success, err = organism.Phenotype.Activate()
-			if err != nil {
-				neat.ErrorLog("Failed to activate network")
-				return false, err
-			}
-		}
+		// Use depth to ensure full relaxation
+		success, err = organism.Phenotype.ForwardSteps(netDepth)
 		out[count] = organism.Phenotype.Outputs[0].Activation
 
-		if _, err := organism.Phenotype.Flush(); err != nil {
+		// Flush network for subsequent use
+		if _, err = organism.Phenotype.Flush(); err != nil {
 			neat.ErrorLog("Failed to flush network")
 			return false, err
 		}
