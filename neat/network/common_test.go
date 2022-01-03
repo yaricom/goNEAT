@@ -1,11 +1,22 @@
 package network
 
 import (
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/yaricom/goNEAT/v2/neat/math"
 	"testing"
 )
+
+const alwaysErrorText = "always be failing"
+
+var alwaysError = errors.New(alwaysErrorText)
+
+type ErrorWriter int
+
+func (e ErrorWriter) Write(_ []byte) (int, error) {
+	return 0, alwaysError
+}
 
 func TestNodeTypeName(t *testing.T) {
 	name := NodeTypeName(NeuronNode)

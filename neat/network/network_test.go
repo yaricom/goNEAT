@@ -348,20 +348,22 @@ func TestNetwork_ActivateSteps_maxActivationDepth_negative_cycle(t *testing.T) {
 	net := buildNetwork()
 
 	// create negative cycle
-	for _, np := range net.allNodes {
-		if np.IsNeuron() {
-			for i, link := range np.Incoming {
-				np.Incoming[i] = NewLink(link.ConnectionWeight*(-1.0), link.InNode, link.OutNode, link.IsRecurrent)
-			}
-		}
-	}
-	net.allNodes[1].ConnectFrom(net.allNodes[7], -13.0)
+	net.allNodes[1].ConnectFrom(net.allNodes[7], -130.0)
 
 	depth, err := net.maxActivationDepth(nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, depth)
 
 	logNetworkActivationPath(net, t)
+}
+
+func TestNetwork_ActivateSteps_maxActivationDepth_writeError(t *testing.T) {
+	net := buildNetwork()
+
+	errWriter := ErrorWriter(1)
+	depth, err := net.maxActivationDepth(&errWriter)
+	assert.EqualError(t, err, alwaysErrorText)
+	assert.Equal(t, 0, depth)
 }
 
 func TestModularNetwork_ControlNodes(t *testing.T) {

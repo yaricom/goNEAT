@@ -1,12 +1,23 @@
 package neat
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v2/neat/math"
 	"os"
 	"testing"
 )
+
+const alwaysErrorText = "always be failing"
+
+var alwaysError = errors.New(alwaysErrorText)
+
+type ErrorReader int
+
+func (e ErrorReader) Read(_ []byte) (n int, err error) {
+	return 0, alwaysError
+}
 
 func TestLoadNeatOptions(t *testing.T) {
 	config, err := os.Open("../data/xor_test.neat")
@@ -16,6 +27,13 @@ func TestLoadNeatOptions(t *testing.T) {
 	opts, err := LoadNeatOptions(config)
 	require.NoError(t, err)
 	checkNeatOptions(opts, t)
+}
+
+func TestLoadNeatOptions_readError(t *testing.T) {
+	errorReader := ErrorReader(1)
+	opts, err := LoadNeatOptions(&errorReader)
+	assert.EqualError(t, err, alwaysErrorText)
+	assert.Nil(t, opts)
 }
 
 func TestLoadYAMLOptions(t *testing.T) {
@@ -38,6 +56,13 @@ func TestLoadYAMLOptions(t *testing.T) {
 		assert.Equal(t, probs[i], opts.NodeActivatorsProb[i], "wrong probability at: %d", i)
 
 	}
+}
+
+func TestLoadYAMLOptions_readError(t *testing.T) {
+	errorReader := ErrorReader(1)
+	opts, err := LoadYAMLOptions(&errorReader)
+	assert.EqualError(t, err, alwaysErrorText)
+	assert.Nil(t, opts)
 }
 
 func TestOptions_NeatContext(t *testing.T) {

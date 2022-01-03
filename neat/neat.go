@@ -234,6 +234,8 @@ func LoadNeatOptions(r io.Reader) (*Options, error) {
 		_, err := fmt.Fscanf(r, "%s %v", &name, &param)
 		if err == io.EOF {
 			break
+		} else if err != nil {
+			return nil, err
 		}
 		switch name {
 		case "trait_param_mut_prob":

@@ -25,6 +25,14 @@ func TestPrintAllActivationDepthPaths_Modular(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestPrintAllActivationDepthPaths_writeError(t *testing.T) {
+	net := buildModularNetwork()
+
+	errWriter := ErrorWriter(1)
+	err := PrintAllActivationDepthPaths(net, &errWriter)
+	assert.EqualError(t, err, alwaysErrorText)
+}
+
 func TestPrintPath(t *testing.T) {
 	net := buildNetwork()
 
@@ -39,6 +47,19 @@ func TestPrintPath(t *testing.T) {
 	t.Log(b)
 	expected := "3 -> 5 -> 6 -> 8"
 	assert.Equal(t, expected, strings.TrimSpace(b.String()), "wrong path")
+}
+
+func TestPrintPath_writeError(t *testing.T) {
+	net := buildNetwork()
+
+	allPaths, ok := path.JohnsonAllPaths(net)
+	require.True(t, ok, "failed to get all paths")
+	paths, _ := allPaths.AllBetween(net.inputs[2].ID(), net.Outputs[1].ID())
+	require.NotNilf(t, paths, "failed to get specific paths")
+
+	errWriter := ErrorWriter(1)
+	err := PrintPath(&errWriter, paths)
+	assert.EqualError(t, err, alwaysErrorText)
 }
 
 func logNetworkActivationPath(net *Network, t *testing.T) string {

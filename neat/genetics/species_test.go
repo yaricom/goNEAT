@@ -12,23 +12,7 @@ import (
 	"testing"
 )
 
-func buildSpeciesWithOrganisms(id int) (*Species, error) {
-	gen := buildTestGenome(1)
-
-	sp := NewSpecies(id)
-	for i := 0; i < 3; i++ {
-		org, err := NewOrganism(float64(i+1)*5.0*float64(id), gen, id)
-		if err != nil {
-			return nil, err
-		}
-		sp.addOrganism(org)
-	}
-
-	return sp, nil
-}
-
-func TestSpecies_Write(t *testing.T) {
-	spStr := `/* Species #1 : (Size 3) (AF 10.000) (Age 1)  */
+const spStr = `/* Species #1 : (Size 3) (AF 10.000) (Age 1)  */
         /* Organism #1 Fitness: 15.000 Error: 0.000 */
         genomestart 1
         trait 1 0.1 0 0 0 0 0 0 0
@@ -69,6 +53,22 @@ func TestSpecies_Write(t *testing.T) {
         gene 3 3 4 3.5 false 3 0 true
         genomeend 1`
 
+func buildSpeciesWithOrganisms(id int) (*Species, error) {
+	gen := buildTestGenome(1)
+
+	sp := NewSpecies(id)
+	for i := 0; i < 3; i++ {
+		org, err := NewOrganism(float64(i+1)*5.0*float64(id), gen, id)
+		if err != nil {
+			return nil, err
+		}
+		sp.addOrganism(org)
+	}
+
+	return sp, nil
+}
+
+func TestSpecies_Write(t *testing.T) {
 	sp, err := buildSpeciesWithOrganisms(1)
 	require.NoError(t, err, "failed to build species")
 
@@ -84,6 +84,15 @@ func TestSpecies_Write(t *testing.T) {
 	for i, gsr := range inputTokens {
 		assert.Equal(t, gsr, outputTokens[i], "lines mismatch at: %d", i)
 	}
+}
+
+func TestSpecies_Write_writeError(t *testing.T) {
+	sp, err := buildSpeciesWithOrganisms(1)
+	require.NoError(t, err, "failed to build species")
+
+	errorWriter := ErrorWriter(1)
+	err = sp.Write(&errorWriter)
+	assert.EqualError(t, err, alwaysErrorText)
 }
 
 // Tests Species adjustFitness
