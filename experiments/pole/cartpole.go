@@ -81,7 +81,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 	if epoch.Solved {
 		// print winner organism
 		org := epoch.Best
-		depth, err := org.Phenotype.MaxActivationDepthFast()
+		depth, err := org.Phenotype.MaxActivationDepthFast(0)
 		if err == nil {
 			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
 		}
@@ -164,7 +164,7 @@ func (e *cartPoleGenerationEvaluator) runCart(net *network.Network) (steps int, 
 		thetaDot = float64(rand.Int31()%3000)/1000.0 - 1.5
 	}
 
-	netDepth, err := net.MaxActivationDepthFast() // The max depth of the network to be activated
+	netDepth, err := net.MaxActivationDepthFast(0) // The max depth of the network to be activated
 	if err != nil {
 		neat.WarnLog(fmt.Sprintf(
 			"Failed to estimate maximal depth of the network with loop.\nUsing default depth: %d", netDepth))

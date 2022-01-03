@@ -128,7 +128,7 @@ func TestNNode_Depth(t *testing.T) {
 	node2.AddIncoming(node, 15.0)
 	node3.AddIncoming(node2, 20.0)
 
-	depth, err := node3.Depth(0)
+	depth, err := node3.Depth(0, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 2, depth)
 }
@@ -140,10 +140,24 @@ func TestNNode_DepthWithLoop(t *testing.T) {
 
 	node2.AddIncoming(node, 15.0)
 	node3.AddIncoming(node2, 20.0)
-	node2.AddIncoming(node3, 10.0)
-	depth, err := node3.Depth(0)
+	node3.AddIncoming(node3, 10.0)
+	depth, err := node3.Depth(0, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 2, depth)
+}
+
+func TestNNode_Depth_withMaximumLimit(t *testing.T) {
+	node := NewNNode(1, InputNeuron)
+	node2 := NewNNode(2, HiddenNeuron)
+	node3 := NewNNode(3, OutputNeuron)
+
+	node2.AddIncoming(node, 15.0)
+	node3.AddIncoming(node2, 20.0)
+
+	maxDepth := 1
+	depth, err := node3.Depth(0, maxDepth)
+	require.EqualError(t, err, ErrMaximalNetDepthExceeded.Error())
+	assert.Equal(t, maxDepth, depth)
 }
 
 // Tests NNode Flushback

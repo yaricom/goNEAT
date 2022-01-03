@@ -198,11 +198,12 @@ func (n *NNode) FlushbackCheck() error {
 	return nil
 }
 
-// Depth Find the greatest depth starting from this neuron at depth d
-func (n *NNode) Depth(d int) (int, error) {
-	if d > 1000 {
-		// to avoid infinite recursion
-		return 10, ErrNetDepthCalculationFailedLoopDetected
+// Depth Find the greatest depth starting from this neuron at depth d. If maxDepth > 0 it can be used to stop early in
+// case if very deep network detected
+func (n *NNode) Depth(d int, maxDepth int) (int, error) {
+	if maxDepth > 0 && d > maxDepth {
+		// to avoid very deep network traversing
+		return maxDepth, ErrMaximalNetDepthExceeded
 	}
 	n.visited = true
 	// Base Case
@@ -216,7 +217,7 @@ func (n *NNode) Depth(d int) (int, error) {
 				// was already visited (loop detected) - skipping
 				continue
 			}
-			curDepth, err := l.InNode.Depth(d + 1)
+			curDepth, err := l.InNode.Depth(d+1, maxDepth)
 			if err != nil {
 				return curDepth, err
 			}

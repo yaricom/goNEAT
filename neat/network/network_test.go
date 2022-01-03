@@ -132,17 +132,26 @@ func TestNetwork_MaxActivationDepth_Modular(t *testing.T) {
 func TestNetwork_MaxActivationDepthFast_Simple(t *testing.T) {
 	net := buildNetwork()
 
-	depth, err := net.MaxActivationDepthFast()
+	depth, err := net.MaxActivationDepthFast(0)
 	assert.NoError(t, err, "failed to calculate max depth")
 	assert.Equal(t, 4, depth)
 
 	logNetworkActivationPath(net, t)
 }
 
+func TestNetwork_MaxActivationDepthFast_Simple_WithMaxLimitError(t *testing.T) {
+	net := buildNetwork()
+
+	maxDepth := 2
+	depth, err := net.MaxActivationDepthFast(2)
+	assert.EqualError(t, err, ErrMaximalNetDepthExceeded.Error())
+	assert.Equal(t, maxDepth, depth)
+}
+
 func TestNetwork_MaxActivationDepthFast_Modular(t *testing.T) {
 	net := buildModularNetwork()
 
-	_, err := net.MaxActivationDepthFast()
+	_, err := net.MaxActivationDepthFast(0)
 	assert.Error(t, err, "error expected")
 }
 

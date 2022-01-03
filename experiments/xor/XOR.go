@@ -86,7 +86,7 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 	if epoch.Solved {
 		// print winner organism
 		org := epoch.Best
-		depth, err := org.Phenotype.MaxActivationDepthFast()
+		depth, err := org.Phenotype.MaxActivationDepthFast(0)
 		if err == nil {
 			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
 		}
@@ -142,7 +142,7 @@ func (e *xorGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool,
 		{1.0, 1.0, 0.0},
 		{1.0, 1.0, 1.0}}
 
-	netDepth, err := organism.Phenotype.MaxActivationDepthFast() // The max depth of the network to be activated
+	netDepth, err := organism.Phenotype.MaxActivationDepthFast(0) // The max depth of the network to be activated
 	if err != nil {
 		neat.WarnLog(fmt.Sprintf(
 			"Failed to estimate maximal depth of the network with loop:\n%s\nUsing default depth: %d",

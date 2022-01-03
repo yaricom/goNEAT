@@ -232,7 +232,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 	if epoch.Solved {
 		// print winner organism
 		org := epoch.Best
-		depth, err := org.Phenotype.MaxActivationDepth() // The max depth of the network to be activated
+		depth, err := org.Phenotype.MaxActivationDepthFast(0) // The max depth of the network to be activated
 		if err == nil {
 			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
 		}
@@ -324,7 +324,7 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 
 	p.resetState()
 
-	netDepth, err := net.MaxActivationDepth() // The max depth of the network to be activated
+	netDepth, err := net.MaxActivationDepthFast(0) // The max depth of the network to be activated
 	if err != nil {
 		neat.WarnLog(fmt.Sprintf(
 			"Failed to estimate activation depth of the network, skipping evaluation: %s", err))

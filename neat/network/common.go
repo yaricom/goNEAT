@@ -11,10 +11,10 @@ import (
 var (
 	// ErrNetExceededMaxActivationAttempts The error to be raised when maximal number of network activation attempts exceeded
 	ErrNetExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded")
-	// ErrNetUnsupportedSensorsArraySize The error to be raised when unsupported size of the sensors data array provided
+	// ErrNetUnsupportedSensorsArraySize The error to be raised when unsupported size of the sensor data array provided
 	ErrNetUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
-	// ErrNetDepthCalculationFailedLoopDetected The error to be raised when depth calculation failed due to the loop in network
-	ErrNetDepthCalculationFailedLoopDetected = errors.New("depth can not be determined for network with loop")
+	// ErrMaximalNetDepthExceeded The error to be raised when depth of the network exceeds maximal allowed
+	ErrMaximalNetDepthExceeded = errors.New("depth of the network exceeds maximum allowed, fallback to maximal")
 	// ErrZeroActivationStepsRequested the error to be raised when zero activation steps requested
 	ErrZeroActivationStepsRequested = errors.New("zero activation steps requested")
 )
