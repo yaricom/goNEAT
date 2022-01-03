@@ -72,3 +72,33 @@ func TestOrganism_MarshalBinary(t *testing.T) {
 	require.NoError(t, err, "failed to check equality")
 	assert.True(t, equals)
 }
+
+func TestOrganism_CheckChampionChildDamaged(t *testing.T) {
+	gnome := buildTestGenome(1)
+	org, err := NewOrganism(rand.Float64(), gnome, 1)
+	require.NoError(t, err, "failed to create organism")
+
+	org.isPopulationChampionChild = true
+	org.highestFitness = 100
+	org.Fitness = 1000
+
+	res := org.CheckChampionChildDamaged()
+	assert.False(t, res)
+
+	org.Fitness = 10
+	res = org.CheckChampionChildDamaged()
+	assert.True(t, res)
+}
+
+func TestOrganism_UpdatePhenotype(t *testing.T) {
+	gnome := buildTestGenome(1)
+	org, err := NewOrganism(rand.Float64(), gnome, 1)
+	require.NoError(t, err, "failed to create organism")
+
+	org.Phenotype = nil
+	assert.Nil(t, org.Phenotype, "no phenotype expected")
+
+	err = org.UpdatePhenotype()
+	require.NoError(t, err, "failed to recreate phenotype")
+	assert.NotNil(t, org.Phenotype)
+}

@@ -6,7 +6,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
-// Organisms is sortable list of organisms by fitness
+// Organisms represents sortable list of organisms by fitness
 type Organisms []*Organism
 
 // OrganismData is the object to associate implementation specific data with particular organism for various algorithm implementations
