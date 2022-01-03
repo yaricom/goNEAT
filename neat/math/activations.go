@@ -52,7 +52,7 @@ var NodeActivators = NewNodeActivatorsFactory()
 type NodeActivatorsFactory struct {
 	// The map of registered neuron node activators by type
 	activators map[NodeActivationType]ActivationFunction
-	// The map of registered neurons module activators by type
+	// The map of registered neuron module activators by type
 	moduleActivators map[NodeActivationType]ModuleActivationFunction
 
 	// The forward and inverse maps of activator type and function name
