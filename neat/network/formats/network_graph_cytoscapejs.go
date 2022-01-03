@@ -97,6 +97,20 @@ func WriteCytoscapeJSONWithStyle(w io.Writer, n *network.Network, style *Cytosca
 	return nil
 }
 
+const (
+	attrActivationValue        = "activation_value"
+	attrActivationFunc         = "activation_function"
+	attrNeuronType             = "neuron_type"
+	attrNodeType               = "node_type"
+	attrInputConnectionsCount  = "in_connections_count"
+	attrOutputConnectionsCount = "out_connections_count"
+	attrControlNode            = "control_node"
+	attrBackgroundColor        = "background-color"
+	attrBorderColor            = "border-color"
+	attrShape                  = "shape"
+	attrTrait                  = "trait"
+)
+
 func nodeToCyJsNode(node *network.NNode, control bool) cytoscapejs.Node {
 	actName, err := math.NodeActivators.ActivationNameFromType(node.ActivationType)
 	if err != nil {
@@ -106,22 +120,22 @@ func nodeToCyJsNode(node *network.NNode, control bool) cytoscapejs.Node {
 		Data: cytoscapejs.NodeData{
 			ID: fmt.Sprintf("%d", node.Id),
 			Attributes: map[string]interface{}{
-				"activation_value":      node.Activation,
-				"activation_function":   actName,
-				"neuron_type":           network.NeuronTypeName(node.NeuronType),
-				"node_type":             network.NodeTypeName(node.NodeType()),
-				"in_connections_count":  len(node.Incoming),
-				"out_connections_count": len(node.Outgoing),
-				"control_node":          control,
-				"background-color":      nodeBgColor(node, control),
-				"border-color":          nodeBorderColor(node, control),
-				"shape":                 nodeShape(node, control),
+				attrActivationValue:        node.Activation,
+				attrActivationFunc:         actName,
+				attrNeuronType:             network.NeuronTypeName(node.NeuronType),
+				attrNodeType:               network.NodeTypeName(node.NodeType()),
+				attrInputConnectionsCount:  len(node.Incoming),
+				attrOutputConnectionsCount: len(node.Outgoing),
+				attrControlNode:            control,
+				attrBackgroundColor:        nodeBgColor(node, control),
+				attrBorderColor:            nodeBorderColor(node, control),
+				attrShape:                  nodeShape(node, control),
 			},
 		},
 		Selectable: true,
 	}
 	if node.Trait != nil {
-		nodeJS.Data.Attributes["trait"] = node.Trait.String()
+		nodeJS.Data.Attributes[attrTrait] = node.Trait.String()
 	}
 	return nodeJS
 }
@@ -146,45 +160,68 @@ func linkToCyJsEdge(link *network.Link) cytoscapejs.Edge {
 	return edgeJS
 }
 
+const (
+	colorControl = "#EA1E53"
+	colorInput   = "#339FDC"
+	colorOutput  = "#E7298A"
+	colorHidden  = "#009999"
+	colorBias    = "#FFCC33"
+	colorDefault = "#555"
+)
+
 func nodeBgColor(node *network.NNode, control bool) string {
 	if control {
-		return "#EA1E53"
+		return colorControl
 	}
 	switch node.NeuronType {
 	case network.InputNeuron:
-		return "#339FDC"
+		return colorInput
 	case network.OutputNeuron:
-		return "#E7298A"
+		return colorOutput
 	case network.HiddenNeuron:
-		return "#009999"
+		return colorHidden
 	case network.BiasNeuron:
-		return "#FFCC33"
+		return colorBias
 	}
-	return "#555"
+	return colorDefault
 }
+
+const (
+	shapeControl = "octagon"
+	shapeInput   = "diamond"
+	shapeOutput  = "round-rectangle"
+	shapeHidden  = "hexagon"
+	shapeBias    = "pentagon"
+	shapeDefault = "ellipse"
+)
 
 func nodeShape(node *network.NNode, control bool) string {
 	if control {
-		return "octagon"
+		return shapeControl
 	}
 	switch node.NeuronType {
 	case network.InputNeuron:
-		return "diamond"
+		return shapeInput
 	case network.OutputNeuron:
-		return "round-rectangle"
+		return shapeOutput
 	case network.HiddenNeuron:
-		return "hexagon"
+		return shapeHidden
 	case network.BiasNeuron:
-		return "pentagon"
+		return shapeBias
 	}
-	return "ellipse"
+	return shapeDefault
 }
+
+const (
+	borderColorControl = "#AAAAAA"
+	borderColorOther   = "#CCCCCC"
+)
 
 func nodeBorderColor(_ *network.NNode, control bool) string {
 	if control {
-		return "#AAAAAA"
+		return borderColorControl
 	} else {
-		return "#CCCCCC"
+		return borderColorOther
 	}
 }
 
