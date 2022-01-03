@@ -103,22 +103,25 @@ func (r *plainGenomeReader) Read() (*Genome, error) {
 			neat.InfoLog(line)
 		}
 	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
 	return &gnome, nil
 }
 
 // The method to read Trait in plain text format
 func readPlainTrait(r io.Reader) (*neat.Trait, error) {
 	nt := neat.NewTrait()
-	_, err := fmt.Fscanf(r, "%d ", &nt.Id)
-	if err == nil {
-		for i := 0; i < neat.NumTraitParams; i++ {
-			if _, err = fmt.Fscanf(r, "%g ", &nt.Params[i]); err != nil {
-				return nil, err
-			}
+	if _, err := fmt.Fscanf(r, "%d ", &nt.Id); err != nil {
+		return nil, err
+	}
+	for i := 0; i < neat.NumTraitParams; i++ {
+		if _, err := fmt.Fscanf(r, "%g ", &nt.Params[i]); err != nil {
+			return nil, err
 		}
 	}
 
-	return nt, err
+	return nt, nil
 }
 
 // Read a Network Node from specified Reader in plain text format

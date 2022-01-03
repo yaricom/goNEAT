@@ -83,21 +83,21 @@ func (wr *plainGenomeWriter) WriteGenome(g *Genome) error {
 
 // Dump trait in plain text format
 func (wr *plainGenomeWriter) writeTrait(t *neat.Trait) error {
-	_, err := fmt.Fprintf(wr.w, "%d ", t.Id)
-	if err == nil {
-		for i, p := range t.Params {
-			if i < len(t.Params)-1 {
-				_, err = fmt.Fprintf(wr.w, "%g ", p)
-			} else {
-				_, err = fmt.Fprintf(wr.w, "%g", p)
+	if _, err := fmt.Fprintf(wr.w, "%d ", t.Id); err != nil {
+		return err
+	}
+	for i, p := range t.Params {
+		if i < len(t.Params)-1 {
+			if _, err := fmt.Fprintf(wr.w, "%g ", p); err != nil {
+				return err
 			}
-
-			if err != nil {
+		} else {
+			if _, err := fmt.Fprintf(wr.w, "%g", p); err != nil {
 				return err
 			}
 		}
 	}
-	return err
+	return nil
 }
 
 // Dump network node in plain text format

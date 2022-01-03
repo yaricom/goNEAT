@@ -9,12 +9,14 @@ import (
 )
 
 var (
-	// NetErrExceededMaxActivationAttempts The error to be raised when maximal number of network activation attempts exceeded
-	NetErrExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded")
-	// NetErrUnsupportedSensorsArraySize The error to be raised when unsupported sensors data array size provided
-	NetErrUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
-	// NetErrDepthCalculationFailedLoopDetected The error to be raised when depth calculation failed due to the loop in network
-	NetErrDepthCalculationFailedLoopDetected = errors.New("depth can not be determined for network with loop")
+	// ErrNetExceededMaxActivationAttempts The error to be raised when maximal number of network activation attempts exceeded
+	ErrNetExceededMaxActivationAttempts = errors.New("maximal network activation attempts exceeded")
+	// ErrNetUnsupportedSensorsArraySize The error to be raised when unsupported size of the sensor data array provided
+	ErrNetUnsupportedSensorsArraySize = errors.New("the sensors array size is unsupported by network solver")
+	// ErrMaximalNetDepthExceeded The error to be raised when depth of the network exceeds maximal allowed
+	ErrMaximalNetDepthExceeded = errors.New("depth of the network exceeds maximum allowed, fallback to maximal")
+	// ErrZeroActivationStepsRequested the error to be raised when zero activation steps requested
+	ErrZeroActivationStepsRequested = errors.New("zero activation steps requested")
 )
 
 // NodeType NNodeType defines the type of NNode to create
@@ -28,7 +30,7 @@ const (
 	SensorNode
 )
 
-// NodeTypeName Returns human readable NNode type name for given constant value
+// NodeTypeName Returns human-readable NNode type name for given constant value
 func NodeTypeName(nType NodeType) string {
 	switch nType {
 	case NeuronNode:
@@ -36,7 +38,7 @@ func NodeTypeName(nType NodeType) string {
 	case SensorNode:
 		return "SENSOR"
 	default:
-		return "!!! UNKNOWN NODE TYPE !!!"
+		return "UNKNOWN NODE TYPE"
 	}
 }
 
@@ -55,32 +57,40 @@ const (
 	BiasNeuron
 )
 
+const (
+	hiddenNeuronName = "HIDN"
+	inputNeuronName  = "INPT"
+	outputNeuronName = "OUTP"
+	biasNeuronName   = "BIAS"
+	unknownNeuroName = "UNKNOWN NEURON TYPE"
+)
+
 // NeuronTypeName Returns human-readable neuron type name for given constant
-func NeuronTypeName(nlayer NodeNeuronType) string {
-	switch nlayer {
+func NeuronTypeName(neuronType NodeNeuronType) string {
+	switch neuronType {
 	case HiddenNeuron:
-		return "HIDN"
+		return hiddenNeuronName
 	case InputNeuron:
-		return "INPT"
+		return inputNeuronName
 	case OutputNeuron:
-		return "OUTP"
+		return outputNeuronName
 	case BiasNeuron:
-		return "BIAS"
+		return biasNeuronName
 	default:
-		return "!!! UNKNOWN NEURON TYPE !!!"
+		return unknownNeuroName
 	}
 }
 
 // NeuronTypeByName Returns neuron node type from its name
 func NeuronTypeByName(name string) (NodeNeuronType, error) {
 	switch name {
-	case "HIDN":
+	case hiddenNeuronName:
 		return HiddenNeuron, nil
-	case "INPT":
+	case inputNeuronName:
 		return InputNeuron, nil
-	case "OUTP":
+	case outputNeuronName:
 		return OutputNeuron, nil
-	case "BIAS":
+	case biasNeuronName:
 		return BiasNeuron, nil
 	default:
 		return math.MaxInt8, errors.New("Unknown neuron type name: " + name)

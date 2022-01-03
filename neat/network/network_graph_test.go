@@ -1,7 +1,6 @@
 package network
 
 import (
-	"bytes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/graph"
@@ -500,20 +499,6 @@ func TestNetwork_To_Modular(t *testing.T) {
 		ids := idsFromNodes(nodes)
 		assert.EqualValues(t, tc.ids, ids, "wrong IDs of nodes to: %d", tc.id)
 	}
-}
-
-func TestNetwork_WriteDOT(t *testing.T) {
-	net := buildNetwork()
-	net.Name = "TestNN"
-
-	net.inputs[0].Params = []float64{1.1, 2.3, 3.4, 4.2, 5.5, 6.7}
-	net.Outputs[0].Incoming[0].Params = []float64{1.1, 2.3, 3.4, 4.2, 5.5, 6.7}
-
-	b := bytes.NewBufferString("")
-	err := net.WriteDOT(b)
-	require.NoError(t, err, "failed to DOT encode")
-	t.Log(b)
-	assert.NotEmpty(t, b)
 }
 
 func idsFromNodes(nodes graph.Nodes) []int64 {

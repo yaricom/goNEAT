@@ -82,6 +82,13 @@ func TestReadGene_readPlainTrait(t *testing.T) {
 	assert.Equal(t, params, trait.Params, "wrong trait params")
 }
 
+func TestReadGene_readPlainTrait_readError(t *testing.T) {
+	errorReader := ErrorReader(1)
+	trait, err := readPlainTrait(&errorReader)
+	assert.EqualError(t, err, alwaysErrorText)
+	assert.Nil(t, trait)
+}
+
 // Tests how NNode read working
 func TestReadGene_ReadPlainNNode(t *testing.T) {
 	nodeId, traitId, nodeType, genNodeLabel := 1, 10, network.SensorNode, network.InputNeuron
@@ -98,6 +105,17 @@ func TestReadGene_ReadPlainNNode(t *testing.T) {
 	assert.Equal(t, trait, node.Trait, "wrong Trait found in the node")
 	assert.Equal(t, nodeType, node.NodeType(), "wrong node type")
 	assert.Equal(t, genNodeLabel, node.NeuronType, "wrong node placement label (neuron type) found")
+}
+
+func TestReadGene_ReadPlainNNode_readError(t *testing.T) {
+	trait := neat.NewTrait()
+	trait.Id = 10
+	traits := []*neat.Trait{trait}
+
+	errorReader := ErrorReader(1)
+	node, err := readPlainNetworkNode(&errorReader, traits)
+	assert.EqualError(t, err, alwaysErrorText)
+	assert.Nil(t, node)
 }
 
 // Tests Gene ReadGene
@@ -132,6 +150,20 @@ func TestReadGene_ReadPlainGene(t *testing.T) {
 	assert.Equal(t, outNodeId, link.OutNode.Id)
 	assert.Equal(t, weight, link.ConnectionWeight)
 	assert.False(t, link.IsRecurrent)
+}
+
+func TestReadGene_ReadPlainGene_readError(t *testing.T) {
+	trait := neat.NewTrait()
+	trait.Id = 1
+	nodes := []*network.NNode{
+		network.NewNNode(1, network.InputNeuron),
+		network.NewNNode(4, network.HiddenNeuron),
+	}
+
+	errorReader := ErrorReader(1)
+	gene, err := readPlainConnectionGene(&errorReader, []*neat.Trait{trait}, nodes)
+	assert.EqualError(t, err, alwaysErrorText)
+	assert.Nil(t, gene)
 }
 
 func TestPlainGenomeReader_ReadFile(t *testing.T) {
@@ -176,6 +208,18 @@ func TestPlainGenomeReader_ReadFile(t *testing.T) {
 		expectedParams := []float64{float64(i+1) / 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 		assert.Equal(t, expectedParams, tr.Params, "Wrong Trait params read at: %d", i)
 	}
+}
+
+func TestPlainGenomeReader_ReadFile_readError(t *testing.T) {
+	errorReader := ErrorReader(1)
+
+	r, err := NewGenomeReader(&errorReader, PlainGenomeEncoding)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+
+	genome, err := r.Read()
+	assert.EqualError(t, err, alwaysErrorText)
+	assert.Nil(t, genome)
 }
 
 func TestYAMLGenomeReader_Read(t *testing.T) {
@@ -294,4 +338,16 @@ func TestYAMLGenomeReader_Read(t *testing.T) {
 		assert.Equal(t, 1.0, g.ControlNode.Outgoing[0].ConnectionWeight, "at: %d", i)
 		idCount++
 	}
+}
+
+func TestYAMLGenomeReader_Read_readError(t *testing.T) {
+	errorReader := ErrorReader(1)
+
+	r, err := NewGenomeReader(&errorReader, YAMLGenomeEncoding)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+
+	genome, err := r.Read()
+	assert.EqualError(t, err, "yaml: input error: "+alwaysErrorText)
+	assert.Nil(t, genome)
 }

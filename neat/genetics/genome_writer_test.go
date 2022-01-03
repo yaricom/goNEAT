@@ -35,6 +35,13 @@ func TestPlainGenomeWriter_WriteTrait(t *testing.T) {
 	assert.Equal(t, traitStr, outStr)
 }
 
+func TestPlainGenomeWriter_WriteTrait_writeError(t *testing.T) {
+	errorWriter := ErrorWriter(1)
+	wr := plainGenomeWriter{w: bufio.NewWriterSize(&errorWriter, 1)}
+	err := wr.writeTrait(neat.NewTrait())
+	assert.EqualError(t, err, alwaysErrorText)
+}
+
 // Tests NNode serialization
 func TestPlainGenomeWriter_WriteNetworkNode(t *testing.T) {
 	nodeId, traitId, nodeType, neuronType := 1, 10, network.SensorNode, network.InputNeuron
@@ -54,6 +61,13 @@ func TestPlainGenomeWriter_WriteNetworkNode(t *testing.T) {
 
 	outStr := outBuffer.String()
 	assert.Equal(t, nodeStr, outStr, "Node serialization failed")
+}
+
+func TestPlainGenomeWriter_WriteNetworkNode_writeError(t *testing.T) {
+	errorWriter := ErrorWriter(1)
+	wr := plainGenomeWriter{w: bufio.NewWriterSize(&errorWriter, 1)}
+	err := wr.writeNetworkNode(network.NewNNode(1, network.InputNeuron))
+	assert.EqualError(t, err, alwaysErrorText)
 }
 
 func TestPlainGenomeWriter_WriteConnectionGene(t *testing.T) {
@@ -82,6 +96,14 @@ func TestPlainGenomeWriter_WriteConnectionGene(t *testing.T) {
 	assert.Equal(t, geneStr, outStr, "Wrong Gene serialization")
 }
 
+func TestPlainGenomeWriter_WriteConnectionGene_writeError(t *testing.T) {
+	errorWriter := ErrorWriter(1)
+	wr := plainGenomeWriter{w: bufio.NewWriterSize(&errorWriter, 1)}
+	err := wr.writeConnectionGene(NewGeneWithTrait(neat.NewTrait(), 1.0, network.NewNNode(1, network.InputNeuron),
+		network.NewNNode(4, network.HiddenNeuron), false, 1.0, 1.0))
+	assert.EqualError(t, err, alwaysErrorText)
+}
+
 func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 	gnome := buildTestGenome(1)
 	outBuf := bytes.NewBufferString("")
@@ -104,6 +126,17 @@ func TestPlainGenomeWriter_WriteGenome(t *testing.T) {
 		outText := outScanner.Text()
 		require.Equal(t, inText, outText, "lines mismatch at")
 	}
+}
+
+func TestPlainGenomeWriter_WriteGenome_writeError(t *testing.T) {
+	errorWriter := ErrorWriter(1)
+	wr, err := NewGenomeWriter(bufio.NewWriter(&errorWriter), PlainGenomeEncoding)
+	require.NoError(t, err)
+	require.NotNil(t, wr)
+
+	gnome := buildTestGenome(1)
+	err = wr.WriteGenome(gnome)
+	assert.EqualError(t, err, alwaysErrorText)
 }
 
 func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
@@ -166,6 +199,17 @@ func TestYamlGenomeWriter_WriteGenome(t *testing.T) {
 		checkLinks(cg.ControlNode.Incoming, ocg.ControlNode.Incoming, t)
 		checkLinks(cg.ControlNode.Outgoing, ocg.ControlNode.Outgoing, t)
 	}
+}
+
+func TestYamlGenomeWriter_WriteGenome_writeError(t *testing.T) {
+	errorWriter := ErrorWriter(1)
+	wr, err := NewGenomeWriter(bufio.NewWriter(&errorWriter), YAMLGenomeEncoding)
+	require.NoError(t, err)
+	require.NotNil(t, wr)
+
+	gnome := buildTestGenome(1)
+	err = wr.WriteGenome(gnome)
+	assert.EqualError(t, err, alwaysErrorText)
 }
 
 func checkLinks(left, right []*network.Link, t *testing.T) {

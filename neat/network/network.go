@@ -234,7 +234,12 @@ func (n *Network) OutputIsOff() bool {
 }
 
 // ActivateSteps Attempts to activate the network given number of steps before returning error.
+// Normally the maxSteps should be equal to the maximal activation depth of the network as returned by
+// MaxActivationDepth() or MaxActivationDepthFast()
 func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
+	if maxSteps == 0 {
+		return false, ErrZeroActivationStepsRequested
+	}
 	// For adding to the active sum
 	addAmount := 0.0
 	// Make sure we at least activate once
@@ -247,7 +252,7 @@ func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 	for n.OutputIsOff() || !oneTime {
 
 		if abortCount >= maxSteps {
-			return false, NetErrExceededMaxActivationAttempts
+			return false, ErrNetExceededMaxActivationAttempts
 		}
 
 		// For each neuron node, compute the sum of its incoming activation
@@ -309,11 +314,13 @@ func (n *Network) Activate() (bool, error) {
 }
 
 func (n *Network) ForwardSteps(steps int) (res bool, err error) {
+	if steps == 0 {
+		return false, ErrZeroActivationStepsRequested
+	}
 	for i := 0; i < steps; i++ {
-		res, err = n.Activate()
-		if err != nil {
+		if res, err = n.ActivateSteps(steps); err != nil {
 			// failure - no need to continue
-			break
+			return false, err
 		}
 	}
 	return res, err
@@ -416,7 +423,6 @@ func (n *Network) IsRecurrent(inNode, outNode *NNode, count *int, thresh int) bo
 }
 
 // MaxActivationDepth is to find the maximum number of neuron layers to be activated between an output and an input layers.
-// The input layer is excluded as it does not require activation.
 func (n *Network) MaxActivationDepth() (int, error) {
 	// The quick case when there are no hidden nodes or control
 	if len(n.allNodes) == len(n.inputs)+len(n.Outputs) && len(n.controlNodes) == 0 {
@@ -429,7 +435,11 @@ func (n *Network) MaxActivationDepth() (int, error) {
 // MaxActivationDepthFast is to find the maximum number of neuron layers to be activated between an output and an input layers.
 // This is the fastest version of depth calculation but only suitable for simple networks. If current network is modular
 // the error will be raised.
-func (n *Network) MaxActivationDepthFast() (int, error) {
+// It is possible to limit the maximal depth value by setting the maxDepth value greater than zero.
+// If network depth exceeds provided maxDepth value this value will be returned along with ErrMaximalNetDepthExceeded
+// to indicate that calculation stopped.
+// If maxDepth is less or equal to zero no maximal depth limitation will be set.
+func (n *Network) MaxActivationDepthFast(maxDepth int) (int, error) {
 	if len(n.controlNodes) > 0 {
 		return -1, errors.New("unsupported for modular networks")
 	}
@@ -441,7 +451,7 @@ func (n *Network) MaxActivationDepthFast() (int, error) {
 
 	max := 0 // The max depth
 	for _, node := range n.Outputs {
-		currDepth, err := node.Depth(0)
+		currDepth, err := node.Depth(1, maxDepth) // 1 is to include this layer
 		if err != nil {
 			return currDepth, err
 		}
@@ -453,15 +463,28 @@ func (n *Network) MaxActivationDepthFast() (int, error) {
 	return max, nil
 }
 
-// AllNodes Returns all nodes in the network including control ones
+// AllNodes Returns all network nodes including MIMO control nodes: base nodes + control nodes
 func (n *Network) AllNodes() []*NNode {
 	return n.allNodesMIMO
 }
 
+// ControlNodes returns all control nodes of this network.
+func (n *Network) ControlNodes() []*NNode {
+	return n.controlNodes
+}
+
+// BaseNodes returns all nodes in this network excluding MIMO control nodes
+func (n *Network) BaseNodes() []*NNode {
+	return n.allNodes
+}
+
+// maxActivationDepth calculates maximal activation depth and optionally prints the examined activation paths to the
+// provided writer.
 func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 	allPaths, ok := path.JohnsonAllPaths(n)
 	if !ok {
-		return 0, errors.New("failed to calculate network depth, negative cycle detected")
+		// negative cycle detected - fallback to FloydWarshall
+		allPaths, _ = path.FloydWarshall(n)
 	}
 	max := 0 // The max depth
 	for _, in := range n.inputs {
@@ -488,9 +511,5 @@ func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 		}
 	}
 
-	max = max - 1 // we do not count input layer
-	if max == 0 {
-		return 0, errors.New("failed to calculate network depth")
-	}
 	return max, nil
 }

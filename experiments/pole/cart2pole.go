@@ -6,6 +6,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v2/neat/network/formats"
 	"math"
 	"os"
 	"sort"
@@ -217,7 +218,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 	// Fill statistics about current epoch
 	epoch.FillPopulationStatistics(pop)
 
-	// Only print to file every print_every generations
+	// Only print to file every print_every generation
 	if epoch.Solved || epoch.Id%context.PrintEvery == 0 {
 		popPath := fmt.Sprintf("%s/gen_%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId), epoch.Id)
 		if file, err := os.Create(popPath); err != nil {
@@ -230,21 +231,35 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 
 	if epoch.Solved {
 		// print winner organism
-		for _, org := range pop.Organisms {
-			if org.IsWinner {
-				// Prints the winner organism to file!
-				orgPath := fmt.Sprintf("%s/%s_%.1f_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-					"pole2_winner", org.Fitness, org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
-				if file, err := os.Create(orgPath); err != nil {
-					return err
-				} else if err = org.Genotype.Write(file); err != nil {
-					neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
-					return err
-				} else {
-					neat.InfoLog(fmt.Sprintf("Generation #%d winner %d dumped to: %s\n", epoch.Id, org.Genotype.Id, orgPath))
-				}
-				break
-			}
+		org := epoch.Best
+		depth, err := org.Phenotype.MaxActivationDepthFast(0) // The max depth of the network to be activated
+		if err == nil {
+			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
+		}
+
+		// Prints the winner organism to file!
+		orgPath := fmt.Sprintf("%s/%s_%.1f_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
+			"pole2_winner_genome", org.Fitness, org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+		if file, err := os.Create(orgPath); err != nil {
+			return err
+		} else if err = org.Genotype.Write(file); err != nil {
+			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
+			return err
+		} else {
+			neat.InfoLog(fmt.Sprintf("Generation #%d winner %d dumped to: %s\n", epoch.Id, org.Genotype.Id, orgPath))
+		}
+
+		// Prints the winner organism's Phenotype to the Cytoscape JSON file!
+		orgPath = fmt.Sprintf("%s/%s_%d-%d.cyjs", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
+			"pole2_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
+		if file, err := os.Create(orgPath); err != nil {
+			return err
+		} else if err = formats.WriteCytoscapeJSON(file, org.Phenotype); err != nil {
+			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
+			return err
+		} else {
+			neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome Cytoscape JSON graph dumped to: %s\n",
+				epoch.Id, orgPath))
 		}
 	}
 
@@ -265,10 +280,10 @@ func (e *cartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organ
 
 	// DEBUG CHECK if organism is damaged
 	if !(cartPole.nonMarkovLong && cartPole.generalizationTest) && organism.CheckChampionChildDamaged() {
-		neat.WarnLog(fmt.Sprintf("ORGANISM DAMAGED:\n%s", organism.Genotype))
+		neat.WarnLog(fmt.Sprintf("ORGANISM DEGRADED:\n%s", organism.Genotype))
 	}
 
-	// Decide if its a winner, in Markov Case
+	// Decide if it's a winner, in Markov Case
 	if cartPole.isMarkov {
 		if organism.Fitness >= markovMaxSteps {
 			winner = true
@@ -309,6 +324,21 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 
 	p.resetState()
 
+	netDepth, err := net.MaxActivationDepthFast(0) // The max depth of the network to be activated
+	if err != nil {
+		neat.WarnLog(fmt.Sprintf(
+			"Failed to estimate activation depth of the network, skipping evaluation: %s", err))
+		return 0, nil
+	} else if netDepth == 0 {
+		// disconnected - assign minimal fitness to not completely exclude organism from evolution
+		// returning only fitness of 1 step
+		if p.isMarkov {
+			return 1.0, nil
+		} else {
+			return 0.0001, err
+		}
+	}
+
 	if p.isMarkov {
 		input := make([]float64, 7)
 		for steps = 0; steps < markovMaxSteps; steps++ {
@@ -320,16 +350,16 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 			input[5] = (p.state[5] + 1.0) / 2.0
 			input[6] = 0.5
 
-			if err := net.LoadSensors(input); err != nil {
+			if err = net.LoadSensors(input); err != nil {
 				return 0, err
 			}
 
 			/*-- activate the network based on the input --*/
-			if res, err := net.Activate(); err != nil {
+			if res, err := net.ActivateSteps(netDepth); err != nil {
+				neat.DebugLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
 				return 0, err
 			} else if !res {
-				//If it loops, exit returning only fitness of 1 step
-				neat.DebugLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
+				// If it loops, exit returning only fitness of 1 step
 				return 1.0, nil
 			}
 			action := net.Outputs[0].Activation
@@ -366,12 +396,12 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 			}
 
 			/*-- activate the network based on the input --*/
-			if res, err := net.Activate(); err != nil {
+			if res, err := net.ActivateSteps(netDepth); err != nil {
+				neat.WarnLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
 				return 0, err
 			} else if !res {
 				// If it loops, exit returning only fitness of 1 step
-				neat.WarnLog(fmt.Sprintf("Failed to activate Network, reason: %s", err))
-				return 0.0001, err
+				return 0.0001, nil
 			}
 
 			action := net.Outputs[0].Activation

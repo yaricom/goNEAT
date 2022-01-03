@@ -77,6 +77,10 @@ func ReadPopulation(ir io.Reader, options *neat.Options) (pop *Population, err e
 		}
 
 	}
+	if err = scanner.Err(); err != nil {
+		return nil, err
+	}
+
 	if err = pop.speciate(options.NeatContext(), pop.Organisms); err != nil {
 		return nil, err
 	}

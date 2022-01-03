@@ -6,7 +6,7 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/network"
 )
 
-// Organisms is sortable list of organisms by fitness
+// Organisms represents sortable list of organisms by fitness
 type Organisms []*Organism
 
 // OrganismData is the object to associate implementation specific data with particular organism for various algorithm implementations
@@ -95,7 +95,8 @@ func (o *Organism) UpdatePhenotype() (err error) {
 	return err
 }
 
-// CheckChampionChildDamaged Method to check if this algorithm is champion child and if so than if it's damaged
+// CheckChampionChildDamaged Method to check if this organism is a child of the champion
+// but has the fitness score less than of the parent. This can be used to check if champion's offsprings degraded.
 func (o *Organism) CheckChampionChildDamaged() bool {
 	if o.isPopulationChampionChild && o.highestFitness > o.Fitness {
 		return true

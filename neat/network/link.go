@@ -82,6 +82,11 @@ func (l *Link) String() string {
 		l.InNode, l.OutNode, l.ConnectionWeight, l.IsRecurrent, l.IsTimeDelayed)
 }
 
+// IDString is to get synthetic ID of this link composed of IDs of connected nodes.
+func (l *Link) IDString() string {
+	return fmt.Sprintf("%d-%d", l.InNode.Id, l.OutNode.Id)
+}
+
 // Copy trait parameters into this link's parameters
 func (l *Link) deriveTrait(t *neat.Trait) {
 	if t != nil {
