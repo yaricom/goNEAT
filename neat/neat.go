@@ -231,7 +231,7 @@ func LoadNeatOptions(r io.Reader) (*Options, error) {
 	var name string
 	var param string
 	for {
-		_, err := fmt.Fscanf(r, "%s %v", &name, &param)
+		_, err := fmt.Fscanf(r, "%s %v\n", &name, &param)
 		if err == io.EOF {
 			break
 		} else if err != nil {
