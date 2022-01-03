@@ -318,10 +318,9 @@ func (n *Network) ForwardSteps(steps int) (res bool, err error) {
 		return false, ErrZeroActivationStepsRequested
 	}
 	for i := 0; i < steps; i++ {
-		res, err = n.ActivateSteps(steps)
-		if err != nil {
+		if res, err = n.ActivateSteps(steps); err != nil {
 			// failure - no need to continue
-			break
+			return false, err
 		}
 	}
 	return res, err

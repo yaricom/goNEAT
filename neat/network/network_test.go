@@ -7,6 +7,24 @@ import (
 	"testing"
 )
 
+func buildPlainNetwork() *Network {
+	allNodes := []*NNode{
+		NewNNode(1, InputNeuron),
+		NewNNode(2, InputNeuron),
+		NewNNode(3, BiasNeuron),
+		NewNNode(7, OutputNeuron),
+		NewNNode(8, OutputNeuron),
+	}
+
+	// OUTPUT 7
+	allNodes[3].ConnectFrom(allNodes[1], 7.0)
+	allNodes[3].ConnectFrom(allNodes[2], 4.5)
+	// OUTPUT 8
+	allNodes[4].ConnectFrom(allNodes[3], 13.0)
+
+	return NewNetwork(allNodes[0:3], allNodes[3:5], allNodes, 0)
+}
+
 func buildDisconnectedNetwork() *Network {
 	allNodes := []*NNode{
 		NewNNode(1, InputNeuron),
@@ -129,6 +147,13 @@ func TestNetwork_MaxActivationDepth_Modular(t *testing.T) {
 	logNetworkActivationPath(net, t)
 }
 
+func TestNetwork_MaxActivationDepth_No_Hidden_or_Control(t *testing.T) {
+	net := buildPlainNetwork()
+	depth, err := net.MaxActivationDepth()
+	assert.NoError(t, err, "failed to calculate max depth")
+	assert.Equal(t, 1, depth)
+}
+
 func TestNetwork_MaxActivationDepthFast_Simple(t *testing.T) {
 	net := buildNetwork()
 
@@ -194,6 +219,14 @@ func TestNetwork_ForwardSteps(t *testing.T) {
 	// test zero steps
 	res, err = net.ForwardSteps(0)
 	assert.EqualError(t, err, ErrZeroActivationStepsRequested.Error())
+	assert.False(t, res)
+}
+
+func TestNetwork_ForwardSteps_disconnected(t *testing.T) {
+	net := buildDisconnectedNetwork()
+
+	res, err := net.ForwardSteps(3)
+	assert.EqualError(t, err, ErrNetExceededMaxActivationAttempts.Error())
 	assert.False(t, res)
 }
 
