@@ -221,6 +221,317 @@ options, err := neat.LoadNeatOptions(optFile)
 
 The [`formats`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network/formats "formats") package provides support for various network graph serialization formats which can be used to visualize the graph with help of well-known tools. Currently, we have support for DOT and CytoscapeJS data formats.
 
+### The CytoscapeJS JSON format
+
+Another important data format supported by the library is the `CytoscapeJS JSON`. The `Network` graph serialized into this format can be easily rendered using either [Cytoscape App](https://cytoscape.org) or the corresponding [CytoscapeJS](https://js.cytoscape.org) JavaScript library.
+
+The following code snippet demonstrates how this can be done:
+```go
+import (
+"github.com/yaricom/goNEAT/v2/neat/network"
+"github.com/yaricom/goNEAT/v2/neat/network/formats"
+"bytes"
+"fmt"
+)
+
+allNodes := []*network.NNode{
+	network.NewNNode(1, network.InputNeuron), 
+	network.NewNNode(2, network.InputNeuron), 
+	network.NewNNode(3, network.BiasNeuron), 
+	network.NewNNode(4, network.HiddenNeuron), 
+	network.NewNNode(5, network.HiddenNeuron), 
+	network.NewNNode(6, network.HiddenNeuron), 
+	network.NewNNode(7, network.OutputNeuron), 
+	network.NewNNode(8, network.OutputNeuron),
+}
+
+// HIDDEN 4
+allNodes[3].connectFrom(allNodes[0], 15.0)
+allNodes[3].connectFrom(allNodes[1], 10.0)
+// HIDDEN 5
+allNodes[4].connectFrom(allNodes[1], 5.0)
+allNodes[4].connectFrom(allNodes[2], 1.0)
+// HIDDEN 6
+allNodes[5].connectFrom(allNodes[4], 17.0)
+// OUTPUT 7
+allNodes[6].connectFrom(allNodes[3], 7.0)
+allNodes[6].connectFrom(allNodes[5], 4.5)
+// OUTPUT 8
+allNodes[7].connectFrom(allNodes[5], 13.0)
+
+net := network.NewNetwork(allNodes[0:3], allNodes[6:8], allNodes, 0)
+
+b := bytes.NewBufferString("")
+err := formats.WriteCytoscapeJSON(b, net)
+fmt.Println(b)
+```
+The produced output looks like the following:
+```json
+{
+  "elements": {
+    "nodes": [
+      {
+        "data": {
+          "activation_function": "SigmoidSteepenedActivation",
+          "activation_value": 0,
+          "background-color": "#339FDC",
+          "border-color": "#CCCCCC",
+          "control_node": false,
+          "id": "1",
+          "in_connections_count": 0,
+          "neuron_type": "INPT",
+          "node_type": "SENSOR",
+          "out_connections_count": 1,
+          "parent": "",
+          "shape": "diamond"
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "activation_function": "SigmoidSteepenedActivation",
+          "activation_value": 0,
+          "background-color": "#339FDC",
+          "border-color": "#CCCCCC",
+          "control_node": false,
+          "id": "2",
+          "in_connections_count": 0,
+          "neuron_type": "INPT",
+          "node_type": "SENSOR",
+          "out_connections_count": 2,
+          "parent": "",
+          "shape": "diamond"
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "activation_function": "SigmoidSteepenedActivation",
+          "activation_value": 0,
+          "background-color": "#FFCC33",
+          "border-color": "#CCCCCC",
+          "control_node": false,
+          "id": "3",
+          "in_connections_count": 0,
+          "neuron_type": "BIAS",
+          "node_type": "SENSOR",
+          "out_connections_count": 1,
+          "parent": "",
+          "shape": "pentagon"
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "activation_function": "SigmoidSteepenedActivation",
+          "activation_value": 0,
+          "background-color": "#009999",
+          "border-color": "#CCCCCC",
+          "control_node": false,
+          "id": "4",
+          "in_connections_count": 2,
+          "neuron_type": "HIDN",
+          "node_type": "NEURON",
+          "out_connections_count": 1,
+          "parent": "",
+          "shape": "hexagon"
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "activation_function": "SigmoidSteepenedActivation",
+          "activation_value": 0,
+          "background-color": "#009999",
+          "border-color": "#CCCCCC",
+          "control_node": false,
+          "id": "5",
+          "in_connections_count": 2,
+          "neuron_type": "HIDN",
+          "node_type": "NEURON",
+          "out_connections_count": 1,
+          "parent": "",
+          "shape": "hexagon"
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "activation_function": "SigmoidSteepenedActivation",
+          "activation_value": 0,
+          "background-color": "#009999",
+          "border-color": "#CCCCCC",
+          "control_node": false,
+          "id": "6",
+          "in_connections_count": 1,
+          "neuron_type": "HIDN",
+          "node_type": "NEURON",
+          "out_connections_count": 2,
+          "parent": "",
+          "shape": "hexagon"
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "activation_function": "SigmoidSteepenedActivation",
+          "activation_value": 0,
+          "background-color": "#E7298A",
+          "border-color": "#CCCCCC",
+          "control_node": false,
+          "id": "7",
+          "in_connections_count": 2,
+          "neuron_type": "OUTP",
+          "node_type": "NEURON",
+          "out_connections_count": 0,
+          "parent": "",
+          "shape": "round-rectangle"
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "activation_function": "SigmoidSteepenedActivation",
+          "activation_value": 0,
+          "background-color": "#E7298A",
+          "border-color": "#CCCCCC",
+          "control_node": false,
+          "id": "8",
+          "in_connections_count": 1,
+          "neuron_type": "OUTP",
+          "node_type": "NEURON",
+          "out_connections_count": 0,
+          "parent": "",
+          "shape": "round-rectangle"
+        },
+        "selectable": true
+      }
+    ],
+    "edges": [
+      {
+        "data": {
+          "id": "1-4",
+          "recurrent": false,
+          "source": "1",
+          "target": "4",
+          "time_delayed": false,
+          "weight": 15
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "id": "2-4",
+          "recurrent": false,
+          "source": "2",
+          "target": "4",
+          "time_delayed": false,
+          "weight": 10
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "id": "2-5",
+          "recurrent": false,
+          "source": "2",
+          "target": "5",
+          "time_delayed": false,
+          "weight": 5
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "id": "3-5",
+          "recurrent": false,
+          "source": "3",
+          "target": "5",
+          "time_delayed": false,
+          "weight": 1
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "id": "5-6",
+          "recurrent": false,
+          "source": "5",
+          "target": "6",
+          "time_delayed": false,
+          "weight": 17
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "id": "4-7",
+          "recurrent": false,
+          "source": "4",
+          "target": "7",
+          "time_delayed": false,
+          "weight": 7
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "id": "6-7",
+          "recurrent": false,
+          "source": "6",
+          "target": "7",
+          "time_delayed": false,
+          "weight": 4.5
+        },
+        "selectable": true
+      },
+      {
+        "data": {
+          "id": "6-8",
+          "recurrent": false,
+          "source": "6",
+          "target": "8",
+          "time_delayed": false,
+          "weight": 13
+        },
+        "selectable": true
+      }
+    ]
+  },
+  "layout": {
+    "name": "circle"
+  },
+  "style": [
+    {
+      "selector": "node",
+      "style": {
+        "background-color": "data(background-color)",
+        "border-color": "data(border-color)",
+        "border-width": 3,
+        "label": "data(id)",
+        "shape": "data(shape)"
+      }
+    },
+    {
+      "selector": "edge",
+      "style": {
+        "curve-style": "bezier",
+        "line-color": "#CCCCCC",
+        "target-arrow-color": "#CCCCCC",
+        "target-arrow-shape": "triangle-backcurve",
+        "width": 5
+      }
+    }
+  ]
+}
+```
+
+The above CYJS can be visualized as following with [Cytoscape App](https://cytoscape.org).
+
+![Example Network](contents/example/example.svg)
+
+You can find more **interesting visualizations** at project's [Wiki](https://github.com/yaricom/goNEAT/wiki/Network-Graph-Visualization).
+
 ### The DOT format
 The `Network` can be serialized into popular [GraphViz DOT](http://www.graphviz.org/doc/info/lang.html)
 format. The following code snippet demonstrates how this can be done:
@@ -234,14 +545,14 @@ import (
 )
 
 allNodes := []*network.NNode{
-    network.NewNNode(1, network.InputNeuron),
-	network.NewNNode(2, network.InputNeuron),
-    network.NewNNode(3, network.BiasNeuron),
-    network.NewNNode(4, network.HiddenNeuron),
-    network.NewNNode(5, network.HiddenNeuron),
-    network.NewNNode(6, network.HiddenNeuron),
-    network.NewNNode(7, network.OutputNeuron),
-    network.NewNNode(8, network.OutputNeuron),
+	network.NewNNode(1, network.InputNeuron), 
+	network.NewNNode(2, network.InputNeuron), 
+	network.NewNNode(3, network.BiasNeuron), 
+	network.NewNNode(4, network.HiddenNeuron), 
+	network.NewNNode(5, network.HiddenNeuron), 
+	network.NewNNode(6, network.HiddenNeuron), 
+	network.NewNNode(7, network.OutputNeuron), 
+	network.NewNNode(8, network.OutputNeuron),
 }
 
 // HIDDEN 4
@@ -266,89 +577,7 @@ err := formats.WriteDOT(b, net)
 fmt.Println(b)
 ```
 
-The produced output looks like the following:
-```text
-strict digraph TestNN {
-    // Node definitions.
-    1 [
-    neuron_type=INPT
-    activation_type=SigmoidSteepenedActivation
-    ];
-    2 [
-    neuron_type=INPT
-    activation_type=SigmoidSteepenedActivation
-    ];
-    3 [
-    neuron_type=BIAS
-    activation_type=SigmoidSteepenedActivation
-    ];
-    4 [
-    neuron_type=HIDN
-    activation_type=SigmoidSteepenedActivation
-    ];
-    5 [
-    neuron_type=HIDN
-    activation_type=SigmoidSteepenedActivation
-    ];
-    6 [
-    neuron_type=HIDN
-    activation_type=SigmoidSteepenedActivation
-    ];
-    7 [
-    neuron_type=OUTP
-    activation_type=SigmoidSteepenedActivation
-    ];
-    8 [
-    neuron_type=OUTP
-    activation_type=SigmoidSteepenedActivation
-    ];
-    
-    // Edge definitions.
-    1 -> 4 [
-    weight=15.000000
-    recurrent=false
-    ];
-    2 -> 4 [
-    weight=10.000000
-    recurrent=false
-    ];
-    2 -> 5 [
-    weight=5.000000
-    recurrent=false
-    ];
-    3 -> 5 [
-    weight=1.000000
-    recurrent=false
-    ];
-    4 -> 7 [
-    weight=7.000000
-    recurrent=false
-    ];
-    5 -> 6 [
-    weight=17.000000
-    recurrent=false
-    ];
-    6 -> 7 [
-    weight=4.500000
-    recurrent=false
-    ];
-    6 -> 8 [
-    weight=13.000000
-    recurrent=false
-    ];
-}
-```
 The DOT output can be saved into the file for subsequent visualization by variety of tools listed at [GraphViz Downloads](http://www.graphviz.org/download/).
-
-### The CytoscapeJS JSON format
-
-Another important data format supported by the library is the `CytoscapeJS JSON`. The `Network` graph serialized into this format can be easily rendered using either [Cytoscape App](https://cytoscape.org) or the corresponding [CytoscapeJS](https://js.cytoscape.org) JavaScript library.
-
-The following image is an example of visualizing the phenotype of the XOR experiment winner using [Cytoscape App](https://cytoscape.org).
-
-![The XOR winner phenotype](contents/xor/xor_winner_phenome_6-11.svg)
-
-You can find more **interesting visualizations** at project's [Wiki](https://github.com/yaricom/goNEAT/wiki/Network-Graph-Visualization).
 
 ## Conclusion
 
@@ -372,6 +601,8 @@ implementation as well as utilities to run experiments while collecting relevant
 * [Hands-On NeuroEvolution with Python, Build high-performing artificial neural network architectures using neuroevolution-based algorithms][6], Iaroslav Omelianenko, Birmingham: Packt Publishing, 2019
 
 This source code maintained and managed by [Iaroslav Omelianenko][3]
+
+<a href="https://www.buymeacoffee.com/io42"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=io42&button_colour=be38f3&font_colour=ffffff&font_family=Comic&outline_colour=ffffff&coffee_colour=FFDD00"></a>
 
 [1]:http://www.cs.ucf.edu/~kstanley/neat.html
 [2]:http://eplex.cs.ucf.edu/neat_software/
