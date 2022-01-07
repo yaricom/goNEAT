@@ -134,9 +134,9 @@ standardised approach to define experiments using the NEAT algorithm implementat
 The most important type here is:
 * [`GenerationEvaluator`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment#GenerationEvaluator) is the interface to be implemented by custom experiments
 
-You can find examples of `GenerationEvaluator` implementations at [experiments](https://github.com/yaricom/goNEAT/tree/master/experiments):
-* [`pole`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiments/pole) - single-, double-pole balancing experiments
-* [`xor`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiments/xor) - XOR solver experiment
+You can find examples of `GenerationEvaluator` implementations at [examples](https://github.com/yaricom/goNEAT/tree/master/examples):
+* [`pole`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/examples/pole) - single-, double-pole balancing experiments
+* [`xor`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/examples/xor) - XOR solver experiment
 
 The following code snippet demonstrates how to run experiments using different implementations of the `GenerationEvaluator` 
 and the [`experiment.Execute`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment#Execute):
