@@ -3,13 +3,12 @@ package pole
 import (
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/experiment"
+	"github.com/yaricom/goNEAT/v2/experiment/utils"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 	"github.com/yaricom/goNEAT/v2/neat/network"
-	"github.com/yaricom/goNEAT/v2/neat/network/formats"
 	"math"
 	"math/rand"
-	"os"
 )
 
 const twelveDegrees = 12.0 * math.Pi / 180.0
@@ -50,13 +49,8 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 			epoch.Best = org
 			if epoch.WinnerNodes == 7 {
 				// You could dump out optimal genomes here if desired
-				optPath := fmt.Sprintf("%s/%s_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-					"pole1_optimal", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
-				if file, err := os.Create(optPath); err != nil {
-					return err
-				} else if err = org.Genotype.Write(file); err != nil {
+				if optPath, err := utils.WriteGenomePlain("pole1_optimal", e.OutputPath, org, epoch); err != nil {
 					neat.ErrorLog(fmt.Sprintf("Failed to dump optimal genome, reason: %s\n", err))
-					return err
 				} else {
 					neat.InfoLog(fmt.Sprintf("Dumped optimal genome to: %s\n", optPath))
 				}
@@ -69,10 +63,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 
 	// Only print to file every print_every generation
 	if epoch.Solved || epoch.Id%context.PrintEvery == 0 {
-		popPath := fmt.Sprintf("%s/gen_%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId), epoch.Id)
-		if file, err := os.Create(popPath); err != nil {
-			return err
-		} else if err = pop.WriteBySpecies(file); err != nil {
+		if _, err = utils.WritePopulationPlain(e.OutputPath, pop, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump population, reason: %s\n", err))
 			return err
 		}
@@ -81,31 +72,21 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 	if epoch.Solved {
 		// print winner organism
 		org := epoch.Best
-		depth, err := org.Phenotype.MaxActivationDepthFast(0)
-		if err == nil {
+		if depth, err := org.Phenotype.MaxActivationDepthFast(0); err == nil {
 			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
 		}
 
+		genomeFile := "pole1_winner_genome"
 		// Prints the winner organism to file!
-		orgPath := fmt.Sprintf("%s/%s_%d-%d", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-			"pole1_winner_genome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
-		if file, err := os.Create(orgPath); err != nil {
-			return err
-		} else if err = org.Genotype.Write(file); err != nil {
-			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism genome, reason: %s\n", err))
-			return err
+		if orgPath, err := utils.WriteGenomePlain(genomeFile, e.OutputPath, org, epoch); err != nil {
+			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's genome, reason: %s\n", err))
 		} else {
-			neat.InfoLog(fmt.Sprintf("Generation #%d winner dumped to: %s\n", epoch.Id, orgPath))
+			neat.InfoLog(fmt.Sprintf("Generation #%d winner's genome dumped to: %s\n", epoch.Id, orgPath))
 		}
 
 		// Prints the winner organism's Phenotype to the Cytoscape JSON file!
-		orgPath = fmt.Sprintf("%s/%s_%d-%d.cyjs", experiment.OutDirForTrial(e.OutputPath, epoch.TrialId),
-			"pole1_winner_phenome", org.Phenotype.NodeCount(), org.Phenotype.LinkCount())
-		if file, err := os.Create(orgPath); err != nil {
-			return err
-		} else if err = formats.WriteCytoscapeJSON(file, org.Phenotype); err != nil {
-			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome, reason: %s\n", err))
-			return err
+		if orgPath, err := utils.WriteGenomeCytoscapeJSON(genomeFile, e.OutputPath, org, epoch); err != nil {
+			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome Cytoscape JSON graph, reason: %s\n", err))
 		} else {
 			neat.InfoLog(fmt.Sprintf("Generation #%d winner's phenome Cytoscape JSON graph dumped to: %s\n",
 				epoch.Id, orgPath))
