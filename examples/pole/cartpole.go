@@ -32,7 +32,7 @@ func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceS
 	}
 }
 
-// GenerationEvaluate This method evaluates one epoch for given population and prints results into output directory if any.
+// GenerationEvaluate evaluates one epoch for given population and prints results into output directory if any.
 func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.Options) (err error) {
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
@@ -96,7 +96,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 	return err
 }
 
-// This methods evaluates provided organism for cart pole balancing task
+// orgEvaluate evaluates provided organism for cart pole balancing task
 func (e *cartPoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool, error) {
 	// Try to balance a pole now
 	if fitness, err := e.runCart(organism.Phenotype); err != nil {
@@ -131,7 +131,7 @@ func (e *cartPoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (
 	return organism.IsWinner, nil
 }
 
-// run cart emulation and return number of emulation steps pole was balanced
+// runCart runs the cart emulation and return number of emulation steps pole was balanced
 func (e *cartPoleGenerationEvaluator) runCart(net *network.Network) (steps int, err error) {
 	var x float64        /* cart position, meters */
 	var xDot float64     /* cart velocity */
@@ -188,10 +188,10 @@ func (e *cartPoleGenerationEvaluator) runCart(net *network.Network) (steps int, 
 	return steps, nil
 }
 
-// cart_and_pole() was take directly from the pole simulator written by Richard Sutton and Charles Anderson.
+// doAction was taken directly from the pole simulator written by Richard Sutton and Charles Anderson.
 // This simulator uses normalized, continuous inputs instead of discretizing the input space.
 /*----------------------------------------------------------------------
-cart_pole:  Takes an action (0 or 1) and the current values of the
+Takes an action (0 or 1) and the current values of the
 four state variables and updates their values by estimating the state
 TAU seconds later.
 ----------------------------------------------------------------------*/
