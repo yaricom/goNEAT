@@ -590,7 +590,9 @@ We hope that you will find great applications in your research and work projects
 implementation as well as utilities to run experiments while collecting relevant data samples.
 
 ## Projects Using goNEAT library
-* [Learning to play Asteroids in Golang with NEAT](https://maori.geek.nz/learning-to-play-asteroids-in-golang-with-neat-f44c3472938f)
+* [Learning to play Asteroids in Golang with NEAT](https://maori.geek.nz/learning-to-play-asteroids-in-golang-with-neat-f44c3472938f) - interesting article about implementation of the intelligent agent to play classic Asteroid game using the NEAT algorithm.
+* [NEAT with Novelty Search](https://github.com/yaricom/goNEAT_NS) - implementation of the Novelty Search optimization algorithm for solution search in the deceptive environments.
+* [Evolvable-Substrate HyperNEAT](https://github.com/yaricom/goESHyperNEAT) - is hypercube-based extension of the NEAT allowing to encode ANNs in the substrate with specific geometric topology and with significant number of neural units.
 
 ## References
 
