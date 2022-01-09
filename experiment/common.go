@@ -3,11 +3,8 @@ package experiment
 
 import (
 	"errors"
-	"fmt"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
-	"log"
-	"os"
 )
 
 // GenerationEvaluator the interface describing evaluator for one epoch (generation) of the evolutionary process.
@@ -37,18 +34,4 @@ func epochExecutorForContext(context *neat.Options) (genetics.PopulationEpochExe
 	default:
 		return nil, errors.New("unsupported epoch executor type requested")
 	}
-}
-
-// OutDirForTrial To provide standard output directory syntax based on current trial
-// Method checks if directory should be created
-func OutDirForTrial(outDir string, trialID int) string {
-	dir := fmt.Sprintf("%s/%d", outDir, trialID)
-	if _, err := os.Stat(dir); err != nil {
-		// create output dir
-		err := os.MkdirAll(dir, os.ModePerm)
-		if err != nil {
-			log.Fatal("Failed to create output directory: ", err)
-		}
-	}
-	return dir
 }
