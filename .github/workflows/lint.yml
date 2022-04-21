@@ -1,29 +1,29 @@
-name: Lint
-# Lint runs golangci-lint over the entire Tendermint repository
-# This workflow is run on every pull request and push to master
-# The `golangci` job will pass without running if no *.{go, mod, sum} files have been modified.
+# This workflow executes several linters on changed files based on languages used in your code base whenever
+# you push a code or open a pull request.
+#
+# You can adjust the behavior by modifying this file.
+# For more information, see:
+# https://github.com/github/super-linter
+name: Lint Code Base
+
 on:
-  pull_request:
   push:
-    branches:
-      - master
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 jobs:
-  golangci:
-    name: golangci-lint
+  run-lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
-          PATTERNS: |
-            **/**.go
-            go.mod
-            go.sum
-      - uses: golangci/golangci-lint-action@v2.5.2
-        with:
-          # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-          version: v1.38
-          args: --timeout 10m
-          github-token: ${{ secrets.github_token }}
-        if: env.GIT_DIFF
+          # Full git history is needed to get a proper list of changed files within `super-linter`
+          fetch-depth: 0
+
+      - name: Lint Code Base
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: master
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
