@@ -26,7 +26,7 @@ and their interconnections).
 ## Minimum requirements
 | Requirement | Notes            |
 |-------------|------------------|
-| Go version  | Go1.15 or higher |
+| Go version  | Go1.17 or higher |
 
 ## Releases
 
