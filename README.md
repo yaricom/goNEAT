@@ -1,4 +1,4 @@
-# goNEAT
+# goNEAT 🇺🇦
 [![banner](contents/book_title.png)][6]
 
 [NeuroEvolution — evolving Artificial Neural Networks topology from the scratch](https://becominghuman.ai/neuroevolution-evolving-artificial-neural-networks-topology-from-the-scratch-d1ebc5540d84)
