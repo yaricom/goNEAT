@@ -1,4 +1,4 @@
-# goNEAT 🇺🇦
+# goNEAT 🇺🇦 [![Made in Ukraine](https://img.shields.io/badge/made_in-ukraine-ffd700.svg?labelColor=0057b7)](https://u24.gov.ua)
 [![banner](contents/book_title.png)][6]
 
 [NeuroEvolution — evolving Artificial Neural Networks topology from the scratch](https://becominghuman.ai/neuroevolution-evolving-artificial-neural-networks-topology-from-the-scratch-d1ebc5540d84)
