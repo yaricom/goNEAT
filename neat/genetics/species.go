@@ -26,7 +26,8 @@ type Species struct {
 	// Is it novel
 	IsNovel bool
 
-	// The organisms in the Species
+	// The organisms in the Species. The algorithm keeps it sorted to have most fit first at beginning of each
+	// reproduction cycle.
 	Organisms Organisms
 	// If this is too long ago, the Species will goes extinct
 	AgeOfLastImprovement int
