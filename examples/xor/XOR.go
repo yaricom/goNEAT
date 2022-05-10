@@ -7,6 +7,7 @@
 package xor
 
 import (
+	"context"
 	"fmt"
 	"github.com/yaricom/goNEAT/v2/experiment"
 	"github.com/yaricom/goNEAT/v2/experiment/utils"
@@ -23,7 +24,7 @@ type xorGenerationEvaluator struct {
 	OutputPath string
 }
 
-// NewXORGenerationEvaluator is to create new generations evaluator to be used for the XOR experiment execution.
+// NewXORGenerationEvaluator is to create new generations' evaluator to be used for the XOR experiment execution.
 // XOR is very simple and does not make a very interesting scientific experiment; however, it is a good way to
 // check whether your system works.
 // Make sure recurrency is disabled for the XOR test. If NEAT is able to add recurrent connections, it may solve XOR by
@@ -38,7 +39,11 @@ func NewXORGenerationEvaluator(outputPath string) experiment.GenerationEvaluator
 }
 
 // GenerationEvaluate This method evaluates one epoch for given population and prints results into output directory if any.
-func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.Options) (err error) {
+func (e *xorGenerationEvaluator) GenerationEvaluate(ctx context.Context, pop *genetics.Population, epoch *experiment.Generation) error {
+	options, ok := neat.FromContext(ctx)
+	if !ok {
+		return neat.ErrNEATOptionsNotFound
+	}
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
 		res, err := e.orgEvaluate(org)
@@ -50,7 +55,7 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
 			epoch.WinnerGenes = org.Genotype.Extrons()
-			epoch.WinnerEvals = context.PopSize*epoch.Id + org.Genotype.Id
+			epoch.WinnerEvals = options.PopSize*epoch.Id + org.Genotype.Id
 			epoch.Best = org
 			if epoch.WinnerNodes == 5 {
 				// You could dump out optimal genomes here if desired
@@ -67,8 +72,8 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 	epoch.FillPopulationStatistics(pop)
 
 	// Only print to file every print_every generation
-	if epoch.Solved || epoch.Id%context.PrintEvery == 0 {
-		if _, err = utils.WritePopulationPlain(e.OutputPath, pop, epoch); err != nil {
+	if epoch.Solved || epoch.Id%options.PrintEvery == 0 {
+		if _, err := utils.WritePopulationPlain(e.OutputPath, pop, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump population, reason: %s\n", err))
 			return err
 		}
@@ -106,10 +111,10 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, ep
 		}
 	}
 
-	return err
+	return nil
 }
 
-// This methods evaluates provided organism
+// orgEvaluate evaluates fitness of the provided organism
 func (e *xorGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool, error) {
 	// The four possible input combinations to xor
 	// The first number is for biasing
