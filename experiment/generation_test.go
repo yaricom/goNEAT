@@ -9,9 +9,73 @@ import (
 	"github.com/yaricom/goNEAT/v3/neat/genetics"
 	"github.com/yaricom/goNEAT/v3/neat/math"
 	"github.com/yaricom/goNEAT/v3/neat/network"
+	"math/rand"
 	"testing"
 	"time"
 )
+
+func TestGeneration_Average(t *testing.T) {
+	fitness := Floats{1.0, 4.0, 4.0}
+	ages := Floats{10.0, 40.0, 40.0}
+	complexities := Floats{2.0, 3.0, 4.0}
+	g := createGenerationWith(fitness, ages, complexities)
+	f, a, c := g.Average()
+	assert.Equal(t, 3.0, f)
+	assert.Equal(t, 30.0, a)
+	assert.Equal(t, 3.0, c)
+}
+
+func TestGeneration_FillPopulationStatistics(t *testing.T) {
+	rand.Seed(42)
+	in, out, nmax := 3, 2, 5
+	linkProb := 0.9
+	conf := neat.Options{
+		DisjointCoeff:   0.5,
+		ExcessCoeff:     0.5,
+		MutdiffCoeff:    0.5,
+		CompatThreshold: 5.0,
+		PopSize:         100,
+	}
+	pop, err := genetics.NewPopulationRandom(in, out, nmax, false, linkProb, &conf)
+	require.NoError(t, err, "failed to create population")
+	require.NotNil(t, pop, "population expected")
+	require.Len(t, pop.Organisms, conf.PopSize, "wrong population size")
+	assert.True(t, len(pop.Species) > 0, "population has no species")
+
+	maxFitness := -1.0
+	for i := range pop.Species {
+		for j := range pop.Species[i].Organisms {
+			fitness := rand.Float64() * 100
+			pop.Species[i].Organisms[j].Fitness = fitness
+			if fitness > maxFitness {
+				maxFitness = fitness
+			}
+		}
+	}
+
+	gen := Generation{
+		Id:      1,
+		TrialId: 1,
+	}
+	gen.FillPopulationStatistics(pop)
+	expectedSpecies := 5
+	assert.Equal(t, expectedSpecies, gen.Diversity, "wrong diversity")
+	assert.Equal(t, expectedSpecies, len(gen.Fitness))
+	assert.Equal(t, expectedSpecies, len(gen.Age))
+	assert.EqualValues(t, Floats{1, 1, 1, 1, 1}, gen.Age)
+	assert.Equal(t, expectedSpecies, len(gen.Complexity))
+	assert.Equal(t, Floats{10, 23, 36, 31, 38}, gen.Complexity)
+	assert.NotNil(t, gen.Best)
+	assert.Equal(t, maxFitness, gen.Best.Fitness)
+}
+
+func createGenerationWith(fitness Floats, ages Floats, complexities Floats) *Generation {
+	return &Generation{
+		Fitness:    fitness,
+		Age:        ages,
+		Complexity: complexities,
+	}
+}
 
 // Tests encoding/decoding of generation
 func TestGeneration_Encode_Decode(t *testing.T) {

@@ -57,7 +57,7 @@ func (g *Generation) FillPopulationStatistics(pop *genetics.Population) {
 		g.Complexity[i] = float64(currSpecies.Organisms[0].Phenotype.Complexity())
 		g.Fitness[i] = currSpecies.Organisms[0].Fitness
 
-		// find best organism in epoch if not solved
+		// finds the best organism in epoch if not solved
 		if !g.Solved {
 			// sort organisms from current species by fitness to have most fit first
 			sort.Sort(sort.Reverse(currSpecies.Organisms))
@@ -77,7 +77,7 @@ func (g *Generation) Average() (fitness, age, complexity float64) {
 	return fitness, age, complexity
 }
 
-// Encode Encodes generation with provided GOB encoder
+// Encode is to encode the generation with provided GOB encoder
 func (g *Generation) Encode(enc *gob.Encoder) error {
 	if err := enc.EncodeValue(reflect.ValueOf(g.Id)); err != nil {
 		return err
