@@ -40,7 +40,7 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 		}
 
 		// create appropriate population's epoch executor
-		epochExecutor, err := epochExecutorForContext(opts)
+		epochExecutor, err := epochExecutorForContext(ctx)
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 				TrialId: run,
 			}
 			genStartTime := time.Now()
-			err = evaluator.GenerationEvaluate(pop, &generation, opts)
+			err = evaluator.GenerationEvaluate(ctx, pop, &generation)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Generation [%d] evaluation failed !!!!!\n", generationId))
 				return err

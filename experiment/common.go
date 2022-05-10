@@ -2,6 +2,7 @@
 package experiment
 
 import (
+	"context"
 	"errors"
 	"github.com/yaricom/goNEAT/v2/neat"
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
@@ -11,7 +12,7 @@ import (
 type GenerationEvaluator interface {
 	// GenerationEvaluate Invoked to evaluate one generation of population of organisms within given
 	// execution context.
-	GenerationEvaluate(pop *genetics.Population, epoch *Generation, context *neat.Options) (err error)
+	GenerationEvaluate(ctx context.Context, pop *genetics.Population, epoch *Generation) error
 }
 
 // TrialRunObserver defines observer to be notified about experiment's trial lifecycle methods
@@ -25,8 +26,12 @@ type TrialRunObserver interface {
 }
 
 // Returns appropriate executor type from given context
-func epochExecutorForContext(context *neat.Options) (genetics.PopulationEpochExecutor, error) {
-	switch context.EpochExecutorType {
+func epochExecutorForContext(ctx context.Context) (genetics.PopulationEpochExecutor, error) {
+	options, ok := neat.FromContext(ctx)
+	if !ok {
+		return nil, neat.ErrNEATOptionsNotFound
+	}
+	switch options.EpochExecutorType {
 	case neat.EpochExecutorTypeSequential:
 		return &genetics.SequentialPopulationEpochExecutor{}, nil
 	case neat.EpochExecutorTypeParallel:
