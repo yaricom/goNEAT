@@ -4,8 +4,8 @@ package experiment
 import (
 	"context"
 	"errors"
-	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
 )
 
 // GenerationEvaluator the interface describing evaluator for one epoch (generation) of the evolutionary process.

@@ -3,7 +3,7 @@ package genetics
 import (
 	"bytes"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v3/neat/network"
 )
 
 // Organisms represents sortable list of organisms by fitness

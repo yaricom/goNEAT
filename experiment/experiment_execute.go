@@ -3,8 +3,8 @@ package experiment
 import (
 	"context"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
 	"time"
 )
 
