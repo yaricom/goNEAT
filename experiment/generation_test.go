@@ -100,21 +100,38 @@ func TestGeneration_Encode_Decode(t *testing.T) {
 	assert.EqualValues(t, gen, dgen)
 }
 
+const (
+	testDiversity   = 32
+	testWinnerEvals = 12423
+	testWinnerNodes = 7
+	testWinnerGenes = 5
+)
+
+var (
+	testAge        = Floats{1.0, 3.0, 4.0, 10.0}
+	testComplexity = Floats{34.0, 21.0, 56.0, 15.0}
+	testFitness    = Floats{10.0, 30.0, 40.0}
+)
+
 func buildTestGeneration(genId int, fitness float64) *Generation {
 	epoch := Generation{}
 	epoch.Id = genId
 	epoch.Executed = time.Now().Round(time.Second)
 	epoch.Solved = true
-	epoch.Fitness = Floats{10.0, 30.0, 40.0, fitness}
-	epoch.Age = Floats{1.0, 3.0, 4.0, 10.0}
-	epoch.Complexity = Floats{34.0, 21.0, 56.0, 15.0}
-	epoch.Diversity = 32
-	epoch.WinnerEvals = 12423
-	epoch.WinnerNodes = 7
-	epoch.WinnerGenes = 5
+	epoch.Fitness = append(testFitness, fitness)
+	epoch.Age = testAge
+	epoch.Complexity = testComplexity
+	epoch.Diversity = testDiversity
+	epoch.WinnerEvals = testWinnerEvals
+	epoch.WinnerNodes = testWinnerNodes
+	epoch.WinnerGenes = testWinnerGenes
+	epoch.Duration = time.Duration(rand.Float32()*10) * time.Second
 
 	genome := buildTestGenome(genId)
 	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: genId}
+	if phenotype, err := org.Genotype.Genesis(1); err == nil {
+		org.Phenotype = phenotype
+	}
 	epoch.Best = &org
 
 	return &epoch

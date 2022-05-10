@@ -26,7 +26,11 @@ func (t *Trial) AvgEpochDuration() time.Duration {
 	for _, i := range t.Generations {
 		total += i.Duration
 	}
-	return total / time.Duration(len(t.Generations))
+	if len(t.Generations) > 0 {
+		return total / time.Duration(len(t.Generations))
+	} else {
+		return EmptyDuration
+	}
 }
 
 // RecentEpochEvalTime is to get time of the epoch executed most recently within this trial
@@ -74,8 +78,9 @@ func (t *Trial) Solved() bool {
 func (t *Trial) BestFitness() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		x[i] = e.Best.Fitness
-
+		if e.Best != nil {
+			x[i] = e.Best.Fitness
+		}
 	}
 	return x
 }
@@ -84,7 +89,9 @@ func (t *Trial) BestFitness() Floats {
 func (t *Trial) BestAge() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		x[i] = float64(e.Best.Species.Age)
+		if e.Best != nil && e.Best.Species != nil {
+			x[i] = float64(e.Best.Species.Age)
+		}
 	}
 	return x
 }
@@ -93,7 +100,9 @@ func (t *Trial) BestAge() Floats {
 func (t *Trial) BestComplexity() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		x[i] = float64(e.Best.Phenotype.Complexity())
+		if e.Best != nil && e.Best.Phenotype != nil {
+			x[i] = float64(e.Best.Phenotype.Complexity())
+		}
 	}
 	return x
 }
@@ -118,14 +127,14 @@ func (t *Trial) Average() (fitness, age, complexity Floats) {
 	return fitness, age, complexity
 }
 
-// Winner Returns number of nodes, genes,  organism evaluations and species diversity in the winner genome
+// Winner Returns number of nodes, genes, organism evaluations and species diversity in the winner genome
 func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
 	if t.WinnerGeneration != nil {
 		nodes = t.WinnerGeneration.WinnerNodes
 		genes = t.WinnerGeneration.WinnerGenes
 		evals = t.WinnerGeneration.WinnerEvals
 		diversity = t.WinnerGeneration.Diversity
-	} else {
+	} else if len(t.Generations) > 0 {
 		for _, e := range t.Generations {
 			if e.Solved {
 				nodes = e.WinnerNodes
@@ -137,11 +146,13 @@ func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
 				break
 			}
 		}
+	} else {
+		nodes, genes, evals, diversity = -1, -1, -1, -1
 	}
 	return nodes, genes, evals, diversity
 }
 
-// Encode Encodes this trial
+// Encode is to encode this trial
 func (t *Trial) Encode(enc *gob.Encoder) error {
 	if err := enc.Encode(t.Id); err != nil {
 		return err

@@ -6,7 +6,11 @@ import (
 	"errors"
 	"github.com/yaricom/goNEAT/v3/neat"
 	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"time"
 )
+
+// EmptyDuration is to return when average duration can not tbe estimated (empty trials or generations)
+const EmptyDuration = time.Duration(-1)
 
 // GenerationEvaluator the interface describing evaluator for one epoch (generation) of the evolutionary process.
 type GenerationEvaluator interface {
