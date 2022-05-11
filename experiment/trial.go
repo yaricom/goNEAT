@@ -44,7 +44,7 @@ func (t *Trial) RecentEpochEvalTime() time.Time {
 	return u
 }
 
-// BestOrganism Finds the most fit organism among all epochs in this trial.
+// BestOrganism finds the most fit organism among all epochs in this trial.
 // It's also possible to get the best organism only among successful solvers of the experiment's problem.
 func (t *Trial) BestOrganism(onlySolvers bool) (*genetics.Organism, bool) {
 	var orgs = make(genetics.Organisms, 0, len(t.Generations))
@@ -127,8 +127,8 @@ func (t *Trial) Average() (fitness, age, complexity Floats) {
 	return fitness, age, complexity
 }
 
-// Winner the number of nodes, genes, organism evaluations and species diversity in the winner genome
-func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
+// WinnerStatistics the number of nodes, genes, organism evaluations and species diversity in the winner genome
+func (t *Trial) WinnerStatistics() (nodes, genes, evals, diversity int) {
 	if t.WinnerGeneration != nil {
 		nodes = t.WinnerGeneration.WinnerNodes
 		genes = t.WinnerGeneration.WinnerGenes

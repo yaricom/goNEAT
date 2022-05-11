@@ -164,10 +164,10 @@ func TestTrial_Average_emptyEpochs(t *testing.T) {
 	assert.Equal(t, numGen, len(complexity))
 }
 
-func TestTrial_Winner(t *testing.T) {
+func TestTrial_WinnerStatistics(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrial(1, numGen)
-	nodes, genes, evals, diversity := trial.Winner()
+	nodes, genes, evals, diversity := trial.WinnerStatistics()
 	assert.Equal(t, testWinnerNodes, nodes)
 	assert.Equal(t, testWinnerGenes, genes)
 	assert.Equal(t, testWinnerEvals, evals)
@@ -175,9 +175,9 @@ func TestTrial_Winner(t *testing.T) {
 	assert.NotNil(t, trial.WinnerGeneration)
 }
 
-func TestTrial_Winner_emptyEpochs(t *testing.T) {
+func TestTrial_WinnerStatistics_emptyEpochs(t *testing.T) {
 	trial := Trial{Id: 1, Generations: make([]Generation, 0)}
-	nodes, genes, evals, diversity := trial.Winner()
+	nodes, genes, evals, diversity := trial.WinnerStatistics()
 	assert.Equal(t, -1, nodes)
 	assert.Equal(t, -1, genes)
 	assert.Equal(t, -1, evals)
