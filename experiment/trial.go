@@ -44,8 +44,8 @@ func (t *Trial) RecentEpochEvalTime() time.Time {
 	return u
 }
 
-// BestOrganism Finds the most fit organism among all epochs in this trial. It's also possible to get the best organism only among the ones
-// which was able to solve the experiment's problem.
+// BestOrganism Finds the most fit organism among all epochs in this trial.
+// It's also possible to get the best organism only among successful solvers of the experiment's problem.
 func (t *Trial) BestOrganism(onlySolvers bool) (*genetics.Organism, bool) {
 	var orgs = make(genetics.Organisms, 0, len(t.Generations))
 	for _, e := range t.Generations {
@@ -96,7 +96,7 @@ func (t *Trial) BestAge() Floats {
 	return x
 }
 
-// BestComplexity Complexity returns the complexity of the best species for each epoch in this trial
+// BestComplexity Complexity returns the complexity of the best organism for each epoch in this trial
 func (t *Trial) BestComplexity() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {

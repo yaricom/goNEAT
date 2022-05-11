@@ -98,14 +98,7 @@ func TestTrial_BestAge_emptyEpochs(t *testing.T) {
 
 func TestTrial_BestComplexity(t *testing.T) {
 	numGen := 4
-	trial := buildTestTrial(1, numGen)
-	// do genesis of best organisms
-	for i := range trial.Generations {
-		org := trial.Generations[i].Best
-		if phenotype, err := org.Genotype.Genesis(org.Genotype.Id); err == nil {
-			trial.Generations[i].Best.Phenotype = phenotype
-		}
-	}
+	trial := buildTestTrialWithGenesis(1, numGen)
 
 	compl := trial.BestComplexity()
 	assert.Equal(t, numGen, len(compl))
@@ -228,6 +221,18 @@ func buildTestTrialWithFitnessMultiplier(id, numGenerations int, fitnessMultipli
 
 func buildTestTrialWithGenerationsDuration(durations []time.Duration) *Trial {
 	return &Trial{Id: rand.Int(), Generations: buildTestGenerationsWithDuration(durations)}
+}
+
+func buildTestTrialWithGenesis(id, numGenerations int) *Trial {
+	trial := buildTestTrial(id, numGenerations)
+	// do genesis of best organisms
+	for i := range trial.Generations {
+		org := trial.Generations[i].Best
+		if phenotype, err := org.Genotype.Genesis(org.Genotype.Id); err == nil {
+			trial.Generations[i].Best.Phenotype = phenotype
+		}
+	}
+	return trial
 }
 
 func fitnessScore(index int) float64 {
