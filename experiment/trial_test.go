@@ -23,10 +23,10 @@ func TestTrial_AvgEpochDuration_emptyEpochs(t *testing.T) {
 }
 
 func TestTrial_RecentEpochEvalTime(t *testing.T) {
+	now := time.Now().Add(-100 * time.Millisecond)
 	trial := buildTestTrial(1, 3)
-	now := time.Now()
-	ex := trial.RecentEpochEvalTime()
-	assert.True(t, ex.After(now))
+	evalTime := trial.RecentEpochEvalTime()
+	assert.True(t, evalTime.After(now))
 }
 
 func TestTrial_RecentEpochEvalTime_emptyEpochs(t *testing.T) {
@@ -97,6 +97,14 @@ func TestTrial_BestAge_emptyEpochs(t *testing.T) {
 func TestTrial_BestComplexity(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrial(1, numGen)
+	// do genesis of best organisms
+	for i := range trial.Generations {
+		org := trial.Generations[i].Best
+		if phenotype, err := org.Genotype.Genesis(org.Genotype.Id); err == nil {
+			trial.Generations[i].Best.Phenotype = phenotype
+		}
+	}
+
 	compl := trial.BestComplexity()
 	assert.Equal(t, numGen, len(compl))
 	expected := make(Floats, numGen)
