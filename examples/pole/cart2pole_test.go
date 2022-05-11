@@ -43,7 +43,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	require.NoError(t, err, "Failed to perform POLE2 Markov experiment")
 
 	// Find winner statistics
-	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinner()
+	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinnerStatistics()
 
 	// check results
 	if avgNodes < 8 {
@@ -118,7 +118,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	require.NoError(t, err, "Failed to perform POLE2 Non-Markov experiment")
 
 	// Find winner statistics
-	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinner()
+	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinnerStatistics()
 
 	// check results
 	if avgNodes < 5 {

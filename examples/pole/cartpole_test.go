@@ -45,7 +45,7 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	require.NoError(t, err, "Failed to perform POLE1 experiment")
 
 	// Find winner statistics
-	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinner()
+	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinnerStatistics()
 
 	// check results
 	if avgNodes < 7 {

@@ -43,7 +43,7 @@ func TestXOR(t *testing.T) {
 	require.NoError(t, err, "Failed to perform XOR experiment")
 
 	// Find winner statistics
-	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinner()
+	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinnerStatistics()
 
 	// check results
 	if avgNodes < 5 {
@@ -105,7 +105,7 @@ func TestXOR_disconnected(t *testing.T) {
 	require.NoError(t, err, "Failed to perform XOR disconnected experiment")
 
 	// Find winner statistics
-	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinner()
+	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinnerStatistics()
 
 	// check results
 	if avgNodes < 5 {

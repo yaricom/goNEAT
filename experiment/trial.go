@@ -127,7 +127,8 @@ func (t *Trial) Average() (fitness, age, complexity Floats) {
 	return fitness, age, complexity
 }
 
-// WinnerStatistics the number of nodes, genes, organism evaluations and species diversity in the winner genome
+// WinnerStatistics finds the number of nodes, genes of the winner genome as well as number of winner organism evaluations
+// and species diversity in the population with successful solver.
 func (t *Trial) WinnerStatistics() (nodes, genes, evals, diversity int) {
 	if t.WinnerGeneration != nil {
 		nodes = t.WinnerGeneration.WinnerNodes
