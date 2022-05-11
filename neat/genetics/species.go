@@ -563,7 +563,7 @@ func (s *Species) String() string {
 	return str
 }
 
-// This is used for list sorting of Species by original fitness of best organism highest fitness first
+// This is used for list sorting of Species by original fitness of the best organism with the highest fitness going first.
 // It implements sort.Interface for []Species based on the OriginalFitness of first Organism field in descending order,
 // i.e. the max fitness goes first
 type byOrganismOrigFitness []*Species

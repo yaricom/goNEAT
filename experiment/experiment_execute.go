@@ -97,7 +97,7 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 			if generation.Solved {
 				// stop further evaluation if already solved
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation, fitness: %f <<<<<\n",
-					generationId, generation.Best.Fitness))
+					generationId, generation.Champion.Fitness))
 				break
 			}
 		}

@@ -65,8 +65,8 @@ func TestGeneration_FillPopulationStatistics(t *testing.T) {
 	assert.EqualValues(t, Floats{1, 1, 1, 1, 1}, gen.Age)
 	assert.Equal(t, expectedSpecies, len(gen.Complexity))
 	assert.EqualValues(t, Floats{11, 25, 36, 32, 35}, gen.Complexity)
-	assert.NotNil(t, gen.Best)
-	assert.Equal(t, maxFitness, gen.Best.Fitness)
+	assert.NotNil(t, gen.Champion)
+	assert.Equal(t, maxFitness, gen.Champion.Fitness)
 }
 
 func createGenerationWith(fitness Floats, ages Floats, complexities Floats) *Generation {
@@ -134,7 +134,7 @@ func buildTestGenerationWithDuration(genId int, fitness float64, duration time.D
 
 	genome := buildTestGenome(genId)
 	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: genId}
-	epoch.Best = &org
+	epoch.Champion = &org
 
 	return &epoch
 }

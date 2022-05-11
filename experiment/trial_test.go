@@ -65,10 +65,10 @@ func TestTrial_Solved_emptyEpochs(t *testing.T) {
 	assert.False(t, solved)
 }
 
-func TestTrial_BestFitness(t *testing.T) {
+func TestTrial_ChampionFitness(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrial(1, numGen)
-	fitness := trial.BestFitness()
+	fitness := trial.ChampionFitness()
 	assert.Equal(t, numGen, len(fitness))
 	expected := make(Floats, numGen)
 	for i := 0; i < numGen; i++ {
@@ -77,30 +77,30 @@ func TestTrial_BestFitness(t *testing.T) {
 	assert.EqualValues(t, expected, fitness)
 }
 
-func TestTrial_BestFitness_emptyEpochs(t *testing.T) {
+func TestTrial_ChampionFitness_emptyEpochs(t *testing.T) {
 	trial := Trial{Id: 1, Generations: make([]Generation, 0)}
-	fitness := trial.BestFitness()
+	fitness := trial.ChampionFitness()
 	assert.Equal(t, 0, len(fitness))
 }
 
-func TestTrial_BestAge(t *testing.T) {
+func TestTrial_ChampionSpeciesAge(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrial(1, numGen)
-	age := trial.BestAge()
+	age := trial.ChampionSpeciesAge()
 	assert.Equal(t, numGen, len(age))
 }
 
-func TestTrial_BestAge_emptyEpochs(t *testing.T) {
+func TestTrial_ChampionSpeciesAge_emptyEpochs(t *testing.T) {
 	trial := Trial{Id: 1, Generations: make([]Generation, 0)}
-	age := trial.BestAge()
+	age := trial.ChampionSpeciesAge()
 	assert.Equal(t, 0, len(age))
 }
 
-func TestTrial_BestComplexity(t *testing.T) {
+func TestTrial_ChampionComplexity(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrialWithBestOrganismGenesis(1, numGen)
 
-	compl := trial.BestComplexity()
+	compl := trial.ChampionComplexity()
 	assert.Equal(t, numGen, len(compl))
 	expected := make(Floats, numGen)
 	for i := 0; i < numGen; i++ {
@@ -109,9 +109,9 @@ func TestTrial_BestComplexity(t *testing.T) {
 	assert.EqualValues(t, expected, compl)
 }
 
-func TestTrial_BestComplexity_emptyEpochs(t *testing.T) {
+func TestTrial_ChampionComplexity_emptyEpochs(t *testing.T) {
 	trial := Trial{Id: 1, Generations: make([]Generation, 0)}
-	compl := trial.BestComplexity()
+	compl := trial.ChampionComplexity()
 	assert.Equal(t, 0, len(compl))
 }
 
@@ -227,9 +227,9 @@ func buildTestTrialWithBestOrganismGenesis(id, numGenerations int) *Trial {
 	trial := buildTestTrial(id, numGenerations)
 	// do genesis of best organisms
 	for i := range trial.Generations {
-		org := trial.Generations[i].Best
+		org := trial.Generations[i].Champion
 		if phenotype, err := org.Genotype.Genesis(org.Genotype.Id); err == nil {
-			trial.Generations[i].Best.Phenotype = phenotype
+			trial.Generations[i].Champion.Phenotype = phenotype
 		}
 	}
 	return trial

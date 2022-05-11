@@ -50,11 +50,11 @@ func (t *Trial) BestOrganism(onlySolvers bool) (*genetics.Organism, bool) {
 	var orgs = make(genetics.Organisms, 0, len(t.Generations))
 	for _, e := range t.Generations {
 		if !onlySolvers {
-			// include all the most fit in each epoch
-			orgs = append(orgs, e.Best)
+			// include every champion in each epoch
+			orgs = append(orgs, e.Champion)
 		} else if e.Solved {
-			// include only task solvers
-			orgs = append(orgs, e.Best)
+			// include only successful task solver champions
+			orgs = append(orgs, e.Champion)
 		}
 	}
 	if len(orgs) > 0 {
@@ -74,34 +74,34 @@ func (t *Trial) Solved() bool {
 	return false
 }
 
-// BestFitness Fitness returns the fitness values of the best organisms for each epoch in this trial
-func (t *Trial) BestFitness() Floats {
+// ChampionFitness returns the fitness values of the champion organisms for each epoch in this trial
+func (t *Trial) ChampionFitness() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		if e.Best != nil {
-			x[i] = e.Best.Fitness
+		if e.Champion != nil {
+			x[i] = e.Champion.Fitness
 		}
 	}
 	return x
 }
 
-// BestAge Age returns the age of the best species for each epoch in this trial
-func (t *Trial) BestAge() Floats {
+// ChampionSpeciesAge returns the age of the species of the champion for each epoch in this trial
+func (t *Trial) ChampionSpeciesAge() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		if e.Best != nil && e.Best.Species != nil {
-			x[i] = float64(e.Best.Species.Age)
+		if e.Champion != nil && e.Champion.Species != nil {
+			x[i] = float64(e.Champion.Species.Age)
 		}
 	}
 	return x
 }
 
-// BestComplexity Complexity returns the complexity of the best organism for each epoch in this trial
-func (t *Trial) BestComplexity() Floats {
+// ChampionComplexity returns the complexity of the champion organism for each epoch in this trial
+func (t *Trial) ChampionComplexity() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		if e.Best != nil && e.Best.Phenotype != nil {
-			x[i] = float64(e.Best.Phenotype.Complexity())
+		if e.Champion != nil && e.Champion.Phenotype != nil {
+			x[i] = float64(e.Champion.Phenotype.Complexity())
 		}
 	}
 	return x
@@ -116,7 +116,7 @@ func (t *Trial) Diversity() Floats {
 	return x
 }
 
-// Average Returns average fitness, age, and complexity of population of organisms for each epoch in this trial
+// Average the average fitness, age, and complexity of the best organisms per species for each epoch in this trial
 func (t *Trial) Average() (fitness, age, complexity Floats) {
 	fitness = make(Floats, len(t.Generations))
 	age = make(Floats, len(t.Generations))
@@ -127,7 +127,7 @@ func (t *Trial) Average() (fitness, age, complexity Floats) {
 	return fitness, age, complexity
 }
 
-// Winner Returns number of nodes, genes, organism evaluations and species diversity in the winner genome
+// Winner the number of nodes, genes, organism evaluations and species diversity in the winner genome
 func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
 	if t.WinnerGeneration != nil {
 		nodes = t.WinnerGeneration.WinnerNodes

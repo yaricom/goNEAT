@@ -84,13 +84,13 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Conte
 			return err
 		}
 
-		if winner && (epoch.Best == nil || org.Fitness > epoch.Best.Fitness) {
+		if winner && (epoch.Champion == nil || org.Fitness > epoch.Champion.Fitness) {
 			// This will be winner in Markov case
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
 			epoch.WinnerGenes = org.Genotype.Extrons()
 			epoch.WinnerEvals = options.PopSize*epoch.Id + org.Genotype.Id
-			epoch.Best = org
+			epoch.Champion = org
 			org.IsWinner = true
 		}
 	}
@@ -206,7 +206,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Conte
 				epoch.WinnerNodes = len(champion.Genotype.Nodes)
 				epoch.WinnerGenes = champion.Genotype.Extrons()
 				epoch.WinnerEvals = options.PopSize*epoch.Id + champion.Genotype.Id
-				epoch.Best = champion
+				epoch.Champion = champion
 			} else {
 				neat.InfoLog("The non-Markov champion unable to generalize")
 				champion.Fitness = championFitness // Restore the champ's fitness
@@ -232,7 +232,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Conte
 
 	if epoch.Solved {
 		// print winner organism
-		org := epoch.Best
+		org := epoch.Champion
 		// The max depth of the network to be activated
 		if depth, err := org.Phenotype.MaxActivationDepthFast(0); err == nil {
 			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))

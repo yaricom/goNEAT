@@ -46,12 +46,12 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, po
 			return err
 		}
 
-		if res && (epoch.Best == nil || org.Fitness > epoch.Best.Fitness) {
+		if res && (epoch.Champion == nil || org.Fitness > epoch.Champion.Fitness) {
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
 			epoch.WinnerGenes = org.Genotype.Extrons()
 			epoch.WinnerEvals = options.PopSize*epoch.Id + org.Genotype.Id
-			epoch.Best = org
+			epoch.Champion = org
 			if epoch.WinnerNodes == 7 {
 				// You could dump out optimal genomes here if desired
 				if optPath, err := utils.WriteGenomePlain("pole1_optimal", e.OutputPath, org, epoch); err != nil {
@@ -76,7 +76,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, po
 
 	if epoch.Solved {
 		// print winner organism
-		org := epoch.Best
+		org := epoch.Champion
 		if depth, err := org.Phenotype.MaxActivationDepthFast(0); err == nil {
 			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
 		}

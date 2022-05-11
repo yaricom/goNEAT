@@ -19,26 +19,26 @@ type Generation struct {
 	Executed time.Time
 	// The elapsed time between generation execution start and finish
 	Duration time.Duration
-	// The best organism of best species
-	Best *genetics.Organism
+	// The best organism of the best species (probably successful solver if Solved flag set).
+	Champion *genetics.Organism
 	// The flag to indicate whether experiment was solved in this epoch
 	Solved bool
 
-	// The list of organisms fitness values per species in population
+	// The list of the best organisms' fitness values per species in population
 	Fitness Floats
-	// The age of organisms per species in population
+	// The age of the best organisms' per species in population
 	Age Floats
-	// The list of organisms complexities per species in population
+	// The list of the best organisms' complexities per species in population
 	Complexity Floats
 
 	// The number of species in population at the end of this epoch
 	Diversity int
 
-	// The number of evaluations done before winner found
+	// The number of evaluations done before winner (champion solver) found
 	WinnerEvals int
-	// The number of nodes in winner genome or zero if not solved
+	// The number of nodes in the genome of the winner (champion solver) or zero if not solved
 	WinnerNodes int
-	// The numbers of genes (links) in winner genome or zero if not solved
+	// The numbers of genes (links) in the genome of the winner (champion solver) or zero if not solved
 	WinnerGenes int
 
 	// The ID of Trial this Generation was evaluated in
@@ -63,13 +63,14 @@ func (g *Generation) FillPopulationStatistics(pop *genetics.Population) {
 		if !g.Solved {
 			if currSpecies.Organisms[0].Fitness > maxFitness {
 				maxFitness = currSpecies.Organisms[0].Fitness
-				g.Best = currSpecies.Organisms[0]
+				g.Champion = currSpecies.Organisms[0]
 			}
 		}
 	}
 }
 
-// Average Returns average fitness, age, and complexity among all organisms from population at the end of this epoch
+// Average the average fitness, age, and complexity among the best organisms of each species in the population
+// at the end of this epoch
 func (g *Generation) Average() (fitness, age, complexity float64) {
 	fitness = g.Fitness.Mean()
 	age = g.Age.Mean()
@@ -117,8 +118,8 @@ func (g *Generation) Encode(enc *gob.Encoder) error {
 	}
 
 	// encode best organism
-	if g.Best != nil {
-		if err := encodeOrganism(enc, g.Best); err != nil {
+	if g.Champion != nil {
+		if err := encodeOrganism(enc, g.Champion); err != nil {
 			return err
 		}
 	}
@@ -201,7 +202,7 @@ func (g *Generation) Decode(dec *gob.Decoder) error {
 	if org, err := decodeOrganism(dec); err != nil {
 		return err
 	} else {
-		g.Best = org
+		g.Champion = org
 	}
 	return nil
 }

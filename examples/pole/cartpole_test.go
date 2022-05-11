@@ -66,9 +66,9 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)
 	meanComplexity, meanDiversity, meanAge := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		meanComplexity += t.BestComplexity().Mean()
+		meanComplexity += t.ChampionComplexity().Mean()
 		meanDiversity += t.Diversity().Mean()
-		meanAge += t.BestAge().Mean()
+		meanAge += t.ChampionSpeciesAge().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	meanComplexity /= count
