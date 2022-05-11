@@ -129,9 +129,6 @@ func buildTestGeneration(genId int, fitness float64) *Generation {
 
 	genome := buildTestGenome(genId)
 	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: genId}
-	if phenotype, err := org.Genotype.Genesis(1); err == nil {
-		org.Phenotype = phenotype
-	}
 	epoch.Best = &org
 
 	return &epoch

@@ -109,6 +109,12 @@ func (g *Generation) Encode(enc *gob.Encoder) error {
 	if err := enc.EncodeValue(reflect.ValueOf(g.WinnerGenes)); err != nil {
 		return err
 	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.Duration)); err != nil {
+		return err
+	}
+	if err := enc.EncodeValue(reflect.ValueOf(g.TrialId)); err != nil {
+		return err
+	}
 
 	// encode best organism
 	if g.Best != nil {
@@ -183,6 +189,12 @@ func (g *Generation) Decode(dec *gob.Decoder) error {
 	}
 	if err := dec.Decode(&g.WinnerGenes); err != nil {
 		return errors.Wrap(err, "failed to decode WinnerNodes")
+	}
+	if err := dec.Decode(&g.Duration); err != nil {
+		return errors.Wrap(err, "failed to decode Duration")
+	}
+	if err := dec.Decode(&g.TrialId); err != nil {
+		return errors.Wrap(err, "failed to decode TrialId")
 	}
 
 	// decode organism
