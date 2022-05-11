@@ -6,14 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"math"
+	"math/rand"
 	"testing"
 	"time"
 )
 
 func TestTrial_AvgEpochDuration(t *testing.T) {
-	trial := buildTestTrial(1, 3)
+	durations := []time.Duration{time.Duration(3), time.Duration(10), time.Duration(2)}
+	trial := buildTestTrialWithGenerationsDuration(durations)
 	avg := trial.AvgEpochDuration()
-	assert.True(t, avg > 0.0)
+	assert.Equal(t, time.Duration(5), avg)
 }
 
 func TestTrial_AvgEpochDuration_emptyEpochs(t *testing.T) {
@@ -213,11 +215,19 @@ func TestTrial_Encode_Decode(t *testing.T) {
 }
 
 func buildTestTrial(id, numGenerations int) *Trial {
+	return buildTestTrialWithFitnessMultiplier(id, numGenerations, 1.0)
+}
+
+func buildTestTrialWithFitnessMultiplier(id, numGenerations int, fitnessMultiplier float64) *Trial {
 	trial := Trial{Id: id, Generations: make([]Generation, numGenerations)}
 	for i := 0; i < numGenerations; i++ {
-		trial.Generations[i] = *buildTestGeneration(i+1, fitnessScore(i+1))
+		trial.Generations[i] = *buildTestGeneration(i+1, fitnessScore(i+1)*fitnessMultiplier)
 	}
 	return &trial
+}
+
+func buildTestTrialWithGenerationsDuration(durations []time.Duration) *Trial {
+	return &Trial{Id: rand.Int(), Generations: buildTestGenerationsWithDuration(durations)}
 }
 
 func fitnessScore(index int) float64 {

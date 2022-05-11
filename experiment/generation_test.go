@@ -114,6 +114,11 @@ var (
 )
 
 func buildTestGeneration(genId int, fitness float64) *Generation {
+	duration := time.Duration(rand.Float32()*10) * time.Second
+	return buildTestGenerationWithDuration(genId, fitness, duration)
+}
+
+func buildTestGenerationWithDuration(genId int, fitness float64, duration time.Duration) *Generation {
 	epoch := Generation{}
 	epoch.Id = genId
 	epoch.Executed = time.Now().Round(time.Second)
@@ -125,13 +130,21 @@ func buildTestGeneration(genId int, fitness float64) *Generation {
 	epoch.WinnerEvals = testWinnerEvals
 	epoch.WinnerNodes = testWinnerNodes
 	epoch.WinnerGenes = testWinnerGenes
-	epoch.Duration = time.Duration(rand.Float32()*10) * time.Second
+	epoch.Duration = duration
 
 	genome := buildTestGenome(genId)
 	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: genId}
 	epoch.Best = &org
 
 	return &epoch
+}
+
+func buildTestGenerationsWithDuration(durations []time.Duration) Generations {
+	epochs := make(Generations, len(durations))
+	for i, d := range durations {
+		epochs[i] = *buildTestGenerationWithDuration(i, fitnessScore(i), d)
+	}
+	return epochs
 }
 
 func buildTestGenome(id int) *genetics.Genome {
