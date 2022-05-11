@@ -68,7 +68,7 @@ func TestTrial_Solved_emptyEpochs(t *testing.T) {
 func TestTrial_ChampionFitness(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrial(1, numGen)
-	fitness := trial.ChampionFitness()
+	fitness := trial.ChampionsFitness()
 	assert.Equal(t, numGen, len(fitness))
 	expected := make(Floats, numGen)
 	for i := 0; i < numGen; i++ {
@@ -79,20 +79,20 @@ func TestTrial_ChampionFitness(t *testing.T) {
 
 func TestTrial_ChampionFitness_emptyEpochs(t *testing.T) {
 	trial := Trial{Id: 1, Generations: make([]Generation, 0)}
-	fitness := trial.ChampionFitness()
+	fitness := trial.ChampionsFitness()
 	assert.Equal(t, 0, len(fitness))
 }
 
 func TestTrial_ChampionSpeciesAge(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrial(1, numGen)
-	age := trial.ChampionSpeciesAge()
+	age := trial.ChampionSpeciesAges()
 	assert.Equal(t, numGen, len(age))
 }
 
 func TestTrial_ChampionSpeciesAge_emptyEpochs(t *testing.T) {
 	trial := Trial{Id: 1, Generations: make([]Generation, 0)}
-	age := trial.ChampionSpeciesAge()
+	age := trial.ChampionSpeciesAges()
 	assert.Equal(t, 0, len(age))
 }
 
@@ -100,7 +100,7 @@ func TestTrial_ChampionComplexity(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrialWithBestOrganismGenesis(1, numGen)
 
-	compl := trial.ChampionComplexity()
+	compl := trial.ChampionsComplexities()
 	assert.Equal(t, numGen, len(compl))
 	expected := make(Floats, numGen)
 	for i := 0; i < numGen; i++ {
@@ -111,7 +111,7 @@ func TestTrial_ChampionComplexity(t *testing.T) {
 
 func TestTrial_ChampionComplexity_emptyEpochs(t *testing.T) {
 	trial := Trial{Id: 1, Generations: make([]Generation, 0)}
-	compl := trial.ChampionComplexity()
+	compl := trial.ChampionsComplexities()
 	assert.Equal(t, 0, len(compl))
 }
 

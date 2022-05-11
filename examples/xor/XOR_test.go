@@ -64,9 +64,9 @@ func TestXOR(t *testing.T) {
 	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %.1f\n", avgNodes, avgGenes, avgEvals)
 	meanComplexity, meanDiversity, meanAge := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		meanComplexity += t.ChampionComplexity().Mean()
+		meanComplexity += t.ChampionsComplexities().Mean()
 		meanDiversity += t.Diversity().Mean()
-		meanAge += t.ChampionSpeciesAge().Mean()
+		meanAge += t.ChampionSpeciesAges().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	meanComplexity /= count
@@ -126,9 +126,9 @@ func TestXOR_disconnected(t *testing.T) {
 	t.Logf("avg_nodes: %.1f, avg_genes: %.1f, avg_evals: %.1f\n", avgNodes, avgGenes, avgEvals)
 	meanComplexity, meanDiversity, meanAge := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		meanComplexity += t.ChampionComplexity().Mean()
+		meanComplexity += t.ChampionsComplexities().Mean()
 		meanDiversity += t.Diversity().Mean()
-		meanAge += t.ChampionSpeciesAge().Mean()
+		meanAge += t.ChampionSpeciesAges().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	meanComplexity /= count

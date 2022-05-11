@@ -64,9 +64,9 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)
 	meanComplexity, meanDiversity, meanAge := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		meanComplexity += t.ChampionComplexity().Mean()
+		meanComplexity += t.ChampionsComplexities().Mean()
 		meanDiversity += t.Diversity().Mean()
-		meanAge += t.ChampionSpeciesAge().Mean()
+		meanAge += t.ChampionSpeciesAges().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	meanComplexity /= count
@@ -139,9 +139,9 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testin
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)
 	meanComplexity, meanDiversity, meanAge := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		meanComplexity += t.ChampionComplexity().Mean()
+		meanComplexity += t.ChampionsComplexities().Mean()
 		meanDiversity += t.Diversity().Mean()
-		meanAge += t.ChampionSpeciesAge().Mean()
+		meanAge += t.ChampionSpeciesAges().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	meanComplexity /= count

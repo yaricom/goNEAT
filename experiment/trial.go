@@ -74,8 +74,8 @@ func (t *Trial) Solved() bool {
 	return false
 }
 
-// ChampionFitness returns the fitness values of the champion organisms for each epoch in this trial
-func (t *Trial) ChampionFitness() Floats {
+// ChampionsFitness returns the fitness values of the champion organisms per generation in this trial
+func (t *Trial) ChampionsFitness() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
 		if e.Champion != nil {
@@ -85,8 +85,8 @@ func (t *Trial) ChampionFitness() Floats {
 	return x
 }
 
-// ChampionSpeciesAge returns the age of the species of the champion for each epoch in this trial
-func (t *Trial) ChampionSpeciesAge() Floats {
+// ChampionSpeciesAges returns the age of the species of the champion per generation in this trial
+func (t *Trial) ChampionSpeciesAges() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
 		if e.Champion != nil && e.Champion.Species != nil {
@@ -96,8 +96,8 @@ func (t *Trial) ChampionSpeciesAge() Floats {
 	return x
 }
 
-// ChampionComplexity returns the complexity of the champion organism for each epoch in this trial
-func (t *Trial) ChampionComplexity() Floats {
+// ChampionsComplexities returns the complexities of the champion organisms per generation in this trial
+func (t *Trial) ChampionsComplexities() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
 		if e.Champion != nil && e.Champion.Phenotype != nil {
