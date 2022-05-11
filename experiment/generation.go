@@ -54,13 +54,13 @@ func (g *Generation) FillPopulationStatistics(pop *genetics.Population) {
 	g.Fitness = make(Floats, g.Diversity)
 	for i, currSpecies := range pop.Species {
 		g.Age[i] = float64(currSpecies.Age)
+		// sort organisms from current species by fitness to have most fit first
+		sort.Sort(sort.Reverse(currSpecies.Organisms))
 		g.Complexity[i] = float64(currSpecies.Organisms[0].Phenotype.Complexity())
 		g.Fitness[i] = currSpecies.Organisms[0].Fitness
 
 		// finds the best organism in epoch if not solved
 		if !g.Solved {
-			// sort organisms from current species by fitness to have most fit first
-			sort.Sort(sort.Reverse(currSpecies.Organisms))
 			if currSpecies.Organisms[0].Fitness > maxFitness {
 				maxFitness = currSpecies.Organisms[0].Fitness
 				g.Best = currSpecies.Organisms[0]

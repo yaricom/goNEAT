@@ -98,7 +98,7 @@ func TestTrial_BestAge_emptyEpochs(t *testing.T) {
 
 func TestTrial_BestComplexity(t *testing.T) {
 	numGen := 4
-	trial := buildTestTrialWithGenesis(1, numGen)
+	trial := buildTestTrialWithBestOrganismGenesis(1, numGen)
 
 	compl := trial.BestComplexity()
 	assert.Equal(t, numGen, len(compl))
@@ -223,7 +223,7 @@ func buildTestTrialWithGenerationsDuration(durations []time.Duration) *Trial {
 	return &Trial{Id: rand.Int(), Generations: buildTestGenerationsWithDuration(durations)}
 }
 
-func buildTestTrialWithGenesis(id, numGenerations int) *Trial {
+func buildTestTrialWithBestOrganismGenesis(id, numGenerations int) *Trial {
 	trial := buildTestTrial(id, numGenerations)
 	// do genesis of best organisms
 	for i := range trial.Generations {

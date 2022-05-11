@@ -64,7 +64,7 @@ func TestGeneration_FillPopulationStatistics(t *testing.T) {
 	assert.Equal(t, expectedSpecies, len(gen.Age))
 	assert.EqualValues(t, Floats{1, 1, 1, 1, 1}, gen.Age)
 	assert.Equal(t, expectedSpecies, len(gen.Complexity))
-	assert.Equal(t, Floats{10, 23, 36, 31, 38}, gen.Complexity)
+	assert.EqualValues(t, Floats{11, 25, 36, 32, 35}, gen.Complexity)
 	assert.NotNil(t, gen.Best)
 	assert.Equal(t, maxFitness, gen.Best.Fitness)
 }
