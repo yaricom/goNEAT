@@ -10,6 +10,7 @@ import (
 	"github.com/yaricom/goNEAT/v3/neat/network"
 	"gopkg.in/yaml.v3"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -18,6 +19,18 @@ import (
 type GenomeReader interface {
 	// Read is tp read one Genome record
 	Read() (*Genome, error)
+	// Encoding is the genome encoding format used by this reader
+	Encoding() GenomeEncoding
+}
+
+// NewGenomeReaderFromFile creates reader for Genome data automatically resolving
+// genome encoding format of the file.
+func NewGenomeReaderFromFile(genomeFilePath string) (GenomeReader, error) {
+	if genomeFile, err := os.Open(genomeFilePath); err != nil {
+		return nil, err
+	} else {
+		return NewGenomeReader(genomeFile, genomeEncodingFromFileName(genomeFile.Name()))
+	}
 }
 
 // NewGenomeReader Creates reader for Genome data with specified encoding format.
@@ -35,6 +48,10 @@ func NewGenomeReader(r io.Reader, encoding GenomeEncoding) (GenomeReader, error)
 // A PlainGenomeReader reads genome data from plain text file.
 type plainGenomeReader struct {
 	r *bufio.Reader
+}
+
+func (r *plainGenomeReader) Encoding() GenomeEncoding {
+	return PlainGenomeEncoding
 }
 
 func (r *plainGenomeReader) Read() (*Genome, error) {
@@ -193,6 +210,10 @@ func readPlainConnectionGene(r io.Reader, traits []*neat.Trait, nodes []*network
 // A YAMLGenomeReader reads genome data from YAML encoded text file
 type yamlGenomeReader struct {
 	r *bufio.Reader
+}
+
+func (r *yamlGenomeReader) Encoding() GenomeEncoding {
+	return YAMLGenomeEncoding
 }
 
 func (r *yamlGenomeReader) Read() (*Genome, error) {

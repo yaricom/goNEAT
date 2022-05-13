@@ -44,14 +44,14 @@ func main() {
 	}
 
 	// Load Genome
-	log.Printf("Loading start genome for %s experiment\n", *experimentName)
-	genomeFile, err := os.Open(*genomePath)
+	log.Printf("Loading start genome for %s experiment from file '%s'\n", *experimentName, *genomePath)
+	reader, err := genetics.NewGenomeReaderFromFile(*genomePath)
 	if err != nil {
-		log.Fatal("Failed to open genome file: ", err)
+		log.Fatalf("Failed to open genome file, reason: '%s'", err)
 	}
-	startGenome, err := genetics.ReadGenome(genomeFile, 1)
+	startGenome, err := reader.Read()
 	if err != nil {
-		log.Fatal("Failed to read start genome: ", err)
+		log.Fatalf("Failed to read start genome, reason: '%s'", err)
 	}
 	fmt.Println(startGenome)
 

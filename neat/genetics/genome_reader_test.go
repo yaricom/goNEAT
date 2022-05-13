@@ -12,6 +12,21 @@ import (
 	"testing"
 )
 
+const (
+	xorPlainGenomeFile = "../../data/xorstartgenes"
+	xorYamlGenomeFile  = "../../data/xorstartgenes.yml"
+)
+
+func TestNewGenomeReaderFromFile(t *testing.T) {
+	r, err := NewGenomeReaderFromFile(xorPlainGenomeFile)
+	require.NoError(t, err)
+	assert.Equal(t, PlainGenomeEncoding, r.Encoding())
+
+	r, err = NewGenomeReaderFromFile(xorYamlGenomeFile)
+	require.NoError(t, err)
+	assert.Equal(t, YAMLGenomeEncoding, r.Encoding())
+}
+
 func TestPlainGenomeReader_Read(t *testing.T) {
 	r, err := NewGenomeReader(strings.NewReader(gnomeStr), PlainGenomeEncoding)
 	require.NoError(t, err, "failed to create reader")
