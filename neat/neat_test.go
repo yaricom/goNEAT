@@ -9,7 +9,11 @@ import (
 	"testing"
 )
 
-const alwaysErrorText = "always be failing"
+const (
+	alwaysErrorText     = "always be failing"
+	xorOptionsFilePlain = "../data/xor_test.neat"
+	xorOptionsFileYaml  = "../data/xor_test.neat.yml"
+)
 
 var alwaysError = errors.New(alwaysErrorText)
 
@@ -20,7 +24,7 @@ func (e ErrorReader) Read(_ []byte) (n int, err error) {
 }
 
 func TestLoadNeatOptions(t *testing.T) {
-	config, err := os.Open("../data/xor_test.neat")
+	config, err := os.Open(xorOptionsFilePlain)
 	require.NoError(t, err)
 
 	// Load Neat Context
@@ -37,7 +41,7 @@ func TestLoadNeatOptions_readError(t *testing.T) {
 }
 
 func TestLoadYAMLOptions(t *testing.T) {
-	config, err := os.Open("../data/xor_test.neat.yml")
+	config, err := os.Open(xorOptionsFileYaml)
 	require.NoError(t, err)
 
 	// Load YAML context
@@ -66,7 +70,7 @@ func TestLoadYAMLOptions_readError(t *testing.T) {
 }
 
 func TestOptions_NeatContext(t *testing.T) {
-	config, err := os.Open("../data/xor_test.neat.yml")
+	config, err := os.Open(xorOptionsFileYaml)
 	require.NoError(t, err)
 
 	// Load YAML context
@@ -79,6 +83,16 @@ func TestOptions_NeatContext(t *testing.T) {
 	nOpts, ok := FromContext(ctx)
 	require.True(t, ok, "options not found")
 	assert.NotNil(t, nOpts)
+}
+
+func TestReadNeatOptionsFromFile(t *testing.T) {
+	opts, err := ReadNeatOptionsFromFile(xorOptionsFilePlain)
+	require.NoError(t, err, "failed to read NEAT options with PLAIN encoding")
+	assert.NotNil(t, opts)
+
+	opts, err = ReadNeatOptionsFromFile(xorOptionsFileYaml)
+	require.NoError(t, err, "failed to read NEAT options with YAML encoding")
+	assert.NotNil(t, opts)
 }
 
 func checkNeatOptions(nc *Options, t *testing.T) {

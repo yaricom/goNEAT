@@ -33,12 +33,8 @@ func main() {
 	seed := time.Now().Unix()
 	rand.Seed(seed)
 
-	// Load neatOptions configuration
-	configFile, err := os.Open(*contextPath)
-	if err != nil {
-		log.Fatal("Failed to open context configuration file: ", err)
-	}
-	neatOptions, err := neat.LoadNeatOptions(configFile)
+	// Load NEAT options
+	neatOptions, err := neat.ReadNeatOptionsFromFile(*contextPath)
 	if err != nil {
 		log.Fatal("Failed to load NEAT options: ", err)
 	}
