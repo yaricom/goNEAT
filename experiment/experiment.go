@@ -206,6 +206,9 @@ func (e *Experiment) AvgWinnerStatistics() (avgNodes, avgGenes, avgEvals, avgDiv
 			count++
 		}
 	}
+	if count == 0 {
+		return -1, -1, -1, -1
+	}
 	avgNodes = float64(totalNodes) / float64(count)
 	avgGenes = float64(totalGenes) / float64(count)
 	avgEvals = float64(totalEvals) / float64(count)

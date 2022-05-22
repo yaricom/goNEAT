@@ -332,6 +332,41 @@ func TestExperiment_SuccessRate_emptyTrials(t *testing.T) {
 	assert.Equal(t, 0.0, successRate)
 }
 
+func TestExperiment_AvgWinnerStatistics(t *testing.T) {
+	trials := Trials{
+		*buildTestTrial(1, 2),
+		*buildTestTrial(1, 3),
+		*buildTestTrial(1, 5),
+	}
+	ex := Experiment{Id: 1, Name: "Test AvgWinnerStatistics", Trials: trials}
+
+	avgNodes, avgGenes, avgEvals, avgDiversity := ex.AvgWinnerStatistics()
+	assert.EqualValues(t, testWinnerNodes, avgNodes)
+	assert.EqualValues(t, testWinnerGenes, avgGenes)
+	assert.EqualValues(t, testWinnerEvals, avgEvals)
+	assert.EqualValues(t, testDiversity, avgDiversity)
+}
+
+func TestExperiment_AvgWinnerStatistics_not_solved(t *testing.T) {
+	solved := 0
+	trials := createTrialsWithNSolved([]int{2, 3, 5}, solved)
+	ex := Experiment{Id: 1, Name: "Test AvgWinnerStatistics_not_solved", Trials: trials}
+	avgNodes, avgGenes, avgEvals, avgDiversity := ex.AvgWinnerStatistics()
+	assert.EqualValues(t, -1, avgNodes)
+	assert.EqualValues(t, -1, avgGenes)
+	assert.EqualValues(t, -1, avgEvals)
+	assert.EqualValues(t, -1, avgDiversity)
+}
+
+func TestExperiment_AvgWinnerStatistics_emptyTrials(t *testing.T) {
+	ex := Experiment{Id: 1, Name: "Test AvgWinnerStatistics_emptyTrials", Trials: Trials{}}
+	avgNodes, avgGenes, avgEvals, avgDiversity := ex.AvgWinnerStatistics()
+	assert.EqualValues(t, -1, avgNodes)
+	assert.EqualValues(t, -1, avgGenes)
+	assert.EqualValues(t, -1, avgEvals)
+	assert.EqualValues(t, -1, avgDiversity)
+}
+
 func createTrialsWithNSolved(generations []int, solvedNumber int) Trials {
 	trials := make(Trials, len(generations))
 	for i := range generations {
