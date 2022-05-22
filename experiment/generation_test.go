@@ -81,6 +81,7 @@ func createGenerationWith(fitness Floats, ages Floats, complexities Floats) *Gen
 func TestGeneration_Encode_Decode(t *testing.T) {
 	genomeId, fitness := 10, 23.0
 	gen := buildTestGeneration(genomeId, fitness)
+	gen.TrialId = 10101
 
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
