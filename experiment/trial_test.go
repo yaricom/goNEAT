@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
 	"math"
 	"math/rand"
 	"testing"
@@ -86,6 +87,13 @@ func TestTrial_ChampionFitness_emptyEpochs(t *testing.T) {
 func TestTrial_ChampionSpeciesAge(t *testing.T) {
 	numGen := 4
 	trial := buildTestTrial(1, numGen)
+
+	// assign species to the best organisms
+	expected := Floats{10, 15, 1, 5}
+	for i, g := range trial.Generations {
+		g.Champion.Species = genetics.NewSpecies(i)
+		g.Champion.Species.Age = int(expected[i])
+	}
 	age := trial.ChampionSpeciesAges()
 	assert.Equal(t, numGen, len(age))
 }

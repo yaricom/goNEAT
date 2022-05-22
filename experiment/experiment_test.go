@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
 	"testing"
 	"time"
 )
@@ -111,7 +112,7 @@ func TestExperiment_AvgEpochDuration(t *testing.T) {
 
 func TestExperiment_AvgEpochDuration_emptyTrials(t *testing.T) {
 	ex := Experiment{Id: 1, Name: "Test AvgEpochDuration_emptyTrials", Trials: Trials{}}
-	duration := ex.AvgTrialDuration()
+	duration := ex.AvgEpochDuration()
 	assert.Equal(t, EmptyDuration, duration)
 }
 
@@ -224,9 +225,17 @@ func TestExperiment_BestSpeciesAge(t *testing.T) {
 		*buildTestTrial(20, 2),
 		*buildTestTrial(30, 3),
 	}
+	// assign species to the best organisms
+	expected := Floats{10, 15, 1}
+	for i, t := range trials {
+		if org, ok := t.BestOrganism(false); ok {
+			org.Species = genetics.NewSpecies(i)
+			org.Species.Age = int(expected[i])
+		}
+	}
+
 	ex := Experiment{Id: 1, Name: "Test BestSpeciesAge", Trials: trials}
 	bestAge := ex.BestSpeciesAge()
-	expected := Floats{0, 0, 0}
 	assert.EqualValues(t, expected, bestAge)
 }
 
