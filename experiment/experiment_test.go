@@ -149,6 +149,7 @@ func TestExperiment_WriteNPZ(t *testing.T) {
 		assert.EqualValues(t, expectedDiversity, diversity)
 	}
 	err = r.Close()
+	assert.NoError(t, err, "failed to close reader")
 }
 
 func TestExperiment_WriteNPZ_writeError(t *testing.T) {
