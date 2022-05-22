@@ -26,7 +26,7 @@ func TestTrial_AvgEpochDuration_emptyEpochs(t *testing.T) {
 }
 
 func TestTrial_RecentEpochEvalTime(t *testing.T) {
-	now := time.Now().Add(-100 * time.Millisecond)
+	now := time.Now().Add(-10 * time.Second)
 	trial := buildTestTrial(1, 3)
 	evalTime := trial.RecentEpochEvalTime()
 	assert.True(t, evalTime.After(now))
