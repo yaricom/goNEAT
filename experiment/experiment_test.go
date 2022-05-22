@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"math"
 	"testing"
 	"time"
 )
@@ -303,7 +304,7 @@ func TestExperiment_EpochsPerTrial_emptyTrials(t *testing.T) {
 
 func TestExperiment_TrialsSolved(t *testing.T) {
 	solvedExpected := 2
-	trials := createTrialsWithNSolved([]int{2, 3, 5}, solvedExpected)
+	trials := createTrialsWithNSolved([]int{2, 3, 5}, solvedExpected, false)
 
 	ex := Experiment{Id: 1, Name: "Test TrialsSolved", Trials: trials}
 	solved := ex.TrialsSolved()
@@ -318,7 +319,7 @@ func TestExperiment_TrialsSolved_emptyTrials(t *testing.T) {
 
 func TestExperiment_SuccessRate(t *testing.T) {
 	solvedExpected := 2
-	trials := createTrialsWithNSolved([]int{2, 3, 5}, solvedExpected)
+	trials := createTrialsWithNSolved([]int{2, 3, 5}, solvedExpected, false)
 
 	ex := Experiment{Id: 1, Name: "Test SuccessRate", Trials: trials}
 	successRate := ex.SuccessRate()
@@ -349,7 +350,7 @@ func TestExperiment_AvgWinnerStatistics(t *testing.T) {
 
 func TestExperiment_AvgWinnerStatistics_not_solved(t *testing.T) {
 	solved := 0
-	trials := createTrialsWithNSolved([]int{2, 3, 5}, solved)
+	trials := createTrialsWithNSolved([]int{2, 3, 5}, solved, false)
 	ex := Experiment{Id: 1, Name: "Test AvgWinnerStatistics_not_solved", Trials: trials}
 	avgNodes, avgGenes, avgEvals, avgDiversity := ex.AvgWinnerStatistics()
 	assert.EqualValues(t, -1, avgNodes)
@@ -367,10 +368,51 @@ func TestExperiment_AvgWinnerStatistics_emptyTrials(t *testing.T) {
 	assert.EqualValues(t, -1, avgDiversity)
 }
 
-func createTrialsWithNSolved(generations []int, solvedNumber int) Trials {
+func TestExperiment_EfficiencyScore(t *testing.T) {
+	solved := 2
+	trials := createTrialsWithNSolved([]int{2, 3, 5}, solved, true)
+	ex := Experiment{Id: 1, Name: "Test EfficiencyScore", Trials: trials}
+
+	meanComplexity := 7.0
+	meanFitness := math.E
+	successRate := ex.SuccessRate()
+	logPenaltyScore := math.Log(ex.penaltyScore(meanComplexity))
+	score := successRate * meanFitness / logPenaltyScore
+
+	actualScore := ex.EfficiencyScore()
+	assert.EqualValues(t, score, actualScore)
+}
+
+func TestExperiment_EfficiencyScore_maxFitness(t *testing.T) {
+	solved := 2
+	trials := createTrialsWithNSolved([]int{2, 3, 5}, solved, true)
+	ex := Experiment{Id: 1, Name: "Test EfficiencyScore_maxFitness", Trials: trials, MaxFitnessScore: math.E * 2.0}
+
+	meanComplexity := 7.0
+	meanFitness := math.E
+	successRate := ex.SuccessRate()
+	logPenaltyScore := math.Log(ex.penaltyScore(meanComplexity))
+	meanFitness = (meanFitness / ex.MaxFitnessScore) * 100
+	score := successRate * meanFitness / logPenaltyScore
+
+	actualScore := ex.EfficiencyScore()
+	assert.EqualValues(t, score, actualScore)
+}
+
+func TestExperiment_EfficiencyScore_emptyTrials(t *testing.T) {
+	ex := Experiment{Id: 1, Name: "Test EfficiencyScore_emptyTrials", Trials: Trials{}}
+	score := ex.EfficiencyScore()
+	assert.EqualValues(t, 0, score)
+}
+
+func createTrialsWithNSolved(generations []int, solvedNumber int, enableGenesis bool) Trials {
 	trials := make(Trials, len(generations))
 	for i := range generations {
-		trials[i] = *buildTestTrial(i, generations[i])
+		if enableGenesis {
+			trials[i] = *buildTestTrialWithBestOrganismGenesis(i, generations[i])
+		} else {
+			trials[i] = *buildTestTrial(i, generations[i])
+		}
 	}
 
 	for _, trial := range trials {

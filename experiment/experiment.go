@@ -217,9 +217,12 @@ func (e *Experiment) AvgWinnerStatistics() (avgNodes, avgGenes, avgEvals, avgDiv
 }
 
 // EfficiencyScore calculates the efficiency score of the found solution.
-// We are interested in efficient solver search solution that take less time per epoch, fewer generations per trial,
+//
+// We are interested in efficient solver solution that take less time per epoch, fewer generations per trial,
 // and produce less complicated winner genomes. At the same time it should have maximal fitness score and maximal
 // success rate among trials.
+//
+//  This value can only be compared against values obtained for the same type of experiments.
 func (e *Experiment) EfficiencyScore() float64 {
 	meanComplexity, meanFitness := 0.0, 0.0
 	if len(e.Trials) > 1 {
@@ -244,16 +247,22 @@ func (e *Experiment) EfficiencyScore() float64 {
 	// normalize and scale fitness score if appropriate
 	fitnessScore := meanFitness
 	if e.MaxFitnessScore > 0 {
-		fitnessScore /= e.MaxFitnessScore
-		fitnessScore *= 100
+		fitnessScore = (fitnessScore / e.MaxFitnessScore) * 100
 	}
 
-	score := e.AvgEpochDuration().Seconds() * 1000.0 * e.AvgGenerationsPerTrial() * meanComplexity
+	score := e.penaltyScore(meanComplexity)
 	if score > 0 {
-		score = e.SuccessRate() * fitnessScore / math.Log(score)
+		// calculate normalized score
+		successRate := e.SuccessRate()
+		logPenaltyScore := math.Log(score)
+		score = successRate * fitnessScore / logPenaltyScore
 	}
 
 	return score
+}
+
+func (e *Experiment) penaltyScore(meanComplexity float64) float64 {
+	return e.AvgEpochDuration().Seconds() * 1000.0 * e.AvgGenerationsPerTrial() * meanComplexity
 }
 
 // PrintStatistics Prints experiment statistics

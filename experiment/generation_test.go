@@ -133,7 +133,7 @@ func buildTestGenerationWithDuration(genId int, fitness float64, duration time.D
 	epoch.Duration = duration
 
 	genome := buildTestGenome(genId)
-	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: genId}
+	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: genId, IsWinner: true}
 	epoch.Champion = &org
 
 	return &epoch
