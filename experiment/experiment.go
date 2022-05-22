@@ -409,16 +409,11 @@ func (e *Experiment) Decode(dec *gob.Decoder) error {
 // - trial_[0...n]_epoch_diversity - the number of species per epoch per trial
 func (e *Experiment) WriteNPZ(w io.Writer) error {
 	// write general statistics
-	trialsFitness := mat.NewDense(len(e.Trials), 2, nil)    // mean, var
-	trialsAges := mat.NewDense(len(e.Trials), 2, nil)       // mean, var
-	trialsComplexity := mat.NewDense(len(e.Trials), 2, nil) // mean, var
-	for i, t := range e.Trials {
-		fitness, age, complexity := t.Average()
-		trialsFitness.SetRow(i, fitness.MeanVariance())
-		trialsAges.SetRow(i, age.MeanVariance())
-		trialsComplexity.SetRow(i, complexity.MeanVariance())
-	}
+	trialsFitness, trialsAges, trialsComplexity := e.fitnessAgeComplexityMat()
 	out := npz.NewWriter(w)
+	if err := out.Write("trials_number", Floats{float64(len(e.Trials))}); err != nil {
+		return err
+	}
 	if err := out.Write("trials_fitness", trialsFitness); err != nil {
 		return err
 	}
@@ -455,6 +450,19 @@ func (e *Experiment) WriteNPZ(w io.Writer) error {
 		}
 	}
 	return out.Close()
+}
+
+func (e *Experiment) fitnessAgeComplexityMat() (trialsFitness, trialsAges, trialsComplexity *mat.Dense) {
+	trialsFitness = mat.NewDense(len(e.Trials), 2, nil)    // mean, var
+	trialsAges = mat.NewDense(len(e.Trials), 2, nil)       // mean, var
+	trialsComplexity = mat.NewDense(len(e.Trials), 2, nil) // mean, var
+	for i, t := range e.Trials {
+		fitness, age, complexity := t.Average()
+		trialsFitness.SetRow(i, fitness.MeanVariance())
+		trialsAges.SetRow(i, age.MeanVariance())
+		trialsComplexity.SetRow(i, complexity.MeanVariance())
+	}
+	return trialsFitness, trialsAges, trialsComplexity
 }
 
 // Experiments is a sortable list of experiments by execution time and Id

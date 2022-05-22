@@ -2,9 +2,12 @@ package experiment
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/sbinet/npyio/npz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"gonum.org/v1/gonum/mat"
 	"math"
 	"testing"
 	"time"
@@ -64,9 +67,88 @@ func TestExperiment_WriteNPZ(t *testing.T) {
 
 	// Write experiment
 	var buff bytes.Buffer
-	err := ex.Write(&buff)
+	err := ex.WriteNPZ(&buff)
 	require.NoError(t, err, "Failed to write experiment")
 	assert.True(t, buff.Len() > 0)
+
+	// Read experiment and compare values
+	r, err := npz.NewReader(bytes.NewReader(buff.Bytes()), int64(buff.Len()))
+	require.NoError(t, err)
+	require.NotNil(t, r)
+
+	expectedTrialsNumber := Floats{float64(len(ex.Trials))}
+	trialsNumber := Floats{}
+	err = r.Read("trials_number", &trialsNumber)
+	assert.NoError(t, err, "failed to read trials number")
+	assert.EqualValues(t, expectedTrialsNumber, trialsNumber, "wrong trials number")
+
+	expectedFitness, expectedAges, expectedComplexity := ex.fitnessAgeComplexityMat()
+
+	trialsFitness := &mat.Dense{}
+	err = r.Read("trials_fitness", trialsFitness)
+	assert.NoError(t, err)
+	assert.EqualValues(t, expectedFitness, trialsFitness, "wrong fitness")
+
+	trialsAges := &mat.Dense{}
+	err = r.Read("trials_ages", trialsAges)
+	assert.NoError(t, err)
+	assert.EqualValues(t, expectedAges, trialsAges, "wrong ages")
+
+	trialsComplexity := &mat.Dense{}
+	err = r.Read("trials_complexity", trialsComplexity)
+	assert.NoError(t, err)
+	assert.EqualValues(t, expectedComplexity, trialsComplexity, "wrong complexity")
+
+	for i, tr := range ex.Trials {
+		expectedFitness, expectedAges, expectedComplexities := tr.Average()
+
+		key := fmt.Sprintf("trial_%d_epoch_mean_fitnesses", i)
+		fitness := Floats{}
+		err = r.Read(key, &fitness)
+		assert.NoError(t, err)
+		assert.EqualValues(t, expectedFitness, fitness)
+
+		key = fmt.Sprintf("trial_%d_epoch_mean_ages", i)
+		ages := Floats{}
+		err = r.Read(key, &ages)
+		assert.NoError(t, err)
+		assert.EqualValues(t, expectedAges, ages)
+
+		key = fmt.Sprintf("trial_%d_epoch_mean_complexities", i)
+		complexities := Floats{}
+		err = r.Read(key, &complexities)
+		assert.NoError(t, err)
+		assert.EqualValues(t, expectedComplexities, complexities)
+
+		key = fmt.Sprintf("trial_%d_epoch_best_fitnesses", i)
+		expectedChapFitness := tr.ChampionsFitness()
+		champFitness := Floats{}
+		err = r.Read(key, &champFitness)
+		assert.NoError(t, err)
+		assert.EqualValues(t, expectedChapFitness, champFitness)
+
+		key = fmt.Sprintf("trial_%d_epoch_best_ages", i)
+		expectedBestAges := tr.ChampionSpeciesAges()
+		bestAges := Floats{}
+		err = r.Read(key, &bestAges)
+		assert.NoError(t, err)
+		assert.EqualValues(t, expectedBestAges, bestAges)
+
+		key = fmt.Sprintf("trial_%d_epoch_best_complexities", i)
+		expectedBestComplexities := tr.ChampionsComplexities()
+		bestComplexities := Floats{}
+		err = r.Read(key, &bestComplexities)
+		assert.NoError(t, err)
+		assert.EqualValues(t, expectedBestComplexities, bestComplexities)
+
+		key = fmt.Sprintf("trial_%d_epoch_diversity", i)
+		expectedDiversity := tr.Diversity()
+		diversity := Floats{}
+		err = r.Read(key, &diversity)
+		assert.NoError(t, err)
+		assert.EqualValues(t, expectedDiversity, diversity)
+	}
+	err = r.Close()
 }
 
 func TestExperiment_WriteNPZ_writeError(t *testing.T) {
