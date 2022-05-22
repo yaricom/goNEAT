@@ -262,3 +262,65 @@ func TestExperiment_BestComplexity_emptyTrials(t *testing.T) {
 	bestComplexity := ex.BestComplexity()
 	assert.Equal(t, 0, len(bestComplexity))
 }
+
+func TestExperiment_AvgDiversity(t *testing.T) {
+	trials := Trials{
+		*buildTestTrial(1, 2),
+		*buildTestTrial(1, 3),
+		*buildTestTrial(1, 5),
+	}
+	ex := Experiment{Id: 1, Name: "Test AvgDiversity", Trials: trials}
+
+	avgDiversity := ex.AvgDiversity()
+	expected := Floats{testDiversity, testDiversity, testDiversity}
+	assert.EqualValues(t, expected, avgDiversity)
+}
+
+func TestExperiment_AvgDiversity_emptyTrials(t *testing.T) {
+	ex := Experiment{Id: 1, Name: "Test AvgDiversity_emptyTrials", Trials: Trials{}}
+	avgDiversity := ex.AvgDiversity()
+	assert.Equal(t, 0, len(avgDiversity))
+}
+
+func TestExperiment_EpochsPerTrial(t *testing.T) {
+	expected := Floats{2, 3, 5}
+	trials := Trials{
+		*buildTestTrial(1, int(expected[0])),
+		*buildTestTrial(1, int(expected[1])),
+		*buildTestTrial(1, int(expected[2])),
+	}
+	ex := Experiment{Id: 1, Name: "Test EpochsPerTrial", Trials: trials}
+
+	epochs := ex.EpochsPerTrial()
+	assert.EqualValues(t, expected, epochs)
+}
+
+func TestExperiment_EpochsPerTrial_emptyTrials(t *testing.T) {
+	ex := Experiment{Id: 1, Name: "Test EpochsPerTrial_emptyTrials", Trials: Trials{}}
+	epochs := ex.EpochsPerTrial()
+	assert.Equal(t, 0, len(epochs))
+}
+
+func TestExperiment_TrialsSolved(t *testing.T) {
+	trials := Trials{
+		*buildTestTrial(1, 2),
+		*buildTestTrial(1, 3),
+		*buildTestTrial(1, 5),
+	}
+	for i, trial := range trials {
+		solved := i == len(trials)-1
+		for j := range trial.Generations {
+			trial.Generations[j].Solved = solved
+		}
+	}
+
+	ex := Experiment{Id: 1, Name: "Test TrialsSolved", Trials: trials}
+	solved := ex.TrialsSolved()
+	assert.Equal(t, 1, solved)
+}
+
+func TestExperiment_TrialsSolved_emptyTrials(t *testing.T) {
+	ex := Experiment{Id: 1, Name: "Test TrialsSolved_emptyTrials", Trials: Trials{}}
+	solved := ex.TrialsSolved()
+	assert.Equal(t, 0, solved)
+}
