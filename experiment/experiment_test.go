@@ -302,25 +302,48 @@ func TestExperiment_EpochsPerTrial_emptyTrials(t *testing.T) {
 }
 
 func TestExperiment_TrialsSolved(t *testing.T) {
-	trials := Trials{
-		*buildTestTrial(1, 2),
-		*buildTestTrial(1, 3),
-		*buildTestTrial(1, 5),
-	}
-	for i, trial := range trials {
-		solved := i == len(trials)-1
-		for j := range trial.Generations {
-			trial.Generations[j].Solved = solved
-		}
-	}
+	solvedExpected := 2
+	trials := createTrialsWithNSolved([]int{2, 3, 5}, solvedExpected)
 
 	ex := Experiment{Id: 1, Name: "Test TrialsSolved", Trials: trials}
 	solved := ex.TrialsSolved()
-	assert.Equal(t, 1, solved)
+	assert.Equal(t, solvedExpected, solved)
 }
 
 func TestExperiment_TrialsSolved_emptyTrials(t *testing.T) {
 	ex := Experiment{Id: 1, Name: "Test TrialsSolved_emptyTrials", Trials: Trials{}}
 	solved := ex.TrialsSolved()
 	assert.Equal(t, 0, solved)
+}
+
+func TestExperiment_SuccessRate(t *testing.T) {
+	solvedExpected := 2
+	trials := createTrialsWithNSolved([]int{2, 3, 5}, solvedExpected)
+
+	ex := Experiment{Id: 1, Name: "Test SuccessRate", Trials: trials}
+	successRate := ex.SuccessRate()
+	expectedRate := float64(solvedExpected) / 3.0
+	assert.Equal(t, expectedRate, successRate)
+}
+
+func TestExperiment_SuccessRate_emptyTrials(t *testing.T) {
+	ex := Experiment{Id: 1, Name: "Test TrialsSolved_emptyTrials", Trials: Trials{}}
+	successRate := ex.SuccessRate()
+	assert.Equal(t, 0.0, successRate)
+}
+
+func createTrialsWithNSolved(generations []int, solvedNumber int) Trials {
+	trials := make(Trials, len(generations))
+	for i := range generations {
+		trials[i] = *buildTestTrial(i, generations[i])
+	}
+
+	for _, trial := range trials {
+		solved := solvedNumber > 0
+		solvedNumber -= 1
+		for j := range trial.Generations {
+			trial.Generations[j].Solved = solved
+		}
+	}
+	return trials
 }

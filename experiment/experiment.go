@@ -183,7 +183,11 @@ func (e *Experiment) TrialsSolved() int {
 // per total number of trials executed.
 func (e *Experiment) SuccessRate() float64 {
 	solved := float64(e.TrialsSolved())
-	return solved / float64(len(e.Trials))
+	if len(e.Trials) > 0 {
+		return solved / float64(len(e.Trials))
+	} else {
+		return 0
+	}
 }
 
 // AvgWinnerStatistics calculates the average number of nodes, genes, organisms evaluations,
