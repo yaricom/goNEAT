@@ -3,7 +3,7 @@ package network
 import (
 	"errors"
 	"fmt"
-	neatmath "github.com/yaricom/goNEAT/v2/neat/math"
+	neatmath "github.com/yaricom/goNEAT/v3/neat/math"
 	"math"
 )
 

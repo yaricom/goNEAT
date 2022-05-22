@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v3/neat"
 	"io"
 	"math"
 	"math/rand"
@@ -26,9 +26,10 @@ type Species struct {
 	// Is it novel
 	IsNovel bool
 
-	// The organisms in the Species
+	// The organisms in the Species. The algorithm keeps it sorted to have most fit first at beginning of each
+	// reproduction cycle.
 	Organisms Organisms
-	// If this is too long ago, the Species will goes extinct
+	// If this is too long ago, the Species will go extinct
 	AgeOfLastImprovement int
 
 	// Flag used for search optimization
@@ -562,7 +563,7 @@ func (s *Species) String() string {
 	return str
 }
 
-// This is used for list sorting of Species by original fitness of best organism highest fitness first
+// This is used for list sorting of Species by original fitness of the best organism with the highest fitness going first.
 // It implements sort.Interface for []Species based on the OriginalFitness of first Organism field in descending order,
 // i.e. the max fitness goes first
 type byOrganismOrigFitness []*Species

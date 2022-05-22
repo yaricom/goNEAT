@@ -2,7 +2,7 @@ package experiment
 
 import (
 	"encoding/gob"
-	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
 	"sort"
 	"time"
 )
@@ -26,7 +26,11 @@ func (t *Trial) AvgEpochDuration() time.Duration {
 	for _, i := range t.Generations {
 		total += i.Duration
 	}
-	return total / time.Duration(len(t.Generations))
+	if len(t.Generations) > 0 {
+		return total / time.Duration(len(t.Generations))
+	} else {
+		return EmptyDuration
+	}
 }
 
 // RecentEpochEvalTime is to get time of the epoch executed most recently within this trial
@@ -40,17 +44,17 @@ func (t *Trial) RecentEpochEvalTime() time.Time {
 	return u
 }
 
-// BestOrganism Finds the most fit organism among all epochs in this trial. It's also possible to get the best organism only among the ones
-// which was able to solve the experiment's problem.
+// BestOrganism finds the most fit organism among all epochs in this trial.
+// It's also possible to get the best organism only among successful solvers of the experiment's problem.
 func (t *Trial) BestOrganism(onlySolvers bool) (*genetics.Organism, bool) {
 	var orgs = make(genetics.Organisms, 0, len(t.Generations))
 	for _, e := range t.Generations {
 		if !onlySolvers {
-			// include all the most fit in each epoch
-			orgs = append(orgs, e.Best)
+			// include every champion in each epoch
+			orgs = append(orgs, e.Champion)
 		} else if e.Solved {
-			// include only task solvers
-			orgs = append(orgs, e.Best)
+			// include only successful task solver champions
+			orgs = append(orgs, e.Champion)
 		}
 	}
 	if len(orgs) > 0 {
@@ -70,30 +74,35 @@ func (t *Trial) Solved() bool {
 	return false
 }
 
-// BestFitness Fitness returns the fitness values of the best organisms for each epoch in this trial
-func (t *Trial) BestFitness() Floats {
+// ChampionsFitness returns the fitness values of the champion organisms per generation in this trial
+func (t *Trial) ChampionsFitness() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		x[i] = e.Best.Fitness
-
+		if e.Champion != nil {
+			x[i] = e.Champion.Fitness
+		}
 	}
 	return x
 }
 
-// BestAge Age returns the age of the best species for each epoch in this trial
-func (t *Trial) BestAge() Floats {
+// ChampionSpeciesAges returns the age of the species of the champion per generation in this trial
+func (t *Trial) ChampionSpeciesAges() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		x[i] = float64(e.Best.Species.Age)
+		if e.Champion != nil && e.Champion.Species != nil {
+			x[i] = float64(e.Champion.Species.Age)
+		}
 	}
 	return x
 }
 
-// BestComplexity Complexity returns the complexity of the best species for each epoch in this trial
-func (t *Trial) BestComplexity() Floats {
+// ChampionsComplexities returns the complexities of the champion organisms per generation in this trial
+func (t *Trial) ChampionsComplexities() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		x[i] = float64(e.Best.Phenotype.Complexity())
+		if e.Champion != nil && e.Champion.Phenotype != nil {
+			x[i] = float64(e.Champion.Phenotype.Complexity())
+		}
 	}
 	return x
 }
@@ -107,7 +116,7 @@ func (t *Trial) Diversity() Floats {
 	return x
 }
 
-// Average Returns average fitness, age, and complexity of population of organisms for each epoch in this trial
+// Average the average fitness, age, and complexity of the best organisms per species for each epoch in this trial
 func (t *Trial) Average() (fitness, age, complexity Floats) {
 	fitness = make(Floats, len(t.Generations))
 	age = make(Floats, len(t.Generations))
@@ -118,14 +127,15 @@ func (t *Trial) Average() (fitness, age, complexity Floats) {
 	return fitness, age, complexity
 }
 
-// Winner Returns number of nodes, genes,  organism evaluations and species diversity in the winner genome
-func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
+// WinnerStatistics finds the number of nodes, genes of the winner genome as well as number of winner organism evaluations
+// and species diversity in the population with successful solver.
+func (t *Trial) WinnerStatistics() (nodes, genes, evals, diversity int) {
 	if t.WinnerGeneration != nil {
 		nodes = t.WinnerGeneration.WinnerNodes
 		genes = t.WinnerGeneration.WinnerGenes
 		evals = t.WinnerGeneration.WinnerEvals
 		diversity = t.WinnerGeneration.Diversity
-	} else {
+	} else if len(t.Generations) > 0 {
 		for _, e := range t.Generations {
 			if e.Solved {
 				nodes = e.WinnerNodes
@@ -137,11 +147,13 @@ func (t *Trial) Winner() (nodes, genes, evals, diversity int) {
 				break
 			}
 		}
+	} else {
+		nodes, genes, evals, diversity = -1, -1, -1, -1
 	}
 	return nodes, genes, evals, diversity
 }
 
-// Encode Encodes this trial
+// Encode is to encode this trial
 func (t *Trial) Encode(enc *gob.Encoder) error {
 	if err := enc.Encode(t.Id); err != nil {
 		return err

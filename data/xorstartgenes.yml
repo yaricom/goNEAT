@@ -1,0 +1,23 @@
+# The seed genome configuration for XOR experiment
+genome:
+  id: 1
+  # The traits used in this genome
+  traits:
+    - { id: 1,  params: [ 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ] }
+    - { id: 2,  params: [ 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ] }
+    - { id: 3,  params: [ 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ] }
+
+  # The neuron nodes for this genome
+  nodes:
+    - { id: 1,  trait_id: 0, type: BIAS, activation: NullActivation }
+    # The input nodes - sensors
+    - { id: 2,  trait_id: 0, type: INPT, activation: NullActivation }
+    - { id: 3,  trait_id: 0, type: INPT, activation: NullActivation }
+    # The output nodes - actuators
+    - { id: 4,  trait_id: 0, type: OUTP, activation: SigmoidSteepenedActivation }
+
+  # The genes - connection between neuron nodes within this genome
+  genes:
+    - { src_id: 1,  tgt_id: 4,  weight: 0.0, trait_id: 1, innov_num: 1,  mut_num: 0, recurrent: false, enabled: true }
+    - { src_id: 2,  tgt_id: 4,  weight: 0.0, trait_id: 1, innov_num: 1,  mut_num: 0, recurrent: false, enabled: true }
+    - { src_id: 3,  tgt_id: 4,  weight: 0.0, trait_id: 1, innov_num: 1,  mut_num: 0, recurrent: false, enabled: true }

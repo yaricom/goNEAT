@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v3/neat"
 	"sort"
 	"sync"
 )
@@ -18,6 +18,7 @@ type PopulationEpochExecutor interface {
 
 // SequentialPopulationEpochExecutor The epoch executor that runs execution sequentially in single thread for all species and organisms
 type SequentialPopulationEpochExecutor struct {
+	// sortedSpecies sorted to have species with the best fitness score first
 	sortedSpecies         []*Species
 	bestSpeciesReproduced bool
 	bestSpeciesId         int
@@ -50,7 +51,7 @@ func (s *SequentialPopulationEpochExecutor) prepareForReproduction(ctx context.C
 	s.sortedSpecies = nil
 
 	// Use Species' ages to modify the objective fitness of organisms in other words, make it more fair for younger
-	// species so they have a chance to take hold and also penalize stagnant species. Then adjust the fitness using
+	// species, so they have a chance to take hold and also penalize stagnant species. Then adjust the fitness using
 	// the species size to "share" fitness within a species. Then, within each Species, mark for death those below
 	// survival_thresh * average
 	for _, sp := range p.Species {

@@ -4,13 +4,34 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/math"
-	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/math"
+	"github.com/yaricom/goNEAT/v3/neat/network"
 	"os"
 	"strings"
 	"testing"
 )
+
+const (
+	xorPlainGenomeFile = "../../data/xorstartgenes"
+	xorYamlGenomeFile  = "../../data/xorstartgenes.yml"
+)
+
+func TestNewGenomeReaderFromFile(t *testing.T) {
+	r, err := NewGenomeReaderFromFile(xorPlainGenomeFile)
+	require.NoError(t, err)
+	assert.Equal(t, PlainGenomeEncoding, r.Encoding())
+
+	r, err = NewGenomeReaderFromFile(xorYamlGenomeFile)
+	require.NoError(t, err)
+	assert.Equal(t, YAMLGenomeEncoding, r.Encoding())
+}
+
+func TestNewGenomeReaderFromFile_error(t *testing.T) {
+	r, err := NewGenomeReaderFromFile("not existing file path")
+	assert.Error(t, err)
+	assert.Nil(t, r)
+}
 
 func TestPlainGenomeReader_Read(t *testing.T) {
 	r, err := NewGenomeReader(strings.NewReader(gnomeStr), PlainGenomeEncoding)

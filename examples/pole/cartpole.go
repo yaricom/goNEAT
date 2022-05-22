@@ -1,12 +1,13 @@
 package pole
 
 import (
+	"context"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/experiment"
-	"github.com/yaricom/goNEAT/v2/experiment/utils"
-	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/genetics"
-	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v3/experiment"
+	"github.com/yaricom/goNEAT/v3/experiment/utils"
+	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"github.com/yaricom/goNEAT/v3/neat/network"
 	"math"
 	"math/rand"
 )
@@ -33,7 +34,11 @@ func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceS
 }
 
 // GenerationEvaluate evaluates one epoch for given population and prints results into output directory if any.
-func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.Options) (err error) {
+func (e *cartPoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, pop *genetics.Population, epoch *experiment.Generation) error {
+	options, ok := neat.FromContext(ctx)
+	if !ok {
+		return neat.ErrNEATOptionsNotFound
+	}
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
 		res, err := e.orgEvaluate(org)
@@ -41,12 +46,12 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 			return err
 		}
 
-		if res && (epoch.Best == nil || org.Fitness > epoch.Best.Fitness) {
+		if res && (epoch.Champion == nil || org.Fitness > epoch.Champion.Fitness) {
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
 			epoch.WinnerGenes = org.Genotype.Extrons()
-			epoch.WinnerEvals = context.PopSize*epoch.Id + org.Genotype.Id
-			epoch.Best = org
+			epoch.WinnerEvals = options.PopSize*epoch.Id + org.Genotype.Id
+			epoch.Champion = org
 			if epoch.WinnerNodes == 7 {
 				// You could dump out optimal genomes here if desired
 				if optPath, err := utils.WriteGenomePlain("pole1_optimal", e.OutputPath, org, epoch); err != nil {
@@ -62,8 +67,8 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 	epoch.FillPopulationStatistics(pop)
 
 	// Only print to file every print_every generation
-	if epoch.Solved || epoch.Id%context.PrintEvery == 0 {
-		if _, err = utils.WritePopulationPlain(e.OutputPath, pop, epoch); err != nil {
+	if epoch.Solved || epoch.Id%options.PrintEvery == 0 {
+		if _, err := utils.WritePopulationPlain(e.OutputPath, pop, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump population, reason: %s\n", err))
 			return err
 		}
@@ -71,7 +76,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 
 	if epoch.Solved {
 		// print winner organism
-		org := epoch.Best
+		org := epoch.Champion
 		if depth, err := org.Phenotype.MaxActivationDepthFast(0); err == nil {
 			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
 		}
@@ -93,7 +98,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Populatio
 		}
 	}
 
-	return err
+	return nil
 }
 
 // orgEvaluate evaluates provided organism for cart pole balancing task
@@ -156,7 +161,7 @@ func (e *cartPoleGenerationEvaluator) runCart(net *network.Network) (steps int, 
 
 	in := make([]float64, 5)
 	for steps = 0; steps < e.WinBalancingSteps; steps++ {
-		/*-- setup the input layer based on the four inputs --*/
+		/*-- set up the input layer based on the four inputs --*/
 		in[0] = 1.0 // Bias
 		in[1] = (x + 2.4) / 4.8
 		in[2] = (xDot + .75) / 1.5

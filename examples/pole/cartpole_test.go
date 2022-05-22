@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v2/examples/utils"
-	experiment2 "github.com/yaricom/goNEAT/v2/experiment"
-	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v3/examples/utils"
+	experiment2 "github.com/yaricom/goNEAT/v3/experiment"
+	"github.com/yaricom/goNEAT/v3/neat"
 	"math/rand"
 	"testing"
 	"time"
@@ -45,7 +45,7 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	require.NoError(t, err, "Failed to perform POLE1 experiment")
 
 	// Find winner statistics
-	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinner()
+	avgNodes, avgGenes, avgEvals, _ := experiment.AvgWinnerStatistics()
 
 	// check results
 	if avgNodes < 7 {
@@ -66,9 +66,9 @@ func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	t.Logf("Average nodes: %.1f, genes: %.1f, evals: %.1f\n", avgNodes, avgGenes, avgEvals)
 	meanComplexity, meanDiversity, meanAge := 0.0, 0.0, 0.0
 	for _, t := range experiment.Trials {
-		meanComplexity += t.BestComplexity().Mean()
+		meanComplexity += t.ChampionsComplexities().Mean()
 		meanDiversity += t.Diversity().Mean()
-		meanAge += t.BestAge().Mean()
+		meanAge += t.ChampionSpeciesAges().Mean()
 	}
 	count := float64(len(experiment.Trials))
 	meanComplexity /= count

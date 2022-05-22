@@ -1,12 +1,13 @@
 package pole
 
 import (
+	"context"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/experiment"
-	"github.com/yaricom/goNEAT/v2/experiment/utils"
-	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/genetics"
-	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v3/experiment"
+	"github.com/yaricom/goNEAT/v3/experiment/utils"
+	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"github.com/yaricom/goNEAT/v3/neat/network"
 	"math"
 	"sort"
 )
@@ -66,7 +67,11 @@ type CartPole struct {
 }
 
 // GenerationEvaluate Perform evaluation of one epoch on double pole balancing
-func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Population, epoch *experiment.Generation, context *neat.Options) (err error) {
+func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, pop *genetics.Population, epoch *experiment.Generation) error {
+	options, ok := neat.FromContext(ctx)
+	if !ok {
+		return neat.ErrNEATOptionsNotFound
+	}
 	cartPole := newCartPole(e.Markov)
 
 	cartPole.nonMarkovLong = false
@@ -79,13 +84,13 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 			return err
 		}
 
-		if winner && (epoch.Best == nil || org.Fitness > epoch.Best.Fitness) {
+		if winner && (epoch.Champion == nil || org.Fitness > epoch.Champion.Fitness) {
 			// This will be winner in Markov case
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
 			epoch.WinnerGenes = org.Genotype.Extrons()
-			epoch.WinnerEvals = context.PopSize*epoch.Id + org.Genotype.Id
-			epoch.Best = org
+			epoch.WinnerEvals = options.PopSize*epoch.Id + org.Genotype.Id
+			epoch.Champion = org
 			org.IsWinner = true
 		}
 	}
@@ -200,8 +205,8 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 				epoch.Solved = true
 				epoch.WinnerNodes = len(champion.Genotype.Nodes)
 				epoch.WinnerGenes = champion.Genotype.Extrons()
-				epoch.WinnerEvals = context.PopSize*epoch.Id + champion.Genotype.Id
-				epoch.Best = champion
+				epoch.WinnerEvals = options.PopSize*epoch.Id + champion.Genotype.Id
+				epoch.Champion = champion
 			} else {
 				neat.InfoLog("The non-Markov champion unable to generalize")
 				champion.Fitness = championFitness // Restore the champ's fitness
@@ -218,8 +223,8 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 	epoch.FillPopulationStatistics(pop)
 
 	// Only print to file every print_every generation
-	if epoch.Solved || epoch.Id%context.PrintEvery == 0 {
-		if _, err = utils.WritePopulationPlain(e.OutputPath, pop, epoch); err != nil {
+	if epoch.Solved || epoch.Id%options.PrintEvery == 0 {
+		if _, err := utils.WritePopulationPlain(e.OutputPath, pop, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump population, reason: %s\n", err))
 			return err
 		}
@@ -227,7 +232,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 
 	if epoch.Solved {
 		// print winner organism
-		org := epoch.Best
+		org := epoch.Champion
 		// The max depth of the network to be activated
 		if depth, err := org.Phenotype.MaxActivationDepthFast(0); err == nil {
 			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
@@ -250,10 +255,10 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(pop *genetics.Pop
 		}
 	}
 
-	return err
+	return nil
 }
 
-// orgEvaluate method evaluates provided organism for cart double pole-balancing task
+// orgEvaluate method evaluates fitness of the organism for cart double pole-balancing task
 func (e *cartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism, cartPole *CartPole) (winner bool, err error) {
 	// Try to balance a pole now
 	organism.Fitness, err = cartPole.evalNet(organism.Phenotype, e.ActionType)

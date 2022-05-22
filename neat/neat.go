@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"github.com/yaricom/goNEAT/v2/neat/math"
+	"github.com/yaricom/goNEAT/v3/neat/math"
 	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -325,4 +326,18 @@ func LoadNeatOptions(r io.Reader) (*Options, error) {
 	}
 
 	return c, nil
+}
+
+// ReadNeatOptionsFromFile reads NEAT options from specified configFilePath automatically resolving config file encoding.
+func ReadNeatOptionsFromFile(configFilePath string) (*Options, error) {
+	configFile, err := os.Open(configFilePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open config file")
+	}
+	fileName := configFile.Name()
+	if strings.HasSuffix(fileName, "yml") || strings.HasSuffix(fileName, "yaml") {
+		return LoadYAMLOptions(configFile)
+	} else {
+		return LoadNeatOptions(configFile)
+	}
 }

@@ -78,23 +78,23 @@ go get github.com/yaricom/goNEAT
 For new projects, consider using the v2 of the library with the following import:
 
 ```go
-import "github.com/yaricom/goNEAT/v2"
+import "github.com/yaricom/goNEAT/v3"
 ```
 
 ## Essential Packages
 
-### [`genetics`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics "API documentation") package
+### [`genetics`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/genetics "API documentation") package
 
 The `genetics` package provides the genetic part of the NEAT algorithm describing all the machinery related to
 genome mutations, mating, and speciation of the population of organisms.
 
 It contains implementation of all important types related to the NEAT algorithm:
-* [`Gene`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics#Gene) type in this system specifies a "Connection Gene."
-* [`MIMOControlGene`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics#MIMOControlGene) type is the Multiple-Input Multiple-Output (MIMO) control Gene which allows creation of modular genomes  
-* [`Genome`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics#Genome) type is the primary source of genotype information used to create a phenotype.
-* [`Organism`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics#Organism) type is Genotypes (Genomes) and Phenotypes (Networks) combined with fitness information, i.e. the genotype and phenotype together.
-* [`Population`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics#Population) type is a group of Organisms including their Species
-* [`Species`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/genetics#Species) type  is a group of similar Organisms. Reproduction takes place mostly within a single species, so that compatible organisms can mate.
+* [`Gene`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/genetics#Gene) type in this system specifies a "Connection Gene."
+* [`MIMOControlGene`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/genetics#MIMOControlGene) type is the Multiple-Input Multiple-Output (MIMO) control Gene which allows creation of modular genomes  
+* [`Genome`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/genetics#Genome) type is the primary source of genotype information used to create a phenotype.
+* [`Organism`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/genetics#Organism) type is Genotypes (Genomes) and Phenotypes (Networks) combined with fitness information, i.e. the genotype and phenotype together.
+* [`Population`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/genetics#Population) type is a group of Organisms including their Species
+* [`Species`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/genetics#Species) type  is a group of similar Organisms. Reproduction takes place mostly within a single species, so that compatible organisms can mate.
 
 Additionally, it contains variety of utility functions to serialise/deserialize specified above types using two
 supported data formats:
@@ -102,44 +102,44 @@ supported data formats:
 * YAML
 
 The current implementation supports sequential and parallel execution of evolution epoch which controlled by
-[related parameter](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat#EpochExecutorType) in the NEAT context options.
+[related parameter](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat#EpochExecutorType) in the NEAT context options.
 
-### [`math`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/math "API documentation") package
+### [`math`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/math "API documentation") package
 
 Package `math` defines standard mathematical primitives used by the NEAT algorithm as well as utility functions
 
-### [`network`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network "API documentation") package
+### [`network`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/network "API documentation") package
 
 Package `network` provides data structures and utilities to describe Artificial Neural Network and network solvers.
 
 The most important types are:
-* [`NNode`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network#NNode) type defines the node of the network and is a part of organism's genotype as well as phenotype
-* [`Link`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network#Link) type is a connection from one node to another with an associated weight.
-* [`Network`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network#Network) type is a collection of all nodes within an organism's phenotype, which effectively defines Neural Network topology.
-* [`Solver`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network#Solver) type defines network solver interface, which allows propagation of the activation waves through the underlying network graph.
+* [`NNode`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/network#NNode) type defines the node of the network and is a part of organism's genotype as well as phenotype
+* [`Link`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/network#Link) type is a connection from one node to another with an associated weight.
+* [`Network`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/network#Network) type is a collection of all nodes within an organism's phenotype, which effectively defines Neural Network topology.
+* [`Solver`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/network#Solver) type defines network solver interface, which allows propagation of the activation waves through the underlying network graph.
 
 The current implementation supports two types of network solvers: 
-* [`FastModularNetworkSolver`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network#FastModularNetworkSolver) is the network solver implementation to be used for large neural networks simulation.
+* [`FastModularNetworkSolver`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/network#FastModularNetworkSolver) is the network solver implementation to be used for large neural networks simulation.
 * Standard Network Solver implemented by the `Network` type
 
 The topology of the Neural Network represented by the `Network` fully supports the directed graph presentation as defined
 by [Gonum graph](https://pkg.go.dev/gonum.org/v1/gonum/graph) package. This feature can be used for analysis of the network
 topology as well as encoding the graph in variety of popular graph presentation formats.
 
-### [`experiment`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment "API documentation") package
+### [`experiment`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/experiment "API documentation") package
 
 Package `experiment` defines standard evolutionary epochs evaluators and experimental data samples collectors. It provides
 standardised approach to define experiments using the NEAT algorithm implementation.
 
 The most important type here is:
-* [`GenerationEvaluator`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment#GenerationEvaluator) is the interface to be implemented by custom experiments
+* [`GenerationEvaluator`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/experiment#GenerationEvaluator) is the interface to be implemented by custom experiments
 
 You can find examples of `GenerationEvaluator` implementations at [examples](https://github.com/yaricom/goNEAT/tree/master/examples):
-* [`pole`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/examples/pole) - single-, double-pole balancing experiments
-* [`xor`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/examples/xor) - XOR solver experiment
+* [`pole`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/examples/pole) - single-, double-pole balancing experiments
+* [`xor`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/examples/xor) - XOR solver experiment
 
 The following code snippet demonstrates how to run experiments using different implementations of the `GenerationEvaluator` 
-and the [`experiment.Execute`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/experiment#Execute):
+and the [`experiment.Execute`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/experiment#Execute):
 
 ```go
 // create experiment
@@ -182,12 +182,12 @@ go func() {
 For more details, take a look at the experiment [executor](https://github.com/yaricom/goNEAT/blob/master/executor.go) 
 implementation provided with the goNEAT library.
 
-### [`neat`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat "API documentation") package
+### [`neat`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat "API documentation") package
 
 Package `neat` is an entry point to the NEAT algorithm. It defines the NEAT execution context and configuration
 options.
 
-You can find all available configuration options in the [`Options`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat#Options).
+You can find all available configuration options in the [`Options`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat#Options).
 
 The configuration options can be saved either using plain text or the YAML format. We recommend using the YAML format 
 for new projects because it allows for a more flexible setup and detailed documentation of the configuration 
@@ -219,7 +219,7 @@ options, err := neat.LoadNeatOptions(optFile)
 
 ## Phenotype Network Graph Visualization
 
-The [`formats`](https://pkg.go.dev/github.com/yaricom/goNEAT/v2/neat/network/formats "formats") package provides support for various network graph serialization formats which can be used to visualize the graph with help of well-known tools. Currently, we have support for DOT and CytoscapeJS data formats.
+The [`formats`](https://pkg.go.dev/github.com/yaricom/goNEAT/v3/neat/network/formats "formats") package provides support for various network graph serialization formats which can be used to visualize the graph with help of well-known tools. Currently, we have support for DOT and CytoscapeJS data formats.
 
 ### The CytoscapeJS JSON format
 
@@ -228,8 +228,8 @@ Another important data format supported by the library is the `CytoscapeJS JSON`
 The following code snippet demonstrates how this can be done:
 ```go
 import (
-"github.com/yaricom/goNEAT/v2/neat/network"
-"github.com/yaricom/goNEAT/v2/neat/network/formats"
+"github.com/yaricom/goNEAT/v3/neat/network"
+"github.com/yaricom/goNEAT/v3/neat/network/formats"
 "bytes"
 "fmt"
 )
@@ -538,8 +538,8 @@ format. The following code snippet demonstrates how this can be done:
 
 ```go
 import (
-"github.com/yaricom/goNEAT/v2/neat/network"
-"github.com/yaricom/goNEAT/v2/neat/network/formats"
+"github.com/yaricom/goNEAT/v3/neat/network"
+"github.com/yaricom/goNEAT/v3/neat/network/formats"
 "bytes"
 "fmt"
 )

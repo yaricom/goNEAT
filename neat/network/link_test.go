@@ -2,7 +2,7 @@ package network
 
 import (
 	"github.com/stretchr/testify/assert"
-	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v3/neat"
 	"testing"
 )
 

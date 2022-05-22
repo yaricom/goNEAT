@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat"
+	"github.com/yaricom/goNEAT/v3/neat"
 	"math"
 	"math/rand"
 	"sync"
@@ -206,7 +206,7 @@ func (p *Population) checkBestSpeciesAlive(bestSpeciesId int, bestSpeciesReprodu
 }
 
 // speciate separates given organisms into species of this population by checking compatibilities against a threshold.
-// Any organism that does is not compatible with the first organism in any existing species becomes a new species.
+// Any organism that is not compatible with the first organism in any existing species becomes a new species.
 func (p *Population) speciate(ctx context.Context, organisms []*Organism) error {
 	if len(organisms) == 0 {
 		return errors.New("no organisms to speciate from")
@@ -346,7 +346,7 @@ func (p *Population) purgeZeroOffspringSpecies(generation int) {
 		}
 	}
 
-	// Remove stagnated species which can not produce any offspring any more
+	// Remove stagnated species which can not produce any offspring
 	speciesToKeep := make([]*Species, 0)
 	for _, sp := range p.Species {
 		if sp.ExpectedOffspring > 0 {

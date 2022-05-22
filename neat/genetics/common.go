@@ -3,8 +3,9 @@ package genetics
 
 import (
 	"errors"
-	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/network"
+	"strings"
 )
 
 // The innovation method type to be applied
@@ -65,4 +66,12 @@ func NodeWithId(nodeId int, nodes []*network.NNode) *network.NNode {
 		}
 	}
 	return nil
+}
+
+func genomeEncodingFromFileName(fileName string) GenomeEncoding {
+	if strings.HasSuffix(fileName, "yml") || strings.HasSuffix(fileName, "yaml") {
+		return YAMLGenomeEncoding
+	} else {
+		return PlainGenomeEncoding
+	}
 }

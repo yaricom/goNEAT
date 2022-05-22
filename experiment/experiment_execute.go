@@ -3,8 +3,8 @@ package experiment
 import (
 	"context"
 	"fmt"
-	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/genetics"
+	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
 	"time"
 )
 
@@ -40,7 +40,7 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 		}
 
 		// create appropriate population's epoch executor
-		epochExecutor, err := epochExecutorForContext(opts)
+		epochExecutor, err := epochExecutorForContext(ctx)
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 				TrialId: run,
 			}
 			genStartTime := time.Now()
-			err = evaluator.GenerationEvaluate(pop, &generation, opts)
+			err = evaluator.GenerationEvaluate(ctx, pop, &generation)
 			if err != nil {
 				neat.InfoLog(fmt.Sprintf("!!!!! Generation [%d] evaluation failed !!!!!\n", generationId))
 				return err
@@ -97,7 +97,11 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 			if generation.Solved {
 				// stop further evaluation if already solved
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation, fitness: %f <<<<<\n",
-					generationId, generation.Best.Fitness))
+					generationId, generation.Champion.Fitness))
+				// notify trial observer
+				if trialObserver != nil {
+					trialObserver.TrialRunFinished(&trial)
+				}
 				break
 			}
 		}

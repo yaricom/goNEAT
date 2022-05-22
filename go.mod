@@ -1,4 +1,4 @@
-module github.com/yaricom/goNEAT/v2
+module github.com/yaricom/goNEAT/v3
 
 go 1.17
 
@@ -14,5 +14,6 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/stretchr/objx v0.1.0 // indirect
 	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3 // indirect
 )

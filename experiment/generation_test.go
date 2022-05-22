@@ -5,18 +5,83 @@ import (
 	"encoding/gob"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v2/neat"
-	"github.com/yaricom/goNEAT/v2/neat/genetics"
-	"github.com/yaricom/goNEAT/v2/neat/math"
-	"github.com/yaricom/goNEAT/v2/neat/network"
+	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"github.com/yaricom/goNEAT/v3/neat/math"
+	"github.com/yaricom/goNEAT/v3/neat/network"
+	"math/rand"
 	"testing"
 	"time"
 )
+
+func TestGeneration_Average(t *testing.T) {
+	fitness := Floats{1.0, 4.0, 4.0}
+	ages := Floats{10.0, 40.0, 40.0}
+	complexities := Floats{2.0, 3.0, 4.0}
+	g := createGenerationWith(fitness, ages, complexities)
+	f, a, c := g.Average()
+	assert.Equal(t, 3.0, f)
+	assert.Equal(t, 30.0, a)
+	assert.Equal(t, 3.0, c)
+}
+
+func TestGeneration_FillPopulationStatistics(t *testing.T) {
+	rand.Seed(42)
+	in, out, nmax := 3, 2, 5
+	linkProb := 0.9
+	conf := neat.Options{
+		DisjointCoeff:   0.5,
+		ExcessCoeff:     0.5,
+		MutdiffCoeff:    0.5,
+		CompatThreshold: 5.0,
+		PopSize:         100,
+	}
+	pop, err := genetics.NewPopulationRandom(in, out, nmax, false, linkProb, &conf)
+	require.NoError(t, err, "failed to create population")
+	require.NotNil(t, pop, "population expected")
+	require.Len(t, pop.Organisms, conf.PopSize, "wrong population size")
+	assert.True(t, len(pop.Species) > 0, "population has no species")
+
+	maxFitness := -1.0
+	for i := range pop.Species {
+		for j := range pop.Species[i].Organisms {
+			fitness := rand.Float64() * 100
+			pop.Species[i].Organisms[j].Fitness = fitness
+			if fitness > maxFitness {
+				maxFitness = fitness
+			}
+		}
+	}
+
+	gen := Generation{
+		Id:      1,
+		TrialId: 1,
+	}
+	gen.FillPopulationStatistics(pop)
+	expectedSpecies := 5
+	assert.Equal(t, expectedSpecies, gen.Diversity, "wrong diversity")
+	assert.Equal(t, expectedSpecies, len(gen.Fitness))
+	assert.Equal(t, expectedSpecies, len(gen.Age))
+	assert.EqualValues(t, Floats{1, 1, 1, 1, 1}, gen.Age)
+	assert.Equal(t, expectedSpecies, len(gen.Complexity))
+	assert.EqualValues(t, Floats{11, 25, 36, 32, 35}, gen.Complexity)
+	assert.NotNil(t, gen.Champion)
+	assert.Equal(t, maxFitness, gen.Champion.Fitness)
+}
+
+func createGenerationWith(fitness Floats, ages Floats, complexities Floats) *Generation {
+	return &Generation{
+		Fitness:    fitness,
+		Age:        ages,
+		Complexity: complexities,
+	}
+}
 
 // Tests encoding/decoding of generation
 func TestGeneration_Encode_Decode(t *testing.T) {
 	genomeId, fitness := 10, 23.0
 	gen := buildTestGeneration(genomeId, fitness)
+	gen.TrialId = 10101
 
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
@@ -36,24 +101,51 @@ func TestGeneration_Encode_Decode(t *testing.T) {
 	assert.EqualValues(t, gen, dgen)
 }
 
+const (
+	testDiversity   = 32
+	testWinnerEvals = 12423
+	testWinnerNodes = 7
+	testWinnerGenes = 5
+)
+
+var (
+	testAge        = Floats{1.0, 3.0, 4.0, 10.0}
+	testComplexity = Floats{34.0, 21.0, 56.0, 15.0}
+	testFitness    = Floats{10.0, 30.0, 40.0}
+)
+
 func buildTestGeneration(genId int, fitness float64) *Generation {
+	duration := time.Duration(rand.Float32()*10) * time.Second
+	return buildTestGenerationWithDuration(genId, fitness, duration)
+}
+
+func buildTestGenerationWithDuration(genId int, fitness float64, duration time.Duration) *Generation {
 	epoch := Generation{}
 	epoch.Id = genId
 	epoch.Executed = time.Now().Round(time.Second)
 	epoch.Solved = true
-	epoch.Fitness = Floats{10.0, 30.0, 40.0, fitness}
-	epoch.Age = Floats{1.0, 3.0, 4.0, 10.0}
-	epoch.Complexity = Floats{34.0, 21.0, 56.0, 15.0}
-	epoch.Diversity = 32
-	epoch.WinnerEvals = 12423
-	epoch.WinnerNodes = 7
-	epoch.WinnerGenes = 5
+	epoch.Fitness = append(testFitness, fitness)
+	epoch.Age = testAge
+	epoch.Complexity = testComplexity
+	epoch.Diversity = testDiversity
+	epoch.WinnerEvals = testWinnerEvals
+	epoch.WinnerNodes = testWinnerNodes
+	epoch.WinnerGenes = testWinnerGenes
+	epoch.Duration = duration
 
 	genome := buildTestGenome(genId)
-	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: genId}
-	epoch.Best = &org
+	org := genetics.Organism{Fitness: fitness, Genotype: genome, Generation: genId, IsWinner: true}
+	epoch.Champion = &org
 
 	return &epoch
+}
+
+func buildTestGenerationsWithDuration(durations []time.Duration) Generations {
+	epochs := make(Generations, len(durations))
+	for i, d := range durations {
+		epochs[i] = *buildTestGenerationWithDuration(i, fitnessScore(i), d)
+	}
+	return epochs
 }
 
 func buildTestGenome(id int) *genetics.Genome {
