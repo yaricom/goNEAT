@@ -95,6 +95,12 @@ func TestReadNeatOptionsFromFile(t *testing.T) {
 	assert.NotNil(t, opts)
 }
 
+func TestReadNeatOptionsFromFile_error(t *testing.T) {
+	opts, err := ReadNeatOptionsFromFile("file doesnt exist")
+	assert.Error(t, err)
+	assert.Nil(t, opts)
+}
+
 func checkNeatOptions(nc *Options, t *testing.T) {
 	assert.Equal(t, 0.5, nc.TraitParamMutProb)
 	assert.Equal(t, 1.0, nc.TraitMutationPower)

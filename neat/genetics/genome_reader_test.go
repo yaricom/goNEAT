@@ -27,6 +27,12 @@ func TestNewGenomeReaderFromFile(t *testing.T) {
 	assert.Equal(t, YAMLGenomeEncoding, r.Encoding())
 }
 
+func TestNewGenomeReaderFromFile_error(t *testing.T) {
+	r, err := NewGenomeReaderFromFile("not existing file path")
+	assert.Error(t, err)
+	assert.Nil(t, r)
+}
+
 func TestPlainGenomeReader_Read(t *testing.T) {
 	r, err := NewGenomeReader(strings.NewReader(gnomeStr), PlainGenomeEncoding)
 	require.NoError(t, err, "failed to create reader")
