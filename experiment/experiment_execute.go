@@ -98,6 +98,10 @@ func (e *Experiment) Execute(ctx context.Context, startGenome *genetics.Genome, 
 				// stop further evaluation if already solved
 				neat.InfoLog(fmt.Sprintf(">>>>> The winner organism found in [%d] generation, fitness: %f <<<<<\n",
 					generationId, generation.Champion.Fitness))
+				// notify trial observer
+				if trialObserver != nil {
+					trialObserver.TrialRunFinished(&trial)
+				}
 				break
 			}
 		}
