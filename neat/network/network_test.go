@@ -216,10 +216,30 @@ func TestNetwork_ForwardSteps(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, res)
 
+	expectedOuts := []float64{1.0, 1.0}
+	assert.EqualValues(t, expectedOuts, net.ReadOutputs())
+
 	// test zero steps
 	res, err = net.ForwardSteps(0)
 	assert.EqualError(t, err, ErrZeroActivationStepsRequested.Error())
 	assert.False(t, res)
+}
+
+func TestNetwork_RecursiveSteps(t *testing.T) {
+	net := buildNetwork()
+
+	data := []float64{0.5, 0.0, 1.5}
+	err := net.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
+
+	relaxed, err := net.RecursiveSteps()
+	assert.NoError(t, err)
+	assert.True(t, relaxed)
+
+	logNetworkActivationPath(net, t)
+
+	expectedOuts := []float64{1.0, 1.0}
+	assert.EqualValues(t, expectedOuts, net.ReadOutputs())
 }
 
 func TestNetwork_ForwardSteps_disconnected(t *testing.T) {

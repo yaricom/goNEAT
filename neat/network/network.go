@@ -327,7 +327,11 @@ func (n *Network) ForwardSteps(steps int) (res bool, err error) {
 }
 
 func (n *Network) RecursiveSteps() (bool, error) {
-	return false, errors.New("RecursiveSteps is not implemented")
+	netDepth, err := n.MaxActivationDepthFast(0)
+	if err != nil {
+		return false, err
+	}
+	return n.ForwardSteps(netDepth)
 }
 
 func (n *Network) Relax(_ int, _ float64) (bool, error) {
