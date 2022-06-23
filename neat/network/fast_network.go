@@ -331,7 +331,10 @@ func (s *FastModularNetworkSolver) LoadSensors(inputs []float64) error {
 
 // ReadOutputs Read output values from the output nodes of the network
 func (s *FastModularNetworkSolver) ReadOutputs() []float64 {
-	return s.neuronSignals[s.sensorNeuronCount : s.sensorNeuronCount+s.outputNeuronCount]
+	// decouple and return
+	outs := make([]float64, s.outputNeuronCount)
+	copy(outs, s.neuronSignals[s.sensorNeuronCount:s.sensorNeuronCount+s.outputNeuronCount])
+	return outs
 }
 
 // NodeCount Returns the total number of neural units in the network
