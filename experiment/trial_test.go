@@ -3,8 +3,10 @@ package experiment
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/yaricom/goNEAT/v3/neat"
 	"github.com/yaricom/goNEAT/v3/neat/genetics"
 	"math"
 	"math/rand"
@@ -235,9 +237,8 @@ func buildTestTrialWithBestOrganismGenesis(id, numGenerations int) *Trial {
 	trial := buildTestTrial(id, numGenerations)
 	// do genesis of best organisms
 	for i := range trial.Generations {
-		org := trial.Generations[i].Champion
-		if phenotype, err := org.Genotype.Genesis(org.Genotype.Id); err == nil {
-			trial.Generations[i].Champion.Phenotype = phenotype
+		if err := trial.Generations[i].Champion.UpdatePhenotype(); err != nil {
+			neat.WarnLog(fmt.Sprintf("Failed to crete phenotype, reason: %s", err))
 		}
 	}
 	return trial

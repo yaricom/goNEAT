@@ -144,7 +144,7 @@ func (e *Experiment) BestComplexity() Floats {
 	var x Floats = make([]float64, len(e.Trials))
 	for i, t := range e.Trials {
 		if org, ok := t.BestOrganism(false); ok {
-			x[i] = float64(org.Phenotype.Complexity())
+			x[i] = float64(organismComplexity(org))
 		}
 	}
 	return x
@@ -234,7 +234,7 @@ func (e *Experiment) EfficiencyScore() float64 {
 					t.WinnerStatistics()
 				}
 
-				meanComplexity += float64(t.WinnerGeneration.Champion.Phenotype.Complexity())
+				meanComplexity += float64(t.WinnerGeneration.ChampionComplexity())
 				meanFitness += t.WinnerGeneration.Champion.Fitness
 
 				count++
@@ -277,7 +277,7 @@ func (e *Experiment) PrintStatistics() {
 		fmt.Printf("\nChampion found in %d trial run\n\tNodes:\t\t\t%d\n\tGenes:\t\t\t%d\n\tEvaluations:\t\t%d\n\n\tDiversity:\t\t%d",
 			trid, nodes, genes, evals, divers)
 		fmt.Printf("\n\tComplexity:\t\t%d\n\tAge:\t\t\t%d\n\tFitness:\t\t%f\n",
-			org.Phenotype.Complexity(), org.Species.Age, org.Fitness)
+			organismComplexity(org), org.Species.Age, org.Fitness)
 	} else {
 		fmt.Println("\nNo winner found in the experiment!!!")
 	}
@@ -296,7 +296,7 @@ func (e *Experiment) PrintStatistics() {
 				avgDivers += float64(diversity)
 				avgGenerations += float64(len(t.Generations))
 
-				meanComplexity += float64(t.WinnerGeneration.Champion.Phenotype.Complexity())
+				meanComplexity += float64(t.WinnerGeneration.ChampionComplexity())
 				meanAge += float64(t.WinnerGeneration.Champion.Species.Age)
 				meanFitness += t.WinnerGeneration.Champion.Fitness
 

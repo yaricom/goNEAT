@@ -140,6 +140,10 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Conte
 		// the organism champion
 		champion := currSpecies.FindChampion()
 		championFitness := champion.Fitness
+		championPhenotype, err := champion.Phenotype()
+		if err != nil {
+			return err
+		}
 
 		// Now check to make sure the champion can do 100'000 evaluations
 		cartPole.nonMarkovLong = true
@@ -174,7 +178,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Conte
 							// The champion needs to be flushed here because it may have
 							// leftover activation from its last test run that could affect
 							// its recurrent memory
-							if _, err = champion.Phenotype.Flush(); err != nil {
+							if _, err = championPhenotype.Flush(); err != nil {
 								return err
 							}
 
@@ -231,12 +235,9 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Conte
 	}
 
 	if epoch.Solved {
-		// print winner organism
+		// print winner organism's statistics
 		org := epoch.Champion
-		// The max depth of the network to be activated
-		if depth, err := org.Phenotype.MaxActivationDepthFast(0); err == nil {
-			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
-		}
+		utils.PrintActivationDepth(org, true)
 
 		genomeFile := "pole2_winner_genome"
 		// Prints the winner organism to file!
@@ -246,7 +247,7 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Conte
 			neat.InfoLog(fmt.Sprintf("Generation #%d winner's genome dumped to: %s\n", epoch.Id, orgPath))
 		}
 
-		// Prints the winner organism's Phenotype to the Cytoscape JSON file!
+		// Prints the winner organism's phenotype to the Cytoscape JSON file!
 		if orgPath, err := utils.WriteGenomeCytoscapeJSON(genomeFile, e.OutputPath, org, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome Cytoscape JSON graph, reason: %s\n", err))
 		} else {
@@ -261,7 +262,11 @@ func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Conte
 // orgEvaluate method evaluates fitness of the organism for cart double pole-balancing task
 func (e *cartDoublePoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism, cartPole *CartPole) (winner bool, err error) {
 	// Try to balance a pole now
-	organism.Fitness, err = cartPole.evalNet(organism.Phenotype, e.ActionType)
+	phenotype, err := organism.Phenotype()
+	if err != nil {
+		return false, err
+	}
+	organism.Fitness, err = cartPole.evalNet(phenotype, e.ActionType)
 	if err != nil {
 		return false, err
 	}
@@ -316,7 +321,7 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 
 	p.resetState()
 
-	netDepth, err := net.MaxActivationDepthFast(0) // The max depth of the network to be activated
+	netDepth, err := net.MaxActivationDepthWithCap(0) // The max depth of the network to be activated
 	if err != nil {
 		neat.WarnLog(fmt.Sprintf(
 			"Failed to estimate activation depth of the network, skipping evaluation: %s", err))

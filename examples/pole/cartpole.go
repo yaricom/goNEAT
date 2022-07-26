@@ -75,11 +75,9 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, po
 	}
 
 	if epoch.Solved {
-		// print winner organism
+		// print winner organism's statistics
 		org := epoch.Champion
-		if depth, err := org.Phenotype.MaxActivationDepthFast(0); err == nil {
-			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
-		}
+		utils.PrintActivationDepth(org, true)
 
 		genomeFile := "pole1_winner_genome"
 		// Prints the winner organism to file!
@@ -89,7 +87,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, po
 			neat.InfoLog(fmt.Sprintf("Generation #%d winner's genome dumped to: %s\n", epoch.Id, orgPath))
 		}
 
-		// Prints the winner organism's Phenotype to the Cytoscape JSON file!
+		// Prints the winner organism's phenotype to the Cytoscape JSON file!
 		if orgPath, err := utils.WriteGenomeCytoscapeJSON(genomeFile, e.OutputPath, org, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome Cytoscape JSON graph, reason: %s\n", err))
 		} else {
@@ -103,8 +101,13 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, po
 
 // orgEvaluate evaluates provided organism for cart pole balancing task
 func (e *cartPoleGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool, error) {
+	phenotype, err := organism.Phenotype()
+	if err != nil {
+		return false, err
+	}
+
 	// Try to balance a pole now
-	if fitness, err := e.runCart(organism.Phenotype); err != nil {
+	if fitness, err := e.runCart(phenotype); err != nil {
 		return false, nil
 	} else {
 		organism.Fitness = float64(fitness)
@@ -150,7 +153,7 @@ func (e *cartPoleGenerationEvaluator) runCart(net *network.Network) (steps int, 
 		thetaDot = float64(rand.Int31()%3000)/1000.0 - 1.5
 	}
 
-	netDepth, err := net.MaxActivationDepthFast(0) // The max depth of the network to be activated
+	netDepth, err := net.MaxActivationDepthWithCap(0) // The max depth of the network to be activated
 	if err != nil {
 		neat.WarnLog(fmt.Sprintf(
 			"Failed to estimate maximal depth of the network with loop.\nUsing default depth: %d", netDepth))

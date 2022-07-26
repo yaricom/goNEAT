@@ -82,9 +82,7 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(ctx context.Context, pop *ge
 	if epoch.Solved {
 		// print winner organism
 		org := epoch.Champion
-		if depth, err := org.Phenotype.MaxActivationDepthFast(0); err == nil {
-			neat.InfoLog(fmt.Sprintf("Activation depth of the winner: %d\n", depth))
-		}
+		utils.PrintActivationDepth(org, true)
 
 		genomeFile := "xor_winner_genome"
 		// Prints the winner organism's Genome to the file!
@@ -94,7 +92,7 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(ctx context.Context, pop *ge
 			neat.InfoLog(fmt.Sprintf("Generation #%d winner's genome dumped to: %s\n", epoch.Id, orgPath))
 		}
 
-		// Prints the winner organism's Phenotype to the DOT file!
+		// Prints the winner organism's phenotype to the DOT file!
 		if orgPath, err := utils.WriteGenomeDOT(genomeFile, e.OutputPath, org, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome DOT graph, reason: %s\n", err))
 		} else {
@@ -102,7 +100,7 @@ func (e *xorGenerationEvaluator) GenerationEvaluate(ctx context.Context, pop *ge
 				epoch.Id, orgPath))
 		}
 
-		// Prints the winner organism's Phenotype to the Cytoscape JSON file!
+		// Prints the winner organism's phenotype to the Cytoscape JSON file!
 		if orgPath, err := utils.WriteGenomeCytoscapeJSON(genomeFile, e.OutputPath, org, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's phenome Cytoscape JSON graph, reason: %s\n", err))
 		} else {
@@ -124,7 +122,12 @@ func (e *xorGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool,
 		{1.0, 1.0, 0.0},
 		{1.0, 1.0, 1.0}}
 
-	netDepth, err := organism.Phenotype.MaxActivationDepthFast(0) // The max depth of the network to be activated
+	phenotype, err := organism.Phenotype()
+	if err != nil {
+		return false, err
+	}
+
+	netDepth, err := phenotype.MaxActivationDepthWithCap(0) // The max depth of the network to be activated
 	if err != nil {
 		neat.WarnLog(fmt.Sprintf(
 			"Failed to estimate maximal depth of the network with loop:\n%s\nUsing default depth: %d",
@@ -141,20 +144,20 @@ func (e *xorGenerationEvaluator) orgEvaluate(organism *genetics.Organism) (bool,
 
 	// Load and activate the network on each input
 	for count := 0; count < 4; count++ {
-		if err = organism.Phenotype.LoadSensors(in[count]); err != nil {
+		if err = phenotype.LoadSensors(in[count]); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to load sensors: %s", err))
 			return false, err
 		}
 
 		// Use depth to ensure full relaxation
-		if success, err = organism.Phenotype.ForwardSteps(netDepth); err != nil {
+		if success, err = phenotype.ForwardSteps(netDepth); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to activate network: %s", err))
 			return false, err
 		}
-		out[count] = organism.Phenotype.Outputs[0].Activation
+		out[count] = phenotype.Outputs[0].Activation
 
 		// Flush network for subsequent use
-		if _, err = organism.Phenotype.Flush(); err != nil {
+		if _, err = phenotype.Flush(); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to flush network: %s", err))
 			return false, err
 		}

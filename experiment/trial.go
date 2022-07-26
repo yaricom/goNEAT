@@ -3,6 +3,7 @@ package experiment
 import (
 	"encoding/gob"
 	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"math"
 	"sort"
 	"time"
 )
@@ -100,8 +101,8 @@ func (t *Trial) ChampionSpeciesAges() Floats {
 func (t *Trial) ChampionsComplexities() Floats {
 	var x Floats = make([]float64, len(t.Generations))
 	for i, e := range t.Generations {
-		if e.Champion != nil && e.Champion.Phenotype != nil {
-			x[i] = float64(e.Champion.Phenotype.Complexity())
+		if complexity := e.ChampionComplexity(); complexity != math.MaxInt {
+			x[i] = float64(complexity)
 		}
 	}
 	return x

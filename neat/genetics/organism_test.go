@@ -95,10 +95,10 @@ func TestOrganism_UpdatePhenotype(t *testing.T) {
 	org, err := NewOrganism(rand.Float64(), gnome, 1)
 	require.NoError(t, err, "failed to create organism")
 
-	org.Phenotype = nil
-	assert.Nil(t, org.Phenotype, "no phenotype expected")
+	org.orgPhenotype = nil
+	assert.Nil(t, org.orgPhenotype, "no phenotype expected")
 
 	err = org.UpdatePhenotype()
 	require.NoError(t, err, "failed to recreate phenotype")
-	assert.NotNil(t, org.Phenotype)
+	assert.NotNil(t, org.orgPhenotype)
 }

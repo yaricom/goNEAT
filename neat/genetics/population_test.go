@@ -11,13 +11,13 @@ import (
 
 func TestNewPopulationRandom(t *testing.T) {
 	rand.Seed(42)
-	in, out, nmax := 3, 2, 5
+	in, out, maxHidden := 3, 2, 5
 	linkProb := 0.5
 	conf := neat.Options{
 		CompatThreshold: 0.5,
 		PopSize:         10,
 	}
-	pop, err := NewPopulationRandom(in, out, nmax, false, linkProb, &conf)
+	pop, err := NewPopulationRandom(in, out, maxHidden, false, linkProb, &conf)
 	require.NoError(t, err, "failed to create population")
 	require.NotNil(t, pop, "population expected")
 	require.Len(t, pop.Organisms, conf.PopSize, "wrong population size")
@@ -29,7 +29,6 @@ func TestNewPopulationRandom(t *testing.T) {
 		assert.True(t, len(org.Genotype.Genes) > 0, "organism has no genes at: %d", i)
 		assert.True(t, len(org.Genotype.Nodes) > 0, "organism has no nodes at: %d", i)
 		assert.True(t, len(org.Genotype.Traits) > 0, "organism has no traits at: %d", i)
-		assert.NotNil(t, org.Genotype.Phenotype, "organism has no phenotype")
 	}
 }
 
@@ -60,13 +59,12 @@ func TestNewPopulation(t *testing.T) {
 		assert.True(t, len(org.Genotype.Genes) > 0, "organism has no genes at: %d", i)
 		assert.True(t, len(org.Genotype.Nodes) > 0, "organism has no nodes at: %d", i)
 		assert.True(t, len(org.Genotype.Traits) > 0, "organism has no traits at: %d", i)
-		assert.NotNil(t, org.Genotype.Phenotype, "organism has no phenotype")
 	}
 }
 
 func TestPopulation_verify(t *testing.T) {
 	// first create population
-	popStr := "genomestart 1\n" +
+	genomeStr := "genomestart 1\n" +
 		"trait 1 0.1 0 0 0 0 0 0 0\n" +
 		"trait 2 0.2 0 0 0 0 0 0 0\n" +
 		"trait 3 0.3 0 0 0 0 0 0 0\n" +
@@ -93,7 +91,7 @@ func TestPopulation_verify(t *testing.T) {
 	conf := neat.Options{
 		CompatThreshold: 0.5,
 	}
-	pop, err := ReadPopulation(strings.NewReader(popStr), &conf)
+	pop, err := ReadPopulation(strings.NewReader(genomeStr), &conf)
 	require.NoError(t, err, "failed to create population")
 	require.NotNil(t, pop, "population expected")
 
