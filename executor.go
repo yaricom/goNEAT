@@ -25,12 +25,16 @@ func main() {
 	var experimentName = flag.String("experiment", "XOR", "The name of experiment to run. [XOR, cart_pole, cart_2pole_markov, cart_2pole_non-markov]")
 	var trialsCount = flag.Int("trials", 0, "The number of trials for experiment. Overrides the one set in configuration.")
 	var logLevel = flag.String("log_level", "", "The logger level to be used. Overrides the one set in configuration.")
+	var randSeed = flag.Int64("seed", 0, "The seed for random number generator")
 
 	flag.Parse()
 
 	// Seed the random-number generator with current time so that
 	// the numbers will be different every time we run.
 	seed := time.Now().Unix()
+	if randSeed != nil {
+		seed = *randSeed
+	}
 	rand.Seed(seed)
 
 	// Load NEAT options
