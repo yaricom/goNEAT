@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/math"
 	"math/rand"
 	"sort"
 	"testing"
@@ -210,11 +211,15 @@ func TestSpecies_reproduce(t *testing.T) {
 
 	// Configuration
 	opts := neat.Options{
-		DropOffAge:      5,
-		SurvivalThresh:  0.5,
-		AgeSignificance: 0.5,
-		PopSize:         30,
-		CompatThreshold: 0.6,
+		DropOffAge:         5,
+		SurvivalThresh:     0.5,
+		AgeSignificance:    0.5,
+		PopSize:            30,
+		CompatThreshold:    0.6,
+		MutateAddLinkProb:  0.9,
+		MutateAddNodeProb:  0.9,
+		NodeActivators:     []math.NodeActivationType{math.SigmoidApproximationActivation, math.SigmoidBipolarActivation},
+		NodeActivatorsProb: []float64{0.5, 0.5},
 	}
 	neat.LogLevel = neat.LogLevelInfo
 
