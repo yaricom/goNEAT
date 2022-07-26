@@ -25,8 +25,16 @@ func TestPrintAllActivationDepthPaths_Modular(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestPrintAllActivationDepthPaths_writeError(t *testing.T) {
+func TestPrintAllActivationDepthPaths_modular_writeError(t *testing.T) {
 	net := buildModularNetwork()
+
+	errWriter := ErrorWriter(1)
+	err := PrintAllActivationDepthPaths(net, &errWriter)
+	assert.EqualError(t, err, alwaysErrorText)
+}
+
+func TestPrintAllActivationDepthPaths_plain_writeError(t *testing.T) {
+	net := buildNetwork()
 
 	errWriter := ErrorWriter(1)
 	err := PrintAllActivationDepthPaths(net, &errWriter)

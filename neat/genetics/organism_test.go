@@ -45,6 +45,24 @@ func TestOrganisms(t *testing.T) {
 	}
 }
 
+func TestOrganism_Phenotype(t *testing.T) {
+	gnome := buildTestGenome(1)
+	organism, err := NewOrganism(rand.Float64(), gnome, 1)
+	require.NoError(t, err)
+
+	phenotype, err := organism.Phenotype()
+	require.NoError(t, err)
+	require.NotNil(t, phenotype)
+
+	assert.Equal(t, 4, phenotype.NodeCount(), "wrong nodes count")
+	assert.Equal(t, 3, phenotype.LinkCount(), "wrong links count")
+
+	// check that phenotype not created twice
+	other, err := organism.Phenotype()
+	require.NoError(t, err)
+	assert.True(t, phenotype == other, "must be the same pointer")
+}
+
 func TestOrganism_MarshalBinary(t *testing.T) {
 	gnome := buildTestGenome(1)
 	org, err := NewOrganism(rand.Float64(), gnome, 1)

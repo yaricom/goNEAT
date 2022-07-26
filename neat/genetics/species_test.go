@@ -206,7 +206,7 @@ func TestSpecies_reproduce_fail(t *testing.T) {
 // Tests Species reproduce success
 func TestSpecies_reproduce(t *testing.T) {
 	rand.Seed(42)
-	in, out, nmax, n := 3, 2, 15, 3
+	in, out, maxHidden, n := 3, 2, 15, 3
 	linkProb := 0.8
 
 	// Configuration
@@ -223,7 +223,7 @@ func TestSpecies_reproduce(t *testing.T) {
 	}
 	neat.LogLevel = neat.LogLevelInfo
 
-	gen := newGenomeRand(1, in, out, n, nmax, false, linkProb)
+	gen := newGenomeRand(1, in, out, n, maxHidden, false, linkProb)
 	pop, err := NewPopulation(gen, &opts)
 	require.NoError(t, err, "failed to create population")
 	require.NotNil(t, pop, "population expected")
