@@ -13,7 +13,7 @@ func TestPrintAllActivationDepthPaths_Simple(t *testing.T) {
 	net := buildNetwork()
 
 	actual := logNetworkActivationPath(net, t)
-	expected := "\n1 -> 4 -> 7\n---------------\n2 -> 4 -> 7\n2 -> 5 -> 6 -> 8\n---------------\n3 -> 5 -> 6 -> 7\n3 -> 5 -> 6 -> 8\n---------------\n"
+	expected := "\n1 -> 4 -> 7\n2 -> 4 -> 7\n2 -> 5 -> 6 -> 7\n3 -> 5 -> 6 -> 7\n2 -> 5 -> 6 -> 8\n3 -> 5 -> 6 -> 8\n"
 	assert.Equal(t, expected, actual)
 }
 
