@@ -44,16 +44,15 @@ type Genome struct {
 
 // NewGenome Constructor which takes full genome specs and puts them into the new one
 func NewGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene) *Genome {
-	return &Genome{
-		Id:     id,
-		Traits: t,
-		Nodes:  n,
-		Genes:  g,
-	}
+	return newGenome(id, t, n, g, nil)
 }
 
 // NewModularGenome Constructs new modular genome
 func NewModularGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene, mimoG []*MIMOControlGene) *Genome {
+	return newGenome(id, t, n, g, mimoG)
+}
+
+func newGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene, mimoG []*MIMOControlGene) *Genome {
 	return &Genome{
 		Id:           id,
 		Traits:       t,
