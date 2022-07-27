@@ -360,8 +360,8 @@ func (g *Genome) hasGene(gene *Gene) bool {
 	}
 
 	// Find genetically equal link in this genome to the provided gene
-	for _, g := range g.Genes {
-		if g.Link.IsEqualGenetically(gene.Link) {
+	for _, gn := range g.Genes {
+		if gn.Link.IsEqualGenetically(gene.Link) {
 			return true
 		}
 	}

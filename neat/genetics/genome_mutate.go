@@ -1,8 +1,8 @@
 package genetics
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/yaricom/goNEAT/v3/neat"
 	"github.com/yaricom/goNEAT/v3/neat/math"
 	"github.com/yaricom/goNEAT/v3/neat/network"
@@ -129,11 +129,13 @@ func (g *Genome) mutateConnectSensors(innovations InnovationsObserver, _ *neat.O
 
 // Mutate the genome by adding a new link between two random NNodes,
 // if NNodes are already connected, keep trying conf.NewLinkTries times
-func (g *Genome) mutateAddLink(innovations InnovationsObserver, opts *neat.Options) (bool, error) {
+func (g *Genome) mutateAddLink(innovations InnovationsObserver, generation int, opts *neat.Options) (bool, error) {
 	// If the phenotype does not exist, exit on false, print error
 	// Note: This should never happen - if it does there is a bug
 	if g.Phenotype == nil {
-		return false, errors.New("attempt to add link to genome with no phenotype")
+		if _, err := g.Genesis(generation); err != nil {
+			return false, errors.Wrap(err, "genesis failed while trying to add link")
+		}
 	} else if len(g.Nodes) == 0 {
 		return false, errors.New("genome has no nodes to be connected by new link")
 	}
@@ -367,7 +369,7 @@ func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator 
 			-A new node
 			-Stuck between the same nodes as were chosen for this mutation
 			-Splitting the same gene as chosen for this mutation
-		If so, we know this mutation is not a novel innovation in this generation
+		If so, we know this mutation is not a novel innovation in this generation,
 		so we make it match the original, identical mutation which occurred
 		elsewhere in the population by coincidence */
 		if inn.innovationType == newNodeInnType &&

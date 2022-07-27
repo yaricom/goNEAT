@@ -29,7 +29,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	_, err = gnome1.Genesis(1)
 	require.NoError(t, err, "genesis failed")
 
-	res, err := gnome1.mutateAddLink(pop, context)
+	res, err := gnome1.mutateAddLink(pop, 1, context)
 	require.NoError(t, err, "failed to add link")
 	require.True(t, res, "New link not added")
 
@@ -52,7 +52,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	_, err = gnome1.Genesis(1) // do network genesis with new nodes added
 	require.NoError(t, err, "genesis failed")
 
-	res, err = gnome1.mutateAddLink(pop, context)
+	res, err = gnome1.mutateAddLink(pop, 1, context)
 	require.NoError(t, err, "failed to add link")
 	require.True(t, res, "New link not added")
 

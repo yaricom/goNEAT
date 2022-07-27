@@ -315,10 +315,7 @@ func (s *Species) reproduce(ctx context.Context, generation int, pop *Population
 					}
 				} else {
 					// Sometimes we add a link to a superchamp
-					if _, err = newGenome.Genesis(generation); err != nil {
-						return nil, err
-					}
-					if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
+					if _, err = newGenome.mutateAddLink(pop, generation, opts); err != nil {
 						return nil, err
 					}
 					mutStructBaby = true
@@ -380,11 +377,7 @@ func (s *Species) reproduce(ctx context.Context, generation int, pop *Population
 			} else if rand.Float64() < opts.MutateAddLinkProb {
 				neat.DebugLog("SPECIES: ---> mutateAddLink")
 
-				// Mutate add link
-				if _, err = newGenome.Genesis(generation); err != nil {
-					return nil, err
-				}
-				if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
+				if _, err = newGenome.mutateAddLink(pop, generation, opts); err != nil {
 					return nil, err
 				}
 				mutStructBaby = true
@@ -495,11 +488,7 @@ func (s *Species) reproduce(ctx context.Context, generation int, pop *Population
 				} else if rand.Float64() < opts.MutateAddLinkProb {
 					neat.DebugLog("SPECIES: ---------> mutateAddLink")
 
-					// mutate_add_link
-					if _, err = newGenome.Genesis(generation); err != nil {
-						return nil, err
-					}
-					if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
+					if _, err = newGenome.mutateAddLink(pop, generation, opts); err != nil {
 						return nil, err
 					}
 					mutStructBaby = true
