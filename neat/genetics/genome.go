@@ -655,6 +655,14 @@ func (g *Genome) verify() (bool, error) {
 	return true, nil
 }
 
+func (g *Genome) nodeInsert(node *network.NNode) {
+	g.Nodes = nodeInsert(g.Nodes, node)
+}
+
+func (g *Genome) geneInsert(gene *Gene) {
+	g.Genes = geneInsert(g.Genes, gene)
+}
+
 // Inserts a NNode into a given ordered list of NNodes in ascending order by NNode ID
 func nodeInsert(nodes []*network.NNode, n *network.NNode) []*network.NNode {
 	if n == nil {

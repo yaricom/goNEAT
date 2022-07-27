@@ -119,7 +119,7 @@ func (g *Genome) mutateConnectSensors(innovations InnovationsObserver, _ *neat.O
 
 			// Now add the new Gene to the Genome
 			if gene != nil {
-				g.Genes = geneInsert(g.Genes, gene)
+				g.geneInsert(gene)
 				linkAdded = true
 			}
 		}
@@ -295,7 +295,7 @@ func (g *Genome) mutateAddLink(innovations InnovationsObserver, generation int, 
 
 		// Now add the new Gene to the Genome
 		if gene != nil {
-			g.Genes = geneInsert(g.Genes, gene)
+			g.geneInsert(gene)
 		}
 	}
 
@@ -435,9 +435,9 @@ func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator 
 
 	// Now add the new NNode and new Genes to the Genome
 	if node != nil && gene1 != nil && gene2 != nil {
-		g.Genes = geneInsert(g.Genes, gene1)
-		g.Genes = geneInsert(g.Genes, gene2)
-		g.Nodes = nodeInsert(g.Nodes, node)
+		g.geneInsert(gene1)
+		g.geneInsert(gene2)
+		g.nodeInsert(node)
 		return true, nil
 	}
 	// failed to create node or connecting genes

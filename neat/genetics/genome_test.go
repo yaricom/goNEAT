@@ -220,13 +220,10 @@ func TestGene_Verify(t *testing.T) {
 func TestGenome_geneInsert(t *testing.T) {
 	gnome := buildTestGenome(1)
 	gnome.Genes = append(gnome.Genes, NewConnectionGene(network.NewLinkWithTrait(gnome.Traits[2], 5.5, gnome.Nodes[2], gnome.Nodes[3], false), 5, 0, false))
-	genes := geneInsert(gnome.Genes, NewConnectionGene(network.NewLinkWithTrait(gnome.Traits[2], 5.5, gnome.Nodes[2], gnome.Nodes[3], false), 4, 0, false))
-	if len(genes) != 5 {
-		t.Error("len(genes) != 5", len(genes))
-		return
-	}
+	gnome.geneInsert(NewConnectionGene(network.NewLinkWithTrait(gnome.Traits[2], 5.5, gnome.Nodes[2], gnome.Nodes[3], false), 4, 0, false))
+	require.Equal(t, 5, len(gnome.Genes), "wrong genes number")
 
-	for i, g := range genes {
+	for i, g := range gnome.Genes {
 		if g.InnovationNum != int64(i+1) {
 			t.Error("(g.InnovationNum != i + 1)", g.InnovationNum, i+1)
 		}
