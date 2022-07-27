@@ -55,11 +55,7 @@ func (r *plainGenomeReader) Encoding() GenomeEncoding {
 }
 
 func (r *plainGenomeReader) Read() (*Genome, error) {
-	gnome := Genome{
-		Traits: make([]*neat.Trait, 0),
-		Nodes:  make([]*network.NNode, 0),
-		Genes:  make([]*Gene, 0),
-	}
+	gnome := newGenome(0, make([]*neat.Trait, 0), make([]*network.NNode, 0), make([]*Gene, 0), nil)
 
 	var gId int
 	// Loop until file is finished, parsing each line
@@ -93,7 +89,7 @@ func (r *plainGenomeReader) Read() (*Genome, error) {
 				return nil, err
 			}
 			// check that node ID is unique
-			if prevNode := NodeWithId(newNode.Id, gnome.Nodes); prevNode != nil {
+			if gnome.haveNode(newNode.Id) {
 				return nil, fmt.Errorf("node ID: %d is not unique", newNode.Id)
 			}
 			gnome.addNode(newNode)
@@ -123,7 +119,7 @@ func (r *plainGenomeReader) Read() (*Genome, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-	return &gnome, nil
+	return gnome, nil
 }
 
 // The method to read Trait in plain text format
@@ -234,13 +230,7 @@ func (r *yamlGenomeReader) Read() (*Genome, error) {
 	if err != nil {
 		return nil, err
 	}
-	gnome := &Genome{
-		Id:           genId,
-		Traits:       make([]*neat.Trait, 0),
-		Nodes:        make([]*network.NNode, 0),
-		Genes:        make([]*Gene, 0),
-		ControlGenes: make([]*MIMOControlGene, 0),
-	}
+	gnome := newGenome(genId, make([]*neat.Trait, 0), make([]*network.NNode, 0), make([]*Gene, 0), make([]*MIMOControlGene, 0))
 
 	// read traits
 	traits := gm["traits"].([]interface{})
@@ -264,7 +254,7 @@ func (r *yamlGenomeReader) Read() (*Genome, error) {
 			return nil, err
 		}
 		// check that node ID is unique
-		if prevNode := NodeWithId(node.Id, gnome.Nodes); prevNode != nil {
+		if gnome.haveNode(node.Id) {
 			return nil, fmt.Errorf("node ID: %d is not unique", node.Id)
 		}
 		gnome.addNode(node)
@@ -289,7 +279,7 @@ func (r *yamlGenomeReader) Read() (*Genome, error) {
 				return nil, err
 			}
 			// check that control node ID is unique
-			if prevNode := NodeWithId(mGene.ControlNode.Id, gnome.Nodes); prevNode != nil {
+			if gnome.haveNode(mGene.ControlNode.Id) {
 				return nil, fmt.Errorf("control node ID: %d is not unique", mGene.ControlNode.Id)
 			}
 			gnome.ControlGenes = append(gnome.ControlGenes, mGene)

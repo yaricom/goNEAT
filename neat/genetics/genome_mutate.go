@@ -107,7 +107,7 @@ func (g *Genome) mutateConnectSensors(innovations InnovationsObserver, _ *neat.O
 				newInnovation := NewInnovationForLink(sensor.Id, output.Id, nextInnovId,
 					newWeight, traitNum)
 				innovations.StoreInnovation(*newInnovation)
-			} else if gene != nil && g.hasGene(gene) {
+			} else if gene != nil && g.haveGene(gene) {
 				// The gene for already occurred innovation already in this genome.
 				// This may happen as result of parent genome mutation in current epoch which is
 				// repeated in the child after parent's genome transferred to child during mating
@@ -277,7 +277,7 @@ func (g *Genome) mutateAddLink(innovations InnovationsObserver, generation int, 
 			innovation := NewInnovationForRecurrentLink(node1.Id, node2.Id, nextInnovId,
 				newWeight, traitNum, doRecur)
 			innovations.StoreInnovation(*innovation)
-		} else if gene != nil && g.hasGene(gene) {
+		} else if gene != nil && g.haveGene(gene) {
 			// The gene for already occurred innovation already in this genome.
 			// This may happen as result of parent genome mutation in current epoch which is
 			// repeated in the child after parent's genome transferred to child during mating
@@ -420,7 +420,7 @@ func (g *Genome) mutateAddNode(innovations InnovationsObserver, nodeIdGenerator 
 		// Store innovation
 		innovation := NewInnovationForNode(inNode.Id, outNode.Id, gene1Innovation, gene2Innovation, node.Id, gene.InnovationNum)
 		innovations.StoreInnovation(*innovation)
-	} else if node != nil && g.hasNode(node) {
+	} else if node != nil && g.haveNode(node.Id) {
 		// The same add node innovation occurred in the same genome (parent) - just skip.
 		// This may happen when parent of this organism experienced the same mutation in current epoch earlier
 		// and after that parent's genome was duplicated to child by mating and the same mutation parameters
