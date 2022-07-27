@@ -55,7 +55,7 @@ func buildTestModularGenome(id int) *Genome {
 		{Id: 6, NeuronType: network.HiddenNeuron, ActivationType: math.LinearActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 		{Id: 7, NeuronType: network.HiddenNeuron, ActivationType: math.NullActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
-	gnome.Nodes = append(gnome.Nodes, ioNodes...)
+	gnome.addNodes(ioNodes)
 
 	// connect added nodes
 	ioConnGenes := []*Gene{

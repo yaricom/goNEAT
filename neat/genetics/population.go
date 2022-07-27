@@ -139,7 +139,7 @@ func (p *Population) Innovations() []Innovation {
 	return p.innovations
 }
 
-// Create a population from Genome g. The new Population will have the same topology as g
+// spawn creates a population from Genome g. The new Population will have the same topology as g
 // with link weights slightly perturbed from g's
 func (p *Population) spawn(g *Genome, opts *neat.Options) (err error) {
 	for count := 0; count < opts.PopSize; count++ {

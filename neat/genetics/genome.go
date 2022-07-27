@@ -103,21 +103,21 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 			newNode = network.NewNNode(i, network.BiasNeuron)
 		}
 		newNode.Trait = newTrait
-		gnome.Nodes = append(gnome.Nodes, newNode)
+		gnome.addNode(newNode)
 	}
 
 	// Build the hidden nodes
 	for i := in + 1; i <= in+n; i++ {
 		newNode := network.NewNNode(i, network.HiddenNeuron)
 		newNode.Trait = newTrait
-		gnome.Nodes = append(gnome.Nodes, newNode)
+		gnome.addNode(newNode)
 	}
 
 	// Build the output nodes
 	for i := firstOutput; i <= totalNodes; i++ {
 		newNode := network.NewNNode(i, network.OutputNeuron)
 		newNode.Trait = newTrait
-		gnome.Nodes = append(gnome.Nodes, newNode)
+		gnome.addNode(newNode)
 	}
 
 	//
@@ -335,6 +335,16 @@ func (g *Genome) getNextGeneInnovNum() (int64, error) {
 	return innNum + int64(1), nil
 }
 
+func (g *Genome) addNode(node *network.NNode) {
+	g.Nodes = append(g.Nodes, node)
+}
+
+func (g *Genome) addNodes(nodes []*network.NNode) {
+	for i := 0; i < len(nodes); i++ {
+		g.addNode(nodes[i])
+	}
+}
+
 // Returns true if this Genome already includes provided node
 func (g *Genome) hasNode(node *network.NNode) bool {
 	if node == nil {
@@ -478,26 +488,78 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 	}
 
 	// Duplicate NNodes
-	nodesDup := make([]*network.NNode, len(g.Nodes))
-	for i, nd := range g.Nodes {
-		// First, find the duplicate of the trait that this node points to
-		assocTrait := nd.Trait
-		if assocTrait != nil {
-			assocTrait = TraitWithId(assocTrait.Id, traitsDup)
-		}
-		nodesDup[i] = network.NewNNodeCopy(nd, assocTrait)
-	}
+	nodesDup := g.duplicateNodes(traitsDup)
 
 	// Duplicate Genes
+	genesDup, err := g.duplicateGenes(traitsDup, nodesDup)
+	if err != nil {
+		return nil, err
+	}
+
+	// If no MIMO control genes return plain genome
+	//
+	if len(g.ControlGenes) == 0 {
+		return NewGenome(newId, traitsDup, nodesDup, genesDup), nil
+	}
+
+	// Duplicate MIMO Control Genes and return modular genome
+	//
+	controlGenesDup, err := g.duplicateControlGenes(traitsDup, nodesDup)
+	if err != nil {
+		return nil, err
+	}
+	return NewModularGenome(newId, traitsDup, nodesDup, genesDup, controlGenesDup), nil
+}
+
+func (g *Genome) duplicateControlGenes(traits []*neat.Trait, nodes []*network.NNode) ([]*MIMOControlGene, error) {
+	controlGenesDup := make([]*MIMOControlGene, len(g.ControlGenes))
+	for i, cg := range g.ControlGenes {
+		// duplicate control node
+		controlNode := cg.ControlNode
+		// find duplicate of trait associated with control node
+		assocTrait := controlNode.Trait
+		if assocTrait != nil {
+			assocTrait = TraitWithId(assocTrait.Id, traits)
+		}
+		nodeCopy := network.NewNNodeCopy(controlNode, assocTrait)
+		// add incoming links
+		for _, l := range controlNode.Incoming {
+			inNode := NodeWithId(l.InNode.Id, nodes)
+			if inNode == nil {
+				return nil, fmt.Errorf("incoming node: %d not found for control node: %d",
+					l.InNode.Id, controlNode.Id)
+			}
+			newInLink := network.NewLinkCopy(l, inNode, nodeCopy)
+			nodeCopy.Incoming = append(nodeCopy.Incoming, newInLink)
+		}
+
+		// add outgoing links
+		for _, l := range controlNode.Outgoing {
+			outNode := NodeWithId(l.OutNode.Id, nodes)
+			if outNode == nil {
+				return nil, fmt.Errorf("outgoing node: %d not found for control node: %d",
+					l.InNode.Id, controlNode.Id)
+			}
+			newOutLink := network.NewLinkCopy(l, nodeCopy, outNode)
+			nodeCopy.Outgoing = append(nodeCopy.Outgoing, newOutLink)
+		}
+
+		// add MIMO control gene
+		controlGenesDup[i] = NewMIMOGeneCopy(cg, nodeCopy)
+	}
+	return controlGenesDup, nil
+}
+
+func (g *Genome) duplicateGenes(traits []*neat.Trait, nodes []*network.NNode) ([]*Gene, error) {
 	genesDup := make([]*Gene, len(g.Genes))
 	for i, gn := range g.Genes {
 		// First find the nodes connected by the gene's link
-		inNode := NodeWithId(gn.Link.InNode.Id, nodesDup)
+		inNode := NodeWithId(gn.Link.InNode.Id, nodes)
 		if inNode == nil {
 			return nil, fmt.Errorf("incoming node: %d not found for gene %s",
 				gn.Link.InNode.Id, gn.String())
 		}
-		outNode := NodeWithId(gn.Link.OutNode.Id, nodesDup)
+		outNode := NodeWithId(gn.Link.OutNode.Id, nodes)
 		if outNode == nil {
 			return nil, fmt.Errorf("outgoing node: %d not found for gene %s",
 				gn.Link.OutNode.Id, gn.String())
@@ -506,55 +568,25 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 		// Find the duplicate of trait associated with this gene
 		assocTrait := gn.Link.Trait
 		if assocTrait != nil {
-			assocTrait = TraitWithId(assocTrait.Id, traitsDup)
+			assocTrait = TraitWithId(assocTrait.Id, traits)
 		}
 
 		genesDup[i] = NewGeneCopy(gn, assocTrait, inNode, outNode)
 	}
+	return genesDup, nil
+}
 
-	if len(g.ControlGenes) == 0 {
-		// If no MIMO control genes return plain genome
-		return NewGenome(newId, traitsDup, nodesDup, genesDup), nil
-	} else {
-		// Duplicate MIMO Control Genes and build modular genome
-		controlGenesDup := make([]*MIMOControlGene, len(g.ControlGenes))
-		for i, cg := range g.ControlGenes {
-			// duplicate control node
-			controlNode := cg.ControlNode
-			// find duplicate of trait associated with control node
-			assocTrait := controlNode.Trait
-			if assocTrait != nil {
-				assocTrait = TraitWithId(assocTrait.Id, traitsDup)
-			}
-			nodeCopy := network.NewNNodeCopy(controlNode, assocTrait)
-			// add incoming links
-			for _, l := range controlNode.Incoming {
-				inNode := NodeWithId(l.InNode.Id, nodesDup)
-				if inNode == nil {
-					return nil, fmt.Errorf("incoming node: %d not found for control node: %d",
-						l.InNode.Id, controlNode.Id)
-				}
-				newInLink := network.NewLinkCopy(l, inNode, nodeCopy)
-				nodeCopy.Incoming = append(nodeCopy.Incoming, newInLink)
-			}
-
-			// add outgoing links
-			for _, l := range controlNode.Outgoing {
-				outNode := NodeWithId(l.OutNode.Id, nodesDup)
-				if outNode == nil {
-					return nil, fmt.Errorf("outgoing node: %d not found for control node: %d",
-						l.InNode.Id, controlNode.Id)
-				}
-				newOutLink := network.NewLinkCopy(l, nodeCopy, outNode)
-				nodeCopy.Outgoing = append(nodeCopy.Outgoing, newOutLink)
-			}
-
-			// add MIMO control gene
-			controlGenesDup[i] = NewMIMOGeneCopy(cg, nodeCopy)
+func (g *Genome) duplicateNodes(traits []*neat.Trait) []*network.NNode {
+	nodesDup := make([]*network.NNode, len(g.Nodes))
+	for i, nd := range g.Nodes {
+		// First, find the duplicate of the trait that this node points to
+		assocTrait := nd.Trait
+		if assocTrait != nil {
+			assocTrait = TraitWithId(assocTrait.Id, traits)
 		}
-
-		return NewModularGenome(newId, traitsDup, nodesDup, genesDup, controlGenesDup), nil
+		nodesDup[i] = network.NewNNodeCopy(nd, assocTrait)
 	}
+	return nodesDup
 }
 
 // For debugging: A number of tests can be run on a genome to check its integrity.

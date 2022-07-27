@@ -96,7 +96,7 @@ func (r *plainGenomeReader) Read() (*Genome, error) {
 			if prevNode := NodeWithId(newNode.Id, gnome.Nodes); prevNode != nil {
 				return nil, fmt.Errorf("node ID: %d is not unique", newNode.Id)
 			}
-			gnome.Nodes = append(gnome.Nodes, newNode)
+			gnome.addNode(newNode)
 
 		case "gene":
 			// Read a Gene
@@ -267,7 +267,7 @@ func (r *yamlGenomeReader) Read() (*Genome, error) {
 		if prevNode := NodeWithId(node.Id, gnome.Nodes); prevNode != nil {
 			return nil, fmt.Errorf("node ID: %d is not unique", node.Id)
 		}
-		gnome.Nodes = append(gnome.Nodes, node)
+		gnome.addNode(node)
 	}
 
 	// read Genes

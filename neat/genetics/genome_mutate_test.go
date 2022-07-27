@@ -48,7 +48,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: math.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 		{Id: 6, NeuronType: network.InputNeuron, ActivationType: math.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
-	gnome1.Nodes = append(gnome1.Nodes, nodes...)
+	gnome1.addNodes(nodes)
 	_, err = gnome1.Genesis(1) // do network genesis with new nodes added
 	require.NoError(t, err, "genesis failed")
 
@@ -93,7 +93,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 		ActivationType: math.SigmoidSteepenedActivation,
 		Incoming:       make([]*network.Link, 0),
 		Outgoing:       make([]*network.Link, 0)}
-	gnome1.Nodes = append(gnome1.Nodes, node)
+	gnome1.addNode(node)
 	// Create gnome phenotype
 	_, err = gnome1.Genesis(1)
 	require.NoError(t, err, "genesis failed")
