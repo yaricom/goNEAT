@@ -140,7 +140,7 @@ func readPlainTrait(r io.Reader) (*neat.Trait, error) {
 // Read a Network Node from specified Reader in plain text format
 // and applies corresponding trait to it from a list of traits provided
 func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, error) {
-	n := network.NewNetworkNode()
+	node := network.NewNetworkNode()
 	buff := bufio.NewReader(r)
 	line, _, err := buff.ReadLine()
 	if err != nil {
@@ -153,25 +153,25 @@ func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, er
 	if nId, err := strconv.ParseInt(parts[0], 10, 32); err != nil {
 		return nil, err
 	} else {
-		n.Id = int(nId)
+		node.Id = int(nId)
 	}
 	if traitId, err := strconv.ParseInt(parts[1], 10, 32); err != nil {
 		return nil, err
 	} else {
-		n.Trait = TraitWithId(int(traitId), traits)
+		node.Trait = TraitWithId(int(traitId), traits)
 	}
 
 	if neuronType, err := strconv.ParseInt(parts[3], 10, 8); err != nil {
 		return nil, err
 	} else {
-		n.NeuronType = network.NodeNeuronType(neuronType)
+		node.NeuronType = network.NodeNeuronType(neuronType)
 	}
 
 	if len(parts) == 5 {
-		n.ActivationType, err = math.NodeActivators.ActivationTypeFromName(parts[4])
+		node.ActivationType, err = math.NodeActivators.ActivationTypeFromName(parts[4])
 	}
 
-	return n, err
+	return node, err
 }
 
 // Reads Gene from reader in plain text format
@@ -413,19 +413,19 @@ func readMIMOControlGene(conf map[string]interface{}, traits []*neat.Trait, node
 
 // Reads NNode configuration
 func readNNode(conf map[string]interface{}, traits []*neat.Trait) (*network.NNode, error) {
-	nd := network.NewNetworkNode()
-	nd.Id = conf["id"].(int)
+	node := network.NewNetworkNode()
+	node.Id = conf["id"].(int)
 	traitId := conf["trait_id"].(int)
-	nd.Trait = TraitWithId(traitId, traits)
+	node.Trait = TraitWithId(traitId, traits)
 	typeName := conf["type"].(string)
 	var err error
-	nd.NeuronType, err = network.NeuronTypeByName(typeName)
+	node.NeuronType, err = network.NeuronTypeByName(typeName)
 	if err != nil {
 		return nil, err
 	}
 	activation := conf["activation"].(string)
-	nd.ActivationType, err = math.NodeActivators.ActivationTypeFromName(activation)
-	return nd, err
+	node.ActivationType, err = math.NodeActivators.ActivationTypeFromName(activation)
+	return node, err
 }
 
 // Reads Trait configuration

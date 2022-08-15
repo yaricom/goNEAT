@@ -109,12 +109,8 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 
 	// Build the input nodes
 	for i := 1; i <= in; i++ {
-		var newNode *network.NNode
-		if i < in {
-			newNode = network.NewNNode(i, network.InputNeuron)
-		} else {
-			newNode = network.NewNNode(i, network.BiasNeuron)
-		}
+		bias := i == in // the last input node
+		newNode := network.NewSensorNode(i, bias)
 		newNode.Trait = newTrait
 		gnome.addNode(newNode)
 	}

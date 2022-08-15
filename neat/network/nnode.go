@@ -75,6 +75,19 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 	return node
 }
 
+// NewSensorNode is to create sensor node
+func NewSensorNode(nodeId int, bias bool) *NNode {
+	n := NewNetworkNode()
+	n.ActivationType = math.NullActivation
+	n.Id = nodeId
+	if bias {
+		n.NeuronType = BiasNeuron
+	} else {
+		n.NeuronType = InputNeuron
+	}
+	return n
+}
+
 // NewNetworkNode The default constructor
 func NewNetworkNode() *NNode {
 	return &NNode{
