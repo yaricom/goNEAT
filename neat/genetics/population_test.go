@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v3/neat/math"
 	"math/rand"
 	"strings"
 	"testing"
@@ -14,8 +15,10 @@ func TestNewPopulationRandom(t *testing.T) {
 	in, out, maxHidden := 3, 2, 5
 	linkProb := 0.5
 	conf := neat.Options{
-		CompatThreshold: 0.5,
-		PopSize:         10,
+		CompatThreshold:    0.5,
+		PopSize:            10,
+		NodeActivators:     []math.NodeActivationType{math.GaussianBipolarActivation},
+		NodeActivatorsProb: []float64{1.0},
 	}
 	pop, err := NewPopulationRandom(in, out, maxHidden, false, linkProb, &conf)
 	require.NoError(t, err, "failed to create population")
@@ -36,13 +39,16 @@ func TestNewPopulation(t *testing.T) {
 	rand.Seed(42)
 	in, out, nmax, n := 3, 2, 5, 3
 	linkProb := 0.5
-	conf := neat.Options{
-		CompatThreshold: 0.5,
-		PopSize:         10,
+	conf := &neat.Options{
+		CompatThreshold:    0.5,
+		PopSize:            10,
+		NodeActivators:     []math.NodeActivationType{math.GaussianBipolarActivation},
+		NodeActivatorsProb: []float64{1.0},
 	}
-	gen := newGenomeRand(1, in, out, n, nmax, false, linkProb)
+	gen, err := newGenomeRand(1, in, out, n, nmax, false, linkProb, conf)
+	require.NoError(t, err, "failed to create random genome")
 
-	pop, err := NewPopulation(gen, &conf)
+	pop, err := NewPopulation(gen, conf)
 	require.NoError(t, err, "failed to create population")
 	require.NotNil(t, pop, "population expected")
 	require.Len(t, pop.Organisms, conf.PopSize, "wrong population size")

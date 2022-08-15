@@ -78,7 +78,7 @@ func newGenomeWithNodeIdMap(id int, traits []*neat.Trait, nodes []*network.NNode
 // This special constructor creates a Genome with in inputs, out outputs, n out of maxHidden hidden units, and random
 // connectivity.  If rec is true then recurrent connections will be included. The last input is a bias
 // link_prob is the probability of a link. The created genome is not modular.
-func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb float64) *Genome {
+func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb float64, opts *neat.Options) (*Genome, error) {
 	totalNodes := in + out + maxHidden
 	matrixDim := totalNodes * totalNodes
 	// The connection matrix which will be randomized
@@ -118,6 +118,11 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 	// Build the hidden nodes
 	for i := in + 1; i <= in+n; i++ {
 		newNode := network.NewNNode(i, network.HiddenNeuron)
+		if activationType, err := opts.RandomNodeActivationType(); err != nil {
+			return nil, err
+		} else {
+			newNode.ActivationType = activationType
+		}
 		newNode.Trait = newTrait
 		gnome.addNode(newNode)
 	}
@@ -192,7 +197,7 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 			inNode, outNode = nil, nil
 		}
 	}
-	return &gnome
+	return &gnome, nil
 }
 
 // ReadGenome reads Genome from reader

@@ -85,9 +85,16 @@ func buildTestModularGenome(id int) *Genome {
 func TestGenome_NewGenomeRand(t *testing.T) {
 	rand.Seed(42)
 	newId, in, out, n := 1, 3, 2, 2
+	opts := &neat.Options{
+		CompatThreshold:    0.5,
+		PopSize:            10,
+		NodeActivators:     []math.NodeActivationType{math.GaussianBipolarActivation},
+		NodeActivatorsProb: []float64{1.0},
+	}
 
-	gnome := newGenomeRand(newId, in, out, n, 5, false, 0.5)
-	require.NotNil(t, gnome, "Failed to create random genome")
+	gnome, err := newGenomeRand(newId, in, out, n, 5, false, 0.5, opts)
+	require.NoError(t, err, "failed to create random genome")
+	require.NotNil(t, gnome, "random genome expected")
 	assert.Len(t, gnome.Nodes, in+n+out, "failed to create nodes")
 	assert.True(t, len(gnome.Genes) >= in+n+out, "Failed to create genes")
 }
