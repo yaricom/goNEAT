@@ -112,11 +112,13 @@ func buildTestPopulation(t *testing.T) (*genetics.Population, float64) {
 	in, out, maxHidden := 3, 2, 5
 	linkProb := 0.9
 	conf := neat.Options{
-		DisjointCoeff:   0.5,
-		ExcessCoeff:     0.5,
-		MutdiffCoeff:    0.5,
-		CompatThreshold: 5.0,
-		PopSize:         100,
+		DisjointCoeff:      0.5,
+		ExcessCoeff:        0.5,
+		MutdiffCoeff:       0.5,
+		CompatThreshold:    5.0,
+		PopSize:            100,
+		NodeActivators:     []neatMath.NodeActivationType{neatMath.GaussianBipolarActivation},
+		NodeActivatorsProb: []float64{1.0},
 	}
 	pop, err := genetics.NewPopulationRandom(in, out, maxHidden, false, linkProb, &conf)
 	require.NoError(t, err, "failed to create population")
