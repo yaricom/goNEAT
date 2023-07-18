@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v4/neat"
 	"testing"
 )
 

@@ -4,7 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/sbinet/npyio/npz"
-	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"github.com/yaricom/goNEAT/v4/neat/genetics"
 	"gonum.org/v1/gonum/mat"
 	"io"
 	"math"

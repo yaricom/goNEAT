@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v4/neat"
 	"math"
 	"math/rand"
 	"sync"

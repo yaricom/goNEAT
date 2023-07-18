@@ -4,11 +4,11 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/experiment"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/genetics"
-	"github.com/yaricom/goNEAT/v3/neat/network"
-	"github.com/yaricom/goNEAT/v3/neat/network/formats"
+	"github.com/yaricom/goNEAT/v4/experiment"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/genetics"
+	"github.com/yaricom/goNEAT/v4/neat/network"
+	"github.com/yaricom/goNEAT/v4/neat/network/formats"
 	"log"
 	"os"
 )

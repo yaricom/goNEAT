@@ -9,10 +9,10 @@ package xor
 import (
 	"context"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/experiment"
-	"github.com/yaricom/goNEAT/v3/experiment/utils"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"github.com/yaricom/goNEAT/v4/experiment"
+	"github.com/yaricom/goNEAT/v4/experiment/utils"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/genetics"
 	"math"
 )
 
