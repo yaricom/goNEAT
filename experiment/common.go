@@ -4,8 +4,10 @@ package experiment
 import (
 	"context"
 	"errors"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"fmt"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/genetics"
+	"math"
 	"time"
 )
 
@@ -42,5 +44,20 @@ func epochExecutorForContext(ctx context.Context) (genetics.PopulationEpochExecu
 		return &genetics.ParallelPopulationEpochExecutor{}, nil
 	default:
 		return nil, errors.New("unsupported epoch executor type requested")
+	}
+}
+
+// organismComplexity is to get complexity of the given organism. If error happens during complexity evaluation or
+// provided nil the math.MaxInt will be returned.
+func organismComplexity(organism *genetics.Organism) int {
+	if organism == nil {
+		neat.WarnLog("Can not estimate complexity of the organism. Nil provided.")
+		return math.MaxInt
+	}
+	if phenotype, err := organism.Phenotype(); err != nil {
+		neat.WarnLog(fmt.Sprintf("Failed to get phenotype of the organism, reason: %s", err))
+		return math.MaxInt
+	} else {
+		return phenotype.Complexity()
 	}
 }

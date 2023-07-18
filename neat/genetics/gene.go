@@ -2,8 +2,8 @@ package genetics
 
 import (
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/network"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/network"
 )
 
 // The Gene type in this system specifies a "Connection Gene."

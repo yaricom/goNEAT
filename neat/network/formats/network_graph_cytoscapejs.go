@@ -3,8 +3,8 @@ package formats
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat/math"
-	"github.com/yaricom/goNEAT/v3/neat/network"
+	"github.com/yaricom/goNEAT/v4/neat/math"
+	"github.com/yaricom/goNEAT/v4/neat/network"
 	"gonum.org/v1/gonum/graph/formats/cytoscapejs"
 	"io"
 )

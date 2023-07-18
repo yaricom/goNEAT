@@ -9,8 +9,19 @@ import (
 
 // PrintAllActivationDepthPaths is to print all paths used to find the maximal activation depth of the network
 func PrintAllActivationDepthPaths(n *Network, w io.Writer) error {
-	_, err := n.maxActivationDepth(w)
-	return err
+	if len(n.controlNodes) > 0 {
+		_, err := n.maxActivationDepthModular(w)
+		return err
+	}
+
+	for _, node := range n.Outputs {
+		path := make([]int, n.NodeCount())
+		pathIndex := 0
+		if err := node.printDepthPaths(path, &pathIndex, w); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // PrintPath is to print the given paths into specified writer

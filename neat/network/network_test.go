@@ -3,7 +3,7 @@ package network
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v3/neat/math"
+	"github.com/yaricom/goNEAT/v4/neat/math"
 	"testing"
 )
 
@@ -70,12 +70,12 @@ func buildNetwork() *Network {
 
 func buildModularNetwork() *Network {
 	allNodes := []*NNode{
-		NewNNode(1, InputNeuron),
-		NewNNode(2, InputNeuron),
-		NewNNode(3, BiasNeuron),
-		NewNNode(4, HiddenNeuron),
-		NewNNode(5, HiddenNeuron),
-		NewNNode(7, HiddenNeuron),
+		NewNNode(1, InputNeuron),  // INPUT 1
+		NewNNode(2, InputNeuron),  // INPUT 2
+		NewNNode(3, BiasNeuron),   // BIAS
+		NewNNode(4, HiddenNeuron), // HIDDEN 4
+		NewNNode(5, HiddenNeuron), // HIDDEN 5
+		NewNNode(7, HiddenNeuron), // HIDDEN 7
 		NewNNode(8, OutputNeuron),
 		NewNNode(9, OutputNeuron),
 	}
@@ -84,27 +84,27 @@ func buildModularNetwork() *Network {
 	}
 	// HIDDEN 6 - control node
 	controlNodes[0].ActivationType = math.MultiplyModuleActivation
-	controlNodes[0].AddIncoming(allNodes[3], 1.0)
-	controlNodes[0].AddIncoming(allNodes[4], 1.0)
-	controlNodes[0].AddOutgoing(allNodes[5], 1.0)
+	controlNodes[0].AddIncoming(allNodes[3], 1.0) // <- HIDDEN 4
+	controlNodes[0].AddIncoming(allNodes[4], 1.0) // <- HIDDEN 5
+	controlNodes[0].AddOutgoing(allNodes[5], 1.0) // -> HIDDEN 7
 
 	// HIDDEN 4
 	allNodes[3].ActivationType = math.LinearActivation
-	allNodes[3].ConnectFrom(allNodes[0], 15.0)
-	allNodes[3].ConnectFrom(allNodes[2], 10.0)
+	allNodes[3].ConnectFrom(allNodes[0], 15.0) // <- INPUT 1
+	allNodes[3].ConnectFrom(allNodes[2], 10.0) // <- BIAS
 	// HIDDEN 5
 	allNodes[4].ActivationType = math.LinearActivation
-	allNodes[4].ConnectFrom(allNodes[1], 5.0)
-	allNodes[4].ConnectFrom(allNodes[2], 1.0)
+	allNodes[4].ConnectFrom(allNodes[1], 5.0) // <- INPUT 2
+	allNodes[4].ConnectFrom(allNodes[2], 1.0) // <- BIAS
 
 	// HIDDEN 7
-	allNodes[5].ActivationType = math.NullActivation
+	allNodes[5].ActivationType = math.NullActivation // <- CONTROL
 
 	// OUTPUT 8
-	allNodes[6].ConnectFrom(allNodes[5], 4.5)
+	allNodes[6].ConnectFrom(allNodes[5], 4.5) // <- HIDDEN 7
 	allNodes[6].ActivationType = math.LinearActivation
 	// OUTPUT 9
-	allNodes[7].ConnectFrom(allNodes[5], 13.0)
+	allNodes[7].ConnectFrom(allNodes[5], 13.0) // <- HIDDEN 7
 	allNodes[7].ActivationType = math.LinearActivation
 
 	return NewModularNetwork(allNodes[0:3], allNodes[6:8], allNodes, controlNodes, 0)
@@ -132,7 +132,7 @@ func TestNetwork_MaxActivationDepth_Simple(t *testing.T) {
 
 	depth, err := net.MaxActivationDepth()
 	assert.NoError(t, err, "failed to calculate max depth")
-	assert.Equal(t, 4, depth)
+	assert.Equal(t, 3, depth)
 
 	logNetworkActivationPath(net, t)
 }
@@ -142,7 +142,7 @@ func TestNetwork_MaxActivationDepth_Modular(t *testing.T) {
 
 	depth, err := net.MaxActivationDepth()
 	assert.NoError(t, err, "failed to calculate max depth")
-	assert.Equal(t, 5, depth)
+	assert.Equal(t, 4, depth)
 
 	logNetworkActivationPath(net, t)
 }
@@ -157,9 +157,9 @@ func TestNetwork_MaxActivationDepth_No_Hidden_or_Control(t *testing.T) {
 func TestNetwork_MaxActivationDepthFast_Simple(t *testing.T) {
 	net := buildNetwork()
 
-	depth, err := net.MaxActivationDepthFast(0)
+	depth, err := net.MaxActivationDepthWithCap(0)
 	assert.NoError(t, err, "failed to calculate max depth")
-	assert.Equal(t, 4, depth)
+	assert.Equal(t, 3, depth)
 
 	logNetworkActivationPath(net, t)
 }
@@ -168,7 +168,7 @@ func TestNetwork_MaxActivationDepthFast_Simple_WithMaxLimitError(t *testing.T) {
 	net := buildNetwork()
 
 	maxDepth := 2
-	depth, err := net.MaxActivationDepthFast(2)
+	depth, err := net.MaxActivationDepthWithCap(2)
 	assert.EqualError(t, err, ErrMaximalNetDepthExceeded.Error())
 	assert.Equal(t, maxDepth, depth)
 }
@@ -176,7 +176,7 @@ func TestNetwork_MaxActivationDepthFast_Simple_WithMaxLimitError(t *testing.T) {
 func TestNetwork_MaxActivationDepthFast_Modular(t *testing.T) {
 	net := buildModularNetwork()
 
-	_, err := net.MaxActivationDepthFast(0)
+	_, err := net.MaxActivationDepthWithCap(0)
 	assert.Error(t, err, "error expected")
 }
 
@@ -354,36 +354,6 @@ func TestNetwork_ActivateSteps_ErrNetExceededMaxActivationAttempts(t *testing.T)
 	res, err := net.ActivateSteps(10)
 	assert.EqualError(t, err, ErrNetExceededMaxActivationAttempts.Error())
 	assert.False(t, res)
-}
-
-func TestNetwork_ActivateSteps_maxActivationDepth_disconnected(t *testing.T) {
-	net := buildDisconnectedNetwork()
-
-	depth, err := net.maxActivationDepth(nil)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, depth)
-}
-
-func TestNetwork_ActivateSteps_maxActivationDepth_negative_cycle(t *testing.T) {
-	net := buildNetwork()
-
-	// create negative cycle
-	net.allNodes[1].ConnectFrom(net.allNodes[7], -130.0)
-
-	depth, err := net.maxActivationDepth(nil)
-	assert.NoError(t, err)
-	assert.Equal(t, 3, depth)
-
-	logNetworkActivationPath(net, t)
-}
-
-func TestNetwork_ActivateSteps_maxActivationDepth_writeError(t *testing.T) {
-	net := buildNetwork()
-
-	errWriter := ErrorWriter(1)
-	depth, err := net.maxActivationDepth(&errWriter)
-	assert.EqualError(t, err, alwaysErrorText)
-	assert.Equal(t, 0, depth)
 }
 
 func TestModularNetwork_ControlNodes(t *testing.T) {

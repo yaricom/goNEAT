@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/math"
 	"math/rand"
 	"sort"
 	"testing"
@@ -205,21 +206,27 @@ func TestSpecies_reproduce_fail(t *testing.T) {
 // Tests Species reproduce success
 func TestSpecies_reproduce(t *testing.T) {
 	rand.Seed(42)
-	in, out, nmax, n := 3, 2, 15, 3
+	in, out, maxHidden, n := 3, 2, 15, 3
 	linkProb := 0.8
 
 	// Configuration
-	opts := neat.Options{
-		DropOffAge:      5,
-		SurvivalThresh:  0.5,
-		AgeSignificance: 0.5,
-		PopSize:         30,
-		CompatThreshold: 0.6,
+	opts := &neat.Options{
+		DropOffAge:         5,
+		SurvivalThresh:     0.5,
+		AgeSignificance:    0.5,
+		PopSize:            30,
+		CompatThreshold:    0.6,
+		MutateAddLinkProb:  0.9,
+		MutateAddNodeProb:  0.9,
+		NodeActivators:     []math.NodeActivationType{math.SigmoidApproximationActivation, math.SigmoidBipolarActivation},
+		NodeActivatorsProb: []float64{0.5, 0.5},
 	}
 	neat.LogLevel = neat.LogLevelInfo
 
-	gen := newGenomeRand(1, in, out, n, nmax, false, linkProb)
-	pop, err := NewPopulation(gen, &opts)
+	gen, err := newGenomeRand(1, in, out, n, maxHidden, false, linkProb, opts)
+	require.NoError(t, err, "failed to create random genome")
+
+	pop, err := NewPopulation(gen, opts)
 	require.NoError(t, err, "failed to create population")
 	require.NotNil(t, pop, "population expected")
 

@@ -3,8 +3,9 @@ package network
 import (
 	"bytes"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/math"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/math"
+	"io"
 )
 
 // NNode is either a NEURON or a SENSOR.
@@ -72,6 +73,19 @@ func NewNNodeCopy(n *NNode, t *neat.Trait) *NNode {
 	node.ActivationType = n.ActivationType
 	node.Trait = t
 	return node
+}
+
+// NewSensorNode is to create sensor node
+func NewSensorNode(nodeId int, bias bool) *NNode {
+	n := NewNetworkNode()
+	n.ActivationType = math.NullActivation
+	n.Id = nodeId
+	if bias {
+		n.NeuronType = BiasNeuron
+	} else {
+		n.NeuronType = InputNeuron
+	}
+	return n
 }
 
 // NewNetworkNode The default constructor
@@ -198,36 +212,78 @@ func (n *NNode) FlushbackCheck() error {
 	return nil
 }
 
-// Depth Find the greatest depth starting from this neuron at depth d. If maxDepth > 0 it can be used to stop early in
+// Depth Find the greatest depth starting from this neuron at depth d. If maxDepthCap > 0 it can be used to stop early in
 // case if very deep network detected
-func (n *NNode) Depth(d int, maxDepth int) (int, error) {
-	if maxDepth > 0 && d > maxDepth {
+func (n *NNode) Depth(d int, maxDepthCap int) (int, error) {
+	if maxDepthCap > 0 && d > maxDepthCap {
 		// to avoid very deep network traversing
-		return maxDepth, ErrMaximalNetDepthExceeded
+		return maxDepthCap, ErrMaximalNetDepthExceeded
 	}
-	n.visited = true
-	// Base Case
+
+	// The end reached
 	if n.IsSensor() {
 		return d, nil
+	}
+
+	n.visited = true
+
+	// visit parent nodes
+	max := d
+	for _, l := range n.Incoming {
+		if l.InNode.visited {
+			// was already visited (loop detected) - skipping
+			continue
+		}
+		if curDepth, err := l.InNode.Depth(d+1, maxDepthCap); err != nil {
+			return curDepth, err
+		} else if curDepth > max {
+			max = curDepth
+		}
+	}
+
+	n.visited = false
+	return max, nil
+
+}
+
+func (n *NNode) printDepthPaths(path []int, pathIndex *int, w io.Writer) error {
+	// Mark the current node and store it in path[]
+	n.visited = true
+	path[*pathIndex] = n.Id
+	*pathIndex++
+
+	if n.IsSensor() {
+		// destination reached
+		for i := *pathIndex - 1; i >= 0; i-- {
+			if i > 0 {
+				if _, err := fmt.Fprintf(w, "%d -> ", path[i]); err != nil {
+					return err
+				}
+			} else {
+				if _, err := fmt.Fprintf(w, "%d", path[i]); err != nil {
+					return err
+				}
+			}
+		}
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
 	} else {
-		// recursion
-		max := d // The max depth
+		// visit parent nodes
 		for _, l := range n.Incoming {
 			if l.InNode.visited {
 				// was already visited (loop detected) - skipping
 				continue
 			}
-			curDepth, err := l.InNode.Depth(d+1, maxDepth)
-			if err != nil {
-				return curDepth, err
-			}
-			if curDepth > max {
-				max = curDepth
+			if err := l.InNode.printDepthPaths(path, pathIndex, w); err != nil {
+				return err
 			}
 		}
-		return max, nil
 	}
-
+	// Remove current vertex from path[] and mark it as unvisited
+	*pathIndex--
+	n.visited = false
+	return nil
 }
 
 // NodeType Convenient method to check network's node type (SENSOR, NEURON)

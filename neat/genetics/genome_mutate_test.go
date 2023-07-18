@@ -3,9 +3,9 @@ package genetics
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/math"
-	"github.com/yaricom/goNEAT/v3/neat/network"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/math"
+	"github.com/yaricom/goNEAT/v4/neat/network"
 	"math/rand"
 	"testing"
 )
@@ -29,7 +29,7 @@ func TestGenome_mutateAddLink(t *testing.T) {
 	_, err = gnome1.Genesis(1)
 	require.NoError(t, err, "genesis failed")
 
-	res, err := gnome1.mutateAddLink(pop, context)
+	res, err := gnome1.mutateAddLink(pop, 1, context)
 	require.NoError(t, err, "failed to add link")
 	require.True(t, res, "New link not added")
 
@@ -48,11 +48,11 @@ func TestGenome_mutateAddLink(t *testing.T) {
 		{Id: 5, NeuronType: network.HiddenNeuron, ActivationType: math.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 		{Id: 6, NeuronType: network.InputNeuron, ActivationType: math.SigmoidSteepenedActivation, Incoming: make([]*network.Link, 0), Outgoing: make([]*network.Link, 0)},
 	}
-	gnome1.Nodes = append(gnome1.Nodes, nodes...)
+	gnome1.addNodes(nodes)
 	_, err = gnome1.Genesis(1) // do network genesis with new nodes added
 	require.NoError(t, err, "genesis failed")
 
-	res, err = gnome1.mutateAddLink(pop, context)
+	res, err = gnome1.mutateAddLink(pop, 1, context)
 	require.NoError(t, err, "failed to add link")
 	require.True(t, res, "New link not added")
 
@@ -93,7 +93,7 @@ func TestGenome_mutateConnectSensors(t *testing.T) {
 		ActivationType: math.SigmoidSteepenedActivation,
 		Incoming:       make([]*network.Link, 0),
 		Outgoing:       make([]*network.Link, 0)}
-	gnome1.Nodes = append(gnome1.Nodes, node)
+	gnome1.addNode(node)
 	// Create gnome phenotype
 	_, err = gnome1.Genesis(1)
 	require.NoError(t, err, "genesis failed")

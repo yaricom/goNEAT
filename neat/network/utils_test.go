@@ -13,7 +13,7 @@ func TestPrintAllActivationDepthPaths_Simple(t *testing.T) {
 	net := buildNetwork()
 
 	actual := logNetworkActivationPath(net, t)
-	expected := "\n1 -> 4 -> 7\n---------------\n2 -> 4 -> 7\n2 -> 5 -> 6 -> 8\n---------------\n3 -> 5 -> 6 -> 7\n3 -> 5 -> 6 -> 8\n---------------\n"
+	expected := "\n1 -> 4 -> 7\n2 -> 4 -> 7\n2 -> 5 -> 6 -> 7\n3 -> 5 -> 6 -> 7\n2 -> 5 -> 6 -> 8\n3 -> 5 -> 6 -> 8\n"
 	assert.Equal(t, expected, actual)
 }
 
@@ -25,8 +25,16 @@ func TestPrintAllActivationDepthPaths_Modular(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestPrintAllActivationDepthPaths_writeError(t *testing.T) {
+func TestPrintAllActivationDepthPaths_modular_writeError(t *testing.T) {
 	net := buildModularNetwork()
+
+	errWriter := ErrorWriter(1)
+	err := PrintAllActivationDepthPaths(net, &errWriter)
+	assert.EqualError(t, err, alwaysErrorText)
+}
+
+func TestPrintAllActivationDepthPaths_plain_writeError(t *testing.T) {
+	net := buildNetwork()
 
 	errWriter := ErrorWriter(1)
 	err := PrintAllActivationDepthPaths(net, &errWriter)

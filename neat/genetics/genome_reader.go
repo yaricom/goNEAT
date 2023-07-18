@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/cast"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/math"
-	"github.com/yaricom/goNEAT/v3/neat/network"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/math"
+	"github.com/yaricom/goNEAT/v4/neat/network"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -55,11 +55,7 @@ func (r *plainGenomeReader) Encoding() GenomeEncoding {
 }
 
 func (r *plainGenomeReader) Read() (*Genome, error) {
-	gnome := Genome{
-		Traits: make([]*neat.Trait, 0),
-		Nodes:  make([]*network.NNode, 0),
-		Genes:  make([]*Gene, 0),
-	}
+	gnome := newGenome(0, make([]*neat.Trait, 0), make([]*network.NNode, 0), make([]*Gene, 0), nil)
 
 	var gId int
 	// Loop until file is finished, parsing each line
@@ -93,10 +89,10 @@ func (r *plainGenomeReader) Read() (*Genome, error) {
 				return nil, err
 			}
 			// check that node ID is unique
-			if prevNode := NodeWithId(newNode.Id, gnome.Nodes); prevNode != nil {
+			if gnome.haveNode(newNode.Id) {
 				return nil, fmt.Errorf("node ID: %d is not unique", newNode.Id)
 			}
-			gnome.Nodes = append(gnome.Nodes, newNode)
+			gnome.addNode(newNode)
 
 		case "gene":
 			// Read a Gene
@@ -123,7 +119,7 @@ func (r *plainGenomeReader) Read() (*Genome, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-	return &gnome, nil
+	return gnome, nil
 }
 
 // The method to read Trait in plain text format
@@ -144,7 +140,7 @@ func readPlainTrait(r io.Reader) (*neat.Trait, error) {
 // Read a Network Node from specified Reader in plain text format
 // and applies corresponding trait to it from a list of traits provided
 func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, error) {
-	n := network.NewNetworkNode()
+	node := network.NewNetworkNode()
 	buff := bufio.NewReader(r)
 	line, _, err := buff.ReadLine()
 	if err != nil {
@@ -157,25 +153,25 @@ func readPlainNetworkNode(r io.Reader, traits []*neat.Trait) (*network.NNode, er
 	if nId, err := strconv.ParseInt(parts[0], 10, 32); err != nil {
 		return nil, err
 	} else {
-		n.Id = int(nId)
+		node.Id = int(nId)
 	}
 	if traitId, err := strconv.ParseInt(parts[1], 10, 32); err != nil {
 		return nil, err
 	} else {
-		n.Trait = TraitWithId(int(traitId), traits)
+		node.Trait = TraitWithId(int(traitId), traits)
 	}
 
 	if neuronType, err := strconv.ParseInt(parts[3], 10, 8); err != nil {
 		return nil, err
 	} else {
-		n.NeuronType = network.NodeNeuronType(neuronType)
+		node.NeuronType = network.NodeNeuronType(neuronType)
 	}
 
 	if len(parts) == 5 {
-		n.ActivationType, err = math.NodeActivators.ActivationTypeFromName(parts[4])
+		node.ActivationType, err = math.NodeActivators.ActivationTypeFromName(parts[4])
 	}
 
-	return n, err
+	return node, err
 }
 
 // Reads Gene from reader in plain text format
@@ -234,13 +230,7 @@ func (r *yamlGenomeReader) Read() (*Genome, error) {
 	if err != nil {
 		return nil, err
 	}
-	gnome := &Genome{
-		Id:           genId,
-		Traits:       make([]*neat.Trait, 0),
-		Nodes:        make([]*network.NNode, 0),
-		Genes:        make([]*Gene, 0),
-		ControlGenes: make([]*MIMOControlGene, 0),
-	}
+	gnome := newGenome(genId, make([]*neat.Trait, 0), make([]*network.NNode, 0), make([]*Gene, 0), make([]*MIMOControlGene, 0))
 
 	// read traits
 	traits := gm["traits"].([]interface{})
@@ -264,10 +254,10 @@ func (r *yamlGenomeReader) Read() (*Genome, error) {
 			return nil, err
 		}
 		// check that node ID is unique
-		if prevNode := NodeWithId(node.Id, gnome.Nodes); prevNode != nil {
+		if gnome.haveNode(node.Id) {
 			return nil, fmt.Errorf("node ID: %d is not unique", node.Id)
 		}
-		gnome.Nodes = append(gnome.Nodes, node)
+		gnome.addNode(node)
 	}
 
 	// read Genes
@@ -289,7 +279,7 @@ func (r *yamlGenomeReader) Read() (*Genome, error) {
 				return nil, err
 			}
 			// check that control node ID is unique
-			if prevNode := NodeWithId(mGene.ControlNode.Id, gnome.Nodes); prevNode != nil {
+			if gnome.haveNode(mGene.ControlNode.Id) {
 				return nil, fmt.Errorf("control node ID: %d is not unique", mGene.ControlNode.Id)
 			}
 			gnome.ControlGenes = append(gnome.ControlGenes, mGene)
@@ -423,19 +413,19 @@ func readMIMOControlGene(conf map[string]interface{}, traits []*neat.Trait, node
 
 // Reads NNode configuration
 func readNNode(conf map[string]interface{}, traits []*neat.Trait) (*network.NNode, error) {
-	nd := network.NewNetworkNode()
-	nd.Id = conf["id"].(int)
+	node := network.NewNetworkNode()
+	node.Id = conf["id"].(int)
 	traitId := conf["trait_id"].(int)
-	nd.Trait = TraitWithId(traitId, traits)
+	node.Trait = TraitWithId(traitId, traits)
 	typeName := conf["type"].(string)
 	var err error
-	nd.NeuronType, err = network.NeuronTypeByName(typeName)
+	node.NeuronType, err = network.NeuronTypeByName(typeName)
 	if err != nil {
 		return nil, err
 	}
 	activation := conf["activation"].(string)
-	nd.ActivationType, err = math.NodeActivators.ActivationTypeFromName(activation)
-	return nd, err
+	node.ActivationType, err = math.NodeActivators.ActivationTypeFromName(activation)
+	return node, err
 }
 
 // Reads Trait configuration

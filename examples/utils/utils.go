@@ -2,8 +2,8 @@ package utils
 
 import (
 	"github.com/pkg/errors"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/genetics"
 	"os"
 )
 

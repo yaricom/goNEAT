@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"github.com/pkg/errors"
-	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"github.com/yaricom/goNEAT/v4/neat/genetics"
 	"math"
 	"reflect"
 	"sort"
@@ -56,7 +56,7 @@ func (g *Generation) FillPopulationStatistics(pop *genetics.Population) {
 		g.Age[i] = float64(currSpecies.Age)
 		// sort organisms from current species by fitness to have most fit first
 		sort.Sort(sort.Reverse(currSpecies.Organisms))
-		g.Complexity[i] = float64(currSpecies.Organisms[0].Phenotype.Complexity())
+		g.Complexity[i] = float64(organismComplexity(currSpecies.Organisms[0]))
 		g.Fitness[i] = currSpecies.Organisms[0].Fitness
 
 		// finds the best organism in epoch if not solved
@@ -76,6 +76,15 @@ func (g *Generation) Average() (fitness, age, complexity float64) {
 	age = g.Age.Mean()
 	complexity = g.Complexity.Mean()
 	return fitness, age, complexity
+}
+
+// ChampionComplexity is to get complexity of the champion organism. If failed to calculate complexity
+// due to error or missing champion the math.MaxInt value returned.
+func (g *Generation) ChampionComplexity() int {
+	if g.Champion == nil {
+		return math.MaxInt
+	}
+	return organismComplexity(g.Champion)
 }
 
 // Encode is to encode the generation with provided GOB encoder

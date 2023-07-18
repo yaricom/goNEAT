@@ -6,7 +6,7 @@ import (
 	"github.com/sbinet/npyio/npz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yaricom/goNEAT/v3/neat/genetics"
+	"github.com/yaricom/goNEAT/v4/neat/genetics"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"testing"

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat/math"
+	"github.com/yaricom/goNEAT/v4/neat/math"
 	"gonum.org/v1/gonum/graph/path"
 	"io"
 )
@@ -235,7 +235,7 @@ func (n *Network) OutputIsOff() bool {
 
 // ActivateSteps Attempts to activate the network given number of steps before returning error.
 // Normally the maxSteps should be equal to the maximal activation depth of the network as returned by
-// MaxActivationDepth() or MaxActivationDepthFast()
+// MaxActivationDepth() or MaxActivationDepthWithCap()
 func (n *Network) ActivateSteps(maxSteps int) (bool, error) {
 	if maxSteps == 0 {
 		return false, ErrZeroActivationStepsRequested
@@ -327,7 +327,7 @@ func (n *Network) ForwardSteps(steps int) (res bool, err error) {
 }
 
 func (n *Network) RecursiveSteps() (bool, error) {
-	netDepth, err := n.MaxActivationDepthFast(0)
+	netDepth, err := n.MaxActivationDepthWithCap(0)
 	if err != nil {
 		return false, err
 	}
@@ -428,22 +428,20 @@ func (n *Network) IsRecurrent(inNode, outNode *NNode, count *int, thresh int) bo
 
 // MaxActivationDepth is to find the maximum number of neuron layers to be activated between an output and an input layers.
 func (n *Network) MaxActivationDepth() (int, error) {
-	// The quick case when there are no hidden nodes or control
-	if len(n.allNodes) == len(n.inputs)+len(n.Outputs) && len(n.controlNodes) == 0 {
-		return 1, nil // just one layer depth
+	if len(n.controlNodes) == 0 {
+		return n.MaxActivationDepthWithCap(0)
+	} else {
+		return n.maxActivationDepthModular(nil)
 	}
-
-	return n.maxActivationDepth(nil)
 }
 
-// MaxActivationDepthFast is to find the maximum number of neuron layers to be activated between an output and an input layers.
-// This is the fastest version of depth calculation but only suitable for simple networks. If current network is modular
-// the error will be raised.
-// It is possible to limit the maximal depth value by setting the maxDepth value greater than zero.
+// MaxActivationDepthWithCap is to find the maximum number of neuron layers to be activated between an output and an input layers.
+// It is possible to limit the maximal depth value by setting the maxDepthCap value greater than zero.
 // If network depth exceeds provided maxDepth value this value will be returned along with ErrMaximalNetDepthExceeded
 // to indicate that calculation stopped.
-// If maxDepth is less or equal to zero no maximal depth limitation will be set.
-func (n *Network) MaxActivationDepthFast(maxDepth int) (int, error) {
+// If maxDepthCap is less or equal to zero no maximal depth limitation will be set.
+// Unsupported for modular networks.
+func (n *Network) MaxActivationDepthWithCap(maxDepthCap int) (int, error) {
 	if len(n.controlNodes) > 0 {
 		return -1, errors.New("unsupported for modular networks")
 	}
@@ -455,7 +453,7 @@ func (n *Network) MaxActivationDepthFast(maxDepth int) (int, error) {
 
 	max := 0 // The max depth
 	for _, node := range n.Outputs {
-		currDepth, err := node.Depth(1, maxDepth) // 1 is to include this layer
+		currDepth, err := node.Depth(0, maxDepthCap)
 		if err != nil {
 			return currDepth, err
 		}
@@ -482,9 +480,9 @@ func (n *Network) BaseNodes() []*NNode {
 	return n.allNodes
 }
 
-// maxActivationDepth calculates maximal activation depth and optionally prints the examined activation paths to the
-// provided writer.
-func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
+// maxActivationDepthModular calculates maximal activation depth and optionally prints the examined activation paths
+// to the provided writer. It is intended only for modular networks.
+func (n *Network) maxActivationDepthModular(w io.Writer) (int, error) {
 	allPaths, ok := path.JohnsonAllPaths(n)
 	if !ok {
 		// negative cycle detected - fallback to FloydWarshall
@@ -501,7 +499,7 @@ func (n *Network) maxActivationDepth(w io.Writer) (int, error) {
 				}
 				// iterate over returned paths and find the one with maximal length
 				for _, p := range paths {
-					l := len(p)
+					l := len(p) - 1 // to exclude input node
 					if l > max {
 						max = l
 					}

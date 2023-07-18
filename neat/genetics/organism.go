@@ -3,7 +3,7 @@ package genetics
 import (
 	"bytes"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat/network"
+	"github.com/yaricom/goNEAT/v4/neat/network"
 )
 
 // Organisms represents sortable list of organisms by fitness
@@ -25,8 +25,6 @@ type Organism struct {
 	// Win marker (if needed for a particular task)
 	IsWinner bool
 
-	// The Organism's phenotype
-	Phenotype *network.Network
 	// The Organism's genotype
 	Genotype *Genome
 	// The Species of the Organism
@@ -40,6 +38,9 @@ type Organism struct {
 	// The utility data transfer object to be used by different GA implementations to hold additional data.
 	// Implemented as ANY to allow implementation specific objects.
 	Data *OrganismData
+
+	// The Organism's phenotype
+	orgPhenotype *network.Network
 
 	// A fitness measure that won't change during fitness adjustments of population's epoch evaluation
 	originalFitness float64
@@ -69,29 +70,35 @@ type Organism struct {
 
 // NewOrganism Creates new organism with specified genome, fitness and given generation number
 func NewOrganism(fit float64, g *Genome, generation int) (org *Organism, err error) {
-	phenotype := g.Phenotype
-	if phenotype == nil {
-		phenotype, err = g.Genesis(g.Id)
+	org = &Organism{
+		Fitness:      fit,
+		Genotype:     g,
+		orgPhenotype: g.Phenotype,
+		Generation:   generation,
+	}
+	return org, nil
+}
+
+// Phenotype is to get phenotype of this organism. If phenotype was not built yet, then it would be created first
+// as a result of this method invocation
+func (o *Organism) Phenotype() (*network.Network, error) {
+	if o.orgPhenotype == nil {
+		phenotype, err := o.Genotype.Genesis(o.Genotype.Id)
 		if err != nil {
 			return nil, err
 		}
+		o.orgPhenotype = phenotype
 	}
-	org = &Organism{
-		Fitness:    fit,
-		Genotype:   g,
-		Phenotype:  phenotype,
-		Generation: generation,
-	}
-	return org, nil
+	return o.orgPhenotype, nil
 }
 
 // UpdatePhenotype Regenerate the underlying network graph based on a change in the genotype
 func (o *Organism) UpdatePhenotype() (err error) {
 	// First, delete the old phenotype (net)
-	o.Phenotype = nil
+	o.orgPhenotype = nil
 
 	// Now, recreate the phenotype off the new genotype
-	o.Phenotype, err = o.Genotype.Genesis(o.Genotype.Id)
+	o.orgPhenotype, err = o.Genotype.Genesis(o.Genotype.Id)
 	return err
 }
 
@@ -124,8 +131,6 @@ func (o *Organism) UnmarshalBinary(data []byte) error {
 		return err
 	} else if o.Genotype, err = ReadGenome(b, genotypeId); err != nil {
 		return err
-	} else if o.Phenotype, err = o.Genotype.Genesis(genotypeId); err != nil {
-		return err
 	}
 
 	return nil
@@ -150,12 +155,12 @@ func (o *Organism) Dump() string {
 	_, _ = fmt.Fprintln(b, "Fitness: ", o.Fitness)
 	_, _ = fmt.Fprintln(b, "Error: ", o.Error)
 	_, _ = fmt.Fprintln(b, "IsWinner: ", o.IsWinner)
-	_, _ = fmt.Fprintln(b, "Phenotype: ", o.Phenotype)
+	_, _ = fmt.Fprintln(b, "Phenotype: ", o.orgPhenotype)
 	_, _ = fmt.Fprintln(b, "Genotype: ", o.Genotype)
 	_, _ = fmt.Fprintln(b, "Species: ", o.Species)
 	_, _ = fmt.Fprintln(b, "ExpectedOffspring: ", o.ExpectedOffspring)
 	_, _ = fmt.Fprintln(b, "Data: ", o.Data)
-	_, _ = fmt.Fprintln(b, "Phenotype: ", o.Phenotype)
+	_, _ = fmt.Fprintln(b, "Phenotype: ", o.orgPhenotype)
 	_, _ = fmt.Fprintln(b, "originalFitness: ", o.originalFitness)
 	_, _ = fmt.Fprintln(b, "toEliminate: ", o.toEliminate)
 	_, _ = fmt.Fprintln(b, "isChampion: ", o.isChampion)
@@ -183,14 +188,8 @@ func (f Organisms) Less(i, j int) bool {
 		// try to promote most fit organisms
 		return true // lower fitness is less
 	} else if f[i].Fitness == f[j].Fitness {
-		// try to promote less complex organisms
-		ci := f[i].Phenotype.Complexity()
-		cj := f[j].Phenotype.Complexity()
-		if ci > cj {
-			return true // higher complexity is less
-		} else if ci == cj {
-			return f[i].Genotype.Id < f[j].Genotype.Id // least recent (older) is less
-		}
+		// try to promote children of the population champion
+		return f[i].highestFitness < f[j].highestFitness
 	}
 	return false
 }

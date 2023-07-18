@@ -2,8 +2,8 @@ package genetics
 
 import (
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/network"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/network"
 	"math/rand"
 )
 
@@ -101,13 +101,13 @@ func (g *Genome) mateMultipoint(og *Genome, genomeId int, fitness1, fitness2 flo
 				chosenGene = p1gene
 				i1++
 				if !p1better {
-					skip = true // Skip excess from the worse genome
+					skip = true // Skip disjoint from the worse genome
 				}
 			} else {
 				chosenGene = p2gene
 				i2++
 				if p1better {
-					skip = true // Skip excess from the worse genome
+					skip = true // Skip disjoint from the worse genome
 				}
 			}
 		}
@@ -116,10 +116,12 @@ func (g *Genome) mateMultipoint(og *Genome, genomeId int, fitness1, fitness2 flo
 		// skip=false
 
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
-		for _, gene := range newGenes {
-			if gene.Link.IsEqualGenetically(chosenGene.Link) {
-				skip = true
-				break
+		if !skip {
+			for _, gene := range newGenes {
+				if gene.Link.IsEqualGenetically(chosenGene.Link) {
+					skip = true
+					break
+				}
 			}
 		}
 
@@ -315,13 +317,13 @@ func (g *Genome) mateMultipointAvg(og *Genome, genomeId int, fitness1, fitness2 
 				chosenGene = p1gene
 				i1++
 				if !p1better {
-					skip = true // Skip excess from the worse genome
+					skip = true // Skip disjoint from the worse genome
 				}
 			} else {
 				chosenGene = p2gene
 				i2++
 				if p1better {
-					skip = true // Skip excess from the worse genome
+					skip = true // Skip disjoint from the worse genome
 				}
 			}
 		}
@@ -330,10 +332,12 @@ func (g *Genome) mateMultipointAvg(og *Genome, genomeId int, fitness1, fitness2 
 		// skip=false
 
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
-		for _, gene := range newGenes {
-			if gene.Link.IsEqualGenetically(chosenGene.Link) {
-				skip = true
-				break
+		if !skip {
+			for _, gene := range newGenes {
+				if gene.Link.IsEqualGenetically(chosenGene.Link) {
+					skip = true
+					break
+				}
 			}
 		}
 
@@ -557,10 +561,12 @@ func (g *Genome) mateSinglePoint(og *Genome, genomeId int) (*Genome, error) {
 		}
 
 		// Check to see if the chosen gene conflicts with an already chosen gene i.e. do they represent the same link
-		for _, gene := range newGenes {
-			if gene.Link.IsEqualGenetically(chosenGene.Link) {
-				skip = true
-				break
+		if !skip {
+			for _, gene := range newGenes {
+				if gene.Link.IsEqualGenetically(chosenGene.Link) {
+					skip = true
+					break
+				}
 			}
 		}
 

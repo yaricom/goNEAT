@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/yaricom/goNEAT/v4/neat"
 	"io"
 	"math"
 	"math/rand"
@@ -315,10 +315,7 @@ func (s *Species) reproduce(ctx context.Context, generation int, pop *Population
 					}
 				} else {
 					// Sometimes we add a link to a superchamp
-					if _, err = newGenome.Genesis(generation); err != nil {
-						return nil, err
-					}
-					if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
+					if _, err = newGenome.mutateAddLink(pop, generation, opts); err != nil {
 						return nil, err
 					}
 					mutStructBaby = true
@@ -380,11 +377,7 @@ func (s *Species) reproduce(ctx context.Context, generation int, pop *Population
 			} else if rand.Float64() < opts.MutateAddLinkProb {
 				neat.DebugLog("SPECIES: ---> mutateAddLink")
 
-				// Mutate add link
-				if _, err = newGenome.Genesis(generation); err != nil {
-					return nil, err
-				}
-				if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
+				if _, err = newGenome.mutateAddLink(pop, generation, opts); err != nil {
 					return nil, err
 				}
 				mutStructBaby = true
@@ -495,11 +488,7 @@ func (s *Species) reproduce(ctx context.Context, generation int, pop *Population
 				} else if rand.Float64() < opts.MutateAddLinkProb {
 					neat.DebugLog("SPECIES: ---------> mutateAddLink")
 
-					// mutate_add_link
-					if _, err = newGenome.Genesis(generation); err != nil {
-						return nil, err
-					}
-					if _, err = newGenome.mutateAddLink(pop, opts); err != nil {
+					if _, err = newGenome.mutateAddLink(pop, generation, opts); err != nil {
 						return nil, err
 					}
 					mutStructBaby = true
@@ -581,15 +570,8 @@ func (f byOrganismOrigFitness) Less(i, j int) bool {
 		// try to promote most fit species
 		return true // Lower fitness is less
 	} else if org1.originalFitness == org2.originalFitness {
-		// try to promote less complex species
-		c1 := org1.Phenotype.Complexity()
-		c2 := org2.Phenotype.Complexity()
-		if c1 > c2 {
-			return true // Higher complexity is "less"
-		} else if c1 == c2 {
-			// try to promote younger species
-			return f[i].Age > f[j].Age // Higher Age is Less
-		}
+		// try to promote younger species
+		return f[i].Age > f[j].Age // Higher Age is Less
 	}
 	return false
 }

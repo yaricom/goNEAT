@@ -3,9 +3,9 @@ package genetics
 import (
 	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat"
-	"github.com/yaricom/goNEAT/v3/neat/math"
-	"github.com/yaricom/goNEAT/v3/neat/network"
+	"github.com/yaricom/goNEAT/v4/neat"
+	"github.com/yaricom/goNEAT/v4/neat/math"
+	"github.com/yaricom/goNEAT/v4/neat/network"
 	"io"
 	"math/rand"
 	"reflect"
@@ -40,33 +40,45 @@ type Genome struct {
 
 	// Allows Genome to be matched with its Network
 	Phenotype *network.Network `yaml:""`
+
+	// nodeByIdMap allows to fast lookup if node with specific ID belongs to this Genome
+	nodeByIdMap map[int]*network.NNode
 }
 
 // NewGenome Constructor which takes full genome specs and puts them into the new one
 func NewGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene) *Genome {
-	return &Genome{
-		Id:     id,
-		Traits: t,
-		Nodes:  n,
-		Genes:  g,
-	}
+	return newGenome(id, t, n, g, nil)
 }
 
 // NewModularGenome Constructs new modular genome
 func NewModularGenome(id int, t []*neat.Trait, n []*network.NNode, g []*Gene, mimoG []*MIMOControlGene) *Genome {
+	return newGenome(id, t, n, g, mimoG)
+}
+
+func newGenome(id int, traits []*neat.Trait, nodes []*network.NNode, genes []*Gene, mimoG []*MIMOControlGene) *Genome {
+	nodeByIdMap := make(map[int]*network.NNode)
+	for _, n := range nodes {
+		nodeByIdMap[n.Id] = n
+	}
+	return newGenomeWithNodeIdMap(id, traits, nodes, genes, mimoG, nodeByIdMap)
+}
+
+func newGenomeWithNodeIdMap(id int, traits []*neat.Trait, nodes []*network.NNode, genes []*Gene,
+	mimoG []*MIMOControlGene, nodeByIdMap map[int]*network.NNode) *Genome {
 	return &Genome{
 		Id:           id,
-		Traits:       t,
-		Nodes:        n,
-		Genes:        g,
+		Traits:       traits,
+		Nodes:        nodes,
+		Genes:        genes,
 		ControlGenes: mimoG,
+		nodeByIdMap:  nodeByIdMap,
 	}
 }
 
 // This special constructor creates a Genome with in inputs, out outputs, n out of maxHidden hidden units, and random
 // connectivity.  If rec is true then recurrent connections will be included. The last input is a bias
 // link_prob is the probability of a link. The created genome is not modular.
-func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb float64) *Genome {
+func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb float64, opts *neat.Options) (*Genome, error) {
 	totalNodes := in + out + maxHidden
 	matrixDim := totalNodes * totalNodes
 	// The connection matrix which will be randomized
@@ -83,10 +95,11 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 
 	// Create empty genome
 	gnome := Genome{
-		Id:     newId,
-		Traits: []*neat.Trait{newTrait},
-		Nodes:  make([]*network.NNode, 0),
-		Genes:  make([]*Gene, 0),
+		Id:          newId,
+		Traits:      []*neat.Trait{newTrait},
+		Nodes:       make([]*network.NNode, 0),
+		Genes:       make([]*Gene, 0),
+		nodeByIdMap: make(map[int]*network.NNode),
 	}
 
 	// Step through the connection matrix, randomly assigning bits
@@ -96,28 +109,29 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 
 	// Build the input nodes
 	for i := 1; i <= in; i++ {
-		var newNode *network.NNode
-		if i < in {
-			newNode = network.NewNNode(i, network.InputNeuron)
-		} else {
-			newNode = network.NewNNode(i, network.BiasNeuron)
-		}
+		bias := i == in // the last input node
+		newNode := network.NewSensorNode(i, bias)
 		newNode.Trait = newTrait
-		gnome.Nodes = append(gnome.Nodes, newNode)
+		gnome.addNode(newNode)
 	}
 
 	// Build the hidden nodes
 	for i := in + 1; i <= in+n; i++ {
 		newNode := network.NewNNode(i, network.HiddenNeuron)
+		if activationType, err := opts.RandomNodeActivationType(); err != nil {
+			return nil, err
+		} else {
+			newNode.ActivationType = activationType
+		}
 		newNode.Trait = newTrait
-		gnome.Nodes = append(gnome.Nodes, newNode)
+		gnome.addNode(newNode)
 	}
 
 	// Build the output nodes
 	for i := firstOutput; i <= totalNodes; i++ {
 		newNode := network.NewNNode(i, network.OutputNeuron)
 		newNode.Trait = newTrait
-		gnome.Nodes = append(gnome.Nodes, newNode)
+		gnome.addNode(newNode)
 	}
 
 	//
@@ -183,7 +197,7 @@ func newGenomeRand(newId, in, out, n, maxHidden int, recurrent bool, linkProb fl
 			inNode, outNode = nil, nil
 		}
 	}
-	return &gnome
+	return &gnome, nil
 }
 
 // ReadGenome reads Genome from reader
@@ -335,24 +349,37 @@ func (g *Genome) getNextGeneInnovNum() (int64, error) {
 	return innNum + int64(1), nil
 }
 
+func (g *Genome) addNode(node *network.NNode) {
+	g.Nodes = append(g.Nodes, node)
+	g.mapNodeId(node)
+}
+
+func (g *Genome) addNodes(nodes []*network.NNode) {
+	for i := 0; i < len(nodes); i++ {
+		g.addNode(nodes[i])
+	}
+}
+
+func (g *Genome) mapNodeId(node *network.NNode) {
+	g.nodeByIdMap[node.Id] = node
+}
+
+func (g *Genome) NodeWithId(nodeId int) *network.NNode {
+	if node, ok := g.nodeByIdMap[nodeId]; ok {
+		return node
+	} else {
+		return nil
+	}
+}
+
 // Returns true if this Genome already includes provided node
-func (g *Genome) hasNode(node *network.NNode) bool {
-	if node == nil {
-		return false
-	}
-	if id, _ := g.getLastNodeId(); node.Id > id {
-		return false // not found
-	}
-	for _, n := range g.Nodes {
-		if n.Id == node.Id {
-			return true
-		}
-	}
-	return false
+func (g *Genome) haveNode(nodeId int) bool {
+	_, ok := g.nodeByIdMap[nodeId]
+	return ok
 }
 
 // Returns true if this Genome already includes provided gene
-func (g *Genome) hasGene(gene *Gene) bool {
+func (g *Genome) haveGene(gene *Gene) bool {
 	if inn, _ := g.getNextGeneInnovNum(); gene.InnovationNum >= inn {
 		// The gene has innovation number higher that not assigned yet innovation number for this genome. This means
 		// that this is gene not from this genome lineage.
@@ -360,8 +387,8 @@ func (g *Genome) hasGene(gene *Gene) bool {
 	}
 
 	// Find genetically equal link in this genome to the provided gene
-	for _, g := range g.Genes {
-		if g.Link.IsEqualGenetically(gene.Link) {
+	for _, gn := range g.Genes {
+		if gn.Link.IsEqualGenetically(gene.Link) {
 			return true
 		}
 	}
@@ -478,27 +505,79 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 	}
 
 	// Duplicate NNodes
-	nodesDup := make([]*network.NNode, len(g.Nodes))
-	for i, nd := range g.Nodes {
-		// First, find the duplicate of the trait that this node points to
-		assocTrait := nd.Trait
-		if assocTrait != nil {
-			assocTrait = TraitWithId(assocTrait.Id, traitsDup)
-		}
-		nodesDup[i] = network.NewNNodeCopy(nd, assocTrait)
-	}
+	nodesDup, nodeIdMap := g.duplicateNodes(traitsDup)
 
 	// Duplicate Genes
+	genesDup, err := g.duplicateGenes(traitsDup, nodeIdMap)
+	if err != nil {
+		return nil, err
+	}
+
+	// If no MIMO control genes return plain genome
+	//
+	if len(g.ControlGenes) == 0 {
+		return newGenomeWithNodeIdMap(newId, traitsDup, nodesDup, genesDup, nil, nodeIdMap), nil
+	}
+
+	// Duplicate MIMO Control Genes and return modular genome
+	//
+	controlGenesDup, err := g.duplicateControlGenes(traitsDup, nodeIdMap)
+	if err != nil {
+		return nil, err
+	}
+	return newGenomeWithNodeIdMap(newId, traitsDup, nodesDup, genesDup, controlGenesDup, nodeIdMap), nil
+}
+
+func (g *Genome) duplicateControlGenes(traits []*neat.Trait, nodeIdMap map[int]*network.NNode) ([]*MIMOControlGene, error) {
+	controlGenesDup := make([]*MIMOControlGene, len(g.ControlGenes))
+	for i, cg := range g.ControlGenes {
+		// duplicate control node
+		controlNode := cg.ControlNode
+		// find duplicate of trait associated with control node
+		assocTrait := controlNode.Trait
+		if assocTrait != nil {
+			assocTrait = TraitWithId(assocTrait.Id, traits)
+		}
+		nodeCopy := network.NewNNodeCopy(controlNode, assocTrait)
+		// add incoming links
+		for _, l := range controlNode.Incoming {
+			inNode, ok := nodeIdMap[l.InNode.Id]
+			if !ok {
+				return nil, fmt.Errorf("incoming node: %d not found for control node: %d",
+					l.InNode.Id, controlNode.Id)
+			}
+			newInLink := network.NewLinkCopy(l, inNode, nodeCopy)
+			nodeCopy.Incoming = append(nodeCopy.Incoming, newInLink)
+		}
+
+		// add outgoing links
+		for _, l := range controlNode.Outgoing {
+			outNode, ok := nodeIdMap[l.OutNode.Id]
+			if !ok {
+				return nil, fmt.Errorf("outgoing node: %d not found for control node: %d",
+					l.InNode.Id, controlNode.Id)
+			}
+			newOutLink := network.NewLinkCopy(l, nodeCopy, outNode)
+			nodeCopy.Outgoing = append(nodeCopy.Outgoing, newOutLink)
+		}
+
+		// add MIMO control gene
+		controlGenesDup[i] = NewMIMOGeneCopy(cg, nodeCopy)
+	}
+	return controlGenesDup, nil
+}
+
+func (g *Genome) duplicateGenes(traits []*neat.Trait, nodeIdMap map[int]*network.NNode) ([]*Gene, error) {
 	genesDup := make([]*Gene, len(g.Genes))
 	for i, gn := range g.Genes {
 		// First find the nodes connected by the gene's link
-		inNode := NodeWithId(gn.Link.InNode.Id, nodesDup)
-		if inNode == nil {
+		inNode, ok := nodeIdMap[gn.Link.InNode.Id]
+		if !ok {
 			return nil, fmt.Errorf("incoming node: %d not found for gene %s",
 				gn.Link.InNode.Id, gn.String())
 		}
-		outNode := NodeWithId(gn.Link.OutNode.Id, nodesDup)
-		if outNode == nil {
+		outNode, ok := nodeIdMap[gn.Link.OutNode.Id]
+		if !ok {
 			return nil, fmt.Errorf("outgoing node: %d not found for gene %s",
 				gn.Link.OutNode.Id, gn.String())
 		}
@@ -506,55 +585,28 @@ func (g *Genome) duplicate(newId int) (*Genome, error) {
 		// Find the duplicate of trait associated with this gene
 		assocTrait := gn.Link.Trait
 		if assocTrait != nil {
-			assocTrait = TraitWithId(assocTrait.Id, traitsDup)
+			assocTrait = TraitWithId(assocTrait.Id, traits)
 		}
 
 		genesDup[i] = NewGeneCopy(gn, assocTrait, inNode, outNode)
 	}
+	return genesDup, nil
+}
 
-	if len(g.ControlGenes) == 0 {
-		// If no MIMO control genes return plain genome
-		return NewGenome(newId, traitsDup, nodesDup, genesDup), nil
-	} else {
-		// Duplicate MIMO Control Genes and build modular genome
-		controlGenesDup := make([]*MIMOControlGene, len(g.ControlGenes))
-		for i, cg := range g.ControlGenes {
-			// duplicate control node
-			controlNode := cg.ControlNode
-			// find duplicate of trait associated with control node
-			assocTrait := controlNode.Trait
-			if assocTrait != nil {
-				assocTrait = TraitWithId(assocTrait.Id, traitsDup)
-			}
-			nodeCopy := network.NewNNodeCopy(controlNode, assocTrait)
-			// add incoming links
-			for _, l := range controlNode.Incoming {
-				inNode := NodeWithId(l.InNode.Id, nodesDup)
-				if inNode == nil {
-					return nil, fmt.Errorf("incoming node: %d not found for control node: %d",
-						l.InNode.Id, controlNode.Id)
-				}
-				newInLink := network.NewLinkCopy(l, inNode, nodeCopy)
-				nodeCopy.Incoming = append(nodeCopy.Incoming, newInLink)
-			}
-
-			// add outgoing links
-			for _, l := range controlNode.Outgoing {
-				outNode := NodeWithId(l.OutNode.Id, nodesDup)
-				if outNode == nil {
-					return nil, fmt.Errorf("outgoing node: %d not found for control node: %d",
-						l.InNode.Id, controlNode.Id)
-				}
-				newOutLink := network.NewLinkCopy(l, nodeCopy, outNode)
-				nodeCopy.Outgoing = append(nodeCopy.Outgoing, newOutLink)
-			}
-
-			// add MIMO control gene
-			controlGenesDup[i] = NewMIMOGeneCopy(cg, nodeCopy)
+func (g *Genome) duplicateNodes(traits []*neat.Trait) ([]*network.NNode, map[int]*network.NNode) {
+	nodesDup := make([]*network.NNode, len(g.Nodes))
+	nodeIdMap := make(map[int]*network.NNode)
+	for i, nd := range g.Nodes {
+		// First, find the duplicate of the trait that this node points to
+		assocTrait := nd.Trait
+		if assocTrait != nil {
+			assocTrait = TraitWithId(assocTrait.Id, traits)
 		}
-
-		return NewModularGenome(newId, traitsDup, nodesDup, genesDup, controlGenesDup), nil
+		node := network.NewNNodeCopy(nd, assocTrait)
+		nodesDup[i] = node
+		nodeIdMap[node.Id] = node
 	}
+	return nodesDup, nodeIdMap
 }
 
 // For debugging: A number of tests can be run on a genome to check its integrity.
@@ -622,6 +674,15 @@ func (g *Genome) verify() (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (g *Genome) nodeInsert(node *network.NNode) {
+	g.Nodes = nodeInsert(g.Nodes, node)
+	g.mapNodeId(node)
+}
+
+func (g *Genome) geneInsert(gene *Gene) {
+	g.Genes = geneInsert(g.Genes, gene)
 }
 
 // Inserts a NNode into a given ordered list of NNodes in ascending order by NNode ID

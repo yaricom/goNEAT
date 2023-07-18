@@ -2,9 +2,9 @@ package genetics
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/yaricom/goNEAT/v3/neat"
+	"github.com/pkg/errors"
+	"github.com/yaricom/goNEAT/v4/neat"
 	"math"
 	"math/rand"
 	"sync"
@@ -78,7 +78,10 @@ func NewPopulationRandom(in, out, maxHidden int, recurrent bool, linkProb float6
 
 	pop := newPopulation()
 	for count := 0; count < opts.PopSize; count++ {
-		gen := newGenomeRand(count, in, out, rand.Intn(maxHidden), maxHidden, recurrent, linkProb)
+		gen, err := newGenomeRand(count, in, out, rand.Intn(maxHidden), maxHidden, recurrent, linkProb, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create random population")
+		}
 		org, err := NewOrganism(0.0, gen, 1)
 		if err != nil {
 			return nil, err
@@ -139,7 +142,7 @@ func (p *Population) Innovations() []Innovation {
 	return p.innovations
 }
 
-// Create a population from Genome g. The new Population will have the same topology as g
+// spawn creates a population from Genome g. The new Population will have the same topology as g
 // with link weights slightly perturbed from g's
 func (p *Population) spawn(g *Genome, opts *neat.Options) (err error) {
 	for count := 0; count < opts.PopSize; count++ {
