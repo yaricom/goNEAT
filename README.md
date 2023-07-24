@@ -602,6 +602,22 @@ implementation as well as utilities to run experiments while collecting relevant
 * Kenneth O. Stanley, [Ph.D. Dissertation: EFFICIENT EVOLUTION OF NEURAL NETWORKS THROUGH COMPLEXIFICATION][5], Department of Computer Sciences, The University of Texas at Austin, Technical Report~AI-TR-04–39, August 2004
 * [Hands-On NeuroEvolution with Python, Build high-performing artificial neural network architectures using neuroevolution-based algorithms][6], Iaroslav Omelianenko, Birmingham: Packt Publishing, 2019
 
+## Citing
+
+If you find our work useful, please consider citing:
+
+```text
+@software{Omelianenko_The_GoLang_implementation_2023,
+    author = {Omelianenko, Iaroslav},
+    doi = {10.5281/zenodo.8178789},
+    month = jul,
+    title = {{The GoLang implementation of NeuroEvolution of Augmented Topologies (NEAT) algorithm}},
+    url = {https://github.com/yaricom/goNEAT},
+    version = {4.0.1},
+    year = {2023}
+}
+```
+
 This source code maintained and managed by [Iaroslav Omelianenko][3]
 
 <a href="https://www.buymeacoffee.com/io42"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=io42&button_colour=be38f3&font_colour=ffffff&font_family=Comic&outline_colour=ffffff&coffee_colour=FFDD00"></a>
