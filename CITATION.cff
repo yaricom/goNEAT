@@ -6,6 +6,6 @@ authors:
   orcid: "https://orcid.org/0000-0002-2190-5664"
 title: "The GoLang implementation of NeuroEvolution of Augmented Topologies (NEAT) algorithm"
 version: 4.0.1
-doi:
+doi: 10.5281/zenodo.8178789
 date-released: 2023-07-24
 url: "https://github.com/yaricom/goNEAT"
