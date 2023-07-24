@@ -607,14 +607,17 @@ implementation as well as utilities to run experiments while collecting relevant
 If you find our work useful, please consider citing:
 
 ```text
-@software{Omelianenko_The_GoLang_implementation_2023,
-    author = {Omelianenko, Iaroslav},
-    doi = {10.5281/zenodo.8178789},
-    month = jul,
-    title = {{The GoLang implementation of NeuroEvolution of Augmented Topologies (NEAT) algorithm}},
-    url = {https://github.com/yaricom/goNEAT},
-    version = {4.0.1},
-    year = {2023}
+@software{omelianenko_iaroslav_2023_8178789,
+  author       = {Omelianenko, Iaroslav},
+  title        = {{The GoLang implementation of NeuroEvolution of 
+                   Augmented Topologies (NEAT) algorithm}},
+  month        = jul,
+  year         = 2023,
+  note         = {If you use this software, please cite it as below.},
+  publisher    = {Zenodo},
+  version      = {v4.0.1},
+  doi          = {10.5281/zenodo.8178789},
+  url          = {https://doi.org/10.5281/zenodo.8178789}
 }
 ```
 
