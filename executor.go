@@ -77,7 +77,9 @@ func main() {
 		neatOptions.NumRuns = *trialsCount
 	}
 	if len(*logLevel) > 0 {
-		neat.LogLevel = neat.LoggerLevel(*logLevel)
+		if err = neat.InitLogger(*logLevel); err != nil {
+			log.Fatal("Failed to initialize logger: ", err)
+		}
 	}
 
 	// create experiment
