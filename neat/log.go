@@ -1,6 +1,7 @@
 package neat
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"log"
 	"os"
@@ -31,25 +32,25 @@ var (
 
 	// DebugLog The logger to output all messages
 	DebugLog = func(message string) {
-		if LogLevel <= LogLevelDebug {
+		if acceptLogLevel(LogLevel, LogLevelDebug) {
 			_ = loggerDebug.Output(2, message)
 		}
 	}
 	// InfoLog The logger to output messages with Info and up level
 	InfoLog = func(message string) {
-		if LogLevel <= LogLevelInfo {
+		if acceptLogLevel(LogLevel, LogLevelInfo) {
 			_ = loggerInfo.Output(2, message)
 		}
 	}
 	// WarnLog The logger to output messages with Warn and up level
 	WarnLog = func(message string) {
-		if LogLevel <= LogLevelWarning {
+		if acceptLogLevel(LogLevel, LogLevelWarning) {
 			_ = loggerWarn.Output(2, message)
 		}
 	}
 	// ErrorLog The logger to output messages with Error and up level
 	ErrorLog = func(message string) {
-		if LogLevel <= LogLevelError {
+		if acceptLogLevel(LogLevel, LogLevelError) {
 			_ = loggerError.Output(2, message)
 		}
 	}
@@ -70,4 +71,18 @@ func InitLogger(level string) error {
 		return errors.Errorf("unsupported log level: [%s]", level)
 	}
 	return nil
+}
+
+func acceptLogLevel(currentLevel, targetLevel LoggerLevel) bool {
+	if currentLevel == LogLevelDebug {
+		return targetLevel == LogLevelDebug || targetLevel == LogLevelInfo || targetLevel == LogLevelWarning || targetLevel == LogLevelError
+	} else if currentLevel == LogLevelInfo {
+		return targetLevel == LogLevelInfo || targetLevel == LogLevelWarning || targetLevel == LogLevelError
+	} else if currentLevel == LogLevelWarning {
+		return targetLevel == LogLevelWarning || targetLevel == LogLevelError
+	} else if currentLevel == LogLevelError {
+		return targetLevel == LogLevelError
+	}
+	_ = loggerError.Output(2, fmt.Sprintf("Unsupported NEAT log level was set: '%s'. Please use one of the following: 'debug', 'info', 'warn', and 'error'.", currentLevel))
+	return false
 }
