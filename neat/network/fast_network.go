@@ -10,13 +10,13 @@ import (
 // FastNetworkLink The connection descriptor for fast network
 type FastNetworkLink struct {
 	// The index of source neuron
-	SourceIndex int
+	SourceIndex int `json:"source_index"`
 	// The index of target neuron
-	TargetIndex int
+	TargetIndex int `json:"target_index"`
 	// The weight of this link
-	Weight float64
+	Weight float64 `json:"weight"`
 	// The signal relayed by this link
-	Signal float64
+	Signal float64 `json:"signal"`
 }
 
 // FastControlNode The module relay (control node) descriptor for fast network
@@ -312,6 +312,7 @@ func (s *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) (i
 func (s *FastModularNetworkSolver) Flush() (bool, error) {
 	for i := s.biasNeuronCount; i < s.totalNeuronCount; i++ {
 		s.neuronSignals[i] = 0.0
+		s.neuronSignalsBeingProcessed[i] = 0.0
 	}
 	return true, nil
 }
