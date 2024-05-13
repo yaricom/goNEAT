@@ -13,6 +13,38 @@ func (s *FastModularNetworkSolver) WriteModel(w io.Writer) error {
 	return enc.Encode(dataHolder)
 }
 
+// ReadFMNSModel allows loading model encoding FastModularNetworkSolver.
+func ReadFMNSModel(reader io.Reader) (*FastModularNetworkSolver, error) {
+	var data fastModularNetworkSolverData
+	dec := json.NewDecoder(reader)
+	if err := dec.Decode(&data); err != nil {
+		return nil, err
+	}
+	activationFunctions := make([]math.NodeActivationType, len(data.ActivationFunctions))
+	for i, f := range data.ActivationFunctions {
+		activationFunctions[i] = f.NodeActivation
+	}
+	var modules []*FastControlNode
+	if len(data.Modules) > 0 {
+		modules = make([]*FastControlNode, len(data.Modules))
+		for i, m := range data.Modules {
+			modules[i] = &FastControlNode{
+				ActivationType: m.ActivationType.NodeActivation,
+				InputIndexes:   m.InputIndexes,
+				OutputIndexes:  m.OutputIndexes,
+			}
+		}
+	}
+	fmns := NewFastModularNetworkSolver(
+		data.BiasNeuronCount, data.InputNeuronCount, data.OutputNeuronCount,
+		data.TotalNeuronCount, activationFunctions,
+		data.Connections, data.BiasList, modules,
+	)
+	fmns.Name = data.Name
+	fmns.Id = data.Id
+	return fmns, nil
+}
+
 type NodeActivator struct {
 	NodeActivation math.NodeActivationType
 }
@@ -34,7 +66,7 @@ type fastModularNetworkSolverData struct {
 	ActivationFunctions []NodeActivator       `json:"activation_functions"`
 	BiasList            []float64             `json:"bias_list"`
 	Connections         []*FastNetworkLink    `json:"connections"`
-	Modules             []fastControlNodeData `json:"modules"`
+	Modules             []fastControlNodeData `json:"modules,omitempty"`
 }
 
 func newFastModularNetworkSolverData(n *FastModularNetworkSolver) *fastModularNetworkSolverData {
@@ -46,15 +78,15 @@ func newFastModularNetworkSolverData(n *FastModularNetworkSolver) *fastModularNe
 		OutputNeuronCount:   n.outputNeuronCount,
 		BiasNeuronCount:     n.biasNeuronCount,
 		TotalNeuronCount:    n.totalNeuronCount,
-		ActivationFunctions: make([]NodeActivator, 0, len(n.activationFunctions)),
+		ActivationFunctions: make([]NodeActivator, len(n.activationFunctions)),
 		BiasList:            n.biasList,
 		Connections:         n.connections,
 		Modules:             make([]fastControlNodeData, 0),
 	}
-	for _, v := range n.activationFunctions {
-		data.ActivationFunctions = append(data.ActivationFunctions, NodeActivator{
+	for i, v := range n.activationFunctions {
+		data.ActivationFunctions[i] = NodeActivator{
 			NodeActivation: v,
-		})
+		}
 	}
 	if n.modules != nil {
 		for _, v := range n.modules {
@@ -74,4 +106,9 @@ func (n *NodeActivator) MarshalText() ([]byte, error) {
 	} else {
 		return []byte(activationName), nil
 	}
+}
+
+func (n *NodeActivator) UnmarshalText(text []byte) (err error) {
+	n.NodeActivation, err = math.NodeActivators.ActivationTypeFromName(string(text))
+	return err
 }

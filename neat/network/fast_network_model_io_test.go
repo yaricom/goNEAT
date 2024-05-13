@@ -54,3 +54,88 @@ func TestFastModularNetworkSolver_WriteModel_WithModule(t *testing.T) {
 
 	assert.EqualValues(t, expected, actual, "model JSON does not match expected JSON")
 }
+
+func TestReadFMNSModel_NoModule(t *testing.T) {
+	buf := bytes.NewBufferString(jsonFMNStr)
+
+	fmm, err := ReadFMNSModel(buf)
+	assert.NoError(t, err, "failed to read model")
+	assert.NotNil(t, fmm, "failed to deserialize model")
+
+	data := []float64{1.5, 2.0} // bias inherent
+	err = fmm.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
+
+	// test that it operates as expected
+	//
+	net := buildNetwork()
+	depth, err := net.MaxActivationDepth()
+	require.NoError(t, err, "failed to calculate max depth")
+
+	t.Logf("depth: %d\n", depth)
+	logNetworkActivationPath(net, t)
+
+	data = append(data, 1.0) // BIAS is third object
+	err = net.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
+	res, err := net.ForwardSteps(depth)
+	require.NoError(t, err, "error when trying to activate objective network")
+	require.True(t, res, "failed to activate objective network")
+
+	// do forward steps through the solver and test results
+	//
+	res, err = fmm.ForwardSteps(depth)
+	require.NoError(t, err, "error while do forward steps")
+	require.True(t, res, "forward steps returned false")
+
+	// check results by comparing activations of objective network and fast network solver
+	//
+	outputs := fmm.ReadOutputs()
+	for i, out := range outputs {
+		assert.Equal(t, net.Outputs[i].Activation, out, "wrong activation at: %d", i)
+	}
+}
+
+func TestReadFMNSModel_ModularNetwork(t *testing.T) {
+	buf := bytes.NewBufferString(jsonFNMStrModule)
+
+	fmm, err := ReadFMNSModel(buf)
+	assert.NoError(t, err, "failed to read model")
+	assert.NotNil(t, fmm, "failed to deserialize model")
+
+	data := []float64{1.0, 2.0} // bias inherent
+	err = fmm.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
+
+	// test that it operates as expected
+	//
+	net := buildModularNetwork()
+	depth, err := net.MaxActivationDepth()
+	require.NoError(t, err, "failed to calculate max depth")
+
+	t.Logf("depth: %d\n", depth)
+	logNetworkActivationPath(net, t)
+
+	// activate objective network
+	//
+	data = append(data, 1.0) // BIAS is third object
+	err = net.LoadSensors(data)
+	require.NoError(t, err, "failed to load sensors")
+	res, err := net.ForwardSteps(depth)
+	require.NoError(t, err, "error when trying to activate objective network")
+	require.True(t, res, "failed to activate objective network")
+
+	// do forward steps through the solver and test results
+	//
+	res, err = fmm.ForwardSteps(depth)
+	require.NoError(t, err, "error while do forward steps")
+	require.True(t, res, "forward steps returned false")
+
+	// check results by comparing activations of objective network and fast network solver
+	//
+	outputs := fmm.ReadOutputs()
+	for i, out := range outputs {
+		assert.Equal(t, net.Outputs[i].Activation, out, "wrong activation at: %d", i)
+	}
+
+}
