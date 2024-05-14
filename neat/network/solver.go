@@ -4,6 +4,7 @@ package network
 type Solver interface {
 	// ForwardSteps Propagates activation wave through all network nodes provided number of steps in forward direction.
 	// Normally the number of steps should be equal to the activation depth of the network.
+	// See also Relax for conditional activation waves propagation.
 	// Returns true if activation wave passed from all inputs to the output nodes.
 	ForwardSteps(steps int) (bool, error)
 
@@ -11,8 +12,9 @@ type Solver interface {
 	// Returns true if activation wave passed from all inputs to the output nodes.
 	RecursiveSteps() (bool, error)
 
-	// Relax Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute
-	// value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
+	// Relax Attempts to relax network (propagate activation waves) given amount of steps until giving up.
+	// The network considered relaxed when absolute value of the change at any given point is less
+	// than maxAllowedSignalDelta during activation waves propagation.
 	// If maxAllowedSignalDelta value is less than or equal to 0, the method will return true without checking for relaxation.
 	Relax(maxSteps int, maxAllowedSignalDelta float64) (bool, error)
 
