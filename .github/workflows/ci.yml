@@ -23,10 +23,15 @@ jobs:
       env:
         GO111MODULE: on
 
-    - name: Run coverage
+    - name: Run Tests
       run: go test -coverprofile=coverage.txt -covermode=atomic -timeout 40m -v ./...
       env:
         GO111MODULE: on
         
     - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash)
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.txt
+        flags: unittests
+        token: ${{ secrets.CODECOV_TOKEN }}
+        verbose: true
