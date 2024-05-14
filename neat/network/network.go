@@ -135,8 +135,11 @@ func (n *Network) FastNetworkSolver() (Solver, error) {
 		modules[i] = &FastControlNode{InputIndexes: inputs, OutputIndexes: outputs, ActivationType: cn.ActivationType}
 	}
 
-	return NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount,
-		activations, connections, biases, modules), nil
+	solver := NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount,
+		activations, connections, biases, modules)
+	solver.Id = n.Id
+	solver.Name = n.Name
+	return solver, nil
 }
 
 func processList(startIndex int, nList []*NNode, activations []math.NodeActivationType, neuronLookup map[int]int) int {

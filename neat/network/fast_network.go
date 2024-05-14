@@ -133,6 +133,7 @@ func NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuron
 }
 
 // ForwardSteps Propagates activation wave through all network nodes provided number of steps in forward direction.
+// See also Relax for conditional activation waves propagation.
 // Returns true if activation wave passed from all inputs to the outputs.
 func (s *FastModularNetworkSolver) ForwardSteps(steps int) (res bool, err error) {
 	for i := 0; i < steps; i++ {
@@ -233,8 +234,9 @@ func (s *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res b
 	return res, err
 }
 
-// Relax Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute
-// value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
+// Relax Attempts to relax network (propagate activation waves) given amount of steps until giving up.
+// The network considered relaxed when absolute value of the change at any given point is less
+// than maxAllowedSignalDelta during activation waves propagation.
 // If maxAllowedSignalDelta value is less than or equal to 0, the method will return true without checking for relaxation.
 func (s *FastModularNetworkSolver) Relax(maxSteps int, maxAllowedSignalDelta float64) (relaxed bool, err error) {
 	for i := 0; i < maxSteps; i++ {
