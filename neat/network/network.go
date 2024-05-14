@@ -73,6 +73,8 @@ func (n *Network) FastNetworkSolver() (Solver, error) {
 			inList = append(inList, ne)
 		case HiddenNeuron:
 			hiddenList = append(hiddenList, ne)
+		default:
+			// skip
 		}
 	}
 	inputNeuronCount := len(inList)
