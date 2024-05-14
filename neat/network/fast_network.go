@@ -10,13 +10,13 @@ import (
 // FastNetworkLink The connection descriptor for fast network
 type FastNetworkLink struct {
 	// The index of source neuron
-	SourceIndex int
+	SourceIndex int `json:"source_index"`
 	// The index of target neuron
-	TargetIndex int
+	TargetIndex int `json:"target_index"`
 	// The weight of this link
-	Weight float64
+	Weight float64 `json:"weight"`
 	// The signal relayed by this link
-	Signal float64
+	Signal float64 `json:"signal"`
 }
 
 // FastControlNode The module relay (control node) descriptor for fast network
@@ -132,8 +132,6 @@ func NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuron
 	return &fmm
 }
 
-// ForwardSteps Propagates activation wave through all network nodes provided number of steps in forward direction.
-// Returns true if activation wave passed from all inputs to the outputs.
 func (s *FastModularNetworkSolver) ForwardSteps(steps int) (res bool, err error) {
 	for i := 0; i < steps; i++ {
 		if res, err = s.forwardStep(0); err != nil {
@@ -143,9 +141,6 @@ func (s *FastModularNetworkSolver) ForwardSteps(steps int) (res bool, err error)
 	return res, nil
 }
 
-// RecursiveSteps Propagates activation wave through all network nodes provided number of steps by recursion from output nodes
-// Returns true if activation wave passed from all inputs to the outputs. This method is preferred method
-// of network activation when number of forward steps can not be easy calculated and no network modules are set.
 func (s *FastModularNetworkSolver) RecursiveSteps() (res bool, err error) {
 	if len(s.modules) > 0 {
 		return false, errors.New("recursive activation can not be used for network with defined modules")
@@ -233,9 +228,6 @@ func (s *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res b
 	return res, err
 }
 
-// Relax Attempts to relax network given amount of steps until giving up. The network considered relaxed when absolute
-// value of the change at any given point is less than maxAllowedSignalDelta during activation waves propagation.
-// If maxAllowedSignalDelta value is less than or equal to 0, the method will return true without checking for relaxation.
 func (s *FastModularNetworkSolver) Relax(maxSteps int, maxAllowedSignalDelta float64) (relaxed bool, err error) {
 	for i := 0; i < maxSteps; i++ {
 		if relaxed, err = s.forwardStep(maxAllowedSignalDelta); err != nil {
@@ -307,16 +299,14 @@ func (s *FastModularNetworkSolver) forwardStep(maxAllowedSignalDelta float64) (i
 	return isRelaxed, err
 }
 
-// Flush Flushes network state by removing all current activations. Returns true if network flushed successfully or
-// false in case of error.
 func (s *FastModularNetworkSolver) Flush() (bool, error) {
 	for i := s.biasNeuronCount; i < s.totalNeuronCount; i++ {
 		s.neuronSignals[i] = 0.0
+		s.neuronSignalsBeingProcessed[i] = 0.0
 	}
 	return true, nil
 }
 
-// LoadSensors Set sensors values to the input nodes of the network
 func (s *FastModularNetworkSolver) LoadSensors(inputs []float64) error {
 	if len(inputs) == s.inputNeuronCount {
 		// only inputs should be provided
@@ -329,7 +319,6 @@ func (s *FastModularNetworkSolver) LoadSensors(inputs []float64) error {
 	return nil
 }
 
-// ReadOutputs Read output values from the output nodes of the network
 func (s *FastModularNetworkSolver) ReadOutputs() []float64 {
 	// decouple and return
 	outs := make([]float64, s.outputNeuronCount)
@@ -337,12 +326,10 @@ func (s *FastModularNetworkSolver) ReadOutputs() []float64 {
 	return outs
 }
 
-// NodeCount Returns the total number of neural units in the network
 func (s *FastModularNetworkSolver) NodeCount() int {
 	return s.totalNeuronCount + len(s.modules)
 }
 
-// LinkCount Returns the total number of links between nodes in the network
 func (s *FastModularNetworkSolver) LinkCount() int {
 	// count all connections
 	numLinks := len(s.connections)

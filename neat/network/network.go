@@ -73,6 +73,8 @@ func (n *Network) FastNetworkSolver() (Solver, error) {
 			inList = append(inList, ne)
 		case HiddenNeuron:
 			hiddenList = append(hiddenList, ne)
+		default:
+			// skip
 		}
 	}
 	inputNeuronCount := len(inList)
@@ -135,8 +137,11 @@ func (n *Network) FastNetworkSolver() (Solver, error) {
 		modules[i] = &FastControlNode{InputIndexes: inputs, OutputIndexes: outputs, ActivationType: cn.ActivationType}
 	}
 
-	return NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount,
-		activations, connections, biases, modules), nil
+	solver := NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuronCount, totalNeuronCount,
+		activations, connections, biases, modules)
+	solver.Id = n.Id
+	solver.Name = n.Name
+	return solver, nil
 }
 
 func processList(startIndex int, nList []*NNode, activations []math.NodeActivationType, neuronLookup map[int]int) int {
@@ -451,18 +456,18 @@ func (n *Network) MaxActivationDepthWithCap(maxDepthCap int) (int, error) {
 		return 1, nil // just one layer depth
 	}
 
-	max := 0 // The max depth
+	maxDepth := 0 // The max depth
 	for _, node := range n.Outputs {
 		currDepth, err := node.Depth(0, maxDepthCap)
 		if err != nil {
 			return currDepth, err
 		}
-		if currDepth > max {
-			max = currDepth
+		if currDepth > maxDepth {
+			maxDepth = currDepth
 		}
 	}
 
-	return max, nil
+	return maxDepth, nil
 }
 
 // AllNodes Returns all network nodes including MIMO control nodes: base nodes + control nodes
@@ -488,7 +493,7 @@ func (n *Network) maxActivationDepthModular(w io.Writer) (int, error) {
 		// negative cycle detected - fallback to FloydWarshall
 		allPaths, _ = path.FloydWarshall(n)
 	}
-	max := 0 // The max depth
+	maxDepth := 0 // The max depth
 	for _, in := range n.inputs {
 		for _, out := range n.Outputs {
 			if paths, _ := allPaths.AllBetween(in.ID(), out.ID()); paths != nil {
@@ -500,8 +505,8 @@ func (n *Network) maxActivationDepthModular(w io.Writer) (int, error) {
 				// iterate over returned paths and find the one with maximal length
 				for _, p := range paths {
 					l := len(p) - 1 // to exclude input node
-					if l > max {
-						max = l
+					if l > maxDepth {
+						maxDepth = l
 					}
 				}
 			}
@@ -513,5 +518,5 @@ func (n *Network) maxActivationDepthModular(w io.Writer) (int, error) {
 		}
 	}
 
-	return max, nil
+	return maxDepth, nil
 }
