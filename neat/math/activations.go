@@ -25,6 +25,7 @@ const (
 	// The other activators assortment
 	TanhActivation
 	GaussianBipolarActivation
+	GaussianActivation
 	LinearActivation
 	LinearAbsActivation
 	LinearClippedActivation
@@ -82,6 +83,7 @@ func NewNodeActivatorsFactory() *NodeActivatorsFactory {
 
 	af.Register(TanhActivation, hyperbolicTangent, "TanhActivation")
 	af.Register(GaussianBipolarActivation, bipolarGaussian, "GaussianBipolarActivation")
+	af.Register(GaussianActivation, gaussian, "GaussianActivation")
 	af.Register(LinearActivation, linear, "LinearActivation")
 	af.Register(LinearAbsActivation, absoluteLinear, "LinearAbsActivation")
 	af.Register(LinearClippedActivation, clippedLinear, "LinearClippedActivation")
@@ -225,6 +227,10 @@ var (
 	bipolarGaussian = func(input float64, auxParams []float64) float64 {
 		return 2.0*math.Exp(-math.Pow(input*2.5, 2.0)) - 1.0
 	}
+	// The Gaussian activator xrange->[-1,1] yrange->[0,1]
+	gaussian = func(input float64, auxParams []float64) float64 {
+		return math.Exp(-math.Pow(input, 2.0))
+	}
 	// The absolute linear
 	absoluteLinear = func(input float64, auxParams []float64) float64 {
 		return math.Abs(input)
@@ -284,18 +290,18 @@ var (
 	}
 	// Finds maximal value among inputs and return it
 	maxModule = func(inputs []float64, auxParams []float64) []float64 {
-		max := float64(math.MinInt64)
+		maxVal := float64(math.MinInt64)
 		for _, v := range inputs {
-			max = math.Max(max, v)
+			maxVal = math.Max(maxVal, v)
 		}
-		return []float64{max}
+		return []float64{maxVal}
 	}
 	// Finds minimal value among inputs and returns it
 	minModule = func(inputs []float64, auxParams []float64) []float64 {
-		min := math.MaxFloat64
+		minVal := math.MaxFloat64
 		for _, v := range inputs {
-			min = math.Min(min, v)
+			minVal = math.Min(minVal, v)
 		}
-		return []float64{min}
+		return []float64{minVal}
 	}
 )
