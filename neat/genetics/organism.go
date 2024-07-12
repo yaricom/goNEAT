@@ -111,25 +111,28 @@ func (o *Organism) CheckChampionChildDamaged() bool {
 	return false
 }
 
-// MarshalBinary Encodes this organism for wired transmission during parallel reproduction cycle
+// MarshalBinary Encodes this organism for wired transmission during parallel reproduction cycle or parallel simulation
 func (o *Organism) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 	if _, err := fmt.Fprintln(&buf, o.Fitness, o.Generation, o.highestFitness, o.isPopulationChampionChild, o.Genotype.Id); err != nil {
 		return nil, err
-	} else if err = o.Genotype.Write(&buf); err != nil {
+	}
+	// encode genotype next
+	if err := o.Genotype.Write(&buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
 }
 
-// UnmarshalBinary Decodes organism received over the wire during parallel reproduction cycle
-func (o *Organism) UnmarshalBinary(data []byte) error {
-	// A simple encoding: plain text.
+// UnmarshalBinary Decodes organism received over the wire during parallel reproduction cycle or parallel simulation
+func (o *Organism) UnmarshalBinary(data []byte) (err error) {
 	b := bytes.NewBuffer(data)
 	var genotypeId int
-	if _, err := fmt.Fscanln(b, &o.Fitness, &o.Generation, &o.highestFitness, &o.isPopulationChampionChild, &genotypeId); err != nil {
+	if _, err = fmt.Fscanln(b, &o.Fitness, &o.Generation, &o.highestFitness, &o.isPopulationChampionChild, &genotypeId); err != nil {
 		return err
-	} else if o.Genotype, err = ReadGenome(b, genotypeId); err != nil {
+	}
+	// decode genotype next
+	if o.Genotype, err = ReadGenome(b, genotypeId); err != nil {
 		return err
 	}
 
