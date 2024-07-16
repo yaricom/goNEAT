@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/yaricom/goNEAT/v4/examples/pole"
+	"github.com/yaricom/goNEAT/v4/examples/pole2"
 	"github.com/yaricom/goNEAT/v4/examples/xor"
 	"github.com/yaricom/goNEAT/v4/experiment"
 	"github.com/yaricom/goNEAT/v4/neat"
@@ -98,9 +99,12 @@ func main() {
 		generationEvaluator = pole.NewCartPoleGenerationEvaluator(outDir, true, 500000)
 	case "cart_2pole_markov":
 		expt.MaxFitnessScore = 1.0 // as given by fitness function definition
-		generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, true, pole.ContinuousAction)
+		generationEvaluator = pole2.NewCartDoublePoleGenerationEvaluator(outDir, true, pole2.ContinuousAction)
 	case "cart_2pole_non-markov":
-		generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, false, pole.ContinuousAction)
+		generationEvaluator = pole2.NewCartDoublePoleGenerationEvaluator(outDir, false, pole2.ContinuousAction)
+	case "cart_2pole_markov_parallel":
+		expt.MaxFitnessScore = 1.0 // as given by fitness function definition
+		generationEvaluator = pole2.NewCartDoublePoleParallelGenerationEvaluator(outDir, true, pole2.ContinuousAction)
 	default:
 		log.Fatalf("Unsupported experiment: %s", *experimentName)
 	}
