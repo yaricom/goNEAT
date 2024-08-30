@@ -32,8 +32,8 @@ const (
 	DiscreteAction
 )
 
-// CartPole The structure to describe cart pole emulation
-type CartPole struct {
+// CartDoublePole The structure to describe cart pole emulation
+type CartDoublePole struct {
 	// The flag to indicate that we are executing Markov experiment setup (known velocities information)
 	isMarkov bool
 	// Flag that we are looking at the champion in Non-Markov experiment
@@ -57,13 +57,13 @@ type CartPole struct {
 }
 
 // NewCartPole If markov is false, then velocity information will be withheld from the network population (non-Markov)
-func NewCartPole(markov bool) *CartPole {
-	return &CartPole{
+func NewCartPole(markov bool) *CartDoublePole {
+	return &CartDoublePole{
 		isMarkov: markov,
 	}
 }
 
-func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps float64, err error) {
+func (p *CartDoublePole) evalNet(net *network.Network, actionType ActionType) (steps float64, err error) {
 	nonMarkovMax := nonMarkovGeneralizationMaxSteps
 	if p.nonMarkovLong {
 		nonMarkovMax = nonMarkovLongMaxSteps
@@ -202,7 +202,7 @@ func (p *CartPole) evalNet(net *network.Network, actionType ActionType) (steps f
 	}
 }
 
-func (p *CartPole) performAction(action, stepNum float64) {
+func (p *CartDoublePole) performAction(action, stepNum float64) {
 	const TAU = 0.01 // ∆t = 0.01s
 
 	/*--- Apply action to the simulated cart-pole ---*/
@@ -230,7 +230,7 @@ func (p *CartPole) performAction(action, stepNum float64) {
 	}
 }
 
-func (p *CartPole) step(action float64, st [6]float64, derivs *[6]float64) {
+func (p *CartDoublePole) step(action float64, st [6]float64, derivs *[6]float64) {
 	const Mup = 0.000002
 	const Gravity = -9.8
 	const ForceMag = 10.0 // [N]
@@ -266,7 +266,7 @@ func (p *CartPole) step(action float64, st [6]float64, derivs *[6]float64) {
 	derivs[5] = -0.75 * (derivs[1]*cosTheta2 + gSinTheta2 + temp2) / Length2
 }
 
-func (p *CartPole) rk4(f float64, y, dydx [6]float64, yout *[6]float64, tau float64) {
+func (p *CartDoublePole) rk4(f float64, y, dydx [6]float64, yout *[6]float64, tau float64) {
 	var yt, dym, dyt [6]float64
 	hh := tau * 0.5
 	h6 := tau / 6.0
@@ -301,7 +301,7 @@ func (p *CartPole) rk4(f float64, y, dydx [6]float64, yout *[6]float64, tau floa
 }
 
 // Check if simulation goes outside of bounds
-func (p *CartPole) outsideBounds() bool {
+func (p *CartDoublePole) outsideBounds() bool {
 	const failureAngle = thirtySixDegrees
 
 	return p.state[0] < -2.4 ||
@@ -312,7 +312,7 @@ func (p *CartPole) outsideBounds() bool {
 		p.state[4] > failureAngle
 }
 
-func (p *CartPole) resetState() {
+func (p *CartDoublePole) resetState() {
 	if p.isMarkov {
 		// Clear all fitness records
 		p.cartPosSum = 0.0
@@ -330,7 +330,7 @@ func (p *CartPole) resetState() {
 }
 
 // OrganismEvaluate method evaluates fitness of the organism for cart double pole-balancing task
-func OrganismEvaluate(organism *genetics.Organism, cartPole *CartPole, actionType ActionType) (winner bool, err error) {
+func OrganismEvaluate(organism *genetics.Organism, cartPole *CartDoublePole, actionType ActionType) (winner bool, err error) {
 	// Try to balance a pole now
 	phenotype, err := organism.Phenotype()
 	if err != nil {

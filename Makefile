@@ -43,6 +43,18 @@ run-cartpole-two-markov:
 						 -trials $(TRIALS_NUMBER) \
 						 -log_level $(LOG_LEVEL)
 
+
+# The target to run double-pole Markov experiment in parallel objective
+# function evaluation mode
+#
+run-cartpole-two-parallel-markov:
+	$(GORUN) executor.go -out $(OUT_DIR)/pole2_markov_parallel \
+						 -context $(DATA_DIR)/pole2_markov.neat \
+						 -genome $(DATA_DIR)/pole2_markov_startgenes \
+						 -experiment cart_2pole_markov_parallel \
+						 -trials $(TRIALS_NUMBER) \
+						 -log_level $(LOG_LEVEL)
+
 # The target to run single-pole experiment
 #
 run-cartpole:
@@ -51,6 +63,17 @@ run-cartpole:
 						 -genome $(DATA_DIR)/pole1startgenes \
 						 -experiment cart_pole \
 						 -trials $(TRIALS_NUMBER) \
+						 -log_level $(LOG_LEVEL)
+
+# The target to run single-pole experiment in parallel objective
+# function evaluation mode
+#
+run-cartpole-parallel:
+	$(GORUN) executor.go -out $(OUT_DIR)/pole1_parallel \
+						 -context $(DATA_DIR)/pole1_150.neat \
+						 -genome $(DATA_DIR)/pole1startgenes \
+						 -experiment cart_pole_parallel \
+						 -trials 100 \
 						 -log_level $(LOG_LEVEL)
 
 # The target to run disconnected XOR experiment

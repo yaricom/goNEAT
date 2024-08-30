@@ -19,7 +19,7 @@ import (
 // and its angular velocity ∆θ2/∆t are set to zero. The GS is then defined as the number of successful runs
 // from the 625 initial conditions and an individual is defined as a solution if it reaches a generalization
 // score of 200 or more.
-func EvaluateOrganismGeneralization(species []*genetics.Species, cartPole *CartPole, actionType ActionType) (*genetics.Organism, error) {
+func EvaluateOrganismGeneralization(species []*genetics.Species, cartPole *CartDoublePole, actionType ActionType) (*genetics.Organism, error) {
 	// Sort the species by max organism fitness in descending order - the highest fitness first
 	sortedSpecies := make([]*genetics.Species, len(species))
 	copy(sortedSpecies, species)
