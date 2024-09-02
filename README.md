@@ -151,16 +151,22 @@ expt := experiment.Experiment{
 var generationEvaluator experiment.GenerationEvaluator
 switch *experimentName {
 case "XOR":
-    expt.MaxFitnessScore = 16.0 // as given by fitness function definition
+    exp.MaxFitnessScore = 16.0 // as given by fitness function definition
     generationEvaluator = xor.NewXORGenerationEvaluator(outDir)
 case "cart_pole":
-    expt.MaxFitnessScore = 1.0 // as given by fitness function definition
-    generationEvaluator = pole.NewCartPoleGenerationEvaluator(outDir, true, 500000)
+    exp.MaxFitnessScore = 1.0 // as given by fitness function definition
+    generationEvaluator = pole.NewCartPoleGenerationEvaluator(outDir, true, 1500000)
+case "cart_pole_parallel":
+    exp.MaxFitnessScore = 1.0 // as given by fitness function definition
+    generationEvaluator = pole.NewCartPoleParallelGenerationEvaluator(outDir, true, 1500000)
 case "cart_2pole_markov":
-    expt.MaxFitnessScore = 1.0 // as given by fitness function definition
-    generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, true, pole.ContinuousAction)
+    exp.MaxFitnessScore = 1.0 // as given by fitness function definition
+    generationEvaluator = pole2.NewCartDoublePoleGenerationEvaluator(outDir, true, pole2.ContinuousAction)
 case "cart_2pole_non-markov":
-    generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, false, pole.ContinuousAction)
+    generationEvaluator = pole2.NewCartDoublePoleGenerationEvaluator(outDir, false, pole2.ContinuousAction)
+case "cart_2pole_markov_parallel":
+    exp.MaxFitnessScore = 1.0 // as given by fitness function definition
+    generationEvaluator = pole2.NewCartDoublePoleParallelGenerationEvaluator(outDir, true, pole2.ContinuousAction)
 default:
     log.Fatalf("Unsupported experiment: %s", *experimentName)
 }
