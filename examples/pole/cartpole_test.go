@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// The integration test running running over multiple iterations
+// The integration test running over multiple iterations
 func TestCartPoleGenerationEvaluator_GenerationEvaluate(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short Unit Test mode.")

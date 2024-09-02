@@ -474,7 +474,7 @@ func (s *Species) reproduce(ctx context.Context, generation int, pop *Population
 			if rand.Float64() > opts.MateOnlyProb ||
 				dad.Genotype.Id == mom.Genotype.Id ||
 				dad.Genotype.compatibility(mom.Genotype, opts) == 0.0 {
-				neat.DebugLog("SPECIES: ------> Mutatte baby genome:")
+				neat.DebugLog("SPECIES: ------> Mutate baby genome:")
 
 				// Do the mutation depending on probabilities of  various mutations
 				if rand.Float64() < opts.MutateAddNodeProb {
@@ -542,9 +542,9 @@ func createFirstSpecies(pop *Population, baby *Organism) {
 }
 
 func (s *Species) String() string {
-	max, avg := s.ComputeMaxAndAvgFitness()
+	maxFitness, avgFitness := s.ComputeMaxAndAvgFitness()
 	str := fmt.Sprintf("Species #%d, age=%d, avg_fitness=%.3f, max_fitness=%.3f, max_fitness_ever=%.3f, expected_offspring=%d, age_of_last_improvement=%d\n",
-		s.Id, s.Age, avg, max, s.MaxFitnessEver, s.ExpectedOffspring, s.AgeOfLastImprovement)
+		s.Id, s.Age, avgFitness, maxFitness, s.MaxFitnessEver, s.ExpectedOffspring, s.AgeOfLastImprovement)
 	str += fmt.Sprintf("Has %d Organisms:\n", len(s.Organisms))
 	for _, o := range s.Organisms {
 		str += fmt.Sprintf("\t%s\n", o)

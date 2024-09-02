@@ -1,4 +1,4 @@
-package pole
+package pole2
 
 import (
 	"fmt"

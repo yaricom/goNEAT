@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/yaricom/goNEAT/v4/examples/pole"
+	"github.com/yaricom/goNEAT/v4/examples/pole2"
 	"github.com/yaricom/goNEAT/v4/examples/xor"
 	"github.com/yaricom/goNEAT/v4/experiment"
 	"github.com/yaricom/goNEAT/v4/neat"
@@ -83,7 +84,7 @@ func main() {
 	}
 
 	// create experiment
-	expt := experiment.Experiment{
+	exp := experiment.Experiment{
 		Id:       0,
 		Trials:   make(experiment.Trials, neatOptions.NumRuns),
 		RandSeed: seed,
@@ -91,16 +92,22 @@ func main() {
 	var generationEvaluator experiment.GenerationEvaluator
 	switch *experimentName {
 	case "XOR":
-		expt.MaxFitnessScore = 16.0 // as given by fitness function definition
+		exp.MaxFitnessScore = 16.0 // as given by fitness function definition
 		generationEvaluator = xor.NewXORGenerationEvaluator(outDir)
 	case "cart_pole":
-		expt.MaxFitnessScore = 1.0 // as given by fitness function definition
-		generationEvaluator = pole.NewCartPoleGenerationEvaluator(outDir, true, 500000)
+		exp.MaxFitnessScore = 1.0 // as given by fitness function definition
+		generationEvaluator = pole.NewCartPoleGenerationEvaluator(outDir, true, 1500000)
+	case "cart_pole_parallel":
+		exp.MaxFitnessScore = 1.0 // as given by fitness function definition
+		generationEvaluator = pole.NewCartPoleParallelGenerationEvaluator(outDir, true, 1500000)
 	case "cart_2pole_markov":
-		expt.MaxFitnessScore = 1.0 // as given by fitness function definition
-		generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, true, pole.ContinuousAction)
+		exp.MaxFitnessScore = 1.0 // as given by fitness function definition
+		generationEvaluator = pole2.NewCartDoublePoleGenerationEvaluator(outDir, true, pole2.ContinuousAction)
 	case "cart_2pole_non-markov":
-		generationEvaluator = pole.NewCartDoublePoleGenerationEvaluator(outDir, false, pole.ContinuousAction)
+		generationEvaluator = pole2.NewCartDoublePoleGenerationEvaluator(outDir, false, pole2.ContinuousAction)
+	case "cart_2pole_markov_parallel":
+		exp.MaxFitnessScore = 1.0 // as given by fitness function definition
+		generationEvaluator = pole2.NewCartDoublePoleParallelGenerationEvaluator(outDir, true, pole2.ContinuousAction)
 	default:
 		log.Fatalf("Unsupported experiment: %s", *experimentName)
 	}
@@ -111,7 +118,7 @@ func main() {
 
 	// run experiment in the separate GO routine
 	go func() {
-		if err = expt.Execute(neat.NewContext(ctx, neatOptions), startGenome, generationEvaluator, nil); err != nil {
+		if err = exp.Execute(neat.NewContext(ctx, neatOptions), startGenome, generationEvaluator, nil); err != nil {
 			errChan <- err
 		} else {
 			errChan <- nil
@@ -144,7 +151,7 @@ func main() {
 
 	// Print experiment results statistics
 	//
-	expt.PrintStatistics()
+	exp.PrintStatistics()
 
 	fmt.Printf(">>> Start genome file:  %s\n", *genomePath)
 	fmt.Printf(">>> Configuration file: %s\n", *contextPath)
@@ -154,7 +161,7 @@ func main() {
 	expResPath := fmt.Sprintf("%s/%s.dat", outDir, *experimentName)
 	if expResFile, err := os.Create(expResPath); err != nil {
 		log.Fatal("Failed to create file for experiment results", err)
-	} else if err = expt.Write(expResFile); err != nil {
+	} else if err = exp.Write(expResFile); err != nil {
 		log.Fatal("Failed to save experiment results", err)
 	}
 
@@ -163,7 +170,7 @@ func main() {
 	npzResPath := fmt.Sprintf("%s/%s.npz", outDir, *experimentName)
 	if npzResFile, err := os.Create(npzResPath); err != nil {
 		log.Fatalf("Failed to create file for experiment results: [%s], reason: %s", npzResPath, err)
-	} else if err = expt.WriteNPZ(npzResFile); err != nil {
+	} else if err = exp.WriteNPZ(npzResFile); err != nil {
 		log.Fatal("Failed to save experiment results as NPZ file", err)
 	}
 }

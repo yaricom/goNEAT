@@ -1,4 +1,4 @@
-package pole
+package pole2
 
 import (
 	"context"
@@ -9,53 +9,66 @@ import (
 	"github.com/yaricom/goNEAT/v4/neat/genetics"
 )
 
-type cartPoleGenerationEvaluator struct {
+type cartDoublePoleGenerationEvaluator struct {
 	// The output path to store execution results
 	OutputPath string
+	// The flag to indicate whether to apply Markov evaluation variant
+	Markov bool
 
-	// The flag to indicate if cart emulator should be started from random position
-	RandomStart bool
-	// The number of emulation steps to be done balancing pole to win
-	WinBalancingSteps int
+	// The flag to indicate whether to use continuous activation or discrete
+	ActionType ActionType
 }
 
-// NewCartPoleGenerationEvaluator is to create generations evaluator for single-pole balancing experiment.
-// This experiment performs evolution on single pole balancing task in order to produce appropriate genome.
-func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceSteps int) experiment.GenerationEvaluator {
-	return &cartPoleGenerationEvaluator{
-		OutputPath:        outDir,
-		RandomStart:       randomStart,
-		WinBalancingSteps: winBalanceSteps,
+// NewCartDoublePoleGenerationEvaluator is the generations evaluator for double-pole balancing experiment: both Markov and non-Markov versions
+func NewCartDoublePoleGenerationEvaluator(outDir string, markov bool, actionType ActionType) experiment.GenerationEvaluator {
+	return &cartDoublePoleGenerationEvaluator{
+		OutputPath: outDir,
+		Markov:     markov,
+		ActionType: actionType,
 	}
 }
 
-// GenerationEvaluate evaluates one epoch for given population and prints results into output directory if any.
-func (e *cartPoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, pop *genetics.Population, epoch *experiment.Generation) error {
+// GenerationEvaluate Perform evaluation of one epoch on double pole balancing
+func (e *cartDoublePoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, pop *genetics.Population, epoch *experiment.Generation) error {
 	options, ok := neat.FromContext(ctx)
 	if !ok {
 		return neat.ErrNEATOptionsNotFound
 	}
+	cartPole := NewCartPole(e.Markov)
+
+	cartPole.nonMarkovLong = false
+	cartPole.generalizationTest = false
+
 	// Evaluate each organism on a test
 	for _, org := range pop.Organisms {
-		res, err := OrganismEvaluate(org, e.WinBalancingSteps, e.RandomStart)
+		winner, err := OrganismEvaluate(org, cartPole, e.ActionType)
 		if err != nil {
 			return err
 		}
 
-		if res && (epoch.Champion == nil || org.Fitness > epoch.Champion.Fitness) {
+		if winner && (epoch.Champion == nil || org.Fitness > epoch.Champion.Fitness) {
+			// This will be winner in Markov case
 			epoch.Solved = true
 			epoch.WinnerNodes = len(org.Genotype.Nodes)
 			epoch.WinnerGenes = org.Genotype.Extrons()
 			epoch.WinnerEvals = options.PopSize*epoch.Id + org.Genotype.Id
 			epoch.Champion = org
-			if epoch.WinnerNodes == 7 {
-				// You could dump out optimal genomes here if desired
-				if optPath, err := utils.WriteGenomePlain("pole1_optimal", e.OutputPath, org, epoch); err != nil {
-					neat.ErrorLog(fmt.Sprintf("Failed to dump optimal genome, reason: %s\n", err))
-				} else {
-					neat.InfoLog(fmt.Sprintf("Dumped optimal genome to: %s\n", optPath))
-				}
-			}
+			org.IsWinner = true
+		}
+	}
+
+	// Check for winner in Non-Markov case
+	if !e.Markov {
+		epoch.Solved = false
+		// evaluate generalization tests
+		if champion, err := EvaluateOrganismGeneralization(pop.Species, cartPole, e.ActionType); err != nil {
+			return err
+		} else if champion.IsWinner {
+			epoch.Solved = true
+			epoch.WinnerNodes = len(champion.Genotype.Nodes)
+			epoch.WinnerGenes = champion.Genotype.Extrons()
+			epoch.WinnerEvals = options.PopSize*epoch.Id + champion.Genotype.Id
+			epoch.Champion = champion
 		}
 	}
 
@@ -75,7 +88,7 @@ func (e *cartPoleGenerationEvaluator) GenerationEvaluate(ctx context.Context, po
 		org := epoch.Champion
 		utils.PrintActivationDepth(org, true)
 
-		genomeFile := "pole1_winner_genome"
+		genomeFile := "pole2_winner_genome"
 		// Prints the winner organism to file!
 		if orgPath, err := utils.WriteGenomePlain(genomeFile, e.OutputPath, org, epoch); err != nil {
 			neat.ErrorLog(fmt.Sprintf("Failed to dump winner organism's genome, reason: %s\n", err))
