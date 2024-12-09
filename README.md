@@ -605,7 +605,7 @@ implementation as well as utilities to run experiments while collecting relevant
 * The original C++ NEAT implementation created by Kenneth Stanley, see: [NEAT][1]
 * Other NEAT implementations may be found at [NEAT Software Catalog][2]
 * Iaroslav Omelianenko, [NeuroEvolution — evolving Artificial Neural Networks topology from the scratch][4], Medium, 2018
-* Kenneth O. Stanley, [Ph.D. Dissertation: EFFICIENT EVOLUTION OF NEURAL NETWORKS THROUGH COMPLEXIFICATION][5], Department of Computer Sciences, The University of Texas at Austin, Technical Report~AI-TR-04–39, August 2004
+* Kenneth O. Stanley, [Ph.D. Dissertation: Efficient Evolution of Neural Networks through Complexification][5], Department of Computer Sciences, The University of Texas at Austin, Technical Report~AI-TR-04–39, August 2004
 * [Hands-On NeuroEvolution with Python, Build high-performing artificial neural network architectures using neuroevolution-based algorithms][6], Iaroslav Omelianenko, Birmingham: Packt Publishing, 2019
 
 ## Citing
@@ -635,5 +635,5 @@ This source code maintained and managed by [Iaroslav Omelianenko][3]
 [2]:http://eplex.cs.ucf.edu/neat_software/
 [3]:https://io42.space
 [4]:https://becominghuman.ai/neuroevolution-evolving-artificial-neural-networks-topology-from-the-scratch-d1ebc5540d84
-[5]:http://nn.cs.utexas.edu/keyword?stanley:phd04
+[5]:https://nn.cs.utexas.edu/downloads/papers/stanley.phd04.pdf
 [6]:https://www.packtpub.com/product/hands-on-neuroevolution-with-python/9781838824914
