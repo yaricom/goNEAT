@@ -91,8 +91,6 @@ func (l *Link) IDString() string {
 func (l *Link) deriveTrait(t *neat.Trait) {
 	if t != nil {
 		l.Params = make([]float64, len(t.Params))
-		for i, p := range t.Params {
-			l.Params[i] = p
-		}
+		copy(l.Params, t.Params)
 	}
 }

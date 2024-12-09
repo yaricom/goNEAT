@@ -34,9 +34,7 @@ func NewTrait() *Trait {
 func NewTraitCopy(t *Trait) *Trait {
 	nt := newTrait(len(t.Params))
 	nt.Id = t.Id
-	for i, p := range t.Params {
-		nt.Params[i] = p
-	}
+	copy(nt.Params, t.Params)
 	return nt
 }
 
