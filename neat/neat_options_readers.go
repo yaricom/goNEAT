@@ -7,7 +7,6 @@ import (
 	"github.com/yaricom/goNEAT/v4/neat/math"
 	"gopkg.in/yaml.v3"
 	"io"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -15,7 +14,7 @@ import (
 
 // LoadYAMLOptions is to load NEAT options encoded as YAML file
 func LoadYAMLOptions(r io.Reader) (*Options, error) {
-	content, err := ioutil.ReadAll(r)
+	content, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
