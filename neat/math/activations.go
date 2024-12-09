@@ -101,12 +101,12 @@ func NewNodeActivatorsFactory() *NodeActivatorsFactory {
 }
 
 // ActivateByType is to calculate activation value for give input and auxiliary parameters using activation function with specified type.
-// Will return error and -0.0 activation if unsupported activation type requested.
+// Will return error and -math.Inf activation if unsupported activation type requested.
 func (a *NodeActivatorsFactory) ActivateByType(input float64, auxParams []float64, aType NodeActivationType) (float64, error) {
 	if fn, ok := a.activators[aType]; ok {
 		return fn(input, auxParams), nil
 	} else {
-		return -0.0, fmt.Errorf("unknown neuron activation type: %d", aType)
+		return math.Inf(-1), fmt.Errorf("unknown neuron activation type: %d", aType)
 	}
 }
 
