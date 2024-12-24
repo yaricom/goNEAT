@@ -69,12 +69,10 @@ type FastModularNetworkSolver struct {
 	// For recursive activation, the previous activation values of recurrent connections (recurrent connections processing)
 	lastActivation []float64
 
-	// The adjacent list to hold IDs of outgoing nodes for each network node
-	adjacentList [][]int
-	// The adjacent list to hold IDs of incoming nodes for each network node
-	reverseAdjacentList [][]int
-	// The adjacent matrix to hold connection weights between all connected nodes
-	adjacentMatrix [][]float64
+	// The adjacency list to hold IDs of incoming nodes for each network node
+	reverseAdjacencyList [][]int
+	// The adjacency matrix to hold connection weights between all connected nodes
+	adjacencyMatrix [][]float64
 }
 
 // NewFastModularNetworkSolver Creates new fast modular network solver
@@ -108,25 +106,21 @@ func NewFastModularNetworkSolver(biasNeuronCount, inputNeuronCount, outputNeuron
 	fmm.lastActivation = make([]float64, totalNeuronCount)
 
 	// Build adjacent lists and matrix for fast access of incoming/outgoing nodes and connection weights
-	fmm.adjacentList = make([][]int, totalNeuronCount)
-	fmm.reverseAdjacentList = make([][]int, totalNeuronCount)
-	fmm.adjacentMatrix = make([][]float64, totalNeuronCount)
+	fmm.reverseAdjacencyList = make([][]int, totalNeuronCount)
+	fmm.adjacencyMatrix = make([][]float64, totalNeuronCount)
 
 	for i := 0; i < totalNeuronCount; i++ {
-		fmm.adjacentList[i] = make([]int, 0)
-		fmm.reverseAdjacentList[i] = make([]int, 0)
-		fmm.adjacentMatrix[i] = make([]float64, totalNeuronCount)
+		fmm.reverseAdjacencyList[i] = make([]int, 0)
+		fmm.adjacencyMatrix[i] = make([]float64, totalNeuronCount)
 	}
 
 	for i := 0; i < len(connections); i++ {
 		crs := connections[i].SourceIndex
 		crt := connections[i].TargetIndex
-		// Holds outgoing nodes
-		fmm.adjacentList[crs] = append(fmm.adjacentList[crs], crt)
 		// Holds incoming nodes
-		fmm.reverseAdjacentList[crt] = append(fmm.reverseAdjacentList[crt], crs)
+		fmm.reverseAdjacencyList[crt] = append(fmm.reverseAdjacencyList[crt], crs)
 		// Holds link weight
-		fmm.adjacentMatrix[crs][crt] = connections[i].Weight
+		fmm.adjacencyMatrix[crs][crt] = connections[i].Weight
 	}
 
 	return &fmm
@@ -185,13 +179,13 @@ func (s *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res b
 	s.neuronSignalsBeingProcessed[currentNode] = 0
 
 	// Adjacency list in reverse holds incoming connections, go through each one and activate it
-	for i := 0; i < len(s.reverseAdjacentList[currentNode]); i++ {
-		currentAdjNode := s.reverseAdjacentList[currentNode][i]
+	for i := 0; i < len(s.reverseAdjacencyList[currentNode]); i++ {
+		currentAdjNode := s.reverseAdjacencyList[currentNode][i]
 
 		// If this node is currently being activated then we have reached a cycle, or recurrent connection.
 		// Use the previous activation in this case
 		if s.inActivation[currentAdjNode] {
-			s.neuronSignalsBeingProcessed[currentNode] += s.lastActivation[currentAdjNode] * s.adjacentMatrix[currentAdjNode][currentNode]
+			s.neuronSignalsBeingProcessed[currentNode] += s.lastActivation[currentAdjNode] * s.adjacencyMatrix[currentAdjNode][currentNode]
 		} else {
 			// Otherwise, proceed as normal
 			// Recurse if this neuron has not been activated yet
@@ -206,7 +200,7 @@ func (s *FastModularNetworkSolver) recursiveActivateNode(currentNode int) (res b
 			}
 
 			// Add it to the new activation
-			s.neuronSignalsBeingProcessed[currentNode] += s.neuronSignals[currentAdjNode] * s.adjacentMatrix[currentAdjNode][currentNode]
+			s.neuronSignalsBeingProcessed[currentNode] += s.neuronSignals[currentAdjNode] * s.adjacencyMatrix[currentAdjNode][currentNode]
 		}
 	}
 
