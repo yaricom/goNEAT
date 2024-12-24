@@ -12,7 +12,7 @@ import (
 )
 
 // Run double pole-balancing experiment with Markov environment setup
-func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T) {
+func TestCartDoublePoleGenerationEvaluator_GenerationEvaluate_Markov(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short Unit Test mode.")
 	}
@@ -87,7 +87,7 @@ func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateMarkov(t *testing.T
 }
 
 // Run double pole-balancing experiment with Non-Markov environment setup
-func TestCartDoublePoleGenerationEvaluator_GenerationEvaluateNonMarkov(t *testing.T) {
+func TestCartDoublePoleGenerationEvaluator_GenerationEvaluate_NonMarkov(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short Unit Test mode.")
 	}
