@@ -14,7 +14,7 @@ type cartPoleParallelGenerationEvaluator struct {
 	cartPoleGenerationEvaluator
 }
 
-type parallelEvaluationResult struct {
+type evaluationJobResult struct {
 	genomeId int
 	fitness  float64
 	error    float64
@@ -24,13 +24,40 @@ type parallelEvaluationResult struct {
 
 // NewCartPoleParallelGenerationEvaluator is to create generations evaluator for single-pole balancing experiment.
 // This experiment performs evolution on single pole balancing task in order to produce appropriate genome.
-func NewCartPoleParallelGenerationEvaluator(outDir string, randomStart bool, winBalanceSteps int) experiment.GenerationEvaluator {
+func NewCartPoleParallelGenerationEvaluator(outDir string, randomStart bool, winBalanceSteps int, maxWorkers int) experiment.GenerationEvaluator {
 	return &cartPoleParallelGenerationEvaluator{
 		cartPoleGenerationEvaluator{
 			OutputPath:        outDir,
 			RandomStart:       randomStart,
 			WinBalancingSteps: winBalanceSteps,
+			MaxWorkers:        maxWorkers,
 		},
+	}
+}
+
+type evaluationJob struct {
+	organism *genetics.Organism
+}
+
+func worker(winnerBalancingSteps int, randomStart bool, jobs <-chan evaluationJob, resChan chan<- evaluationJobResult, wg *sync.WaitGroup) {
+	defer wg.Done()
+	// execute evaluation jobs
+	for job := range jobs {
+		// create simulator and evaluate
+		winner, err := OrganismEvaluate(job.organism, winnerBalancingSteps, randomStart)
+		if err != nil {
+			resChan <- evaluationJobResult{err: err}
+			return
+		}
+
+		// create result
+		result := evaluationJobResult{
+			genomeId: job.organism.Genotype.Id,
+			fitness:  job.organism.Fitness,
+			error:    job.organism.Error,
+			winner:   winner,
+		}
+		resChan <- result
 	}
 }
 
@@ -44,9 +71,16 @@ func (e *cartPoleParallelGenerationEvaluator) GenerationEvaluate(ctx context.Con
 	organismMapping := make(map[int]*genetics.Organism)
 
 	popSize := len(pop.Organisms)
-	resChan := make(chan parallelEvaluationResult, popSize)
+	resChan := make(chan evaluationJobResult, popSize)
+	jobsChan := make(chan evaluationJob, popSize)
 	// The wait group to wait for all GO routines
 	var wg sync.WaitGroup
+
+	// Create pool of workers
+	for i := 0; i < e.MaxWorkers; i++ {
+		wg.Add(1)
+		go worker(e.WinBalancingSteps, e.RandomStart, jobsChan, resChan, &wg)
+	}
 
 	// Evaluate each organism in generation
 	for _, org := range pop.Organisms {
@@ -54,30 +88,13 @@ func (e *cartPoleParallelGenerationEvaluator) GenerationEvaluate(ctx context.Con
 			return fmt.Errorf("organism with %d already exists in mapping", org.Genotype.Id)
 		}
 		organismMapping[org.Genotype.Id] = org
-		wg.Add(1)
-
-		// run in separate GO thread
-		go func(organism *genetics.Organism, resChan chan<- parallelEvaluationResult, wg *sync.WaitGroup) {
-			defer wg.Done()
-
-			// create simulator and evaluate
-			winner, err := OrganismEvaluate(organism, e.WinBalancingSteps, e.RandomStart)
-			if err != nil {
-				resChan <- parallelEvaluationResult{err: err}
-				return
-			}
-
-			// create result
-			result := parallelEvaluationResult{
-				genomeId: organism.Genotype.Id,
-				fitness:  organism.Fitness,
-				error:    organism.Error,
-				winner:   winner,
-			}
-			resChan <- result
-
-		}(org, resChan, &wg)
+		// create and publish fitness evaluation job
+		jobsChan <- evaluationJob{
+			organism: org,
+		}
 	}
+	// close jobs channel
+	close(jobsChan)
 
 	// wait for evaluation results
 	wg.Wait()

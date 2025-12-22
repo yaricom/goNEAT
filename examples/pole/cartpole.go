@@ -17,6 +17,9 @@ type cartPoleGenerationEvaluator struct {
 	RandomStart bool
 	// The number of emulation steps to be done balancing pole to win
 	WinBalancingSteps int
+
+	// The maximal number of parallel workers for fitness evaluation
+	MaxWorkers int
 }
 
 // NewCartPoleGenerationEvaluator is to create generations evaluator for single-pole balancing experiment.
@@ -26,6 +29,7 @@ func NewCartPoleGenerationEvaluator(outDir string, randomStart bool, winBalanceS
 		OutputPath:        outDir,
 		RandomStart:       randomStart,
 		WinBalancingSteps: winBalanceSteps,
+		MaxWorkers:        1,
 	}
 }
 
