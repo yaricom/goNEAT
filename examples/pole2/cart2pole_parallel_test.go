@@ -37,7 +37,7 @@ func TestCartDoublePoleParallelGenerationEvaluator_GenerationEvaluate_Markov(t *
 		Id:     0,
 		Trials: make(experiment.Trials, opts.NumRuns),
 	}
-	evaluator := NewCartDoublePoleParallelGenerationEvaluator(outDirPath, true, ContinuousAction)
+	evaluator := NewCartDoublePoleParallelGenerationEvaluator(outDirPath, true, ContinuousAction, 50)
 	err = exp.Execute(opts.NeatContext(), startGenome, evaluator, nil)
 	require.NoError(t, err, "Failed to perform POLE2 Markov parallel experiment")
 

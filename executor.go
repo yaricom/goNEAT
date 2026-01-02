@@ -27,6 +27,7 @@ func main() {
 	var trialsCount = flag.Int("trials", 0, "The number of trials for experiment. Overrides the one set in configuration.")
 	var logLevel = flag.String("log_level", "", "The logger level to be used. Overrides the one set in configuration.")
 	var randSeed = flag.Int64("seed", 0, "The seed for random number generator")
+	var maxWorkers = flag.Int("max_workers", 50, "The maximum number of concurrent workers")
 
 	flag.Parse()
 
@@ -99,7 +100,7 @@ func main() {
 		generationEvaluator = pole.NewCartPoleGenerationEvaluator(outDir, true, 1500000)
 	case "cart_pole_parallel":
 		exp.MaxFitnessScore = 1.0 // as given by fitness function definition
-		generationEvaluator = pole.NewCartPoleParallelGenerationEvaluator(outDir, true, 1500000)
+		generationEvaluator = pole.NewCartPoleParallelGenerationEvaluator(outDir, true, 1500000, *maxWorkers)
 	case "cart_2pole_markov":
 		exp.MaxFitnessScore = 1.0 // as given by fitness function definition
 		generationEvaluator = pole2.NewCartDoublePoleGenerationEvaluator(outDir, true, pole2.ContinuousAction)
@@ -107,7 +108,7 @@ func main() {
 		generationEvaluator = pole2.NewCartDoublePoleGenerationEvaluator(outDir, false, pole2.ContinuousAction)
 	case "cart_2pole_markov_parallel":
 		exp.MaxFitnessScore = 1.0 // as given by fitness function definition
-		generationEvaluator = pole2.NewCartDoublePoleParallelGenerationEvaluator(outDir, true, pole2.ContinuousAction)
+		generationEvaluator = pole2.NewCartDoublePoleParallelGenerationEvaluator(outDir, true, pole2.ContinuousAction, *maxWorkers)
 	default:
 		log.Fatalf("Unsupported experiment: %s", *experimentName)
 	}

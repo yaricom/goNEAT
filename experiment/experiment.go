@@ -222,7 +222,7 @@ func (e *Experiment) AvgWinnerStatistics() (avgNodes, avgGenes, avgEvals, avgDiv
 // and produce less complicated winner genomes. At the same time it should have maximal fitness score and maximal
 // success rate among trials.
 //
-//  This value can only be compared against values obtained for the same type of experiments.
+//	This value can only be compared against values obtained for the same type of experiments.
 func (e *Experiment) EfficiencyScore() float64 {
 	meanComplexity, meanFitness := 0.0, 0.0
 	if len(e.Trials) > 1 {
@@ -308,7 +308,7 @@ func (e *Experiment) PrintStatistics() {
 		avgEvals /= count
 		avgDivers /= count
 		avgGenerations /= count
-		fmt.Printf("\nAverages among winners (successfull solvers)\n\tAvg Nodes:\t\t%.1f\n\tAvg Genes:\t\t%.1f\n\tAvg Evaluations:\t%.1f\n\tGenerations/trial:\t%.1f\n\n\tDiversity:\t\t%f\n",
+		fmt.Printf("\nAverages among winners (successful solvers)\n\tAvg Nodes:\t\t%.1f\n\tAvg Genes:\t\t%.1f\n\tAvg Evaluations:\t%.1f\n\tGenerations/trial:\t%.1f\n\n\tDiversity:\t\t%f\n",
 			avgNodes, avgGenes, avgEvals, avgGenerations, avgDivers)
 
 		meanComplexity /= count

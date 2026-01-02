@@ -17,6 +17,9 @@ type cartDoublePoleGenerationEvaluator struct {
 
 	// The flag to indicate whether to use continuous activation or discrete
 	ActionType ActionType
+
+	// The maximal number of parallel workers for fitness evaluation
+	MaxWorkers int
 }
 
 // NewCartDoublePoleGenerationEvaluator is the generations evaluator for double-pole balancing experiment: both Markov and non-Markov versions
@@ -25,6 +28,7 @@ func NewCartDoublePoleGenerationEvaluator(outDir string, markov bool, actionType
 		OutputPath: outDir,
 		Markov:     markov,
 		ActionType: actionType,
+		MaxWorkers: 1,
 	}
 }
 
