@@ -5,7 +5,7 @@
 
 [![version](https://img.shields.io/github/v/tag/yaricom/goNEAT.svg?sort=semver)](https://github.com/yaricom/goNEAT/releases/latest)
 [![GoDoc](https://godoc.org/github.com/yaricom/goNEAT/neat?status.svg)](https://godoc.org/github.com/yaricom/goNEAT/neat)
-[![Go version](https://img.shields.io/badge/go-1.18-blue.svg)](https://github.com/moovweb/gvm)
+[![Go version](https://img.shields.io/badge/go-1.22-blue.svg)](https://github.com/moovweb/gvm)
 [![license](https://img.shields.io/github/license/yaricom/goNEAT.svg)](https://github.com/yaricom/goNEAT/blob/master/LICENSE)
 [![yaricom/goNEAT](https://tokei.rs/b1/github/yaricom/goNEAT?category=lines)](https://github.com/yaricom/goNEAT)
 [![DOI](https://zenodo.org/badge/102864171.svg)](https://zenodo.org/badge/latestdoi/102864171)
@@ -26,7 +26,7 @@ and their interconnections).
 ## Minimum requirements
 | Requirement | Notes            |
 |-------------|------------------|
-| Go version  | Go1.18 or higher |
+| Go version  | Go1.22 or higher |
 
 ## Releases
 
